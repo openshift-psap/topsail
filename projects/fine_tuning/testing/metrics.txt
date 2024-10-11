@@ -170,3 +170,11 @@ DCGM_FI_PROF_NVLINK_TX_BYTES{exported_container="pytorch"}
 DCGM_FI_PROF_PCIE_RX_BYTES{exported_container="pytorch"}
 # Sutest GPU PCIe transfer (tx)
 DCGM_FI_PROF_PCIE_TX_BYTES{exported_container="pytorch"}
+# sutest__container_fs_reads_bytes_totalnamespace=fine-tuning-testing
+(sum(irate(container_fs_reads_bytes_total{namespace=~'$NAMESPACE'}[5m])) by (pod, namespace))
+# sutest__container_fs_writes_bytes_totalnamespace=fine-tuning-testing
+(sum(irate(container_fs_writes_bytes_total{namespace=~'$NAMESPACE'}[5m])) by (pod, namespace))
+# sutest__container_network_receive_bytes_total__namespace=fine-tuning-testing
+(sum(irate(container_network_receive_bytes_total{namespace=~'$NAMESPACE'}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)
+# sutest__container_network_transmit_bytes_total__namespace=fine-tuning-testing
+(sum(irate(container_network_transmit_bytes_total{namespace=~'$NAMESPACE'}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)

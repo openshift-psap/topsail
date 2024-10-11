@@ -33,7 +33,7 @@ def _labels_to_string(labels, exclude=[]):
 
     return ",".join(values)
 
-def _get_container_cpu(cluster_role, labels):
+def _get_container_cpu_queries(cluster_role, labels):
     labels_str = _labels_to_string(labels)
 
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
@@ -45,7 +45,8 @@ def _get_container_cpu(cluster_role, labels):
         {f"{cluster_role}__container_cpu_limits__{metric_name}": "kube_pod_container_resource_limits{"+labels_str+",resource='cpu'}"},
     ]
 
-def _get_container_mem(cluster_role, labels):
+
+def _get_container_mem_queries(cluster_role, labels):
     labels_str = _labels_to_string(labels)
 
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
@@ -59,10 +60,8 @@ def _get_container_mem(cluster_role, labels):
         {f"{cluster_role}__container_max_memory__{metric_name}": "container_memory_max_usage_bytes{"+labels_str+"}"},
     ]
 
-def _get_container_cpu_mem(labelss):
-    return _get_container_mem(labels) + _get_container_mem(labels)
 
-def _get_cluster_mem(cluster_role):
+def _get_cluster_mem_queries(cluster_role):
     return [
         {f"{cluster_role}__cluster_memory_capacity": "sum(cluster:capacity_memory_bytes:sum)"},
         {f"{cluster_role}__cluster_memory_usage":
@@ -85,7 +84,7 @@ def _get_cluster_mem(cluster_role):
 """},
     ]
 
-def _get_cluster_cpu(cluster_role):
+def _get_cluster_cpu_queries(cluster_role):
     return [
         {f"{cluster_role}__cluster_cpu_requests":
 """   sum(
@@ -113,13 +112,35 @@ def _get_cluster_cpu(cluster_role):
         {f"{cluster_role}__cluster_cpu_capacity": "sum(cluster:capacity_cpu_cores:sum)"}
     ]
 
+
+def _get_pod_disk_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
+
+    return [
+        {f"{cluster_role}__container_fs_reads_bytes_total{metric_name}": "(sum(irate(container_fs_reads_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
+        {f"{cluster_role}__container_fs_writes_bytes_total{metric_name}": "(sum(irate(container_fs_writes_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
+    ]
+
+
+def _get_pod_network_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
+
+    return [
+        {f"{cluster_role}__container_network_receive_bytes_total__{metric_name}": "(sum(irate(container_network_receive_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+        {f"{cluster_role}__container_network_transmit_bytes_total__{metric_name}": "(sum(irate(container_network_transmit_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+    ]
+
 # ---
 
 def _get_cluster_mem_cpu(cluster_role, register):
     all_metrics = []
 
-    cluster_mem = _get_cluster_mem(cluster_role)
-    cluster_cpu = _get_cluster_cpu(cluster_role)
+    cluster_mem = _get_cluster_mem_queries(cluster_role)
+    cluster_cpu = _get_cluster_cpu_queries(cluster_role)
 
     all_metrics += cluster_mem
     all_metrics += cluster_cpu
@@ -141,14 +162,14 @@ def _get_cluster_mem_cpu(cluster_role, register):
     return all_metrics
 
 
-def _get_container_mem_cpu(cluster_role, register, label_sets):
+def _get_container_mem_cpu_metrics(cluster_role, register, label_sets):
     all_metrics = []
 
     for plot_name_labels in label_sets:
         plot_name, labels = list(plot_name_labels.items())[0]
 
-        mem = _get_container_mem(cluster_role, labels)
-        cpu = _get_container_cpu(cluster_role, labels)
+        mem = _get_container_mem_queries(cluster_role, labels)
+        cpu = _get_container_cpu_queries(cluster_role, labels)
 
         all_metrics += mem
         all_metrics += cpu
@@ -165,6 +186,54 @@ def _get_container_mem_cpu(cluster_role, register, label_sets):
                                       get_metrics=get_metrics(cluster_role),
                                       as_timestamp=True, is_memory=True,
                                       )
+
+    return all_metrics
+
+
+def _get_disk_usage_metrics(cluster_role, register, label_sets, disk_metrics_names):
+    all_metrics = []
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in disk_metrics_names: continue
+
+        disk_queries = _get_pod_disk_queries(cluster_role, labels)
+
+        all_metrics += disk_queries
+
+        if not register: continue
+
+        plotting_prom.Plot(
+            disk_queries, f"Prom: {plot_name}: Disk usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Disk usage", y_title="in MB/s",
+            y_divisor=1024*1024,
+        )
+
+    return all_metrics
+
+
+def _get_network_usage_metrics(cluster_role, register, label_sets, network_metrics_names):
+    all_metrics = []
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in network_metrics_names: continue
+
+        network_queries = _get_pod_network_queries(cluster_role, labels)
+        all_metrics += network_queries
+
+        if not register: continue
+
+
+        plotting_prom.Plot(
+            network_queries, f"Prom: {plot_name}: Network usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Network usage", y_title="in Mbps",
+            y_divisor=1024*1024,
+        )
 
     return all_metrics
 
@@ -229,8 +298,8 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
 
 def _get_control_plane_nodes(cluster_role, register):
     all_metrics = []
-    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod=["!~kube-apiserver-guard.*", "kube-apiserver-.*"])}])
-    all_metrics += _get_container_mem_cpu(cluster_role, register, [{f"{cluster_role.title()} ETCD": dict(namespace="openshift-etcd", pod=["!~etcd-guard-.*", "etcd-.*"])}])
+    all_metrics += _get_container_mem_cpu_metrics(cluster_role, register, [{f"{cluster_role.title()} ApiServer": dict(namespace="openshift-kube-apiserver", pod=["!~kube-apiserver-guard.*", "kube-apiserver-.*"])}])
+    all_metrics += _get_container_mem_cpu_metrics(cluster_role, register, [{f"{cluster_role.title()} ETCD": dict(namespace="openshift-etcd", pod=["!~etcd-guard-.*", "etcd-.*"])}])
 
     return all_metrics
 
@@ -365,7 +434,11 @@ def get_gpu_usage_metrics(cluster_role, register, container):
     return all_metrics
 
 
-def get_cluster_metrics(cluster_role, *, container_labels=[], gpu_container=False, register=False):
+def get_cluster_metrics(cluster_role, *, container_labels=[],
+                        gpu_container=False,
+                        disk_metrics_names=[],
+                        network_metrics_names=[],
+                        register=False):
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
     all_metrics += _get_control_plane_nodes(cluster_role, register)
@@ -373,9 +446,15 @@ def get_cluster_metrics(cluster_role, *, container_labels=[], gpu_container=Fals
     all_metrics += _get_control_plane_nodes_cpu_usage(cluster_role, register)
 
     if container_labels:
-        all_metrics += _get_container_mem_cpu(cluster_role, register, container_labels)
+        all_metrics += _get_container_mem_cpu_metrics(cluster_role, register, container_labels)
 
     if gpu_container:
         all_metrics += get_gpu_usage_metrics(cluster_role, register, container=gpu_container)
+
+    if disk_metrics_names:
+        all_metrics += _get_disk_usage_metrics(cluster_role, register, container_labels, disk_metrics_names)
+
+    if network_metrics_names:
+        all_metrics += _get_network_usage_metrics(cluster_role, register, container_labels, network_metrics_names)
 
     return all_metrics
