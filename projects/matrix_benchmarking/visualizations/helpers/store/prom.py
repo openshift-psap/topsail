@@ -124,10 +124,10 @@ def _get_pod_disk_queries(cluster_role, labels):
     ]
 
 
-def _get_container_network_queries(cluster_role, labels):
-    labels_str = _labels_to_string(labels)
+def _get_pod_network_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
 
-    metric_name = "_".join(f"{k}={v}" for k, v in labels.items())
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
 
     return [
         {f"{cluster_role}__container_network_receive_bytes_total__{metric_name}": "(sum(irate(container_network_receive_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
@@ -208,6 +208,30 @@ def _get_disk_usage_metrics(cluster_role, register, label_sets, disk_metrics_nam
             get_metrics=get_metrics(cluster_role),
             as_timestamp=True,
             title="Disk usage", y_title="in MB/s",
+            y_divisor=1024*1024,
+        )
+
+    return all_metrics
+
+
+def _get_network_usage_metrics(cluster_role, register, label_sets, network_metrics_names):
+    all_metrics = []
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in network_metrics_names: continue
+
+        network_queries = _get_pod_network_queries(cluster_role, labels)
+        all_metrics += network_queries
+
+        if not register: continue
+
+
+        plotting_prom.Plot(
+            network_queries, f"Prom: {plot_name}: Network usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Network usage", y_title="in Mbps",
             y_divisor=1024*1024,
         )
 
@@ -413,6 +437,7 @@ def get_gpu_usage_metrics(cluster_role, register, container):
 def get_cluster_metrics(cluster_role, *, container_labels=[],
                         gpu_container=False,
                         disk_metrics_names=[],
+                        network_metrics_names=[],
                         register=False):
     all_metrics = []
     all_metrics += _get_cluster_mem_cpu(cluster_role, register)
@@ -428,5 +453,8 @@ def get_cluster_metrics(cluster_role, *, container_labels=[],
 
     if disk_metrics_names:
         all_metrics += _get_disk_usage_metrics(cluster_role, register, container_labels, disk_metrics_names)
+
+    if network_metrics_names:
+        all_metrics += _get_network_usage_metrics(cluster_role, register, container_labels, network_metrics_names)
 
     return all_metrics
