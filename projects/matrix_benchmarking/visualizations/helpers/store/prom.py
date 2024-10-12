@@ -1,9 +1,10 @@
 import json
 
 from matrix_benchmarking import common
-import matrix_benchmarking.plotting.prom as plotting_prom
 import matrix_benchmarking.parsing.prom as parsing_prom
-import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
+
+import projects.matrix_benchmarking.visualizations.helpers.plotting.prom as plotting_prom
+import projects.matrix_benchmarking.visualizations.helpers.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
 def get_metrics(name):
     def _get_metrics(entry, metric):

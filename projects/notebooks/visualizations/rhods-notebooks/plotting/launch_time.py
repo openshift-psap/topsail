@@ -33,7 +33,6 @@ class LaunchTimeDistribution():
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         cfg__all_in_one = cfg.get("all_in_one", False)
         cfg__show_only_step = cfg.get("show_only_step", False)
-        cfg__check_all_thresholds = cfg.get("check_all_thresholds", False)
 
         expe_cnt = common.Matrix.count_records(settings, setting_lists)
 
@@ -41,46 +40,27 @@ class LaunchTimeDistribution():
             return {}, f"ERROR: only one experiment must be selected (found {expe_cnt}), or pass the all_in_one config flag."
 
         user_counts = set()
-        threshold_status_keys = set()
 
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = entry.get_name(variables)
 
-            try: check_thresholds = entry.results.check_thresholds
-            except AttributeError: check_thresholds = False
-
-            if cfg__check_all_thresholds:
-                check_thresholds = True
-
             success_users, failed_users, total_users = utils.get_user_info(entry)
             user_counts.add(total_users)
 
             if cfg__all_in_one:
-                if check_thresholds:
-                    _threshold = entry.get_threshold("test_successes", "0")
-                    if "%" in _threshold:
-                        _threshold_pct = int(_threshold[:-1])
-                        threshold = int(total_users * _threshold_pct / 100)
-                    else:
-                        threshold = int(_threshold) or None
 
                 data.append(dict(
                     Event=entry_name,
                     Count=success_users,
                     Status="PASS",
-                    Threshold=threshold if check_thresholds else None,
                 ))
-
-                if check_thresholds:
-                    threshold_status_keys.add(entry_name)
 
                 if failed_users:
                     data.append(dict(
                         Event=entry_name,
                         Count=failed_users,
                         Status="FAIL",
-                        Threshold=threshold if check_thresholds else None,
                 ))
                 continue
 
@@ -104,17 +84,9 @@ class LaunchTimeDistribution():
             return None, "No data to plot ..."
 
         user_count = ", ".join(map(str, user_counts))
-        has_thresholds = False
         df = pd.DataFrame(data)
         if self.show_successes:
             fig = px.histogram(df, x="Event", y="Count", color="Event", pattern_shape="Status")
-
-            if "Threshold" in df and not df['Threshold'].isnull().all():
-                fig.add_scatter(name="Pass threshold",
-                                x=df['Event'], y=df['Threshold'], mode='lines+markers',
-                                marker=dict(color='red', size=15, symbol="triangle-up"),
-                                line=dict(color='black', width=3, dash='dot'))
-                has_thresholds = True
 
             fig.update_layout(title=("Test" if cfg__all_in_one else "Step")
                               + f" successes for {user_count} users", title_x=0.5,)
@@ -159,28 +131,6 @@ class LaunchTimeDistribution():
             msg.append(f"50% within {time(mid_50)}. ")
             msg.append(html.B(step_name))
             msg.append(html.Br())
-
-        if has_thresholds:
-            msg.append(html.H4(("Test" if cfg__all_in_one else "Step") + f" successes for {user_count} users"))
-        else:
-            threshold_status_keys = []
-
-        for legend_name in threshold_status_keys:
-            res_ = df[df["Event"] == legend_name]
-            res = res_[res_["Status"] == "PASS"]
-            if len(res) != 1:
-                logging.warning(f"Expected only one row for evaluating the threshold of '{legend_name}', got {len(res)} ...")
-            pass_count = res["Count"].values[0]
-            threshold = res["Threshold"].values[0]
-
-            test_passed = pass_count >= threshold
-
-            msg += [html.B(legend_name), ": " if legend_name else "Test", html.B("PASSED" if test_passed else "FAILED"), f" ({'1' if test_passed else '0'}/1 success)"]
-            if test_passed:
-                msg.append(html.Ul(html.Li(f"PASS: {pass_count} >= threshold={threshold} successes")))
-            else:
-                msg.append(html.Ul(html.Li(f"FAIL: {pass_count} < threshold={threshold} successes")))
-
 
         return fig, msg
 

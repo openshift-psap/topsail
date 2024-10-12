@@ -1,5 +1,5 @@
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
-import matrix_benchmarking.plotting.prom.cpu_memory as plotting_prom_cpu_memory
+import projects.matrix_benchmarking.visualizations.helpers.plotting.prom.cpu_memory as plotting_prom_cpu_memory
 
 # ---
 
