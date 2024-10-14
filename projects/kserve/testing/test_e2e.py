@@ -3,7 +3,9 @@
 import sys, os
 import pathlib
 
-from projects.core.library import config
+from projects.core.library import config, run
+from projects.cluster.library import prom
+
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -166,7 +168,7 @@ def multi_model_test_sequentially(locally=False):
 
     # launch the remote execution
 
-    prom_start_ts = reset_prometheus()
+    prom_start_ts = prom.reset_prometheus()
     with env.NextArtifactDir("multi_model_test_sequentially"):
         try:
             run.run_toolbox_from_config("local_ci", "run_multi", suffix="test_sequentially",
@@ -186,7 +188,7 @@ def test_models_longevity():
     logging.info(f"Longevity test started at:     {start}")
     logging.info(f"Longevity test will finish at: {finish}")
 
-    prom_start_ts = reset_prometheus()
+    prom_start_ts = prom.reset_prometheus()
 
     deploy_models_concurrently()
 
@@ -275,7 +277,7 @@ def single_model_deploy_and_test_sequentially(locally=False):
     failed = []
     for consolidated_model in consolidated_models:
         with env.NextArtifactDir(consolidated_model['name']):
-            prom_start_ts = reset_prometheus()
+            prom_start_ts = prom.reset_prometheus()
             try:
 
                 deploy_consolidated_model(consolidated_model)
@@ -300,7 +302,7 @@ def multi_model_test_concurrently(expe_name="multi-model_concurrent", with_kserv
     "Tests all the configured models concurrently (all at the same time)"
 
     if with_kserve_prom:
-        prom_start_ts = reset_prometheus()
+        prom_start_ts = prom.reset_prometheus()
 
     with env.NextArtifactDir("multi_model_test_concurrently"):
         try:
@@ -331,7 +333,7 @@ def test_one_model(
     if namespace is not None:
         config.project.set_config("tests.e2e.namespace", namespace)
 
-    prom_start_ts = reset_prometheus()
+    prom_start_ts = prom.reset_prometheus()
 
     consolidate_models(index=index, use_job_index=True, name=model_name, namespace=namespace)
     test_consolidated_models()
@@ -351,78 +353,6 @@ def test_one_model(
 
 # ---
 
-def reset_prometheus(delay=60):
-    capture_prom = config.project.get_config("tests.capture_prom")
-    if not capture_prom:
-        logging.info("tests.capture_prom is disabled, skipping Prometheus DB reset")
-        return
-
-    prom_start_ts = datetime.datetime.now()
-
-    if capture_prom == "with-queries":
-        return prom_start_ts
-
-    with run.Parallel("cluster__reset_prometheus_dbs") as parallel:
-        parallel.delayed(run.run_toolbox, "cluster", "reset_prometheus_db", mute_stdout=True)
-        if config.project.get_config("tests.capture_prom_uwm"):
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "reset_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
-
-    logging.info(f"Wait {delay}s for Prometheus to restart collecting data ...")
-    time.sleep(delay)
-
-    # at the moment, only used when capture_prom == "with-queries".
-    # Returned for consistency.
-    return prom_start_ts
-
-
-def dump_prometheus(prom_start_ts, delay=60):
-    capture_prom = config.project.get_config("tests.capture_prom")
-
-    if not capture_prom:
-        logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
-        return
-
-    if config.project.get_config("tests.dry_mode"):
-        logging.info("tests.dry_mode is enabled, skipping Prometheus DB dump")
-        return
-
-    if capture_prom == "with-queries":
-        if config.project.get_config("tests.capture_prom_uwm"):
-            logging.error("tests.capture_prom_uwm not supported with capture Prom with queries")
-
-        prom_end_ts = datetime.datetime.now()
-        args = dict(
-            duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
-            promquery_file = TESTING_THIS_DIR / "metrics.txt",
-            dest_dir = env.ARTIFACT_DIR / "metrics",
-            namespace = config.project.get_config("tests.e2e.namespace"),
-        )
-
-        with env.NextArtifactDir("cluster__dump_prometheus_dbs"):
-            run.run_toolbox("cluster", "query_prometheus_db", **args)
-            with env.NextArtifactDir("cluster__dump_prometheus_db"):
-                with open(env.ARTIFACT_DIR / "prometheus.tar.dummy", "w") as f:
-                    print(f"""This file is a dummy.
-Metrics have been queried from Prometheus and saved into {args['dest_dir']}.
-Keep this file here, so that 'projects/fine_tuning/visualizations/fine_tuning_prom/store/parsers.py' things Prometheus metrics have been captured,
-and it directly processes the cached files from the metrics directory.""", file=f)
-                nodes = run.run("oc get nodes -ojson", capture_stdout=True)
-                with open(env.ARTIFACT_DIR / "nodes.json", "w") as f:
-                    print(nodes.stdout.strip(), file=f)
-
-        return
-
-    # prom_start_ts not used when during full prometheus dump.
-
-    logging.info(f"Wait {delay}s for Prometheus to finish collecting data ...")
-    time.sleep(delay)
-
-    with run.Parallel("cluster__dump_prometheus_dbs") as parallel:
-        parallel.delayed(run.run_toolbox, "cluster", "dump_prometheus_db", mute_stdout=True)
-        if config.project.get_config("tests.capture_prom_uwm"):
-            parallel.delayed(run.run_toolbox_from_config, "cluster", "dump_prometheus_db", suffix="uwm", artifact_dir_suffix="_uwm", mute_stdout=True)
-
-
 def generate_prom_results(expe_name, prom_start_ts):
     anchor_file = env.ARTIFACT_DIR / ".matbench_prom_db_dir"
     if anchor_file.exists():
@@ -438,7 +368,8 @@ def generate_prom_results(expe_name, prom_start_ts):
     with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
         yaml.dump(config.project.config, f, indent=4)
 
-    dump_prometheus(prom_start_ts)
+    namespace = config.project.get_config("tests.e2e.namespace")
+    prom.dump_prometheus(prom_start_ts, namespace)
 
     raw_deployment = config.project.get_config("kserve.raw_deployment.enabled")
     run.run_toolbox("kserve", "capture_operators_state", raw_deployment=raw_deployment, run_kwargs=dict(capture_stdout=True))
