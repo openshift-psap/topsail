@@ -194,7 +194,7 @@ def get_lts_directory(common_args):
     workload = common_args["workload"]
     results_dirname = common_args["results_dirname"]
 
-    return env.ARTIFACT_DIR / "lts" / workload
+    return results_dirname / "lts" / workload
 
 
 def call_download_lts(step_idx, common_args, common_env_str):
