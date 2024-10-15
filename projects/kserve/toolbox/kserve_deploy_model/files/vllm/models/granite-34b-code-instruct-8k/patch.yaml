@@ -7,7 +7,7 @@ spec:
     minReplicas: 2
     maxReplicas: 2
     model:
-      storageUri: s3://psap-hf-models/mixtral-8x7b/mixtral-8x7b
+      storageUri: s3://psap-1474-blog-models/ibm-granite/granite-34b-code-instruct-8k/ 
       args:
       - --dtype=bfloat16
       - --tensor-parallel-size=4
@@ -17,7 +17,7 @@ spec:
       resources:
         requests:
           cpu: "8"
-          memory: "40Gi"
+          memory: "32Gi"
           nvidia.com/gpu: "4"
         limits:
           nvidia.com/gpu: "4"

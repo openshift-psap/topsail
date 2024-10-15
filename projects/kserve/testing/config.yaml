@@ -35,6 +35,9 @@ ci_presets:
   cluster_a30:
     clusters.sutest.compute.machineset.type: "PSAP A30 node"
 
+  cluster_t4:
+    clusters.sutest.compute.machineset.type: "PSAP T4 node"
+
   cluster_2xa100:
     clusters.sutest.compute.machineset.type: "Beaker A100-80GB"
 
@@ -93,6 +96,10 @@ ci_presets:
 
   raw:
     kserve.raw_deployment.enabled: true
+    tests.e2e.llm_load_test.args.interface: "http"
+
+  serverless:
+    tests.e2e.llm_load_test.args.interface: "https"
 
   quick_raw:
     extends: [raw, no_gpu]
@@ -136,7 +143,6 @@ ci_presets:
     # kserve.model.serving_runtime.update_image: False
     tests.e2e.llm_load_test.args.plugin: "openai_plugin"
     tests.e2e.llm_load_test.args.streaming: true
-    tests.e2e.llm_load_test.args.interface: "http"
     tests.e2e.llm_load_test.args.endpoint: "/v1/completions"
       # tests.e2e.llm_load_test.args.model_name: "/mnt/models/"
       # tests.e2e.llm_load_test.args.host: "http://localhost:8033"
@@ -286,6 +292,84 @@ ci_presets:
     # small models will stop at 32
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
     export_artifacts.enabled: true
+
+  # ---
+  # PSAP 1474, Profiling AI models across different accelerators
+  #
+  single_a10_l4_l40s_llm_models:
+    tests.e2e.models:
+    - name: llama-3-1-8b-instruct
+      model: llama-3.1-8b-instruct
+      testing:
+        size: small
+        max_concurrency: 256
+    - name: granite-7b-instruct
+      testing:
+        size: small
+        max_concurrency: 256
+
+  four_l40s_llm_models:
+    tests.e2e.models:
+    - name: granite-34b-code-instruct-8k
+      testing:
+        size: large
+        max_concurrency: 256
+    - name: mixtral-8x7b
+      testing:
+        size: large
+        max_concurrency: 256
+
+  eight_l40s_llm_models:
+    tests.e2e.models:
+    - name: llama-3-1-70b-instruct
+      model: llama-3.1-70b-instruct
+      testing:
+        size: large
+        max_concurrency: 256
+
+  profiling_settings:
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.enabled: true
+    tests.e2e.llm_load_test.args.duration: 180
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    kserve.model.serving_runtime.update_image: false
+    kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127 
+    tests.visualize: true
+    matbench.lts.opensearch.export.enabled: false
+    export_artifacts.enabled: true
+    export_artifacts.bucket: psap-1474-results
+  
+  single_a10_g5_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-A10
+
+  single_l4_g6_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-L4
+
+  single_l40s_g6e_4xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, single_a10_l4_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: single-L40S
+
+  four_l40s_g6e_12xlarge:
+    extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: four-L40S
+
+  eight_l40s_g6e_48xlarge_tp_8:
+    extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-L40S-TP-8-REP-1
+
+  eight_l40s_g6e_48xlarge_tp_4:
+    extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-L40S-TP-4-REP-2
+
+  eight_a100_nvidia-dgx_A100_SXM4_40GB_tp_4:
+    extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-nvidia-dgx-A100-SXM4-40GB-TP-4-REP-2
+
+  eight_a100_nvidia-dgx_A100_SXM4_40GB_tp_8:
+    extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: eight-nvidia-dgx-A100-SXM4-40GB-TP-8-REP-1
 
   # --
   # single-model vLLM
@@ -466,6 +550,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     nvd-srv-02.nvidia.eng.rdu2.redhat.com: cluster_2xa100
+    x37-h13-000-r740xd.rdu3.labs.perfscale.redhat.com: cluster_t4
   create:
     type: single # can be: single, ocp, managed
     keep: false
