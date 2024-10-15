@@ -19,9 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: |
-          python3 -m pip install fire pyyaml jsonpath_ng joblib
+      - uses: actions/prepare_minimal_ubuntu_image
 
       - name: "Ensure that Ansible 'default' files match the Python entrypoint"
         run: |
