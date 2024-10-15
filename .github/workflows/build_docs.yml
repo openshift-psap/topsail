@@ -21,7 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Install requirements
         run: |
-          sudo python3 -m pip install -r docs/requirements.txt
+          python3 -m pip install --break-system-packages -r docs/requirements.txt
+
       - name: Render the docs
         run: |
           cd ./docs
