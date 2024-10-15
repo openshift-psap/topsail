@@ -1,0 +1,9 @@
+name: "Prepare TOPSAIL minimal ubuntu image"
+
+runs:
+  using: "composite" # <-- this is the important part
+  steps:
+  - name: Install dependencies
+    shell: bash
+    run: |
+      python3 -m pip install --break-system-packages fire pyyaml jsonpath_ng joblib
