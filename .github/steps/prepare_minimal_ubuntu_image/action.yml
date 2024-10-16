@@ -6,4 +6,4 @@ runs:
   - name: Install dependencies
     shell: bash
     run: |
-      python3 -m pip install --break-system-packages fire pyyaml jsonpath_ng joblib
+      python3 -m pip install fire pyyaml jsonpath_ng joblib
