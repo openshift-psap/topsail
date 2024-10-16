@@ -119,7 +119,7 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 """
     else:
         message += """
-• No test configuration (`variable_overrides`) available.
+• No test configuration (`variable_overrides.yaml`) available.
 """
 
     if os.environ.get("PERFLAB_CI") == "true":
