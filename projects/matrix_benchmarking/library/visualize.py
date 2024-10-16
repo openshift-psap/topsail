@@ -192,7 +192,7 @@ def generate_opensearch_config_yaml_env(dest):
 
 def get_lts_directory(common_args):
     workload = common_args["workload"]
-    results_dirname = common_args["results_dirname"]
+    results_dirname = pathlib.Path(common_args["results_dirname"])
 
     return results_dirname / "lts" / workload
 
