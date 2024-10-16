@@ -109,7 +109,7 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 • No reports index generated...
 """
 
-    if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides").exists():
+    if (var_over := pathlib.Path(os.environ.get("ARTIFACT_DIR", "")) / "variable_overrides.yaml").exists():
         with open(var_over) as f:
             message += f"""
 {get_bold("Test configuration")}:
