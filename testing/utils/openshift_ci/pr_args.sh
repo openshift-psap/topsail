@@ -106,23 +106,24 @@ fi
 pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_anchor" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 if [[ "$pos_args" ]]; then
-    echo "PR_POSITIONAL_ARGS=$pos_args" >> "$DEST"
-    echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
+    echo "PR_POSITIONAL_ARGS: $pos_args" >> "$DEST"
+    echo "PR_POSITIONAL_ARG_0: $test_name" >> "$DEST"
     i=1
     for pos_arg in $pos_args; do
-        echo "PR_POSITIONAL_ARG_$i=$pos_arg" >> "$DEST"
+        echo "PR_POSITIONAL_ARG_$i: $pos_arg" >> "$DEST"
         i=$((i + 1))
     done
 else
-    echo "PR_POSITIONAL_ARG_0=$test_name" >> "$DEST"
+    echo "PR_POSITIONAL_ARG_0: $test_name" >> "$DEST"
 fi
 
 while read line; do
     [[ $line != "/var "* ]] && continue
-    [[ $line != *=* ]] && continue
 
-    key=$(echo "$line" | cut -d" " -f2- | cut -d= -f1)
-    value=$(echo "$line" | cut -d= -f2 | tr -d '\n' | tr -d '\r')
-
-    echo "$key=$value" >> "$DEST"
+    yaml_line=$(echo "$line" | cut -b6-)
+    if ! echo "$yaml_line" | yq &>/dev/null; then
+        echo "ERROR: '$(echo "$line")' not a valid yaml line :/"
+        exit 1
+    fi
+    echo "$yaml_line" >> "$DEST"
 done <<< $(echo "$pr_body"; echo "$last_user_test_comment")
