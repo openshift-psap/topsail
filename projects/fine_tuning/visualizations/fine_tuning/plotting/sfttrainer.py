@@ -163,7 +163,8 @@ class SFTTrainerSummary():
         else:
             if x_key is not None:
                 df = df.sort_values(by=["name", x_key], ascending=True)
-            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color="name", barmode='group', text=text)
+            color = None if (len(variables) == 1) else "name"
+            fig = px.bar(df, hover_data=df.columns, x=x_key, y=y_key, color=color, barmode='group', text=text)
 
         if has_gpu:
             fig.update_xaxes(title="Number of GPUs used for the fine-tuning")

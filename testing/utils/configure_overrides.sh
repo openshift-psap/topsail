@@ -17,20 +17,22 @@ do_override() {
         if [[ -z "$line" ]]; then
             continue
         fi
-        key=$(echo "$line" | cut -d= -f1)
-        value=$(echo "$line" | cut -d= -f2- | cut -d\' -f2)
+        key=$(echo "$line" | cut -d: -f1)
+        value=$(echo "$line" | cut -d: -f2- | cut -d\' -f2)
         echo "$key --> '$value'"
         set_config "$key" "$value"
-    done < "${ARTIFACT_DIR:-}/variable_overrides"
+    done < $(cat ${ARTIFACT_DIR:-}/variable_overrides.yaml | yq '. | to_entries[] | ""+.key+"="+(.value | tostring)' -r)
+    # this ^^^ converts the YAML file to a key=value file, with each value in a single line
 }
 
 main() {
-    if ! [[ -f "${ARTIFACT_DIR:-}/variable_overrides" ]]; then
+    if ! [[ -f "${ARTIFACT_DIR:-}/variable_overrides.yaml" ]]; then
         echo "Nothing to override."
         return 0
     fi
 
     do_override
+    return
 }
 
 main "$@"

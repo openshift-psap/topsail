@@ -46,7 +46,7 @@ spec:
 {% endif %}
 
 {% if local_ci_run_multi_variable_overrides %}
-          cat > "${ARTIFACT_DIR}/variable_overrides" << EOF
+          cat > "${ARTIFACT_DIR}/variable_overrides.yaml" << EOF
           {{ local_ci_run_variable_overrides_cmd.stdout | indent(6) }}
           EOF
 {% endif %}

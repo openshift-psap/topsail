@@ -4,6 +4,7 @@ import sys, os
 import pathlib
 import logging
 logging.getLogger().setLevel(logging.INFO)
+import yaml
 
 ARTIFACT_DIR = pathlib.Path(os.environ.get("ARTIFACT_DIR", "."))
 
@@ -16,31 +17,31 @@ rhoai_configuration = {
 
 def main():
     old_variable_overrides = {}
-    variable_overrides = ARTIFACT_DIR / "variable_overrides"
-    if not variable_overrides.exists():
-      logging.fatal(f"File {variable_overrides.absolute()} does not exist. Cannot proceed.")
-      return 1
+    variable_overrides_path = ARTIFACT_DIR / "variable_overrides.yaml"
+    if not variable_overrides_path.exists():
+        logging.fatal(f"File {variable_overrides_path.absolute()} does not exist. Cannot proceed.")
+        raise FileNotFoundError(variable_overrides)
 
-    with open(ARTIFACT_DIR / "variable_overrides") as f:
-        for _line in f.readlines():
-            line, _, _comment = _line.strip().partition("#")
-            if not line: continue
+    with open(variable_overrides_path) as f:
+        old_variable_overrides = yaml.safe_load(f)
 
-            key, found, value = line.strip().partition("=")
-            if not found:
-                logging.error(f"Invalid line (no '=') in 'variable_overrides': {line.strip()}")
-                continue
-            value = value.strip("'")
+    if not isinstance(old_variable_overrides, dict):
+        msg = f"Wrong type for the variable overrides file. Expected a dictionnary, got {old_variable_overrides.__class__.__name__}"
+        logging.fatal(msg)
+        raise ValueError(msg)
 
-            if key.startswith(RHOAI_CONFIG_KEY):
-                _, _, new_key = key.partition(RHOAI_CONFIG_KEY)
-                logging.info(f"RHOAI launcher configuration: {new_key} --> {value}")
-                if new_key not in rhoai_configuration:
-                    raise KeyError(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+    for key, value in old_variable_overrides.items():
+        _, found, new_key = key.partition(RHOAI_CONFIG_KEY)
+        if not found:
+            continue
 
-                rhoai_configuration[new_key] = value
+        logging.info(f"RHOAI launcher configuration: {new_key} --> {value}")
 
-            old_variable_overrides[key] = value
+        if new_key not in rhoai_configuration:
+            raise KeyError(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+
+        rhoai_configuration[new_key] = value
+
 
     original_variable_overrides = old_variable_overrides.copy()
 
@@ -113,18 +114,18 @@ def main():
     logging.info(f"RHOAI launcher: execute: {project_name} {run_args}")
     logging.info("New variable overrides:")
     # write the new file
-    with open(ARTIFACT_DIR / "variable_overrides", "w") as f:
+    with open(ARTIFACT_DIR / "variable_overrides.yaml", "w") as f:
         print(f"# RHOAI: run {project_name} {run_args}", file=f)
         for key, value in new_variable_overrides.items():
             if key.startswith(RHOAI_CONFIG_KEY):
                 continue
 
-            print(f"{key}={value}", file=f)
             logging.info(f"{key}={value}")
 
-    with open(ARTIFACT_DIR / "variable_overrides.orig", "w") as f:
-        for key, value in sorted(original_variable_overrides.items()):
-            print(f"{key}={value}", file=f)
+        yaml.dump(new_variable_overrides, f)
+
+    with open(ARTIFACT_DIR / "variable_overrides.yaml.orig", "w") as f:
+        yaml.dump(old_variable_overrides, f)
 
     command = f"run {project_name} {run_args}"
     logging.info(f"===> Starting '{command}' <===")

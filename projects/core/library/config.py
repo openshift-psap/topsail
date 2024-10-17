@@ -13,7 +13,7 @@ from . import env
 from . import run
 from . import common
 
-VARIABLE_OVERRIDES_FILENAME = "variable_overrides"
+VARIABLE_OVERRIDES_FILENAME = "variable_overrides.yaml"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
 project = None # the project config will be populated in init()
@@ -56,32 +56,30 @@ class Config:
 
         if not variable_overrides_path.exists():
             logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
+
             return
 
         with open(variable_overrides_path) as f:
-            for line in f.readlines():
-                line = line.partition("#")[0]
+            variable_overrides = yaml.safe_load(f)
 
-                if not line.strip():
-                    continue
+        if not isinstance(variable_overrides, dict):
+            msg = f"Wrong type for the variable overrides file. Expected a dictionnary, got {variable_overrides.__class__.__name__}"
+            logging.fatal(msg)
+            raise ValueError(msg)
 
-                key, found, _value = line.strip().partition("=")
-                if not found:
-                    logging.warning(f"apply_config_overrides: Invalid line: '{line.strip()}', ignoring it.")
-                    continue
+        for key, value in variable_overrides.items():
+            MAGIC_DEFAULT_VALUE = object()
+            current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
+            if current_value == MAGIC_DEFAULT_VALUE:
+                if "." in key:
+                    raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
 
-                value = yaml.safe_load(_value) # convert the string as YAML would do
+                self.config[key] = None
 
-                MAGIC_DEFAULT_VALUE = object()
-                current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
-                if current_value == MAGIC_DEFAULT_VALUE:
-                    if "." in key:
-                        raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
-                    self.config[key] = None
+            self.set_config(key, value, dump_command_args=False)
+            actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
+            logging.info(f"config override: {key} --> {actual_value}")
 
-                self.set_config(key, value, dump_command_args=False)
-                actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
-                logging.info(f"config override: {key} --> {actual_value}")
 
     def apply_preset(self, name, do_dump=True):
         try:

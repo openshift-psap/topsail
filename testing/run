@@ -76,7 +76,7 @@ prechecks() {
     fi
 
     if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
-        DEST="${ARTIFACT_DIR}/variable_overrides"
+        DEST="${ARTIFACT_DIR}/variable_overrides.yaml"
         "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
         if [[ -f "$DEST" ]]; then
             echo "Variables overridden from PR:"

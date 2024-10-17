@@ -92,7 +92,7 @@ class GPUTotalMemoryUsage():
             return None, "Not data available ..."
 
         if x_key:
-            df = df.sort_values(by=[x_key], ascending=False)
+            df = df.sort_values(by=[x_key], ascending=True)
 
         y_key = "y"
         if has_gpu:

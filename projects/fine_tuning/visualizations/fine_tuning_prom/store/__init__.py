@@ -62,7 +62,7 @@ def _rewrite_settings(settings_dict):
 # --- custom store
 # ---
 
-def _duplicated_directory(import_key, old_location, new_location):
+def _duplicated_directory(import_key, old_entry, old_location, results, new_location):
     logging.warning(f"duplicated results key: {import_key}")
     logging.warning(f"  old: {old_location}")
     logging.warning(f"  new: {new_location}")
