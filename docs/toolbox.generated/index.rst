@@ -80,6 +80,7 @@ Toolbox Documentation
     
 
                 
+* :doc:`ray_fine_tuning_job <Fine_Tuning.ray_fine_tuning_job>`	 Run a simple Ray fine-tuning Job.
 * :doc:`run_fine_tuning_job <Fine_Tuning.run_fine_tuning_job>`	 Run a simple fine-tuning Job.
 * :doc:`run_quality_evaluation <Fine_Tuning.run_quality_evaluation>`	 Run a simple fine-tuning Job.
 

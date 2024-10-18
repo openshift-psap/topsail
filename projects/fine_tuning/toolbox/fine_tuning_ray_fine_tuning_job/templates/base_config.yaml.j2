@@ -1,0 +1,13 @@
+---
+# DATASET_SOURCE:      {{ fine_tuning_ray_fine_tuning_job_dataset_name }}
+# DATASET_TRANSFORM:   {{ fine_tuning_ray_fine_tuning_job_dataset_transform }}
+# DATASET_REPLICATION: {{ fine_tuning_ray_fine_tuning_job_dataset_replication }}
+
+training_data_path: "/mnt/output/dataset.json" # aka DATASET_DEST
+model_name_or_path: "/mnt/storage/model/{{ fine_tuning_ray_fine_tuning_job_model_name }}"
+
+response_template: "{{ fine_tuning_ray_fine_tuning_job_dataset_response_template }}"
+
+output_dir: "/mnt/output/fine-tuning"
+
+max_seq_length: 4096
