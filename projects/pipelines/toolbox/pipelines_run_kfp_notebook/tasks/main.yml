@@ -302,6 +302,18 @@
       EOF
     ignore_errors: true
 
+  - name: Delete the service account used in the notebook
+    shell:
+      set -o pipefail;
+      oc delete -f "{{ artifact_extra_logs_dir }}/src/serviceaccount.yaml" --ignore-not-found
+    ignore_errors: true
+
+  - name: Delete the cluster role binding for the service account
+    shell:
+      set -o pipefail;
+      oc delete -f "{{ artifact_extra_logs_dir }}/src/clusterrolebinding.yaml" --ignore-not-found
+    ignore_errors: true
+
 - name: Delete the notebook
   command:
     oc delete
