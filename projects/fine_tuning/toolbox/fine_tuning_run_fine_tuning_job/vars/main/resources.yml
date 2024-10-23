@@ -1,5 +1,6 @@
 ---
 fine_tuning_job_template: templates/fine_tuning_job.yaml.j2
+fine_tuning_job_script: files/entrypoint/minimal_job.py
 
 fine_tuning_job_entrypoint_dir: "{{ role_path }}/files/entrypoint"
 fine_tuning_job_entrypoint_name: entrypoint.sh

@@ -161,6 +161,15 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj"]}
 
 
+  kfto:
+    fine_tuning.pvc.size: 2000Gi
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+    tests.fine_tuning.test_settings.name: kfto
+    tests.fine_tuning.test_settings.model_name: null
+    tests.fine_tuning.test_settings.gpu: 4
+
+
   ibm_lora_qlora_models:
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
