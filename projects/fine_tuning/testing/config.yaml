@@ -423,7 +423,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: quay.io/modh/fms-hf-tuning:v2.0.1
+  image: quay.io/opendatahub/training:py311-cuda121-torch230
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
