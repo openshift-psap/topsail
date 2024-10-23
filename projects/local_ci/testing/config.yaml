@@ -1,13 +1,13 @@
 base_image:
-  namespace: topsail
+  namespace: rhoai-tuning-test
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
     ref: main
     dockerfile_path: build/Dockerfile
   user:
-    service_account: topsail
-    role: cluster-admin
+    service_account: rhoai-tuning-test-sa
+    role: rhoai-tuning-test-admin-role
 secrets:
   psap-ods-secret:
     env_key: PSAP_ODS_SECRET_PATH

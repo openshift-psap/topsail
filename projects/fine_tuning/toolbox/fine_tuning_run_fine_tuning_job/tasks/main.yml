@@ -24,6 +24,12 @@
        -n {{ fine_tuning_run_fine_tuning_job_namespace }}
   when: fine_tuning_run_fine_tuning_job_delete_other | bool
 
+- name: Copy the fine tuning job script
+  copy:
+    src: "{{ fine_tuning_job_script }}"
+    dest: "/app/train.py"
+    mode: '0400'
+
 - name: Prepare the config file template
   template:
     src: "{{ fine_tuning_job_config_template }}"
