@@ -1,0 +1,125 @@
+# this resource (.spec) is currently used AS PART of the the RayJob,
+# NOT directly.
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: {{ fine_tuning_ray_fine_tuning_job_name }}
+  namespace: {{ fine_tuning_ray_fine_tuning_job_namespace }}
+spec:
+  headGroupSpec:
+    enableIngress: false
+    rayStartParams:
+      block: 'true'
+      dashboard-host: 0.0.0.0
+      num-gpus: '1'
+      resources: '"{}"'
+    serviceType: ClusterIP
+    template:
+      spec:
+        containers:
+        - name: ray-head
+          ports:
+          - containerPort: 6379
+            name: gcs
+            protocol: TCP
+          - containerPort: 8265
+            name: dashboard
+            protocol: TCP
+          - containerPort: 10001
+            name: client
+            protocol: TCP
+          image: &head_image "{{ fine_tuning_ray_fine_tuning_job_container_image }}"
+
+          env: &head_env
+
+          - name: FT_CONFIG_JSON_PATH
+            value: /mnt/config/config.json
+          - name: DATASET_SOURCE
+            value: "/mnt/storage/dataset/{{ fine_tuning_ray_fine_tuning_job_dataset_name }}"
+          - name: DATASET_REPLICATION
+            value: "{{ fine_tuning_ray_fine_tuning_job_dataset_replication }}"
+{% if fine_tuning_ray_fine_tuning_job_dataset_transform %}
+          - name: DATASET_TRANSFORM
+            value: "/mnt/entrypoint/{{ fine_tuning_ray_fine_tuning_job_dataset_transform }}"
+{% endif %}
+{% if fine_tuning_ray_fine_tuning_job_dataset_prefer_cache %}
+          - name: DATASET_PREFER_CACHE
+            value: "true"
+{% endif %}
+{% if fine_tuning_ray_fine_tuning_job_dataset_prepare_cache_only %}
+          - name: DATASET_PREPARE_CACHE_ONLY
+            value: "true"
+{% endif %}
+
+{% if fine_tuning_ray_fine_tuning_job_gpu %}
+          - name: NUM_GPUS
+            value: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
+{% endif %}
+          - name: MODEL_NAME
+            value: "{{ fine_tuning_ray_fine_tuning_job_model_name}}"
+{% if fine_tuning_ray_fine_tuning_job_sleep_forever %}
+            - name: SLEEP_FOREVER
+              value: "true"
+{% endif %}
+          resources: &head_resources
+            requests: &head_request_block
+{% if fine_tuning_ray_fine_tuning_job_gpu %}
+              nvidia.com/gpu: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
+{% endif %}
+              memory: "{{ fine_tuning_ray_fine_tuning_job_memory }}Gi"
+              cpu: "{{ fine_tuning_ray_fine_tuning_job_cpu }}"
+{% if fine_tuning_ray_fine_tuning_job_request_equals_limits %}
+            limits:  *head_request_block
+{% elif fine_tuning_ray_fine_tuning_job_gpu %}
+            limits:
+              nvidia.com/gpu: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
+{% endif %}
+
+          volumeMounts: &head_volume_mounts
+
+          - name: storage-volume
+            mountPath: /mnt/storage
+          - name: ft-scripts-volume
+            mountPath: /mnt/ft-scripts
+          - name: entrypoint-volume
+            mountPath: /mnt/entrypoint
+          - name: config-volume
+            mountPath: /mnt/config
+          - name: output-volume
+            mountPath: /mnt/output
+
+        volumes: &head_volumes
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: {{ fine_tuning_ray_fine_tuning_job_pvc_name }}
+        - name: config-volume
+          configMap:
+            name: {{ job_name_safe }}-config
+        - name: entrypoint-volume
+          configMap:
+            name: {{ job_name_safe }}-entrypoint
+        - name: ft-scripts-volume
+          configMap:
+            name: {{ job_name_safe }}-ft-scripts
+        - name: output-volume
+          emptyDir: {}
+
+  rayVersion: {{ fine_tuning_ray_fine_tuning_job_ray_version }}
+  workerGroupSpecs:
+  - groupName: {{ fine_tuning_ray_fine_tuning_job_name }}
+    maxReplicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
+    minReplicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
+    rayStartParams:
+      block: "true"
+      num-gpus: "1"
+      resources: '"{}"'
+    replicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
+    template:
+      spec:
+        containers:
+        - name: machine-learning
+          image: *head_image
+          env: *head_env
+          resources: *head_resources
+          volumeMounts: *head_volume_mounts
+        volumes: *head_volumes
