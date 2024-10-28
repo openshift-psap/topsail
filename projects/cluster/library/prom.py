@@ -1,7 +1,12 @@
 import logging
 import datetime, time
+import pathlib
 
 from projects.core.library import config, env, run
+
+
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+
 
 def dump_prometheus(prom_start_ts, namespace, delay=60):
     capture_prom = config.project.get_config("tests.capture_prom", True)
