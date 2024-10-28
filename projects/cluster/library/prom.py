@@ -1,14 +1,10 @@
 import logging
 import datetime, time
-import pathlib
 
-from projects.core.library import config, env, run
-
-
-TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+from projects.core.library import env, config, run
 
 
-def dump_prometheus(prom_start_ts, namespace, delay=60):
+def dump_prometheus(prom_start_ts, namespace, testing_dir, delay=60):
     capture_prom = config.project.get_config("tests.capture_prom", True)
     if not capture_prom:
         logging.info("tests.capture_prom is disabled, skipping Prometheus DB dump")
@@ -25,7 +21,7 @@ def dump_prometheus(prom_start_ts, namespace, delay=60):
         prom_end_ts = datetime.datetime.now()
         args = dict(
             duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
-            promquery_file = TESTING_THIS_DIR / "metrics.txt",
+            promquery_file = testing_dir / "metrics.txt",
             dest_dir = env.ARTIFACT_DIR / "metrics",
             namespace = namespace,
         )

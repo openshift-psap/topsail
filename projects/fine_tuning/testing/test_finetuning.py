@@ -41,7 +41,7 @@ def generate_prom_results(expe_name, prom_start_ts):
         yaml.dump(config.project.config, f, indent=4)
 
     namespace = config.project.get_config("tests.fine_tuning.namespace")
-    prom.dump_prometheus(prom_start_ts, namespace)
+    prom.dump_prometheus(prom_start_ts, namespace, TESTING_THIS_DIR)
 
     if (config.project.get_config("tests.capture_state")
         and not config.project.get_config("tests.dry_mode")
