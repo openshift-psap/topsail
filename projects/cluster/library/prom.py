@@ -1,8 +1,7 @@
 import logging
 import datetime, time
 
-from projects.core.library import env, config, run
-
+from projects.core.library import config, env, run
 
 def dump_prometheus(prom_start_ts, namespace, testing_dir, delay=60):
     capture_prom = config.project.get_config("tests.capture_prom", True)
