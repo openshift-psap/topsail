@@ -303,6 +303,11 @@ ci_presets:
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
+    - name: granite-3-0-8b-instruct
+      model: granite-3.0-8b-instruct
+      testing:
+        size: small
+        max_concurrency: 64
     - name: llama-3-8b-instruct
       testing:
        size: small
@@ -521,11 +526,19 @@ clusters:
 
 rhods:
   catalog:
+<<<<<<< HEAD
     image: quay.io/rhoai/rhoai-fbc-fragment
     tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
     channel: fast
     version: 2.16.0
     version_name: rc1
+=======
+    image: brew.registry.redhat.io/rh-osbs/iib
+    tag: 852859
+    channel: fast
+    version: 2.15.0
+    version_name: rc2
+>>>>>>> ccd67c53... kserve/testing/config.yaml: Updated `tag`, `version_name` fields for "RHOAI 2.15.0 RC2" model-serving performance validation
     opendatahub: false
     managed_rhoai: false
   operator:
