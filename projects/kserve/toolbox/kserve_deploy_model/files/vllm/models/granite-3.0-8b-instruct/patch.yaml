@@ -1,0 +1,16 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    minReplicas: 1
+    model:
+      storageUri: s3://psap-hf-models/granite-3.0-8b-instruct/
+      resources:
+        requests:
+          cpu: "2"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          nvidia.com/gpu: "1"
