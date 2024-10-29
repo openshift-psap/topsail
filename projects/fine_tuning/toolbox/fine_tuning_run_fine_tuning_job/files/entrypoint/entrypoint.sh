@@ -86,6 +86,9 @@ EOF
     exec sleep inf
 fi
 
+export NCCL_BUFFSIZE=2097152
+echo "Set NCCL_BUFFSIZE to ${NCCL_BUFFSIZE}"
+
 if [[ $WORLD_SIZE == 1 ]]; then
     echo "Running on a single machine."
 
