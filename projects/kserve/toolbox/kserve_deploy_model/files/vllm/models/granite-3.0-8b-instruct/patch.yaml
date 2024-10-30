@@ -6,7 +6,7 @@ spec:
   predictor:
     minReplicas: 1
     model:
-      storageUri: s3://psap-hf-models/granite-3.0-8b-instruct/
+      storageUri: s3://psap-hf-models/ibm-granite/granite-3.0-8b-instruct/
       resources:
         requests:
           cpu: "2"
