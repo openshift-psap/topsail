@@ -73,6 +73,9 @@ spec:
 {% elif fine_tuning_ray_fine_tuning_job_gpu %}
             limits:
               nvidia.com/gpu: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
+{% if not fine_tuning_ray_fine_tuning_job_request_equals_limits %}
+              cpu: 20
+{% endif %}
 {% endif %}
 
           volumeMounts: &head_volume_mounts
