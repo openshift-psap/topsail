@@ -56,7 +56,7 @@ fine_tuning run_fine_tuning_job:
   name: {{ tests.fine_tuning.test_settings.job_name }}
   namespace: "{{ tests.fine_tuning.namespace }}"
   pvc_name: "{{ fine_tuning.pvc.name }}"
-  container_image: "{{ fine_tuning.image }}"
+  container_image: "{{ tests.fine_tuning.fms.image }}"
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
   dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
@@ -66,9 +66,22 @@ fine_tuning run_quality_evaluation:
   name: {{ tests.fine_tuning.test_settings.job_name }}
   namespace: "{{ tests.fine_tuning.namespace }}"
   pvc_name: "{{ fine_tuning.pvc.name }}"
-  container_image: "{{ fine_tuning.image }}"
+  container_image: "{{ tests.fine_tuning.fms.image }}"
+  model_name: "{{ tests.fine_tuning.test_settings.model_name }}"
+
+fine_tuning ray_fine_tuning_job:
+  name: {{ tests.fine_tuning.test_settings.job_name }}
+  namespace: "{{ tests.fine_tuning.namespace }}"
+{% if fine_tuning.pvc.name %}
+  pvc_name: "{{ fine_tuning.pvc.name }}"
+{% endif %}
+  container_image: "{{ tests.fine_tuning.ray.image }}"
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
+  dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
+  dataset_replication: {{ tests.fine_tuning.test_settings.dataset_replication }}
+
+  workload: {{ tests.fine_tuning.ray.workload }}
 
 storage download_to_pvc:
   name: SET_AT_RUNTIME

@@ -74,7 +74,9 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     test_settings = config.project.get_config("tests.fine_tuning.test_settings") | test_override_values
     do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
     do_many_model = config.project.get_config("tests.fine_tuning.many_model.enabled")
+    do_fms = config.project.get_config("tests.fine_tuning.fms.enabled")
     do_quality_evaluation = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
+    do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
 
     test_settings["hyper_parameters"] = {k: v for k, v in test_settings["hyper_parameters"].items()
                                          if v is not None}
@@ -82,16 +84,17 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     logging.info(f"Test configuration to run: \n{yaml.dump(test_settings, sort_keys=False)}")
 
     sources = config.project.get_config(f"fine_tuning.sources")
-    dataset_source = sources[test_settings["dataset_name"]]
+    if test_settings["dataset_name"]:
+        dataset_source = sources[test_settings["dataset_name"]]
 
-    if transform := dataset_source.get("transform", False):
-        test_settings["dataset_transform"] = transform
+        if transform := dataset_source.get("transform", False):
+            test_settings["dataset_transform"] = transform
 
-    if (prefer_cache := dataset_source.get("prefer_cache")) is not None:
-        test_settings["dataset_prefer_cache"] = prefer_cache
+        if (prefer_cache := dataset_source.get("prefer_cache")) is not None:
+            test_settings["dataset_prefer_cache"] = prefer_cache
 
-    if (response_template := dataset_source.get("response_template")) is not None:
-        test_settings["dataset_response_template"] = response_template
+        if (response_template := dataset_source.get("response_template")) is not None:
+            test_settings["dataset_response_template"] = response_template
 
     remove_none_values(test_settings)
 
@@ -103,8 +106,14 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     if not do_multi_model:
         prom_start_ts = prom.reset_prometheus()
 
-    test_dir_name = "evaluate_quality" if do_quality_evaluation \
-        else "test_fine_tuning"
+    if do_fms:
+        test_dir_name = "fms_fine_tuning"
+    elif do_quality_evaluation:
+        test_dir_name = "evaluate_quality"
+    elif do_ray:
+        workload = config.project.get_config("tests.fine_tuning.ray.workload")
+        test_dir_name = f"ray__{workload}"
+
     with env.NextArtifactDir(test_dir_name):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
 
@@ -122,9 +131,16 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
                 with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
                     yaml.dump(dict(mode="single-model"), f, indent=4)
 
-                test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
-                run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
-                                            extra=test_settings)
+                if do_fms:
+                    test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
+                    run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
+                                                extra=test_settings)
+                elif do_ray:
+                    run.run_toolbox_from_config(
+                        "fine_tuning", "ray_fine_tuning_job",
+                        extra=test_settings,
+                    )
+
             failed = False
         finally:
             with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -227,6 +243,16 @@ def _run_test_and_visualize(test_override_values=None):
     do_matbenchmarking = test_override_values is None and config.project.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
 
+    ray_enabled = config.project.get_config("tests.fine_tuning.ray.enabled")
+    fms_enabled = config.project.get_config("tests.fine_tuning.fms.enabled")
+    quality_enabled = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
+
+    enabled = sum(1 for opt in (fms_enabled, quality_enabled, ray_enabled) if opt)
+    if enabled != 1:
+        msg = f"FMS or Quality or Ray testing must be enabled. Found {enabled} enabled. Cannot proceed."
+        logging.error(msg)
+        raise RuntimeError(msg)
+
     if not do_matbenchmarking and config.project.get_config("tests.fine_tuning.test_extra_settings"):
         msg = "Cannot use 'test_extra_settings' when 'tests.fine_tuning.tests.fine_tuning.matbenchmarking' isn't enabled."
         logging.error(msg)
@@ -242,8 +268,13 @@ def _run_test_and_visualize(test_override_values=None):
         logging.error(msg)
         raise RuntimeError(msg)
 
-    if not prepare_rhoai_mod.is_component_deployed("trainingoperator"):
-        msg = "Training Operator not installed, cluster not prepared for fine-tuning"
+    if fms_enabled and not prepare_rhoai_mod.is_component_deployed("trainingoperator"):
+        msg = "Training Operator not enabled, cluster not prepared for fine-tuning"
+        logging.error(msg)
+        raise RuntimeError(msg)
+
+    if ray_enabled and not prepare_rhoai_mod.is_component_deployed("ray"):
+        msg = "Ray Operator not enabled, cluster not prepared for fine-tuning"
         logging.error(msg)
         raise RuntimeError(msg)
 
@@ -475,11 +506,23 @@ def matbench_run_one():
 
 
 def _run_test_many_model(test_settings):
-    run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
-                                extra=test_settings | dict(prepare_only=True, delete_other=True))
-    artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
+    ray_enabled = config.project.get_config("tests.fine_tuning.ray.enabled")
+    fms_enabled = config.project.get_config("tests.fine_tuning.fms.enabled")
+    extra = test_settings | dict(prepare_only=True, delete_other=True)
 
-    fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"
+    if fms_enabled:
+        run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job", extra)
+    elif ray_enabled:
+        run.run_toolbox_from_config("fine_tuning", "ray_fine_tuning_job", extra)
+
+    artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
+    if fms_enabled:
+        fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"
+
+    elif ray_enabled:
+        # fine_tuning_job_base = artifact_dir / "src" / "ray_job.yaml"
+        raise NotImplemented("Ray many-model fine-tuning not implemented yet")
+
     if not fine_tuning_job_base.exists():
         raise FileNotFoundError(f"Something went wrong with the fine tuning job preparation. {fine_tuning_job_base} does not exist.")
 

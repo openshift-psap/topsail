@@ -49,7 +49,7 @@ def prepare_rhoai():
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox(
         "rhods", "update_datasciencecluster",
-        enable=["kueue", "codeflare", "trainingoperator"],
+        enable=["kueue", "codeflare", "trainingoperator", "ray"],
         name=None if has_dsc else "default-dsc",
     )
 
@@ -288,5 +288,10 @@ def preload_image():
                 logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
                 if i+1 == RETRIES:
                     raise
+    do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
+    do_fms = config.project.get_config("tests.fine_tuning.ray.enabled")
+    if do_fms:
+        preload(config.project.get_config("tests.fine_tuning.fms.image"), "fine-tuning-image")
 
-    preload(config.project.get_config("fine_tuning.image"), "fine-tuning-image")
+    elif do_ray:
+        preload(config.project.get_config("tests.fine_tuning.ray.image"), "fine-tuning-image")
