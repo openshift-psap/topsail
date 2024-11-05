@@ -16,6 +16,10 @@
   set_fact:
     job_name_safe: "{{ fine_tuning_ray_fine_tuning_job_name | replace('.', '-') | replace('_', '-') }}"
 
+- name: Prepare the workload_dir variable
+  set_fact:
+    workload_dir: "{{ role_path }}/workloads/{{ fine_tuning_ray_fine_tuning_job_workload }}"
+
 - name: Delete the fine-tuning job configmaps, if any
   command:
     oc delete configmap
@@ -62,36 +66,36 @@
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
        | oc apply -f-
 
-- name: Prepare the entrypoint ConfigMap
+- name: Prepare the workload entrypoint ConfigMap
   shell: |
     set -o pipefail;
 
     oc create cm {{ job_name_safe }}-entrypoint \
        -n {{ fine_tuning_ray_fine_tuning_job_namespace }} \
-       --from-file=$(find "{{ fine_tuning_job_entrypoint_dir }}" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null \
+       --from-file=$(find "{{ workload_dir }}/entrypoint" -maxdepth 1 -not -type d | tr '\n' ,)/dev/null \
        --dry-run=client \
        -oyaml \
        | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
        | oc apply -f-
 
-- name: Prepare the fine-tuning scripts ConfigMap
+- name: Prepare the workload app ConfigMap
   shell: |
     set -o pipefail;
 
-    oc create cm {{ job_name_safe }}-ft-scripts \
+    oc create cm {{ job_name_safe }}-app \
        -n {{ fine_tuning_ray_fine_tuning_job_namespace }} \
-       --from-file="$(find "{{ fine_tuning_ray_fine_tuning_job_ft_scripts_dir }}" -not -type d -not -name '*.pyc' | tr '\n' ,)/dev/null" \
+       --from-file="$(find "{{ workload_dir }}/app" -not -type d -not -name '*.pyc' | tr '\n' ,)/dev/null" \
        --dry-run=client \
        -oyaml \
        | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
-       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_ft_scripts.yaml" \
+       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_app.yaml" \
        | oc apply -f-
 
 - name: Load the content of the requirement file
   shell:
     set -o pipefail;
-    cat "{{ fine_tuning_ray_fine_tuning_job_ft_scripts_dir }}/requirements.txt" | sed 's/^/- /'
+    (cat "{{ workload_dir }}/app/requirements.txt" || true) | sed 's/^/- /'
   register: requirements_cmd
 
 - name: Prepare the cluster template file
@@ -177,7 +181,8 @@
           set -o pipefail;
           oc get pods -l 'ray.io/identifier={{ ray_cluster_name }}-head'
              -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-             --no-headers | awk '{print $3}'
+             --no-headers
+             | awk '{print $3}'
         register: wait_pod_fetch
         retries: 720
         delay: 10
@@ -188,7 +193,10 @@
         when: wait_pod_fetch.stdout in ["Error", "Init:Error", "CrashLoopBackOff", "ImagePullBackOff"]
 
   - name: Wait for the cluster to become Ready
-    shell: oc get rayjobs/{{ job_name_safe }} -ojsonpath={.status.jobDeploymentStatus}
+    command:
+      oc get rayjobs/{{ job_name_safe }}
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+         -ojsonpath={.status.jobDeploymentStatus}
     register: ray_job_deployment_status
     retries: 12
     delay: 10
@@ -204,7 +212,9 @@
 
   - name: Wait for the job to complete
     command:
-      oc get rayjob/{{ job_name_safe }} -ojsonpath={.status.endTime}
+      oc get rayjob/{{ job_name_safe }}
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             -ojsonpath={.status.endTime}
     register: ray_job_end_time_cmd
     retries: 720
     delay: 30
@@ -212,26 +222,64 @@
 
   - name: Check if deployment succeeded
     command:
-      oc get rayjob/{{ job_name_safe }} -ojsonpath={.status.jobDeploymentStatus}
+      oc get rayjob/{{ job_name_safe }}
+         -ojsonpath={.status.jobDeploymentStatus}
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
     register: ray_job_deployment_status_cmd
     failed_when: ray_job_deployment_status_cmd.stdout not in ["Complete"]
 
   - name: Check if job succeeded
     command:
-      oc get rayjob/{{ job_name_safe }} -ojsonpath={.status.jobStatus}
+      oc get rayjob/{{ job_name_safe }}
+         -ojsonpath={.status.jobStatus}
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
     register: ray_job_status_cmd
     failed_when: ray_job_status_cmd.stdout not in ["SUCCEEDED"]
 
-  - name: Check if the script succeeded
+  always:
+  - name: Get the name of the job pods
     shell:
       set -o pipefail;
 
-      oc logs job/{{ job_name_safe }}
+      oc get pods -lbatch.kubernetes.io/job-name={{ job_name_safe }}
+         --sort-by=.metadata.creationTimestamp
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         | grep "SCRIPT SUCCEEDED"
-    register: script_succeeded_cmd
+         > {{ artifact_extra_logs_dir }}/artifacts/job_pods.status;
 
-  always:
+      oc get pods -lbatch.kubernetes.io/job-name={{ job_name_safe }}
+         --sort-by=.metadata.creationTimestamp
+         --no-headers
+         -oname
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+    failed_when: false
+    register: job_pod_name_cmd
+
+  - name: Save the job pod logs
+    shell:
+      set -o pipefail;
+
+      oc logs {{ item }}
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/rayjob_pod_{{ item|replace('pod/', '') }}.log
+    failed_when: false
+    loop: "{{ job_pod_name_cmd.stdout_lines }}"
+
+  - name: Capture the state of the RayJobs
+    shell:
+      oc get rayjob/{{ job_name_safe }}
+             -oyaml
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/rayjob.yaml;
+
+      oc get rayjob/{{ job_name_safe }}
+             -ojson
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/rayjob.json;
+
+      oc get rayjob/{{ job_name_safe }}
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/rayjob.status;
+
   - name: Capture the state of the fine-tuning Pod resource
     shell:
       set -o pipefail;
@@ -259,48 +307,21 @@
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
 
-      oc logs $(
-        oc get pods -l 'ray.io/identifier={{ ray_cluster_name }}-head'
-           -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-           -oname | head -1)
-        -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-        > {{ artifact_extra_logs_dir }}/artifacts/pod.log
     ignore_errors: true
+    when: fine_tuning_ray_fine_tuning_job_capture_artifacts | bool
 
-  - name: Capture the state of the RayCluster resource
-    shell:
-      set -o pipefail;
 
-      oc get RayCluster/{{ ray_cluster_name }}
-         -oyaml
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/raycluster.yaml;
+- name: Ensure that the script succeeded
+  shell:
+    set -o pipefail;
 
-      oc get RayCluster/{{ ray_cluster_name }}
-         -owide
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/raycluster.status;
+    cat "{{ artifact_extra_logs_dir }}/artifacts/"rayjob_pod_*.log | grep "SCRIPT SUCCEEDED"
 
-      oc describe RayCluster/{{ ray_cluster_name }}
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/raycluster.desc
-    ignore_errors: true
+- name: Save the logs of the successful Pod
+  shell:
+    set -o pipefail;
+    set -e;
 
-  - name: Capture the state of the RayJob resource
-    shell:
-      set -o pipefail;
+    success_pod_name=$(cat {{ artifact_extra_logs_dir }}/artifacts/job_pods.status | grep Completed | cut -d" " -f1)
 
-      oc get RayJob/{{ job_name_safe }}
-         -oyaml
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/rayjob.yaml;
-
-      oc get RayCluster/{{ job_name_safe }}
-         -owide
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/rayjob.status;
-
-      oc describe RayCluster/{{ job_name_safe }}
-         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/rayjob.desc
-    ignore_errors: true
+    cp "{{ artifact_extra_logs_dir }}/artifacts/rayjob_pod_${success_pod_name}.log" "{{ artifact_extra_logs_dir }}/artifacts/job_pod.log"
