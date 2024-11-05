@@ -92,8 +92,6 @@ Parameters
 
 * The number of GPUs to request for the fine-tuning job
 
-* default value: ``1``
-
 
 ``memory``  
 
@@ -146,4 +144,9 @@ Parameters
 * If enabled, captures the artifacts that will help post-mortem analyses
 
 * default value: ``True``
+
+
+``shutdown_cluster``  
+
+* If True, let the RayJob shutdown the RayCluster when the job terminates
 
