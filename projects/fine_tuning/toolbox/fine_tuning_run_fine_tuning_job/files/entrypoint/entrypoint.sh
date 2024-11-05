@@ -94,12 +94,12 @@ if [[ $WORLD_SIZE == 1 ]]; then
     else
         echo "Running with a $NUM_GPUS GPUs"
     fi
-    nsys profile --trace=cuda,cublas,cudnn,nvtx,osrt --sample=cpu --duration=3600 --capture-range=cudaProfilerApi --force-overwrite=true -o /mnt/storage/nsys_output python /app/accelerate_launch.py
+    python /app/accelerate_launch.py
     exit 0
 fi
 echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
 
-nsys profile --trace=cuda,cublas,cudnn,nvtx,osrt --sample=cpu --duration=3600 --capture-range=cudaProfilerApi --force-overwrite=true -o /mnt/storage/nsys_output accelerate launch \
+accelerate launch \
      --debug \
      --machine_rank $RANK \
      --num_machines $WORLD_SIZE \
