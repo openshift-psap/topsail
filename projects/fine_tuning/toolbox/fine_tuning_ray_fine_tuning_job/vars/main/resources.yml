@@ -3,6 +3,5 @@ fine_tuning_cluster_template: templates/ray_cluster.yaml.j2
 fine_tuning_job_template: templates/ray_job.yaml.j2
 fine_tuning_job_config_template: templates/base_config.yaml.j2
 
-fine_tuning_job_entrypoint_dir: "{{ role_path }}/files/entrypoint"
-fine_tuning_job_entrypoint_name: job_entrypoint.sh
+fine_tuning_job_entrypoint_name: entrypoint.sh
 __safe: [fine_tuning_job_entrypoint_name]

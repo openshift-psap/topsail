@@ -8,7 +8,7 @@ set -x
 
 # echo "Source dataset: $DATASET_SOURCE"
 
-# MAX_SEQ_LENGTH=$(cat "$FT_CONFIG_JSON_PATH" | grep max_seq_length | awk '{print $2}' | cut -d"," -f1)
+# MAX_SEQ_LENGTH=$(cat "$CONFIG_JSON_PATH" | grep max_seq_length | awk '{print $2}' | cut -d"," -f1)
 # DATASET_CACHE_FILE="/mnt/storage/dataset/$(basename "${DATASET_TRANSFORM:-}")_replicate_${DATASET_REPLICATION}_max${MAX_SEQ_LENGTH}tokens_$(basename "${DATASET_SOURCE}")"
 
 # prepare_dataset() {
@@ -46,7 +46,7 @@ if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
 fi
 
 echo "# configuration:"
-cat "$FT_CONFIG_JSON_PATH"
+cat "$CONFIG_JSON_PATH"
 
 echo "# sha256sum of the $MODEL_NAME files"
 if [[ -f "/mnt/storage/model/${MODEL_NAME}.sha256sum" ]]; then
@@ -62,7 +62,7 @@ else
     echo "No GPU seem to be available."
 fi
 
-cd /mnt/ft-scripts
+cd /mnt/app
 
 if [[ "${SLEEP_FOREVER:-}" ]]; then
     set +x
@@ -70,8 +70,8 @@ if [[ "${SLEEP_FOREVER:-}" ]]; then
     echo "Fine-tuning command:"
     cat <<EOF
 oc rsh -n $(cat /run/secrets/kubernetes.io/serviceaccount/namespace) $(cat /proc/sys/kernel/hostname)
-cp \$FT_CONFIG_JSON_PATH .
-export FT_CONFIG_JSON_PATH=\$PWD/config.json
+cp \$CONFIG_JSON_PATH .
+export CONFIG_JSON_PATH=\$PWD/config.json
 ray submit ...
 EOF
     exec sleep inf

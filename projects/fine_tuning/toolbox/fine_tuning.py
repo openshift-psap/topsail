@@ -131,17 +131,16 @@ class Fine_Tuning:
             self,
             name,
             namespace,
-            pvc_name,
+            pvc_name=None,
 
-            model_name,
-            ft_scripts_dir,
+            model_name=None,
+            workload="ray-finetune-llm-deepspeed",
 
-            dataset_name,
+            dataset_name=None,
             dataset_replication=1,
             dataset_transform=None,
             dataset_prefer_cache=True,
             dataset_prepare_cache_only=False,
-            dataset_response_template="\n### Label:",
             container_image="quay.io/rhoai/ray:2.35.0-py39-cu121-torch24-fa26",
             ray_version="2.35.0",
             gpu=1,
@@ -157,6 +156,7 @@ class Fine_Tuning:
             hyper_parameters={},
 
             sleep_forever=False,
+            capture_artifacts=True,
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -175,7 +175,6 @@ class Fine_Tuning:
           dataset_transform: name of the transformation to apply to the dataset
           dataset_prefer_cache: if True, and the dataset has to be transformed/duplicated, save and/or load it from the PVC
           dataset_prepare_cache_only: if True, only prepare the dataset cache file and do not run the fine-tuning.
-          dataset_response_template: the delimiter marking the beginning of the response in the dataset samples
           container_image: the image to use for the fine-tuning container
           gpu: the number of GPUs to request for the fine-tuning job
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
@@ -191,6 +190,12 @@ class Fine_Tuning:
 
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
           ray_version: the version identifier passed to the RayCluster object
+          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
+
+          workload: the name of the workload job to run (see the role's workload directory)
         """
+
+        if dataset_name is None:
+            dataset_replication = None
 
         return RunAnsibleRole(locals())

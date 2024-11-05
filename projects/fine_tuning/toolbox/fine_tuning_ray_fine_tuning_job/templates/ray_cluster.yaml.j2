@@ -31,36 +31,10 @@ spec:
           image: &head_image "{{ fine_tuning_ray_fine_tuning_job_container_image }}"
 
           env: &head_env
-
-          - name: FT_CONFIG_JSON_PATH
+          - name: CONFIG_JSON_PATH
             value: /mnt/config/config.json
-          - name: DATASET_SOURCE
-            value: "/mnt/storage/dataset/{{ fine_tuning_ray_fine_tuning_job_dataset_name }}"
           - name: DATASET_REPLICATION
-            value: "{{ fine_tuning_ray_fine_tuning_job_dataset_replication }}"
-{% if fine_tuning_ray_fine_tuning_job_dataset_transform %}
-          - name: DATASET_TRANSFORM
-            value: "/mnt/entrypoint/{{ fine_tuning_ray_fine_tuning_job_dataset_transform }}"
-{% endif %}
-{% if fine_tuning_ray_fine_tuning_job_dataset_prefer_cache %}
-          - name: DATASET_PREFER_CACHE
-            value: "true"
-{% endif %}
-{% if fine_tuning_ray_fine_tuning_job_dataset_prepare_cache_only %}
-          - name: DATASET_PREPARE_CACHE_ONLY
-            value: "true"
-{% endif %}
-
-{% if fine_tuning_ray_fine_tuning_job_gpu %}
-          - name: NUM_GPUS
-            value: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
-{% endif %}
-          - name: MODEL_NAME
-            value: "{{ fine_tuning_ray_fine_tuning_job_model_name}}"
-{% if fine_tuning_ray_fine_tuning_job_sleep_forever %}
-            - name: SLEEP_FOREVER
-              value: "true"
-{% endif %}
+            value:
           resources: &head_resources
             requests: &head_request_block
 {% if fine_tuning_ray_fine_tuning_job_gpu %}
@@ -79,11 +53,12 @@ spec:
 {% endif %}
 
           volumeMounts: &head_volume_mounts
-
+{% if fine_tuning_ray_fine_tuning_job_pvc_name %}
           - name: storage-volume
             mountPath: /mnt/storage
-          - name: ft-scripts-volume
-            mountPath: /mnt/ft-scripts
+{% endif %}
+          - name: app-volume
+            mountPath: /mnt/app
           - name: entrypoint-volume
             mountPath: /mnt/entrypoint
           - name: config-volume
@@ -92,18 +67,20 @@ spec:
             mountPath: /mnt/output
 
         volumes: &head_volumes
+{% if fine_tuning_ray_fine_tuning_job_pvc_name %}
         - name: storage-volume
           persistentVolumeClaim:
             claimName: {{ fine_tuning_ray_fine_tuning_job_pvc_name }}
+{% endif %}
         - name: config-volume
           configMap:
             name: {{ job_name_safe }}-config
         - name: entrypoint-volume
           configMap:
             name: {{ job_name_safe }}-entrypoint
-        - name: ft-scripts-volume
+        - name: app-volume
           configMap:
-            name: {{ job_name_safe }}-ft-scripts
+            name: {{ job_name_safe }}-app
         - name: output-volume
           emptyDir: {}
 
