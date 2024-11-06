@@ -41,6 +41,9 @@ ci_presets:
   cluster_2xa100:
     clusters.sutest.compute.machineset.type: "Beaker A100-80GB"
 
+  cluster_hgx:
+    clusters.sutest.compute.machineset.type: "HGX 4xH100-80GB"
+
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
@@ -326,17 +329,27 @@ ci_presets:
       testing:
         size: large
         max_concurrency: 256
+  
+  # ---
+  # Profiling vLLM improvements in OpenShift AI
+  #
+  profiling_vllm_improvements_using_llama:
+    extends: [serverless, vllm, e2e_perf, metal, profiling_settings, use_intlab_minio]
+    tests.e2e.models:
+    - name: llama-3-8b-instruct
+      testing:
+       size: small
+       max_concurrency: 1 
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
-    tests.e2e.llm_load_test.args.duration: 180
+    tests.e2e.llm_load_test.args.duration: 60
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]
     kserve.model.serving_runtime.update_image: false
-    kserve.model.serving_runtime.kserve.image: quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127 
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
-    export_artifacts.enabled: true
+    export_artifacts.enabled: false 
     export_artifacts.bucket: psap-1474-results
   
   single_a10_g5_4xlarge:
