@@ -195,9 +195,9 @@ ci_presets:
       hyper_parameters.fp16: true
 
     # LoRA
-    - model_name: mistralai/Mistral-7B-v0.3@hf
-      hyper_parameters.raw_lists:
-        target_modules: ["all-linear"]
+    # - model_name: mistralai/Mistral-7B-v0.3@hf
+    #   hyper_parameters.raw_lists:
+    #     target_modules: ["all-linear"]
 
   ibm_qlora_models:
     fine_tuning.pvc.size: 2000Gi
@@ -423,7 +423,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:7816aaf5db1466f308fad1ced4f9e2854862bb5ef03070df85a92ff2d2b11617
+  image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:c5b7cc4e124fb5e857137bee0c57c71f8cf78841bfd937cfc382d00fa988c1c8
   image_name: fms-hf-tuning:v2.1.0
   pvc:
     name: fine-tuning-storage
