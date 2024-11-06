@@ -285,6 +285,13 @@ ci_presets:
     matbench.lts.opensearch.export.enabled: true
     matbench.lts.regression_analyses.enabled: true
     'ci_presets.light["tests.fine_tuning.test_settings.gpu"]': 1
+
+  no_model:
+    fine_tuning.pvc.name: null
+    tests.fine_tuning.test_settings.dataset_name: null
+    tests.fine_tuning.test_settings.model_name: null
+    tests.fine_tuning.test_settings.dataset_replication: null
+
   # ---
 
   quality_evaluation:
@@ -304,6 +311,16 @@ ci_presets:
   ray:
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ray.enabled: true
+    tests.capture_prom: false # not needed for the time being
+    tests.visualize: false # not needed for the time being
+    tests.capture_state: false # not needed for the time being
+    tests.fine_tuning.test_settings.hyper_parameters: {}
+
+  ray_bench:
+    extends: [ray, no_model]
+    tests.fine_tuning.ray.workload: ray-benchmark
+    tests.fine_tuning.test_settings.hyper_parameters:
+      num_samples: 10
 
   # ---
 
