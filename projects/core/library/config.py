@@ -38,7 +38,8 @@ class TempValue(object):
 
 
 class Config:
-    def __init__(self, config_path):
+    def __init__(self, testing_dir, config_path):
+        self.testing_dir = testing_dir
         self.config_path = config_path
 
         if not self.config_path.exists():
@@ -242,7 +243,7 @@ class Config:
         return False
 
 
-def _set_config_environ(base_dir):
+def _set_config_environ(testing_dir):
     reloading = False
     config_path_final = pathlib.Path(env.ARTIFACT_DIR / "config.yaml")
 
@@ -256,13 +257,13 @@ def _set_config_environ(base_dir):
         config_file_src = shared_dir_file_src
         logging.info(f"Reloading the config file from SHARED_DIR {config_file_src} ...")
     else:
-        config_file_src = base_dir / "config.yaml"
+        config_file_src = testing_dir / "config.yaml"
         logging.info(f"Reloading the config file from TOPSAIL project directory {config_file_src} ...")
 
     os.environ["TOPSAIL_FROM_CONFIG_FILE"] = str(config_path_final)
 
     if "TOPSAIL_FROM_COMMAND_ARGS_FILE" not in os.environ:
-        os.environ["TOPSAIL_FROM_COMMAND_ARGS_FILE"] = str(base_dir / "command_args.yml.j2")
+        os.environ["TOPSAIL_FROM_COMMAND_ARGS_FILE"] = str(testing_dir / "command_args.yml.j2")
 
     if not pathlib.Path(config_file_src) == config_path_final:
 
@@ -296,15 +297,15 @@ def get_jsonpath(config, jsonpath):
     return jsonpath_ng.parse(jsonpath).find(config)[0].value
 
 
-def init(base_dir, apply_preset_from_pr_args=False):
+def init(testing_dir, apply_preset_from_pr_args=False):
     global project
 
     if project:
         logging.info("config.init: project config already configured.")
         return
 
-    config_path = _set_config_environ(base_dir)
-    project = Config(config_path)
+    config_path = _set_config_environ(testing_dir)
+    project = Config(testing_dir, config_path)
 
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
         logging.info("config.init: running in a local-ci multi Pod, skipping apply_config_overrides and apply_preset_from_pr_args.")
