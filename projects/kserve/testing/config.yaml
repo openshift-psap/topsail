@@ -569,6 +569,7 @@ clusters:
     bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     nvd-srv-02.nvidia.eng.rdu2.redhat.com: cluster_2xa100
     x37-h13-000-r740xd.rdu3.labs.perfscale.redhat.com: cluster_t4
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_hgx
   create:
     type: single # can be: single, ocp, managed
     keep: false
