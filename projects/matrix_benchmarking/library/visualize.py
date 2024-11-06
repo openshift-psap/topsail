@@ -62,7 +62,7 @@ def init(allow_no_config_file=False):
         config.project.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
         config.project.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml", dump_command_args=False)
 
-    matbench_config = config.Config(workload_storage_dir / "data" / config.project.get_config("matbench.config_file"))
+    matbench_config = config.Config(workload_storage_dir, workload_storage_dir / "data" / config.project.get_config("matbench.config_file"))
 
 
 def entrypoint(allow_no_config_file=False):
