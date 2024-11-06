@@ -26,10 +26,7 @@ class Toolbox:
             if toolbox_file.name.startswith("."): continue
 
             project_toolbox_module = str(toolbox_file.relative_to(TOPSAIL_DIR).with_suffix("")).replace(os.path.sep, ".")
-            try:
-                mod = importlib.import_module(project_toolbox_module)
-            except:
-                import pdb;pdb.set_trace()
+            mod = importlib.import_module(project_toolbox_module)
             toolbox_name = toolbox_file.with_suffix("").name
 
             if toolbox_name.startswith("_"): continue
