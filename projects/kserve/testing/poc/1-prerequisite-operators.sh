@@ -31,11 +31,11 @@ echo
 # WARNING: we install the Serverless operator in namespace 'openshift-operators' instead of 'openshift-serverless'. The lines below must be updated accordingly.
 wait_for_csv_installed serverless-operator openshift-operators
 
-wait_for_pods_ready "name=knative-openshift" "openshift-operators"
-wait_for_pods_ready "name=knative-openshift-ingress" "openshift-operators"
-wait_for_pods_ready "name=knative-operator" "openshift-operators"
-oc wait --for=condition=ready pod -l name=knative-openshift -n openshift-operators --timeout=300s
-oc wait --for=condition=ready pod -l name=knative-openshift-ingress -n openshift-operators --timeout=300s
-oc wait --for=condition=ready pod -l name=knative-operator -n openshift-operators --timeout=300s
+wait_for_pods_ready "name=knative-openshift" "openshift-serverless"
+wait_for_pods_ready "name=knative-openshift-ingress" "openshift-serverless"
+wait_for_pods_ready "name=knative-operator" "openshift-serverless"
+oc wait --for=condition=ready pod -l name=knative-openshift -n openshift-serverless --timeout=300s
+oc wait --for=condition=ready pod -l name=knative-openshift-ingress -n openshift-serverless --timeout=300s
+oc wait --for=condition=ready pod -l name=knative-operator -n openshift-serverless --timeout=300s
 
 success "[SUCCESS] Successfully installed ServiceMesh, Serverless operators"
