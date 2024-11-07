@@ -13,6 +13,7 @@ import projects.matrix_benchmarking.visualizations.helpers.plotting.report as re
 def register():
     SFTTrainerReport()
     SFTTrainerHyperParametersReport()
+    RayBenchmarkReport()
 
 
 class SFTTrainerReport():
@@ -100,6 +101,43 @@ class SFTTrainerHyperParametersReport():
                                                    report.set_config(
                                                        dict(summary_key=summary_key, filter_key=filter_key, filter_value=gpu_count, x_key=x_key),
                                                        args))
+
+
+        return None, header
+
+
+class RayBenchmarkReport():
+    def __init__(self):
+        self.name = "report: Ray Benchmark report"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
+
+        header += html.Br()
+        header += html.Br()
+        from ..store import parsers
+
+        header += [html.H2("Ray Benchmark Summary metrics.")]
+
+
+        for x_key in list(ordered_vars) or [None]:
+            if x_key is not None:
+                header += [html.H2(f"by {x_key}")]
+
+                ordered_vars.remove(x_key)
+                ordered_vars.insert(0, x_key)
+
+            header += report.Plot_and_Text("Ray Benchmark Summary",
+                                           args)
 
 
         return None, header
