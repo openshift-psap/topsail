@@ -49,7 +49,7 @@ def prepare_rhoai():
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
     run.run_toolbox(
         "rhods", "update_datasciencecluster",
-        enable=["kueue", "codeflare", "trainingoperator"],
+        enable=["kueue", "codeflare", "trainingoperator", "ray"],
         name=None if has_dsc else "default-dsc",
     )
 
@@ -91,23 +91,41 @@ def set_namespace_annotations():
 
 def download_data_sources(test_settings):
     namespace = config.project.get_config("tests.fine_tuning.namespace")
-    model_name = test_settings["model_name"]
-    dataset_name = test_settings["dataset_name"]
+    model_name = test_settings.get("model_name")
+    dataset_name = test_settings.get("dataset_name")
 
     pvc_name = config.project.get_config("fine_tuning.pvc.name")
     sources = config.project.get_config(f"fine_tuning.sources")
 
     dry_mode = config.project.get_config("tests.dry_mode")
 
-    sources_name = [dataset_name]
-    if model_name is None:
+    sources_name = []
+    if dataset_name:
+        sources_name.append(dataset_name)
+
+    if config.project.get_config("tests.fine_tuning.multi_model.enabled"):
         multi_models = config.project.get_config("tests.fine_tuning.multi_model.models")
         for model in multi_models:
             sources_name.append(model["name"])
+    if model_name is None:
+        pass # nothing to do
     elif isinstance(model_name, str):
         sources_name.append(model_name)
-    else:
+    elif isinstance(model_name, list):
         sources_name += model_name
+    else:
+        msg = f"Received an unexpected value of 'model_name': {model_name} ({model_name.__class__.__name__})"
+        logging.error(msg)
+        raise ValueError(msg)
+
+    if not sources_name:
+        logging.info("download_data_sources: Nothing to download.")
+        return # nothing to do
+
+    if not pvc_name:
+        msg = f"Found {len(sources_name)} sources to download, but fine_tuning.pvc.name={pvc_name}"
+        logging.error(msg)
+        raise ValueError(msg)
 
     def do_download(extra, secret_key=None, image_key=None):
         name = extra["name"]
@@ -288,5 +306,10 @@ def preload_image():
                 logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
                 if i+1 == RETRIES:
                     raise
+    do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
+    do_fms = config.project.get_config("tests.fine_tuning.ray.enabled")
+    if do_fms:
+        preload(config.project.get_config("tests.fine_tuning.fms.image"), "fine-tuning-image")
 
-    preload(config.project.get_config("fine_tuning.image"), "fine-tuning-image")
+    elif do_ray:
+        preload(config.project.get_config("tests.fine_tuning.ray.image"), "fine-tuning-image")

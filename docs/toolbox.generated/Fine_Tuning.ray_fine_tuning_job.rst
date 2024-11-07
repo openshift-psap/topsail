@@ -38,9 +38,11 @@ Parameters
 * The name of the model to use inside the /dataset directory of the PVC
 
 
-``ft_scripts_dir``  
+``workload``  
 
-* Directory where the fine-tuning scripts are stored
+* The name of the workload job to run (see the role's workload directory)
+
+* default value: ``ray-finetune-llm-deepspeed``
 
 
 ``dataset_name``  
@@ -70,13 +72,6 @@ Parameters
 ``dataset_prepare_cache_only``  
 
 * If True, only prepare the dataset cache file and do not run the fine-tuning.
-
-
-``dataset_response_template``  
-
-* The delimiter marking the beginning of the response in the dataset samples
-
-* default value: ``\n### Label:``
 
 
 ``container_image``  
@@ -144,4 +139,11 @@ Parameters
 ``sleep_forever``  
 
 * If true, sleeps forever instead of running the fine-tuning command.
+
+
+``capture_artifacts``  
+
+* If enabled, captures the artifacts that will help post-mortem analyses
+
+* default value: ``True``
 

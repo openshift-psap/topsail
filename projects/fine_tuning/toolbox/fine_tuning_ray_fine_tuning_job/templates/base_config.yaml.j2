@@ -1,13 +1,25 @@
 ---
-# DATASET_SOURCE:      {{ fine_tuning_ray_fine_tuning_job_dataset_name }}
-# DATASET_TRANSFORM:   {{ fine_tuning_ray_fine_tuning_job_dataset_transform }}
-# DATASET_REPLICATION: {{ fine_tuning_ray_fine_tuning_job_dataset_replication }}
 
-training_data_path: "/mnt/output/dataset.json" # aka DATASET_DEST
+{% if fine_tuning_ray_fine_tuning_job_model_name %}
 model_name_or_path: "/mnt/storage/model/{{ fine_tuning_ray_fine_tuning_job_model_name }}"
+model_name: "{{ fine_tuning_ray_fine_tuning_job_model_name }}"
+{% endif %}
 
-response_template: "{{ fine_tuning_ray_fine_tuning_job_dataset_response_template }}"
+{% if fine_tuning_ray_fine_tuning_job_dataset_name %}
+dataset_source: "/mnt/storage/dataset/{{ fine_tuning_ray_fine_tuning_job_dataset_name }}"
+dataset_replication: {{ fine_tuning_ray_fine_tuning_job_dataset_replication }}
 
-output_dir: "/mnt/output/fine-tuning"
+{% if fine_tuning_ray_fine_tuning_job_dataset_transform %}
+dataset_transform: "/mnt/entrypoint/{{ fine_tuning_ray_fine_tuning_job_dataset_transform }}"
+{% endif %}
+{% if fine_tuning_ray_fine_tuning_job_dataset_prefer_cache %}
+dataset_prefer_cache: true
+{% endif %}
+{% if fine_tuning_ray_fine_tuning_job_dataset_prepare_cache_only %}
+dataset_prepare_cache_only: true
+{% endif %}
+{% endif %}
 
-max_seq_length: 4096
+{% if fine_tuning_ray_fine_tuning_job_sleep_forever %}
+sleep_forever: true
+{% endif %}

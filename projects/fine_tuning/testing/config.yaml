@@ -64,12 +64,6 @@ ci_presets:
     tests.fine_tuning.multi_model.enabled: true
     tests.fine_tuning.test_settings.model_name: null
 
-  ibm_release_comparison:
-    tests.fine_tuning.test_settings.container_image:
-    - quay.io/modh/fms-hf-tuning:release-ec50c3d7dc09f50d9885f25efc3d2fc98a379709 # RHOAI-2.12
-    - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI-2.11
-    - quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3 # RHOAI-2.10
-
   hf_evaluation:
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
@@ -77,20 +71,6 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.1
     tests.fine_tuning.matbenchmarking.stop_on_error: false
-
-  ibm_regression:
-    extends: [hf_evaluation, dgx_small_footprint]
-    tests.fine_tuning.test_settings.model_name:
-    - ibm-granite/granite-3b-code-instruct
-    - ibm/merlinite-7b
-    - meta-llama/Llama-2-13b-chat-hf
-    - ibm-granite/granite-20b-code-instruct
-    - ibm-granite/granite-34b-code-instruct
-    tests.fine_tuning.test_settings.gpu: [2, 4, 8]
-    tests.fine_tuning.test_settings.container_image:
-    - quay.io/modh/fms-hf-tuning:main-5e965e4676bff71f0c4e8219a59aba37ce542083 # 4.42
-    - quay.io/modh/fms-hf-tuning:main-abbb2e2dfac0f92a34714147f3bd4696758037c6 # 4.41
-    - quay.io/modh/fms-hf-tuning:release-5e4e9441febdb5b2beb21eaecdda1103abd1db05 # RHOAI 2.11 image
 
   dgx_small_footprint:
     tests.fine_tuning.test_settings.gpu: 8
@@ -305,15 +285,43 @@ ci_presets:
     matbench.lts.opensearch.export.enabled: true
     matbench.lts.regression_analyses.enabled: true
     'ci_presets.light["tests.fine_tuning.test_settings.gpu"]': 1
+
+  no_model:
+    fine_tuning.pvc.name: null
+    tests.fine_tuning.test_settings.dataset_name: null
+    tests.fine_tuning.test_settings.model_name: null
+    tests.fine_tuning.test_settings.dataset_replication: null
+
   # ---
 
   quality_evaluation:
     tests.fine_tuning.quality_evaluation.enabled: true
+    tests.fine_tuning.fms.enabled: false
     tests.capture_prom: false
     matbench.workload: projects.fine_tuning.visualizations.quality_evaluation
     matbench.lts.generate: false
     tests.capture_state: false
     tests.fine_tuning.test_settings.name: quality-evaluation
+
+  #
+
+  fms:
+    tests.fine_tuning.fms.enabled: false
+
+  ray:
+    tests.fine_tuning.fms.enabled: false
+    tests.fine_tuning.ray.enabled: true
+    tests.capture_prom: false # not needed for the time being
+    tests.visualize: false # not needed for the time being
+    tests.capture_state: false # not needed for the time being
+    tests.fine_tuning.test_settings.hyper_parameters: {}
+
+  ray_bench:
+    extends: [ray, no_model]
+    tests.fine_tuning.ray.workload: ray-benchmark
+    tests.fine_tuning.test_settings.hyper_parameters:
+      num_samples: 10
+
   # ---
 
   cluster_ibm_dgx:
@@ -423,7 +431,6 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: quay.io/modh/fms-hf-tuning:v2.0.1
   pvc:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
@@ -435,7 +442,7 @@ fine_tuning:
       registry_type: model
       source_dir: "dmf://"
       secret_key: "secrets.dmf_token"
-      download_pod_image_key: "fine_tuning.image"
+      download_pod_image_key: "tests.fine_tuning.fms.image"
     hf:
       type: model-registry
       registry_type: model
@@ -518,9 +525,16 @@ tests:
       count: 20
       kueue_name: local-queue
       timespan: 0
+    fms:
+      enabled: true
+      image: quay.io/modh/fms-hf-tuning:v2.0.1
     quality_evaluation:
       enabled: false
       image: registry.redhat.io/ubi9
+    ray:
+      enabled: false
+      workload: ray-benchmark
+      image: quay.io/rhoai/ray:2.35.0-py311-cu121-torch24-fa26
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning

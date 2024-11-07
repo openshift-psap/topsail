@@ -12,20 +12,16 @@ fine_tuning_ray_fine_tuning_job_name:
 fine_tuning_ray_fine_tuning_job_namespace:
 
 # the name of the PVC where the model and dataset are stored
-# Mandatory value
-fine_tuning_ray_fine_tuning_job_pvc_name:
+fine_tuning_ray_fine_tuning_job_pvc_name: null
 
 # the name of the model to use inside the /dataset directory of the PVC
-# Mandatory value
-fine_tuning_ray_fine_tuning_job_model_name:
+fine_tuning_ray_fine_tuning_job_model_name: null
 
-# directory where the fine-tuning scripts are stored
-# Mandatory value
-fine_tuning_ray_fine_tuning_job_ft_scripts_dir:
+# the name of the workload job to run (see the role's workload directory)
+fine_tuning_ray_fine_tuning_job_workload: ray-finetune-llm-deepspeed
 
 # the name of the dataset to use inside the /model directory of the PVC
-# Mandatory value
-fine_tuning_ray_fine_tuning_job_dataset_name:
+fine_tuning_ray_fine_tuning_job_dataset_name: null
 
 # number of replications of the dataset to use, to artificially extend or reduce the fine-tuning effort
 fine_tuning_ray_fine_tuning_job_dataset_replication: 1
@@ -38,11 +34,6 @@ fine_tuning_ray_fine_tuning_job_dataset_prefer_cache: true
 
 # if True, only prepare the dataset cache file and do not run the fine-tuning.
 fine_tuning_ray_fine_tuning_job_dataset_prepare_cache_only: false
-
-# the delimiter marking the beginning of the response in the dataset samples
-fine_tuning_ray_fine_tuning_job_dataset_response_template: '
-
-  ### Label:'
 
 # the image to use for the fine-tuning container
 fine_tuning_ray_fine_tuning_job_container_image: quay.io/rhoai/ray:2.35.0-py39-cu121-torch24-fa26
@@ -76,3 +67,6 @@ fine_tuning_ray_fine_tuning_job_hyper_parameters: {}
 
 # if true, sleeps forever instead of running the fine-tuning command.
 fine_tuning_ray_fine_tuning_job_sleep_forever: false
+
+# if enabled, captures the artifacts that will help post-mortem analyses
+fine_tuning_ray_fine_tuning_job_capture_artifacts: true
