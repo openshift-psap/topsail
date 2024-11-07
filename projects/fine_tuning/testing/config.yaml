@@ -314,13 +314,25 @@ ci_presets:
     tests.fine_tuning.ray.enabled: true
     tests.capture_prom: false # not needed for the time being
     tests.fine_tuning.test_settings.hyper_parameters: {}
+    matbench.lts.generate: false
+    tests.fine_tuning.test_settings.name: ray
 
   ray_bench:
     extends: [ray, no_model]
     matbench.config_file: ray_benchmark.yaml
     tests.fine_tuning.ray.workload: ray-benchmark
+    tests.fine_tuning.test_settings.gpu: 0
+
     tests.fine_tuning.test_settings.hyper_parameters:
       num_samples: 10
+
+  ray_bench_scale:
+    extends: [ray_bench]
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: true
+    tests.fine_tuning.test_settings.worker_replicas: [16, 32, 64, 128, 256, 512]
+    tests.fine_tuning.test_settings.hyper_parameters.num_samples: [20, 75, 150]
+    tests.fine_tuning.test_settings.gpu: null
 
   # ---
 
