@@ -20,10 +20,15 @@ def dump_prometheus(prom_start_ts, namespace, delay=60):
         prom_end_ts = datetime.datetime.now()
         args = dict(
             duration_s = (prom_end_ts - prom_start_ts).total_seconds(),
-            promquery_file = TESTING_THIS_DIR / "metrics.txt",
+            promquery_file = config.project.testing_dir / "metrics.txt",
             dest_dir = env.ARTIFACT_DIR / "metrics",
             namespace = namespace,
         )
+
+        if not args["promquery_file"].exists():
+            msg = f"Requested tests.capture_prom=with-queries, but '{args['promquery_file']}' does not exist. Cannot proceed."
+            logging.fatal(msg)
+            raise FileNotFoundError(msg)
 
         with env.NextArtifactDir("cluster__dump_prometheus_dbs"):
             run.run_toolbox("cluster", "query_prometheus_db", **args)
