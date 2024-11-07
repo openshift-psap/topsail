@@ -313,12 +313,11 @@ ci_presets:
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ray.enabled: true
     tests.capture_prom: false # not needed for the time being
-    tests.visualize: false # not needed for the time being
-    tests.capture_state: false # not needed for the time being
     tests.fine_tuning.test_settings.hyper_parameters: {}
 
   ray_bench:
     extends: [ray, no_model]
+    matbench.config_file: ray_benchmark.yaml
     tests.fine_tuning.ray.workload: ray-benchmark
     tests.fine_tuning.test_settings.hyper_parameters:
       num_samples: 10
