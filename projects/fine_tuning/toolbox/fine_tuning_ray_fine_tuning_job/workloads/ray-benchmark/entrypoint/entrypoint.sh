@@ -11,13 +11,13 @@ cd /mnt/app
 echo "# configuration:"
 cat "$CONFIG_JSON_PATH"
 
-if python3 ./test_network_overhead.py --smoke-test; then
+if python3 ./test_network_overhead.py; then
     echo "SCRIPT SUCCEEDED"
 else
     echo "SCRIPT FAILED"
     # don't exit with a return code != 0, otherwise the RayJob->Job retries 3 times ...
 fi
-
+set +x
 echo "*********"
 echo "*********"
 echo "*********"
