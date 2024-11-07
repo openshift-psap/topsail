@@ -13,16 +13,21 @@ Theoretical minimum time: 300 seconds
 
 # https://github.com/ray-project/ray/blob/130cb3d4f28e7486fad46697fd893dd84b5a096b/release/tune_tests/scalability_tests/workloads/test_network_overhead.py
 
-import argparse
+import os
+import json
+
 import ray
 
 from ray.tune.utils.release_test_util import timed_tune_run
 
+with open(os.environ["CONFIG_JSON_PATH"]) as f:
+    CONFIG = json.load(f)
 
-def main(smoke_test: bool = False):
+def main():
     ray.init(address="auto")
 
-    num_samples = 100 if not smoke_test else 20
+    num_samples = CONFIG.get("num_samples", 20)
+
     results_per_second = 0.01
     trial_length_s = 300
 
@@ -47,13 +52,4 @@ def main(smoke_test: bool = False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--smoke-test",
-        action="store_true",
-        default=False,
-        help="Finish quickly for training.",
-    )
-    args = parser.parse_args()
-
-    main(args.smoke_test)
+    main()
