@@ -280,6 +280,25 @@
              -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
              > {{ artifact_extra_logs_dir }}/artifacts/rayjob.status;
 
+  - name: Capture the state of the RayCluster
+    shell:
+      oc get raycluster
+             -oyaml
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/raycluster.yaml;
+
+      oc get raycluster
+             -ojson
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/raycluster.json;
+
+      oc get raycluster
+             -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+             > {{ artifact_extra_logs_dir }}/artifacts/raycluster.status;
+    when:
+    - fine_tuning_ray_fine_tuning_job_capture_artifacts | bool
+    - not fine_tuning_ray_fine_tuning_job_shutdown_cluster
+
   - name: Capture the state of the fine-tuning Pod resource
     shell:
       set -o pipefail;
@@ -309,7 +328,6 @@
 
     ignore_errors: true
     when: fine_tuning_ray_fine_tuning_job_capture_artifacts | bool
-
 
 - name: Ensure that the script succeeded
   shell:
