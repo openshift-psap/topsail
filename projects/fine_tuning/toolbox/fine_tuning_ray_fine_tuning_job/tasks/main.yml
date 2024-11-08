@@ -260,7 +260,7 @@
 
       oc logs {{ item }}
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-         > {{ artifact_extra_logs_dir }}/artifacts/rayjob_pod_{{ item|replace('pod/', '') }}.log
+         > {{ artifact_extra_logs_dir }}/artifacts/rayjob_pod_{{ item | replace('pod/', '') }}.log
     failed_when: false
     loop: "{{ job_pod_name_cmd.stdout_lines }}"
 
