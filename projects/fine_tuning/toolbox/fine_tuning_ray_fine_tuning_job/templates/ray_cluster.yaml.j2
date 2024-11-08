@@ -11,7 +11,7 @@ spec:
     rayStartParams:
       block: 'true'
       dashboard-host: 0.0.0.0
-      num-gpus: '1'
+      num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     serviceType: ClusterIP
     template:
@@ -44,12 +44,12 @@ spec:
               cpu: "{{ fine_tuning_ray_fine_tuning_job_cpu }}"
 {% if fine_tuning_ray_fine_tuning_job_request_equals_limits %}
             limits:  *head_request_block
-{% elif fine_tuning_ray_fine_tuning_job_gpu %}
+{% else %}
             limits:
+{% if fine_tuning_ray_fine_tuning_job_gpu %}
               nvidia.com/gpu: "{{ fine_tuning_ray_fine_tuning_job_gpu }}"
-{% if not fine_tuning_ray_fine_tuning_job_request_equals_limits %}
-              cpu: 20
 {% endif %}
+              cpu: 20
 {% endif %}
 
           volumeMounts: &head_volume_mounts
@@ -91,7 +91,7 @@ spec:
     minReplicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
     rayStartParams:
       block: "true"
-      num-gpus: "1"
+      num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     replicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
     template:
