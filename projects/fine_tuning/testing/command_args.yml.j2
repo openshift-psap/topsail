@@ -77,9 +77,13 @@ fine_tuning ray_fine_tuning_job:
 {% endif %}
   container_image: "{{ tests.fine_tuning.ray.image }}"
 
+{% if tests.fine_tuning.test_settings.model_name %}
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
+{% endif %}
+{% if tests.fine_tuning.test_settings.dataset_name %}
   dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
   dataset_replication: {{ tests.fine_tuning.test_settings.dataset_replication }}
+{% endif %}
 
   workload: {{ tests.fine_tuning.ray.workload }}
 
