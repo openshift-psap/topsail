@@ -94,7 +94,7 @@ if [[ $WORLD_SIZE == 1 ]]; then
     else
         echo "Running with a $NUM_GPUS GPUs"
     fi
-    python /app/accelerate_launch.py
+    nsys profile -w true -t cuda,nvtx,osrt,cudnn,cublas -s cpu --capture-range=cudaProfilerApi --cudabacktrace=true --capture-range-end=stop -x true -o /mnt/storage/cuda_profile python /app/accelerate_launch.py
     exit 0
 fi
 echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."

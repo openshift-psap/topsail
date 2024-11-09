@@ -423,7 +423,7 @@ gpu:
     replicas: 1
 
 fine_tuning:
-  image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:c5b7cc4e124fb5e857137bee0c57c71f8cf78841bfd937cfc382d00fa988c1c8
+  image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:35e935d0bed5a34b3a70f0f247523ad053de79e26833f5dd2fa498658ba2f363
   image_name: fms-hf-tuning:v2.1.0
   pvc:
     name: fine-tuning-storage
