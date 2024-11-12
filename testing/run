@@ -64,7 +64,7 @@ prechecks() {
         exit 1
     fi
 
-    if [[ "${PERFLAB_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
+    if [[ "${TOPSAIL_LOCAL_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
         LOCAL_CI_NAMESPACE=topsail
         echo "Checking for local-ci Pods running in the cluster ..."
         if oc get pods --field-selector=status.phase==Running -oname -n "$LOCAL_CI_NAMESPACE" | grep .; then
