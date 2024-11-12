@@ -334,7 +334,7 @@
   shell:
     set -o pipefail;
 
-    cat "{{ artifact_extra_logs_dir }}/artifacts/"rayjob_pod_*.log | grep "SCRIPT SUCCEEDED"
+    cat "{{ artifact_extra_logs_dir }}/artifacts/"rayjob_pod_*.log | grep -E "SCRIPT SUCCEEDED|--- PASSED:|--- FAILED:"
 
 - name: Save the logs of the successful Pod
   shell:
