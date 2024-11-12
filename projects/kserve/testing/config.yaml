@@ -340,7 +340,7 @@ ci_presets:
       testing:
        size: small
        max_concurrency: 1024 
-    export_artifacts.path_prefix: four-H100-vllm-0.5.3.post1
+    export_artifacts.path_prefix: four-H100-vllm-0.5.3.post1-TP-4
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
