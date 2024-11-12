@@ -7,12 +7,13 @@ spec:
     model:
       storageUri: s3://psap-hf-models/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct/
       args:
-      - --tensor-parallel-size=4
+      - --num-scheduler-steps=8
+      # - --tensor-parallel-size=4
       # - --max-model-len=4096
       resources:
         requests:
           cpu: "2"
           memory: "16Gi"
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "1"
         limits:
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "1"
