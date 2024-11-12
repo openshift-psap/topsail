@@ -86,7 +86,7 @@ def export_artifacts(artifacts_dirname, test_step=None):
 
     logging.info(f"Exporting to {export_dest} ({export_url})")
     aws_creds_filename = config.project.get_config("secrets.aws_credentials")
-    run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" --acl public-read &> {env.ARTIFACT_DIR / 'aws_s3_cp.log'}")
+    run.run(f"AWS_SHARED_CREDENTIALS_FILE=\"$PSAP_ODS_SECRET_PATH/{aws_creds_filename}\" aws s3 cp --recursive \"{artifacts_dirname}\" \"{export_dest}\" &> {env.ARTIFACT_DIR / 'aws_s3_cp.log'}")
 
 
 
