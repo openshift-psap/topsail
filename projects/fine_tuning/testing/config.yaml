@@ -494,7 +494,7 @@ tests:
     namespace: fine-tuning-testing
     matbenchmarking:
       enabled: false
-      visu_file: plots.yaml
+      visu_file:
       stop_on_error: true
     multi_model:
       enabled: false

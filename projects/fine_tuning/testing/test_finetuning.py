@@ -319,6 +319,9 @@ def generate_visualization(do_matbenchmarking, test_artifact_dir):
     with env.NextArtifactDir("plots"):
         if do_matbenchmarking:
             visu_file = config.project.get_config("tests.fine_tuning.matbenchmarking.visu_file")
+            if visu_file is None:
+                visu_file = config.project.get_config("matbench.config_file")
+
             with config.TempValue(config.project, "matbench.config_file", visu_file):
                 exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
