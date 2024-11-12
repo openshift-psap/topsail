@@ -9,6 +9,8 @@ metadata:
 spec:
   annotations:
     serving.knative.dev/progress-deadline: 60m
+    prometheus.io/port: '8080'
+    prometheus.io/path: '/metrics'
   builtInAdapter:
     modelLoadingTimeoutMillis: 90000
   containers:
