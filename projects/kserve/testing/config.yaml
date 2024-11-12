@@ -339,17 +339,19 @@ ci_presets:
     - name: llama-3-8b-instruct
       testing:
        size: small
-       max_concurrency: 1 
+       max_concurrency: 256
+    export_artifacts.path_prefix: four-H100-vllm-0.5.3.post1
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
-    tests.e2e.llm_load_test.args.duration: 60
-    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]
-    kserve.model.serving_runtime.update_image: true 
+    tests.e2e.llm_load_test.args.duration: 180 
+    tests.e2e.llm_load_test.args.concurrency: [32, 64, 128, 256, 512]
+    kserve.model.serving_runtime.update_image: true
+    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:b51fde66f162f1a78e8c027320dddf214732d5345953b1599a84fe0f0168c619" 
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
-    export_artifacts.enabled: false 
+    export_artifacts.enabled: true
     export_artifacts.bucket: psap-1474-results
   
   single_a10_g5_4xlarge:
