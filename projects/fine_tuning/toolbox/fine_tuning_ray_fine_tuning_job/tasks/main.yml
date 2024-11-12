@@ -238,15 +238,16 @@
 
   always:
   - name: Get the name of the job pods
+    # -lbatch.kubernetes.io/job-name={{ job_name_safe }} | not supported in OCP 2.12 (Icelake cluster)
     shell:
       set -o pipefail;
 
-      oc get pods -lbatch.kubernetes.io/job-name={{ job_name_safe }}
+      oc get pods -ljob-name={{ job_name_safe }}
          --sort-by=.metadata.creationTimestamp
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/job_pods.status;
 
-      oc get pods -lbatch.kubernetes.io/job-name={{ job_name_safe }}
+      oc get pods -ljob-name={{ job_name_safe }}
          --sort-by=.metadata.creationTimestamp
          --no-headers
          -oname
