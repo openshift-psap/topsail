@@ -198,8 +198,8 @@
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
          -ojsonpath={.status.jobDeploymentStatus}
     register: ray_job_deployment_status
-    retries: 12
-    delay: 10
+    retries: 60
+    delay: 15
     until: ray_job_deployment_status.stdout not in ["", "Initializing"]
 
   - name: Fail if the Job did not start running
