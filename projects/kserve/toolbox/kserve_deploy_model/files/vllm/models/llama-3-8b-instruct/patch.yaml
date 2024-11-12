@@ -6,13 +6,13 @@ spec:
   predictor:
     model:
       storageUri: s3://psap-hf-models/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct/
-      # args:
-      # - --tensor-parallel-size=1
+      args:
+      - --tensor-parallel-size=4
       # - --max-model-len=4096
       resources:
         requests:
           cpu: "2"
           memory: "16Gi"
-          nvidia.com/gpu: "1"
+          nvidia.com/gpu: "4"
         limits:
-          nvidia.com/gpu: "1"
+          nvidia.com/gpu: "4"
