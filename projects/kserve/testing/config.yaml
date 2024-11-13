@@ -353,6 +353,11 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 512
+    - name: granite-3-0-8b-instruct
+      model: granite-3.0-8b-instruct
+      testing:
+        size: small
+        max_concurrency: 512
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128, 192, 256, 384, 512]
 
   # ---
