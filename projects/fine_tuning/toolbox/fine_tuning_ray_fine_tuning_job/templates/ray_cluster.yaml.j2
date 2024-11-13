@@ -33,8 +33,6 @@ spec:
           env: &head_env
           - name: CONFIG_JSON_PATH
             value: /mnt/config/config.json
-          - name: DATASET_REPLICATION
-            value:
           resources: &head_resources
             requests: &head_request_block
 {% if fine_tuning_ray_fine_tuning_job_gpu %}
