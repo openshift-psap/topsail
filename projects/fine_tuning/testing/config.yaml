@@ -179,7 +179,7 @@ ci_presets:
       hyper_parameters.raw_lists:
         target_modules: ["all-linear"]
 
-  gating_qlora_models:
+  gating_dgx40gb_qlora:
     extends: [gating]
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
