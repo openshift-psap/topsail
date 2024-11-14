@@ -340,7 +340,9 @@ ci_presets:
       testing:
        size: small
        max_concurrency: 1024 
-    export_artifacts.path_prefix: four-H100-vllm-0.6.3.dev386-nss-8
+    export_artifacts.path_prefix: four-H100-vllm-0.5.3.post1-baseline
+    kserve.model.serving_runtime.update_image: false
+    kserve.model.serving_runtime.kserve.image: "http://quay.io/modh/vllm@sha256:b51fde66f162f1a78e8c027320dddf214732d5345953b1599a84fe0f0168c619"
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
