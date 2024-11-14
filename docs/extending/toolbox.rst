@@ -35,6 +35,7 @@ parameters are consistent with what the CLI supports
 rendered automatically when executing from the project’s root folder:
 
 ::
+
     ./run_toolbox.py repo generate_ansible_default_settings
 
 

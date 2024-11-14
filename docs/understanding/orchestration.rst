@@ -276,6 +276,7 @@ And everything is YAML. So the preset values can be YAML dictionaries
 (or lists).
 
 ::
+
   tests.fine_tuning.test_settings.hyper_parameters: {r: 4, lora_alpha: 16}
 
 This would work even if no placeholder has been set for ``r`` and
