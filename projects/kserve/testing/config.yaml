@@ -346,9 +346,9 @@ ci_presets:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.enabled: true
     tests.e2e.llm_load_test.args.duration: 180 
-    tests.e2e.llm_load_test.args.concurrency: [32, 64, 128, 256, 512, 1024]
-    kserve.model.serving_runtime.update_image: true 
-    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:b51fde66f162f1a78e8c027320dddf214732d5345953b1599a84fe0f0168c619" 
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    kserve.model.serving_runtime.update_image: false
+    kserve.model.serving_runtime.kserve.image: "quay.io/opendatahub/vllm@sha256:a23fe8096f112b7d3e2e6984babd9b52d798ef8629ddf836b3a3106f70fd5127"
     tests.visualize: true
     matbench.lts.opensearch.export.enabled: false
     export_artifacts.enabled: true
@@ -373,6 +373,10 @@ ci_presets:
   eight_l40s_g6e_48xlarge_tp_8:
     extends: [serverless, vllm, e2e_perf, metal, eight_l40s_llm_models, profiling_settings]
     export_artifacts.path_prefix: eight-L40S-TP-8-REP-1
+
+  profile_eight_l40s_g6e_48xlarge_tp_8:
+    extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
+    export_artifacts.path_prefix: profile-eight-L40S-TP-8-REP-1
 
   eight_l40s_g6e_48xlarge_tp_4:
     extends: [serverless, vllm, e2e_perf, metal, four_l40s_llm_models, profiling_settings]
