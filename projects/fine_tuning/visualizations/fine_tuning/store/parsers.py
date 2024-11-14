@@ -24,6 +24,7 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
 artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
+artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR = "*__fine_tuning__ray_fine_tuning_job"
 artifact_dirnames.RHODS_CAPTURE_STATE = "*__rhods__capture_state"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -33,10 +34,15 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.log",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
+
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
     f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
+
+    f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/src/config_final.json",
+    f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/artifacts/pod.log",
+
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.createdAt",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.version",
 ]
@@ -62,12 +68,21 @@ def parse_once(results, dirname):
 
     results.test_start_end_time = _parse_start_end_time(dirname)
 
-    results.sfttrainer_metrics = _parse_sfttrainer_logs(dirname)
-    results.allocated_resources = _parse_allocated_resources(dirname)
-    results.finish_reason = _parse_finish_reason(dirname)
     results.locations = _prepare_file_locations(dirname)
-    results.job_config = _parse_job_config(dirname)
-    results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
+
+    results.job_config = _parse_job_config(dirname, results.locations)
+
+    results.workload_config = _parse_workload_config(dirname, results.locations)
+
+    if results.locations.has_fms:
+        results.sfttrainer_metrics = _parse_fms_logs(dirname)
+        results.allocated_resources = _parse_fms_allocated_resources(dirname)
+        results.finish_reason = _parse_fms_finish_reason(dirname)
+
+    if results.locations.has_ray:
+        results.ray_metrics = _parse_ray_logs(dirname)
+        results.allocated_resources = _parse_ray_allocated_resources(dirname)
+        results.finish_reason = _parse_ray_finish_reason(dirname)
 
 
 @helpers_store_parsers.ignore_file_not_found
@@ -120,7 +135,7 @@ SFT_TRAINER_PROGRESS_KEYS = {
 
 
 @helpers_store_parsers.ignore_file_not_found
-def _parse_sfttrainer_logs(dirname):
+def _parse_fms_logs(dirname):
     sfttrainer_metrics = types.SimpleNamespace()
     sfttrainer_metrics.summary = types.SimpleNamespace()
     sfttrainer_metrics.progress = []
@@ -177,8 +192,9 @@ def _parse_sfttrainer_logs(dirname):
 
     return sfttrainer_metrics
 
+
 @helpers_store_parsers.ignore_file_not_found
-def _parse_allocated_resources(dirname):
+def _parse_fms_allocated_resources(dirname):
     allocated_resources = types.SimpleNamespace()
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.json")) as f:
         pod_def = json.load(f)
@@ -190,8 +206,14 @@ def _parse_allocated_resources(dirname):
 
     return allocated_resources
 
+
 @helpers_store_parsers.ignore_file_not_found
-def _parse_finish_reason(dirname):
+def _parse_ray_allocated_resources(dirname):
+    pass
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_fms_finish_reason(dirname):
     finish_reason = types.SimpleNamespace()
     finish_reason.exit_code = None
     finish_reason.message = "Parsing did not complete"
@@ -216,41 +238,85 @@ def _parse_finish_reason(dirname):
     return finish_reason
 
 
+@helpers_store_parsers.ignore_file_not_found
+def _parse_ray_finish_reason(dirname):
+    finish_reason = types.SimpleNamespace()
+    finish_reason.exit_code = None
+    finish_reason.message = "_parse_ray_finish_reason: not implemented"
+
+    return finish_reason
+
+
 def _prepare_file_locations(dirname):
     locations = types.SimpleNamespace()
 
-    locations.job_logs = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log"
+    locations.has_fms = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR is not None
+    locations.has_ray = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR is not None
+
+    if locations.has_fms:
+        locations.job_dir = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR
+        locations.job_logs = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log"
+
+    elif locations.has_ray:
+        locations.job_dir = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR
+        locations.job_logs = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/pod.log"
+    else:
+        logging.error("Couldn't fine the FMS nor Ray job directory ...")
+        locations.job_dir = None
+        locations.job_logs = None
+
     job_logs_file = register_important_file(dirname, locations.job_logs)
 
     if not job_logs_file.exists():
         locations.job_logs = None
         logging.info(f"Job log file {job_logs_file} does not exist ...")
 
-    locations.tuning_config_file = (job_logs_file.parent.parent / "src" / "config_final.json").relative_to(dirname)
+    locations.workload_config_file = locations.job_dir / "src" / "config_final.json"
 
     return locations
 
 
 @helpers_store_parsers.ignore_file_not_found
-def _parse_job_config(dirname):
+def _parse_job_config(dirname, locations):
     job_config = {}
 
-    PREFIX = "fine_tuning_run_fine_tuning_job_"
+    if locations.has_fms:
+        prefix = "fine_tuning_run_fine_tuning_job_"
+    elif locations.has_ray:
+        prefix = "fine_tuning_ray_fine_tuning_job_"
 
-    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "_ansible.play.yaml")) as f:
+    with open(register_important_file(dirname, locations.job_dir / "_ansible.play.yaml")) as f:
         ansible_play = yaml.safe_load(f)
 
     for k, v in ansible_play[0]["vars"].items():
-        if not k.startswith(PREFIX): continue
+        if not k.startswith(prefix): continue
 
-        job_config[k.replace(PREFIX, "")] = v
+        job_config[k.replace(prefix, "")] = v
 
     return job_config
 
 
 @helpers_store_parsers.ignore_file_not_found
-def _parse_tuning_config(dirname, tuning_config_file_location):
-    with open(register_important_file(dirname, tuning_config_file_location)) as f:
-        tuning_config = json.load(f)
+def _parse_workload_config(dirname, locations):
+    with open(register_important_file(dirname, locations.workload_config_file)) as f:
+        workload_config = json.load(f)
 
-    return tuning_config
+    return workload_config
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_ray_logs(dirname):
+    ray_metrics = types.SimpleNamespace()
+    ray_metrics.summary = types.SimpleNamespace()
+    ray_metrics.summary.time = None
+
+    ray_metrics.progress = []
+
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/job_pod.log")) as f:
+        for line in f.readlines():
+            if not line.startswith("---"):
+                continue
+            ray_metrics.summary.time = float(line.strip().split("::: ")[-1].split()[0])
+            break
+
+    return ray_metrics

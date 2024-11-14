@@ -143,7 +143,7 @@ class Fine_Tuning:
             dataset_prepare_cache_only=False,
             container_image="quay.io/rhoai/ray:2.35.0-py39-cu121-torch24-fa26",
             ray_version="2.35.0",
-            gpu=1,
+            gpu=0,
             memory=10,
             cpu=1,
             request_equals_limits=False,
@@ -157,6 +157,8 @@ class Fine_Tuning:
 
             sleep_forever=False,
             capture_artifacts=True,
+
+            shutdown_cluster=False,
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -193,6 +195,8 @@ class Fine_Tuning:
           capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
 
           workload: the name of the workload job to run (see the role's workload directory)
+
+          shutdown_cluster: if True, let the RayJob shutdown the RayCluster when the job terminates
         """
 
         if dataset_name is None:

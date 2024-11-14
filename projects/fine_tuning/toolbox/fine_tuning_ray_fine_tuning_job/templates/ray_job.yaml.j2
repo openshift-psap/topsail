@@ -10,7 +10,7 @@ spec:
   # submissionMode: "K8sJobMode"
   entrypoint: bash /mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}
   # shutdownAfterJobFinishes specifies whether the RayCluster should be deleted after the RayJob finishes. Default is false.
-  shutdownAfterJobFinishes: true
+  shutdownAfterJobFinishes: {{ fine_tuning_ray_fine_tuning_job_shutdown_cluster }}
 
   # ttlSecondsAfterFinished specifies the number of seconds after which the RayCluster will be deleted after the RayJob finishes.
   # ttlSecondsAfterFinished: 10

@@ -42,7 +42,7 @@ fine_tuning_ray_fine_tuning_job_container_image: quay.io/rhoai/ray:2.35.0-py39-c
 fine_tuning_ray_fine_tuning_job_ray_version: 2.35.0
 
 # the number of GPUs to request for the fine-tuning job
-fine_tuning_ray_fine_tuning_job_gpu: 1
+fine_tuning_ray_fine_tuning_job_gpu: 0
 
 # the number of RAM gigs to request for to the fine-tuning job (in Gigs)
 fine_tuning_ray_fine_tuning_job_memory: 10
@@ -70,3 +70,6 @@ fine_tuning_ray_fine_tuning_job_sleep_forever: false
 
 # if enabled, captures the artifacts that will help post-mortem analyses
 fine_tuning_ray_fine_tuning_job_capture_artifacts: true
+
+# if True, let the RayJob shutdown the RayCluster when the job terminates
+fine_tuning_ray_fine_tuning_job_shutdown_cluster: false

@@ -255,6 +255,13 @@ def extract_cluster_info(nodes_info):
 def parse_rhods_info(dirname, capture_state_dir, version_name=None):
     rhods_info = types.SimpleNamespace()
 
+    if capture_state_dir is None:
+        logging.error("parse_rhods_info: `capture_state_dir` not available, returning dummy values :/")
+        rhods_info.version = "not available"
+        rhods_info.createdAt_raw = "not available"
+        rhods_info.full_version = "0.0.0"
+        return rhods_info
+
     with open(register_important_file(dirname, capture_state_dir / "rhods.version")) as f:
         rhods_info.version = f.read().strip()
 

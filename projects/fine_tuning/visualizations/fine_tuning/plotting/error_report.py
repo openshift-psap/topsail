@@ -70,8 +70,8 @@ def _get_test_setup(entry):
 
     setup_info += [html.Li([f"Test UUID:", html.Code(entry.results.test_uuid, style={"white-space": "pre-wrap"})])]
 
-    setup_info += [html.Li([f"Job configuration:",
-                            html.A(html.Code("config_final.json"), href=artifacts_basedir / entry.results.locations.tuning_config_file, target="_blank"),
+    setup_info += [html.Li([f"Workload configuration:",
+                            html.A(html.Code("config_final.json"), href=artifacts_basedir / entry.results.locations.workload_config_file, target="_blank"),
                             html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
 
     setup_info += [html.Li([f"Job execution"])]
@@ -82,9 +82,15 @@ def _get_test_setup(entry):
     if entry.results.finish_reason.message:
         exec_info += [html.Li([f"Exit message:", html.Code(entry.results.finish_reason.message, style={"white-space": "pre-wrap"})])]
 
-    metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
-    if metrics.get("progress") or metrics.get("summary"):
-        exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
+    if entry.results.locations.has_fms:
+        metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
+        if metrics and (metrics.get("progress") or metrics.get("summary")):
+            exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
+
+    elif entry.results.locations.has_ray:
+        metrics = yaml.safe_load(json.dumps(entry.results.ray_metrics, default=functools.partial(json_dumper, strict=False)))
+        if metrics.get("progress") or metrics.get("summary"):
+            exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
 
     if entry.results.locations.job_logs:
         exec_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]
