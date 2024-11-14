@@ -86,6 +86,7 @@ The parsers of the main workload components rely on the ``simple``
 store.
 
 ::
+
    store_simple.register_custom_parse_results(local_store.parse_directory)
 
 The ``simple`` store searches for a ``settings.yaml`` file and an
@@ -97,6 +98,7 @@ current directory is considered a test root directory.
 The parsing is done this way:
 
 ::
+
    if exists(CACHE_FILE) and not MATBENCH_STORE_IGNORE_CACHE == true:
      results = reload(CACHE_FILE)
    else:
@@ -114,11 +116,13 @@ Mind that if you are working on the parsers, you should disable the
 cache, or your modifications will not be taken into account.
 
 ::
+
    export MATBENCH_STORE_IGNORE_CACHE=true
 
 You can re-enable it afterwards with:
 
 ::
+
    unset MATBENCH_STORE_IGNORE_CACHE
 
 The results of the main parser is a ``types.SimpleNamespace``
@@ -268,6 +272,7 @@ Performance Testing (CPT).
   OpenMetrics idea.
 
 ::
+
    # HELP kserve_container_cpu_usage_max Max CPU usage of the Kserve container | container_cpu_usage_seconds_total
    # UNIT kserve_container_cpu_usage_max cores
    kserve_container_cpu_usage_max{instance_type="g5.2xlarge", accelerator_name="NVIDIA-A10G", ocp_version="4.16.0-rc.6", rhoai_version="2.13.0-rc1+2024-09-02", model_name="flan-t5-small", ...} 1.964734477279039
@@ -351,6 +356,7 @@ So eventually, the KPIs are the combination of the generic part
 (``matbench_models.KPI``) and project specific labels (``Settings``):
 
 ::
+
    class KPI(matbench_models.KPI, Settings): pass
    KPIs = matbench_models.getKPIsModel("KPIs", __name__, kpi.KPIs, KPI)
 
@@ -471,6 +477,7 @@ function, metadata, format, etc``)
 Second, when the LTS payload is generated via the ``helpers_store``
 
 ::
+
    import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 
 the LTS payload is passed to the KPI function, and the full KPI is
@@ -490,6 +497,7 @@ The ``plotting`` plot classes generate Plotly plots. They receive a
 set of parameters about what should be plotted:
 
 ::
+
    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
        ...
 
@@ -497,6 +505,7 @@ and they return a Plotly figure, and optionally some text to write
 below the plot:
 
 ::
+
    return fig, msg
 
 The parameters are mostly useful when multiple experiments have been
@@ -507,6 +516,7 @@ captured:
   a filtered list of all the entry to include in the plot.
 
 ::
+
    for entry in common.Matrix.all_records(settings, setting_lists):
        # extract plot data from entry
        pass
@@ -515,6 +525,7 @@ Some plotting classes may be written to display only one experiment
 results. A fail-safe exit can be written this way:
 
 ::
+
    if common.Matrix.count_records(settings, setting_lists) != 1:
        return {}, "ERROR: only one experiment must be selected"
 
