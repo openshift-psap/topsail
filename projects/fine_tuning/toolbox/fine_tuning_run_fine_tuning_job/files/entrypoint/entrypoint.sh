@@ -6,13 +6,15 @@ set -o nounset
 set -o errtrace
 set -x
 
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 echo "Transformer version"
 pip freeze | grep transformers
 
 echo "Source dataset: $DATASET_SOURCE"
 
 prepare_dataset() {
-    MAX_SEQ_LENGTH=$(cat $SFT_TRAINER_CONFIG_JSON_PATH | grep max_seq_length | awk '{print $2}' | cut -d"," -f1)
+    MAX_SEQ_LENGTH=$(cat $CONFIG_JSON_PATH | grep max_seq_length | awk '{print $2}' | cut -d"," -f1)
     DATASET_PREFER_CACHE_FILE="/mnt/storage/dataset/$(basename "${DATASET_TRANSFORM:-}")_replicate_${DATASET_REPLICATION}_max${MAX_SEQ_LENGTH}tokens_$(basename "${DATASET_SOURCE}")"
     if [[ -n "${DATASET_PREFER_CACHE:-}" && -f "${DATASET_PREFER_CACHE_FILE:-}" ]]; then
         echo "Found dataset cache file $DATASET_PREFER_CACHE. Not regenerating it."
@@ -40,24 +42,29 @@ prepare_dataset() {
     fi
 }
 
-prepare_dataset
+if [[ "$WORKLOAD" == "fms" ]]; then
 
-CACHE_FILE="${DATASET_DEST}.study_dataset.cache"
-if [ ! -f "$CACHE_FILE" ]; then
-    python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
+    prepare_dataset
+
+    CACHE_FILE="${DATASET_DEST}.study_dataset.cache"
+    if [ ! -f "$CACHE_FILE" ]; then
+        python /mnt/entrypoint/study_dataset.py > "$CACHE_FILE"
+    fi
+    cat "$CACHE_FILE"
+
+    echo "# sha256sum of the dataset files"
+    sha256sum "$DATASET_SOURCE" "$DATASET_DEST"
+
+    if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
+        echo "DATASET_PREPARE_CACHE_ONLY is set, stopping here."
+        exit 0
+    fi
+else
+    echo "Not running with FMS-HF-Tuning, using the raw dataset file from '$DATASET_SOURCE'"
 fi
-cat "$CACHE_FILE"
 
-echo "# sha256sum of the dataset files"
-sha256sum "$DATASET_SOURCE" "$DATASET_DEST"
-
-if [[ "${DATASET_PREPARE_CACHE_ONLY:-0}" == true ]]; then
-    echo "DATASET_PREPARE_CACHE_ONLY is set, stopping here."
-    exit 0
-fi
-
-echo "# SFT-Trainer configuration:"
-cat "$SFT_TRAINER_CONFIG_JSON_PATH"
+echo "# Training job configuration:"
+cat "$CONFIG_JSON_PATH"
 
 echo "# sha256sum of the $MODEL_NAME files"
 if [[ -f "/mnt/storage/model/${MODEL_NAME}.sha256sum" ]]; then
@@ -79,34 +86,23 @@ if [[ "${SLEEP_FOREVER:-}" ]]; then
     echo "Fine-tuning command:"
     cat <<EOF
 oc rsh -n $(cat /run/secrets/kubernetes.io/serviceaccount/namespace) $(cat /proc/sys/kernel/hostname)
-cp \$SFT_TRAINER_CONFIG_JSON_PATH .
-export SFT_TRAINER_CONFIG_JSON_PATH=\$PWD/config.json
-python /app/accelerate_launch.py
+cp \$CONFIG_JSON_PATH .
+export CONFIG_JSON_PATH=\$PWD/config.json
 EOF
+    if [[ "${WORKLOAD:-}" == fms ]]; then
+        cat <<EOF
+bash run_fms.sh
+EOF
+    elif [[ "${WORKLOAD:-}" == ilab ]]; then
+        cat <<EOF
+...
+EOF
+    fi
     exec sleep inf
 fi
 
-if [[ $WORLD_SIZE == 1 ]]; then
-    echo "Running on a single machine."
-
-    if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
-        echo "Running with a single GPU"
-    else
-        echo "Running with a $NUM_GPUS GPUs"
-    fi
-    time python /app/accelerate_launch.py
-    exit 0
+if [[ "${WORKLOAD:-}" == fms ]]; then
+    exec bash "$THIS_DIR"/run_fms.sh
+elif [[ "${WORKLOAD:-}" == ilab ]]; then
+    exec bash "$THIS_DIR"/run_ilab.sh
 fi
-echo "Running on $WORLD_SIZE machines with $NUM_GPUS GPUs each."
-
-time accelerate launch \
-     --debug \
-     --machine_rank $RANK \
-     --num_machines $WORLD_SIZE \
-     --num_processes $WORLD_SIZE \
-     --main_process_ip $MASTER_ADDR \
-     --main_process_port $MASTER_PORT \
-     --mixed_precision no \
-     --dynamo_backend no \
-     --multi_gpu \
-     launch_training.py

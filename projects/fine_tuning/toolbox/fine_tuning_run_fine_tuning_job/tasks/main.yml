@@ -26,11 +26,15 @@
 
 - name: Prepare the config file template
   template:
-    src: "{{ fine_tuning_job_config_template }}"
+    src: "{% if fine_tuning_run_fine_tuning_job_workload == 'fms' -%}
+    {{ fine_tuning_job_fms_config_template }}
+{%- elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
+    {{ fine_tuning_job_ilab_config_template }}
+{%- endif %}"
     dest: "{{ artifact_extra_logs_dir }}/src/config_base.yaml"
     mode: '0400'
 
-- name: Save the hype-parameters overrides into a file
+- name: Save the hyper-parameters overrides into a file
   shell: |
     set -o pipefail;
 
@@ -201,6 +205,7 @@
         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
         > {{ artifact_extra_logs_dir }}/artifacts/pod.log
     ignore_errors: true
+    when: fine_tuning_run_fine_tuning_job_capture_artifacts | bool
 
   - name: Capture the state of the fine-tuning Pod resource
     shell:
@@ -220,3 +225,4 @@
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
     ignore_errors: true
+    when: fine_tuning_run_fine_tuning_job_capture_artifacts | bool
