@@ -97,7 +97,7 @@ class BaseStore():
                 logging.warning(f"Cannot resolve {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}'")
             else:
                 if len(resolutions) > 1:
-                    logging.warning(f"Found multiple resolutions for {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}': {resolutions}. Taking the last one")
+                    logging.debug(f"Found multiple resolutions for {artifact_dirname} glob '{unresolved_dirname}' in '{dirname}': {resolutions}. Taking the last one")
                     resolved_dir = [r.relative_to(dirname) for r in sorted(resolutions)][-1]
                 else:
                     resolved_dir = resolutions[0].relative_to(dirname)
