@@ -38,10 +38,11 @@ class Fine_Tuning:
             prepare_only=False,
             delete_other=False,
 
-            worker_replicas=0,
+            pod_count=1,
 
             hyper_parameters={},
 
+            capture_artifacts=True,
             sleep_forever=False,
     ):
         """
@@ -70,10 +71,11 @@ class Fine_Tuning:
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of Pods to include in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 
+          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
         """
 
@@ -96,7 +98,7 @@ class Fine_Tuning:
             memory=10,
             cpu=1,
 
-            worker_replicas=0,
+            pod_count=1,
 
             hyper_parameters={},
 
@@ -117,11 +119,12 @@ class Fine_Tuning:
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of pods to deploy in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
+          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
         """
 
         return RunAnsibleRole(locals())
@@ -153,7 +156,7 @@ class Fine_Tuning:
             prepare_only=False,
             delete_other=False,
 
-            worker_replicas=2,
+            pod_count=1,
 
             hyper_parameters={},
 
@@ -188,7 +191,7 @@ class Fine_Tuning:
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of Pods to include in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 

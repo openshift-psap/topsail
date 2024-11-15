@@ -259,7 +259,7 @@ ci_presets:
   # ---
 
   multi_node_training:
-    tests.fine_tuning.test_settings.worker_replicas: 1
+    tests.fine_tuning.test_settings.pod_count: 1
     fine_tuning.pvc.access_mode: ReadWriteMany
 
   # ---
@@ -332,7 +332,7 @@ ci_presets:
     extends: [ray_bench]
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
-    tests.fine_tuning.test_settings.worker_replicas: [16, 32, 64, 128, 256, 512]
+    tests.fine_tuning.test_settings.pod_count: [16, 32, 64, 128, 256, 512]
     tests.fine_tuning.test_settings.hyper_parameters.num_samples: [20, 75, 150]
     tests.fine_tuning.test_settings.gpu: null
 
@@ -516,7 +516,7 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       dataset_replication: 1
-      worker_replicas: null
+      pod_count: null
       container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html

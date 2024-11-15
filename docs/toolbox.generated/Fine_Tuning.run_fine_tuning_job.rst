@@ -120,14 +120,23 @@ Parameters
 * If True, delete the other PyTorchJobs before running
 
 
-``worker_replicas``  
+``pod_count``  
 
-* Number of worker replicas to deploy
+* Number of Pods to include in the job
+
+* default value: ``1``
 
 
 ``hyper_parameters``  
 
 * Dictionnary of hyper-parameters to pass to sft-trainer
+
+
+``capture_artifacts``  
+
+* If enabled, captures the artifacts that will help post-mortem analyses
+
+* default value: ``True``
 
 
 ``sleep_forever``  

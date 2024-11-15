@@ -31,8 +31,8 @@ fine_tuning_run_quality_evaluation_memory: 10
 # the number of CPU cores to request for the fine-tuning job (in cores)
 fine_tuning_run_quality_evaluation_cpu: 1
 
-# number of worker replicas to deploy
-fine_tuning_run_quality_evaluation_worker_replicas: 0
+# number of pods to deploy in the job
+fine_tuning_run_quality_evaluation_pod_count: 1
 
 # dictionnary of hyper-parameters to pass to sft-trainer
 fine_tuning_run_quality_evaluation_hyper_parameters: {}

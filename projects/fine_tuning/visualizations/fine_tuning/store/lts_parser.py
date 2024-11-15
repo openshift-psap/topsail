@@ -92,7 +92,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.accelerator_type = gpu_names or "no accelerator"
 
-    replicas = 1 + results.job_config.get("worker_replicas", 0)
+    replicas = results.job_config.get("pod_count", 1)
     accelerators_per_replica = results.job_config["gpu"]
 
     lts_settings.replicas = replicas
