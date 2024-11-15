@@ -15,6 +15,8 @@ import matrix_benchmarking.cli_args as cli_args
 import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
+from . import FLAVOR, RAY_FLAVOR, FMS_FLAVOR
+
 register_important_file = None # will be when importing store/__init__.py
 
 K8S_TIME_FMT = "%Y-%m-%dT%H:%M:%SZ"
@@ -23,8 +25,10 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
-artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
-artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR = "*__fine_tuning__ray_fine_tuning_job"
+if FLAVOR == FMS_FLAVOR:
+    artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
+elif FLAVOR == RAY_FLAVOR:
+    artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR = "*__fine_tuning__ray_fine_tuning_job"
 artifact_dirnames.RHODS_CAPTURE_STATE = "*__rhods__capture_state"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -35,18 +39,23 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/nodes.json",
     f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/ocp_version.yml",
 
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
-
-    f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/src/config_final.json",
-    f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/artifacts/pod.log",
-
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.createdAt",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.version",
 ]
 
+if FLAVOR == FMS_FLAVOR:
+    IMPORTANT_FILES += [
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.json",
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
+    ]
+elif FLAVOR == RAY_FLAVOR:
+    IMPORTANT_FILES += [
+        f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/src/config_final.json",
+        f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/artifacts/job_pod.log",
+        f"{artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR}/_ansible.play.yaml",
+    ]
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
@@ -250,8 +259,8 @@ def _parse_ray_finish_reason(dirname):
 def _prepare_file_locations(dirname):
     locations = types.SimpleNamespace()
 
-    locations.has_fms = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR is not None
-    locations.has_ray = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR is not None
+    locations.has_fms = FLAVOR == FMS_FLAVOR
+    locations.has_ray = FLAVOR == RAY_FLAVOR
 
     if locations.has_fms:
         locations.job_dir = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR
@@ -259,7 +268,7 @@ def _prepare_file_locations(dirname):
 
     elif locations.has_ray:
         locations.job_dir = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR
-        locations.job_logs = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/pod.log"
+        locations.job_logs = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/job_pod.log"
     else:
         logging.error("Couldn't fine the FMS nor Ray job directory ...")
         locations.job_dir = None
