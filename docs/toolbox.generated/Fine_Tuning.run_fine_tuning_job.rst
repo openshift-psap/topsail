@@ -33,6 +33,11 @@ Parameters
 * The name of the PVC where the model and dataset are stored
 
 
+``workload``  
+
+* The name of the workload to run inside the container (fms or ilab)
+
+
 ``model_name``  
 
 * The name of the model to use inside the /dataset directory of the PVC

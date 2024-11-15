@@ -19,8 +19,9 @@ class Fine_Tuning:
             namespace,
             pvc_name,
 
-            model_name,
+            workload,
 
+            model_name,
             dataset_name,
             dataset_replication=1,
             dataset_transform=None,
@@ -50,6 +51,7 @@ class Fine_Tuning:
           name: the name of the fine-tuning job to create
           namespace: the name of the namespace where the scheduler load will be generated
           pvc_name: the name of the PVC where the model and dataset are stored
+          workload: the name of the workload to run inside the container (fms or ilab)
 
           model_name: the name of the model to use inside the /dataset directory of the PVC
 

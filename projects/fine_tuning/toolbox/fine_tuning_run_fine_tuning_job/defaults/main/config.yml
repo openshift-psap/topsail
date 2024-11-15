@@ -15,6 +15,10 @@ fine_tuning_run_fine_tuning_job_namespace:
 # Mandatory value
 fine_tuning_run_fine_tuning_job_pvc_name:
 
+# the name of the workload to run inside the container (fms or ilab)
+# Mandatory value
+fine_tuning_run_fine_tuning_job_workload:
+
 # the name of the model to use inside the /dataset directory of the PVC
 # Mandatory value
 fine_tuning_run_fine_tuning_job_model_name:
