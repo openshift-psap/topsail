@@ -217,6 +217,9 @@ class BaseStore():
 
 
     def build_lts_payloads(self):
+        if not self.lts_payload_model:
+            raise ValueError("Cannot build the LTS payload: no `lts_payload_model` defined in this workload.")
+
         for entry in common.Matrix.processed_map.values():
             results = entry.results
             lts_payload = results.lts
