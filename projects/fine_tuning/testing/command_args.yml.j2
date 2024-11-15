@@ -56,7 +56,17 @@ fine_tuning run_fine_tuning_job:
   name: {{ tests.fine_tuning.test_settings.job_name }}
   namespace: "{{ tests.fine_tuning.namespace }}"
   pvc_name: "{{ fine_tuning.pvc.name }}"
+
+{% if tests.fine_tuning.fms.enabled %}
+  workload: fms
   container_image: "{{ tests.fine_tuning.fms.image }}"
+{% elif tests.fine_tuning.ilab.enabled %}
+  workload: ilab
+  container_image: "{{ tests.fine_tuning.ilab.image }}"
+{% else %}
+  workload: undefined
+  container_image: undefined
+{% endif %}
 
   model_name: {{ tests.fine_tuning.test_settings.model_name }}
   dataset_name: {{ tests.fine_tuning.test_settings.dataset_name }}
