@@ -16,10 +16,10 @@ SUPPORTED_FLAVORS = (RAY_FLAVOR, FMS_FLAVOR)
 FLAVOR = __package__.split(".")[-2]
 if FLAVOR == "fine_tuning":
     raise ValueError(f"Please use a supported flavor of the fine_tuning" +
-                     f" workload visualization ({', '.join(SUPPORTED)})")
+                     f" workload visualization ({', '.join(SUPPORTED_FLAVORS)})")
 elif FLAVOR not in SUPPORTED_FLAVORS:
     raise ValueError(f"{FLAVOR} is not a supported flavor of the fine_tuning" +
-                     f" workload visualization ({', '.join(SUPPORTED)}). Received {FLAVOR}.")
+                     f" workload visualization ({', '.join(SUPPORTED_FLAVORS)}). Received {FLAVOR}.")
 
 logging.info(f"Running with the {FLAVOR} of the fine_tuning visualization package.")
 
