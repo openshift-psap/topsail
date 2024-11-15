@@ -64,7 +64,7 @@ class RayBenchmarkSummary():
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        x_key = ordered_vars[0]
+        x_key = ordered_vars[0] if ordered_vars else None
         y_key = "time"
         data = generateRaySummaryData(entries, x_key, y_key, variables)
 
