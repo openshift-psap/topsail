@@ -12,7 +12,8 @@ import projects.matrix_benchmarking.visualizations.helpers.store as helpers_stor
 
 RAY_FLAVOR = "ray_benchmark"
 FMS_FLAVOR = "fms_hf_tuning"
-SUPPORTED_FLAVORS = (RAY_FLAVOR, FMS_FLAVOR)
+ILAB_FLAVOR = "ilab_training"
+SUPPORTED_FLAVORS = (RAY_FLAVOR, FMS_FLAVOR, ILAB_FLAVOR)
 FLAVOR = __package__.split(".")[-2]
 if FLAVOR == "fine_tuning":
     raise ValueError(f"Please use a supported flavor of the fine_tuning" +
@@ -35,17 +36,15 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 ###
 
+store_conf = dict()
 if FLAVOR == FMS_FLAVOR:
-    store_conf = dict(
+    store_conf |= dict(
         lts_payload_model=models_lts.Payload,
         generate_lts_payload=lts_parser.generate_lts_payload,
 
         models_kpis=models_kpi.KPIs,
         get_kpi_labels=lts_parser.get_kpi_labels,
     )
-elif FLAVOR == RAY_FLAVOR:
-    store_conf = dict()
-    # not LTS/KPI for the time being.
 
 local_store = helpers_store.BaseStore(
     cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
