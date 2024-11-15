@@ -341,7 +341,23 @@ ci_presets:
   ilab:
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ilab.enabled: true
-    matbench.workload: projects.fine_tuning.visualizations.ilab_tuning
+    tests.fine_tuning.test_settings.name: ilab
+    tests.fine_tuning.test_settings.dataset_name: sdg_data.jsonl
+    tests.fine_tuning.test_settings.model_name: granite-3b-code-instruct@hf
+    tests.fine_tuning.test_settings.dataset_replication: null
+    matbench.workload: projects.fine_tuning.visualizations.ilab_training
+    matbench.config_file: ilab_training.yaml
+    matbench.lts.generate: false
+    tests.fine_tuning.test_settings.hyper_parameters:
+      num_epochs: null
+
+  ilab_scale:
+    extends: [ilab]
+
+    tests.fine_tuning.test_settings.pod_count: [1, 2, 4, 6, 8]
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 8]
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: true
 
   # ---
 
@@ -483,6 +499,11 @@ fine_tuning:
       type: dataset
       source_dir: /manually/populated
       response_template: "\n### Response:"
+
+    sdg_data.jsonl:
+      type: dataset
+      source_dir: /manually/populated
+      response_template: null
 
     alpaca_data.json:
       type: dataset
