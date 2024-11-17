@@ -6,9 +6,9 @@ import os
 logger = logging.getLogger("sft_trainer")
 
 def load_fms_hf_tuning_configuration():
-    config_file = os.environ.get("SFT_TRAINER_CONFIG_JSON_PATH")
+    config_file = os.environ.get("CONFIG_JSON_PATH")
     if not config_file:
-        logging.warn("No SFT_TRAINER_CONFIG_JSON_PATH available...")
+        logging.warn("No CONFIG_JSON_PATH available...")
         return {}
 
     with open(config_file) as f:
