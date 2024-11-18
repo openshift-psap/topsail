@@ -85,13 +85,13 @@ spec:
   rayVersion: {{ fine_tuning_ray_fine_tuning_job_ray_version }}
   workerGroupSpecs:
   - groupName: {{ fine_tuning_ray_fine_tuning_job_name }}
-    maxReplicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
-    minReplicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
+    maxReplicas: {{ fine_tuning_ray_fine_tuning_job_pod_count -1 }}
+    minReplicas: {{ fine_tuning_ray_fine_tuning_job_pod_count -1 }}
     rayStartParams:
       block: "true"
       num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
-    replicas: {{ fine_tuning_ray_fine_tuning_job_worker_replicas }}
+    replicas: {{ fine_tuning_ray_fine_tuning_job_pod_count }}
     template:
       spec:
         containers:

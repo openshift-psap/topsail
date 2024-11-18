@@ -64,9 +64,11 @@ Parameters
 * default value: ``1``
 
 
-``worker_replicas``  
+``pod_count``  
 
-* Number of worker replicas to deploy
+* Number of pods to deploy in the job
+
+* default value: ``1``
 
 
 ``hyper_parameters``  

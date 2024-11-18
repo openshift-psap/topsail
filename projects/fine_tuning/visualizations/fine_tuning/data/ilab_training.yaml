@@ -1,0 +1,6 @@
+visualize:
+- id: scale_test
+  generate:
+  - "report: Error report"
+  - "report: ILab report"
+  - "report: ILab HyperParameters report"

@@ -75,6 +75,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
     do_many_model = config.project.get_config("tests.fine_tuning.many_model.enabled")
     do_fms = config.project.get_config("tests.fine_tuning.fms.enabled")
+    do_ilab = config.project.get_config("tests.fine_tuning.ilab.enabled")
     do_quality_evaluation = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
     do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
 
@@ -113,6 +114,10 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     elif do_ray:
         workload = config.project.get_config("tests.fine_tuning.ray.workload")
         test_dir_name = f"ray__{workload}"
+    elif do_ilab:
+        test_dir_name = "ilab_fine_tuning"
+    else:
+        raise ValueError("Fine-tuning flavor not handled. This is a code error.")
 
     with env.NextArtifactDir(test_dir_name):
         test_artifact_dir_p[0] = env.ARTIFACT_DIR
@@ -131,7 +136,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
                 with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
                     yaml.dump(dict(mode="single-model"), f, indent=4)
 
-                if do_fms:
+                if do_fms or do_ilab:
                     test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
                     run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job",
                                                 extra=test_settings)
@@ -245,11 +250,13 @@ def _run_test_and_visualize(test_override_values=None):
 
     ray_enabled = config.project.get_config("tests.fine_tuning.ray.enabled")
     fms_enabled = config.project.get_config("tests.fine_tuning.fms.enabled")
+    ilab_enabled = config.project.get_config("tests.fine_tuning.ilab.enabled")
+
     quality_enabled = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
 
-    enabled = sum(1 for opt in (fms_enabled, quality_enabled, ray_enabled) if opt)
+    enabled = sum(1 for opt in (fms_enabled, quality_enabled, ray_enabled, ilab_enabled) if opt)
     if enabled != 1:
-        msg = f"FMS or Quality or Ray testing must be enabled. Found {enabled} enabled. Cannot proceed."
+        msg = f"FMS or Quality or Ray or Ilab testing must be enabled. Found {enabled} enabled. Cannot proceed."
         logging.error(msg)
         raise RuntimeError(msg)
 
@@ -511,15 +518,17 @@ def matbench_run_one():
 def _run_test_many_model(test_settings):
     ray_enabled = config.project.get_config("tests.fine_tuning.ray.enabled")
     fms_enabled = config.project.get_config("tests.fine_tuning.fms.enabled")
+    ilab_enabled = config.project.get_config("tests.fine_tuning.ilab.enabled")
+
     extra = test_settings | dict(prepare_only=True, delete_other=True)
 
-    if fms_enabled:
+    if fms_enabled or ilab_enabled:
         run.run_toolbox_from_config("fine_tuning", "run_fine_tuning_job", extra)
     elif ray_enabled:
         run.run_toolbox_from_config("fine_tuning", "ray_fine_tuning_job", extra)
 
-    artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__run_fine_tuning_job"))[-1]
     if fms_enabled:
+        artifact_dir = list(env.ARTIFACT_DIR.glob("*__fine_tuning__ray_fine_tuning_job"))[-1]
         fine_tuning_job_base = artifact_dir / "src" / "pytorchjob_fine_tuning.yaml"
 
     elif ray_enabled:

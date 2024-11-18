@@ -19,8 +19,9 @@ class Fine_Tuning:
             namespace,
             pvc_name,
 
-            model_name,
+            workload,
 
+            model_name,
             dataset_name,
             dataset_replication=1,
             dataset_transform=None,
@@ -37,10 +38,11 @@ class Fine_Tuning:
             prepare_only=False,
             delete_other=False,
 
-            worker_replicas=0,
+            pod_count=1,
 
             hyper_parameters={},
 
+            capture_artifacts=True,
             sleep_forever=False,
     ):
         """
@@ -50,6 +52,7 @@ class Fine_Tuning:
           name: the name of the fine-tuning job to create
           namespace: the name of the namespace where the scheduler load will be generated
           pvc_name: the name of the PVC where the model and dataset are stored
+          workload: the name of the workload to run inside the container (fms or ilab)
 
           model_name: the name of the model to use inside the /dataset directory of the PVC
 
@@ -68,10 +71,11 @@ class Fine_Tuning:
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of Pods to include in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 
+          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
         """
 
@@ -94,7 +98,7 @@ class Fine_Tuning:
             memory=10,
             cpu=1,
 
-            worker_replicas=0,
+            pod_count=1,
 
             hyper_parameters={},
 
@@ -115,11 +119,12 @@ class Fine_Tuning:
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of pods to deploy in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
+          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
         """
 
         return RunAnsibleRole(locals())
@@ -151,7 +156,7 @@ class Fine_Tuning:
             prepare_only=False,
             delete_other=False,
 
-            worker_replicas=2,
+            pod_count=1,
 
             hyper_parameters={},
 
@@ -186,7 +191,7 @@ class Fine_Tuning:
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
-          worker_replicas: number of worker replicas to deploy
+          pod_count: number of Pods to include in the job
 
           hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
 

@@ -259,7 +259,7 @@ ci_presets:
   # ---
 
   multi_node_training:
-    tests.fine_tuning.test_settings.worker_replicas: 1
+    tests.fine_tuning.test_settings.pod_count: 1
     fine_tuning.pvc.access_mode: ReadWriteMany
 
   # ---
@@ -332,9 +332,32 @@ ci_presets:
     extends: [ray_bench]
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
-    tests.fine_tuning.test_settings.worker_replicas: [16, 32, 64, 128, 256, 512]
+    tests.fine_tuning.test_settings.pod_count: [16, 32, 64, 128, 256, 512]
     tests.fine_tuning.test_settings.hyper_parameters.num_samples: [20, 75, 150]
     tests.fine_tuning.test_settings.gpu: null
+
+  # ---
+
+  ilab:
+    tests.fine_tuning.fms.enabled: false
+    tests.fine_tuning.ilab.enabled: true
+    tests.fine_tuning.test_settings.name: ilab
+    tests.fine_tuning.test_settings.dataset_name: sdg_data.jsonl
+    tests.fine_tuning.test_settings.model_name: granite-3b-code-instruct@hf
+    tests.fine_tuning.test_settings.dataset_replication: null
+    matbench.workload: projects.fine_tuning.visualizations.ilab_training
+    matbench.config_file: ilab_training.yaml
+    matbench.lts.generate: false
+    tests.fine_tuning.test_settings.hyper_parameters:
+      num_epochs: null
+
+  ilab_scale:
+    extends: [ilab]
+
+    tests.fine_tuning.test_settings.pod_count: [1, 2, 4, 6, 8]
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 8]
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: true
 
   # ---
 
@@ -477,6 +500,11 @@ fine_tuning:
       source_dir: /manually/populated
       response_template: "\n### Response:"
 
+    sdg_data.jsonl:
+      type: dataset
+      source_dir: /manually/populated
+      response_template: null
+
     alpaca_data.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
@@ -509,7 +537,7 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       dataset_replication: 1
-      worker_replicas: null
+      pod_count: null
       container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
@@ -549,6 +577,9 @@ tests:
       enabled: false
       workload: ray-benchmark
       image: quay.io/rhoai/ray:2.35.0-py311-cu121-torch24-fa26
+    ilab:
+      enabled: false
+      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fms_hf_tuning

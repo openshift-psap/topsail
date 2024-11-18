@@ -1,0 +1,24 @@
+---
+# long args only
+nnodes: {{ fine_tuning_run_fine_tuning_job_pod_count }}
+nproc_per_node: 1
+
+module: instructlab.training.main_ds
+
+model_name_or_path: "/mnt/storage/model/{{ fine_tuning_run_fine_tuning_job_model_name }}"
+data_path: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset_name }}"
+
+output_dir: "/mnt/output/model"
+num_epochs: 1
+effective_batch_size: 3840
+learning_rate: 1e-4
+num_warmup_steps: 800
+save_samples: 0
+log_level: INFO
+max_batch_len: 20000
+seed: 42
+cpu_offload_optimizer: true
+distributed_training_framework: fsdp
+cpu_offload_params: true
+is_granite: true
+checkpoint_at_epoch: true

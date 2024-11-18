@@ -15,7 +15,7 @@ import matrix_benchmarking.cli_args as cli_args
 import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
-from . import FLAVOR, RAY_FLAVOR, FMS_FLAVOR
+from . import FLAVOR, RAY_FLAVOR, FMS_FLAVOR, ILAB_FLAVOR
 
 register_important_file = None # will be when importing store/__init__.py
 
@@ -25,7 +25,8 @@ ANSIBLE_LOG_DATE_TIME_FMT = "%Y-%m-%d %H:%M:%S"
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR = "*__cluster__capture_environment"
-if FLAVOR == FMS_FLAVOR:
+
+if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
     artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
 elif FLAVOR == RAY_FLAVOR:
     artifact_dirnames.FINE_TUNING_RAY_FINE_TUNING_DIR = "*__fine_tuning__ray_fine_tuning_job"
@@ -43,7 +44,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.version",
 ]
 
-if FLAVOR == FMS_FLAVOR:
+if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
     IMPORTANT_FILES += [
         f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
         f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/artifacts/pod.log",
@@ -85,8 +86,13 @@ def parse_once(results, dirname):
 
     if results.locations.has_fms:
         results.sfttrainer_metrics = _parse_fms_logs(dirname)
-        results.allocated_resources = _parse_fms_allocated_resources(dirname)
-        results.finish_reason = _parse_fms_finish_reason(dirname)
+
+    if results.locations.has_ilab:
+        results.ilab_metrics = _parse_ilab_logs(dirname)
+
+    if results.locations.has_fms or results.locations.has_ilab:
+        results.allocated_resources = _parse_pytorch_allocated_resources(dirname)
+        results.finish_reason = _parse_pytorch_finish_reason(dirname)
 
     if results.locations.has_ray:
         results.ray_metrics = _parse_ray_logs(dirname)
@@ -202,8 +208,64 @@ def _parse_fms_logs(dirname):
     return sfttrainer_metrics
 
 
+ILAB_PROGRESS_KEYS = {
+    "overall_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="througput"),
+    "cuda_mem_allocated": types.SimpleNamespace(lower_better=True, units="Gi"),
+}
+
+"""
+{
+    "epoch": 6,
+    "step": 7,
+    "rank": 0,
+    "overall_throughput": 6.080472087782912,
+    "lr": 0.0,
+    "cuda_mem_allocated": 1.8076796531677246,
+    "cuda_malloc_retries": 0,
+    "num_loss_counted_tokens": 74968,
+    "batch_size": 55,
+    "total_loss": 200.84430690427916,
+    "samples_seen": 391,
+    "timestamp": "2024-11-16T07:06:54.421224"
+}
+"""
+
 @helpers_store_parsers.ignore_file_not_found
-def _parse_fms_allocated_resources(dirname):
+def _parse_ilab_logs(dirname):
+    ilab_metrics = types.SimpleNamespace()
+    ilab_metrics.summary = types.SimpleNamespace()
+    ilab_metrics.progress = []
+    ilab_metrics.dataset_stats = types.SimpleNamespace()
+
+    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
+        # metrics lines are printed in green. Look them up.
+        in_green = False
+        current_json = ""
+        for line in f.readlines():
+            if not in_green:
+                before, green_found, after = line.partition("[92m")
+                if not green_found:
+                    continue
+                in_green = True
+                line = after
+
+            before, white_found, after = line.partition("[0m")
+            if not white_found:
+                current_json += line
+                continue
+
+            current_json += before[:-1] # remove the trailing ^[ char ...
+            progress = types.SimpleNamespace()
+            progress.__dict__.update(json.loads(current_json))
+            ilab_metrics.progress.append(progress)
+            current_json = ""
+            in_green = False
+
+    return ilab_metrics
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_pytorch_allocated_resources(dirname):
     allocated_resources = types.SimpleNamespace()
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.json")) as f:
         pod_def = json.load(f)
@@ -222,7 +284,7 @@ def _parse_ray_allocated_resources(dirname):
 
 
 @helpers_store_parsers.ignore_file_not_found
-def _parse_fms_finish_reason(dirname):
+def _parse_pytorch_finish_reason(dirname):
     finish_reason = types.SimpleNamespace()
     finish_reason.exit_code = None
     finish_reason.message = "Parsing did not complete"
@@ -261,8 +323,9 @@ def _prepare_file_locations(dirname):
 
     locations.has_fms = FLAVOR == FMS_FLAVOR
     locations.has_ray = FLAVOR == RAY_FLAVOR
+    locations.has_ilab = FLAVOR == ILAB_FLAVOR
 
-    if locations.has_fms:
+    if locations.has_fms or locations.has_ilab:
         locations.job_dir = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR
         locations.job_logs = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log"
 
@@ -270,7 +333,7 @@ def _prepare_file_locations(dirname):
         locations.job_dir = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR
         locations.job_logs = artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/job_pod.log"
     else:
-        logging.error("Couldn't fine the FMS nor Ray job directory ...")
+        logging.error("Couldn't find the FMS/Ray/Ilab job directory ...")
         locations.job_dir = None
         locations.job_logs = None
 
@@ -289,7 +352,7 @@ def _prepare_file_locations(dirname):
 def _parse_job_config(dirname, locations):
     job_config = {}
 
-    if locations.has_fms:
+    if locations.has_fms or locations.has_ilab:
         prefix = "fine_tuning_run_fine_tuning_job_"
     elif locations.has_ray:
         prefix = "fine_tuning_ray_fine_tuning_job_"

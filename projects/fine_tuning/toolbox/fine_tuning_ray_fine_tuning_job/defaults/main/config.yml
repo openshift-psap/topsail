@@ -59,8 +59,8 @@ fine_tuning_ray_fine_tuning_job_prepare_only: false
 # if True, delete the other PyTorchJobs before running
 fine_tuning_ray_fine_tuning_job_delete_other: false
 
-# number of worker replicas to deploy
-fine_tuning_ray_fine_tuning_job_worker_replicas: 2
+# number of Pods to include in the job
+fine_tuning_ray_fine_tuning_job_pod_count: 1
 
 # dictionnary of hyper-parameters to pass to sft-trainer
 fine_tuning_ray_fine_tuning_job_hyper_parameters: {}

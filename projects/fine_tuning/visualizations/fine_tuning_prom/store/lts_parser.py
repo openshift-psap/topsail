@@ -39,7 +39,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.test_mode = import_settings.get("mode")
 
     if results.has_fine_tuning_dir:
-        replicas = 1 + results.job_config.get("worker_replicas", 0)
+        replicas = results.job_config.get("pod_count", 1)
         accelerators_per_replica = results.job_config["gpu"]
 
         lts_settings.replicas = replicas

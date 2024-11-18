@@ -60,9 +60,9 @@ spec:
               name: {{ job_name_safe }}-entrypoint
           - name: output-volume
             emptyDir: {}
-{% if fine_tuning_run_quality_evaluation_worker_replicas > 0 %}
+{% if fine_tuning_run_quality_evaluation_pod_count > 1 %}
     Worker:
-      replicas: {{ fine_tuning_run_quality_evaluation_worker_replicas }}
+      replicas: {{ fine_tuning_run_quality_evaluation_pod_count }}
       restartPolicy: Never
       template: *job_template
 {% endif %}

@@ -11,17 +11,28 @@ import projects.matrix_benchmarking.visualizations.helpers.plotting.report as re
 
 
 def register():
-    SFTTrainerReport()
-    SFTTrainerHyperParametersReport()
+    TrainingReport(flavor="SFTTrainer")
+    TrainingHyperParametersReport(flavor="SFTTrainer")
+    TrainingReport(flavor="ILab")
+    TrainingHyperParametersReport(flavor="ILab")
+
     RayBenchmarkReport()
 
 
-class SFTTrainerReport():
-    def __init__(self):
-        self.name = "report: SFTTrainer report"
+class TrainingReport():
+    def __init__(self, flavor):
+        self.flavor = flavor
+        self.name = f"report: {self.flavor} report"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
+        from ..store import parsers
+
+        self.summary_keys = parsers.SFT_TRAINER_SUMMARY_KEYS if flavor == "SFTTrainer" \
+            else parsers.ILAB_PROGRESS_KEYS
+
+        self.progress_keys = parsers.SFT_TRAINER_PROGRESS_KEYS if flavor == "SFTTrainer" \
+            else parsers.ILAB_PROGRESS_KEYS
 
         table_stats.TableStats._register_stat(self)
 
@@ -30,38 +41,47 @@ class SFTTrainerReport():
 
         header = []
 
-        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
+        header += [html.P(f"These plots show an overview of the metrics extracted from {self.flavor} logs.")]
 
         header += html.Br()
         header += html.Br()
         from ..store import parsers
-        header += [html.H2("SFTTrainer Summary metrics")]
+        header += [html.H2(f"{self.flavor} Summary metrics")]
 
-        for key in parsers.SFT_TRAINER_SUMMARY_KEYS:
+        for key in self.summary_keys.keys():
             header += [html.H3(key)]
-            header += report.Plot_and_Text("SFTTrainer Summary",
-                                                   report.set_config(dict(summary_key=key, speedup=True, efficiency=True), args))
+            header += report.Plot_and_Text(f"{self.flavor} Summary",
+                                           report.set_config(dict(summary_key=key, speedup=True, efficiency=True), args))
 
-        header += [html.H2("SFTTrainer Progress metrics")]
+        header += [html.H2(f"{self.flavor} Progress metrics")]
 
-        for key, properties in parsers.SFT_TRAINER_PROGRESS_KEYS.items():
+        for key, properties in self.progress_keys.items():
             if not getattr(properties, "plot", True):
                 continue
 
             header += [html.H3(key)]
-            header += report.Plot_and_Text("SFTTrainer Progress",
-                                                   report.set_config(dict(progress_key=key), args))
+            header += report.Plot_and_Text(f"{self.flavor} Progress",
+                                           report.set_config(dict(progress_key=key), args))
 
 
         return None, header
 
 
-class SFTTrainerHyperParametersReport():
-    def __init__(self):
-        self.name = "report: SFTTrainer HyperParameters report"
+class TrainingHyperParametersReport():
+    def __init__(self, flavor):
+        self.flavor = flavor
+        self.name = f"report: {self.flavor} HyperParameters report"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
+
+        from ..store import parsers
+
+        self.summary_keys = parsers.SFT_TRAINER_SUMMARY_KEYS if flavor == "SFTTrainer" \
+            else parsers.ILAB_PROGRESS_KEYS
+
+        self.progress_keys = parsers.SFT_TRAINER_PROGRESS_KEYS if flavor == "SFTTrainer" \
+            else parsers.ILAB_PROGRESS_KEYS
 
         table_stats.TableStats._register_stat(self)
 
@@ -70,13 +90,13 @@ class SFTTrainerHyperParametersReport():
 
         header = []
 
-        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
+        header += [html.P(f"These plots show an overview of the metrics extracted from {self.flavor} logs.")]
 
         header += html.Br()
         header += html.Br()
         from ..store import parsers
 
-        header += [html.H2("SFTTrainer Summary metrics. Hyper-parameters study.")]
+        header += [html.H2(f"{self.flavor} Summary metrics. Hyper-parameters study.")]
 
         if "gpu" in variables:
             filter_key = "gpu"
@@ -91,13 +111,13 @@ class SFTTrainerHyperParametersReport():
             if x_key is not None:
                 header += [html.H2(f"by {x_key}")]
 
-            for summary_key in parsers.SFT_TRAINER_SUMMARY_KEYS:
+            for summary_key in self.summary_keys.keys():
                 header += [html.H4(f"Metric: {summary_key}")]
                 for gpu_count in gpu_counts:
                     if gpu_count is not None:
                         header += [html.H4(f"with {gpu_count} GPU{'s' if gpu_count > 1 else ''} per job")]
 
-                    header += report.Plot_and_Text("SFTTrainer Summary",
+                    header += report.Plot_and_Text(f"{self.flavor} Summary",
                                                    report.set_config(
                                                        dict(summary_key=summary_key, filter_key=filter_key, filter_value=gpu_count, x_key=x_key),
                                                        args))
@@ -120,11 +140,10 @@ class RayBenchmarkReport():
 
         header = []
 
-        header += [html.P("These plots show an overview of the metrics extracted from SFTTrainer logs.")]
+        header += [html.P("These plots show an overview of the metrics extracted from Ray logs.")]
 
         header += html.Br()
         header += html.Br()
-        from ..store import parsers
 
         header += [html.H2("Ray Benchmark Summary metrics.")]
 
