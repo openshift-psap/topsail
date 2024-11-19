@@ -9,3 +9,6 @@ spec:
   resources:
     requests:
       storage: {{ storage_download_to_pvc_pvc_size }}
+{% if storage_download_to_pvc_pvc_storage_class_name %}
+  storageClassName: {{ storage_download_to_pvc_pvc_storage_class_name }}
+{% endif %}

@@ -64,9 +64,14 @@ Parameters
 
 ``pvc_size``  
 
-* The size of the PVC to request, when creating it
+* The size of the PVC to request, when creating the PVC
 
 * default value: ``80Gi``
+
+
+``pvc_storage_class_name``  
+
+* The name of the storage class to pass when creating the PVC
 
 
 ``image``  

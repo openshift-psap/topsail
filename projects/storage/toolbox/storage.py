@@ -57,6 +57,7 @@ class Storage:
             clean_first=False,
             pvc_access_mode="ReadWriteOnce",
             pvc_size="80Gi",
+            pvc_storage_class_name=None,
             image="registry.access.redhat.com/ubi9/ubi",
     ):
         """
@@ -71,7 +72,8 @@ class Storage:
             clean_first: if True, clears the storage directory before downloading.
             storage_dir: the path where to store the downloaded files, in the PVC
             pvc_access_mode: the access mode to request when creating the PVC
-            pvc_size: the size of the PVC to request, when creating it
+            pvc_size: the size of the PVC to request, when creating the PVC
+            pvc_storage_class_name: the name of the storage class to pass when creating the PVC
             image: the image to use for running the download Pod
         """
 

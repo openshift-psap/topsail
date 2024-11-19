@@ -217,7 +217,7 @@ class Config:
 
         platform_type = platform_type_cmd.stdout
         logging.info(f"detect_apply_metal_profile: infrastructure/cluster.status.platformStatus.type = {platform_type}")
-        if platform_type not in ("BareMetal", "None"):
+        if platform_type not in ("BareMetal", "None", "IBMCloud"):
             logging.info("detect_apply_metal_profile: Assuming not running in a bare-metal environment.")
             return False
         logging.info(f"detect_apply_metal_profile: Assuming running in a bare-metal environment. Applying the '{profile}' profile.")

@@ -67,7 +67,20 @@ then
 
     export AWS_SHARED_CREDENTIALS_FILE=$CRED_FILE
 
-    if ! time aws s3 cp "$DOWNLOAD_SOURCE" "${STORAGE_DIR}/${SOURCE_NAME}" --recursive --quiet
+    # check if the source is a directory
+    echo "Checking if the source exists (aborts silently if the file doesn't exist)"
+    obj_type=$(aws s3 ls $DOWNLOAD_SOURCE | awk '{print $1}')
+
+    if [[ "$obj_type" == "PRE" ]]
+    then
+        echo "Source is a directory. Downloading recursively."
+        args="--recursive --quiet"
+    else
+        echo "Source is a file."
+        args=
+    fi
+
+    if ! time aws s3 cp "$DOWNLOAD_SOURCE" "$STORAGE_DIR/$SOURCE_NAME" $args
     then
         rm -rf "${STORAGE_DIR}/${SOURCE_NAME}"
         echo "Copy failed :/"

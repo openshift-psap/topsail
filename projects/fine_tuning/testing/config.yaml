@@ -341,11 +341,13 @@ ci_presets:
   # ---
 
   ilab:
+    ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: sdg_data.jsonl
+    ci_presets.light["tests.fine_tuning.test_settings.model_name"]: ibm-granite/granite-3b-code-instruct@hf
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
     tests.fine_tuning.test_settings.dataset_name: sdg_data.jsonl
-    tests.fine_tuning.test_settings.model_name: granite-3b-code-instruct@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3b-code-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
     matbench.prom_workload: projects.fine_tuning.visualizations.ilab_prom
@@ -357,15 +359,18 @@ ci_presets:
   ilab_scale:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.pod_count: [1, 2, 4, 6, 8]
-    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 8]
+    tests.fine_tuning.test_settings.pod_count: [1, 2]
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 4, 8]
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
 
   # ---
 
+  cluster_instructlab:
+    clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
+    fine_tuning.pvc.storage_class_name: nfs-csi
+
   cluster_ibm_dgx:
-    extends: ["metal"]
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
     tests.fine_tuning.namespace: rhoai-tuning-test
     fine_tuning.pvc.name: rhoai-tuning-test
@@ -404,6 +409,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
+    instructlab-standalon-6rjg8-master-0: cluster_instructlab
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -475,6 +481,7 @@ fine_tuning:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
     size: 80Gi
+    storage_class_name: null
   model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
   sources:
     dmf:
