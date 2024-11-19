@@ -20,6 +20,9 @@ export TRITON_OVERRIDE_DIR=$TRITON_HOME
 
 mkdir -p "$CACHE_DIR"
 
+echo "Removing CUDA-Compat library from LD_LIBRARY_PATH ..."
+export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
+
 torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \

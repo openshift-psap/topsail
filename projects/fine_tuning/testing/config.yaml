@@ -309,6 +309,7 @@ ci_presets:
   fms:
     tests.fine_tuning.fms.enabled: false
     matbench.workload: projects.fine_tuning.visualizations.fms_hf_tuning
+    matbench.prom_workload: projects.fine_tuning.visualizations.fms_prom
 
   ray:
     tests.fine_tuning.fms.enabled: false
@@ -317,6 +318,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters: {}
     matbench.lts.generate: false
     tests.fine_tuning.test_settings.name: ray
+    matbench.prom_workload: projects.fine_tuning.visualizations.ray_prom
 
   ray_bench:
     extends: [ray, no_model]
@@ -346,6 +348,7 @@ ci_presets:
     tests.fine_tuning.test_settings.model_name: granite-3b-code-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
+    matbench.prom_workload: projects.fine_tuning.visualizations.ilab_prom
     matbench.config_file: ilab_training.yaml
     matbench.lts.generate: false
     tests.fine_tuning.test_settings.hyper_parameters:
@@ -502,8 +505,9 @@ fine_tuning:
 
     sdg_data.jsonl:
       type: dataset
-      source_dir: /manually/populated
       response_template: null
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
 
     alpaca_data.json:
       type: dataset
@@ -537,7 +541,7 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       dataset_replication: 1
-      pod_count: null
+      pod_count: 1
       container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
@@ -583,7 +587,7 @@ tests:
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fms_hf_tuning
-  prom_workload: projects.fine_tuning.visualizations.fine_tuning_prom
+  prom_workload: projects.fine_tuning.visualizations.fms_prom
   config_file: plots.yaml
   download:
     mode: prefer_cache
