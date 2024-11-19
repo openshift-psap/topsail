@@ -340,9 +340,9 @@ ci_presets:
       testing:
        size: small
        max_concurrency: 1024 
-    export_artifacts.path_prefix: four-H100-vllm-0.6.3.optimizations-chunked-prefill
+    export_artifacts.path_prefix: four-H100-2.16-cuda-vllm-optimizations-chunked-prefill
     kserve.model.serving_runtime.update_image: false
-    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:a8ba53e1b12309913cd958331dd8dda7f2b1fad39f5350d3c722608835e14512"
+    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:167aa05982214c3941afbdde7c5aff6f81040193a0db1dc06a5ad16af0a8780e"
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
