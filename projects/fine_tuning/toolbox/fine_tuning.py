@@ -44,6 +44,8 @@ class Fine_Tuning:
 
             capture_artifacts=True,
             sleep_forever=False,
+
+            ephemeral_output_pvc_size=None,
     ):
         """
         Run a simple fine-tuning Job.
@@ -77,6 +79,8 @@ class Fine_Tuning:
 
           capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
+
+          ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
         """
 
         return RunAnsibleRole(locals())

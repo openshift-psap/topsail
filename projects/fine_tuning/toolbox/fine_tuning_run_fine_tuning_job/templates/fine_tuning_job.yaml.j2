@@ -89,8 +89,20 @@ spec:
           - name: entrypoint-volume
             configMap:
               name: {{ job_name_safe }}-entrypoint
+{% if fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size %}
+          - name: output-volume
+            ephemeral:
+              volumeClaimTemplate:
+                metadata:
+                spec:
+                  accessModes: [ "ReadWriteOnce" ]
+                  resources:
+                    requests:
+                      storage: "{{ fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size }}"
+{% else %}
           - name: output-volume
             emptyDir: {}
+{% endif %}
 {% if fine_tuning_run_fine_tuning_job_pod_count > 1 %}
     Worker:
       replicas: {{ fine_tuning_run_fine_tuning_job_pod_count - 1 }}

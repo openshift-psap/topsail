@@ -143,3 +143,8 @@ Parameters
 
 * If true, sleeps forever instead of running the fine-tuning command.
 
+
+``ephemeral_output_pvc_size``  
+
+* If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
+
