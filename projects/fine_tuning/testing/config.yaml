@@ -364,6 +364,10 @@ ci_presets:
 
   # ---
 
+  cluster_instructlab:
+    clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
+    fine_tuning.pvc.storage_class_name: nfs-csi
+
   cluster_ibm_dgx:
     extends: ["metal"]
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
@@ -404,6 +408,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
+    instructlab-standalon-6rjg8-master-0: cluster_instructlab
   create:
     type: single # can be: single, ocp, managed
     keep: false
