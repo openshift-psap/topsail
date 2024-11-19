@@ -357,8 +357,8 @@ ci_presets:
   ilab_scale:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.pod_count: [1, 2, 4, 6, 8]
-    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 8]
+    tests.fine_tuning.test_settings.pod_count: [1, 2]
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 4, 8]
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
 
