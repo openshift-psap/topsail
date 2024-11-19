@@ -11,6 +11,22 @@ import matrix_benchmarking.store.simple as store_simple
 
 import projects.matrix_benchmarking.visualizations.helpers.store as helpers_store
 
+RAY_FLAVOR = "ray_prom"
+FMS_FLAVOR = "fms_prom"
+ILAB_FLAVOR = "ilab_prom"
+SUPPORTED_FLAVORS = (RAY_FLAVOR, FMS_FLAVOR, ILAB_FLAVOR)
+FLAVOR = __package__.split(".")[-2]
+if FLAVOR == "fine_tuning_prom":
+    raise ValueError(f"Please use a supported flavor of the fine_tuning" +
+                     f" workload visualization ({', '.join(SUPPORTED_FLAVORS)})")
+elif FLAVOR not in SUPPORTED_FLAVORS:
+    raise ValueError(f"{FLAVOR} is not a supported flavor of the fine_tuning" +
+                     f" workload visualization ({', '.join(SUPPORTED_FLAVORS)}). Received {FLAVOR}.")
+
+logging.info(f"Running with the {FLAVOR} of the fine_tuning visualization package.")
+
+### (keep this below the FLAVOR lookup, so that it can be used)
+
 from . import parsers
 from . import lts_parser
 from ..models import kpi as models_kpi
@@ -21,18 +37,31 @@ TEST_DIR_FILE = ".matbench_prom_db_dir"
 
 from ..models import lts as models_lts
 
+store_conf = dict()
+if FLAVOR == FMS_FLAVOR:
+    store_conf |= dict(
+        lts_payload_model=models_lts.Payload,
+        generate_lts_payload=lts_parser.generate_lts_payload,
+
+        models_kpis=models_kpi.KPIs,
+        get_kpi_labels=lts_parser.get_kpi_labels,
+    )
+else:
+    # not LTS/KPI configuration for the other flavors, for the time being.
+    pass
+
 local_store = helpers_store.BaseStore(
-    cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
+    cache_filename=CACHE_FILENAME,
+    important_files=IMPORTANT_FILES,
     extra_mandatory_files=[TEST_DIR_FILE],
-    artifact_dirnames=parsers.artifact_dirnames, artifact_paths=parsers.artifact_paths,
 
-    parse_always=parsers.parse_always, parse_once=parsers.parse_once,
+    artifact_dirnames=parsers.artifact_dirnames,
+    artifact_paths=parsers.artifact_paths,
 
-    lts_payload_model=models_lts.Payload,
-    generate_lts_payload=lts_parser.generate_lts_payload,
+    parse_always=parsers.parse_always,
+    parse_once=parsers.parse_once,
 
-    models_kpis=models_kpi.KPIs,
-    get_kpi_labels=lts_parser.get_kpi_labels,
+    **store_conf
 )
 
 parsers.register_important_file = local_store.register_important_file

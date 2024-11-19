@@ -6,6 +6,7 @@ import logging
 from .. import models
 from ..models import lts as models_lts
 
+from . import FLAVOR, RAY_FLAVOR, FMS_FLAVOR, ILAB_FLAVOR
 
 def generate_lts_payload(results, import_settings):
     lts_payload = types.SimpleNamespace()
@@ -38,7 +39,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     lts_settings.test_mode = import_settings.get("mode")
 
-    if results.has_fine_tuning_dir:
+    if FLAVOR == FMS_FLAVOR:
         replicas = results.job_config.get("pod_count", 1)
         accelerators_per_replica = results.job_config["gpu"]
 

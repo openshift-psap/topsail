@@ -8,12 +8,16 @@ import projects.matrix_benchmarking.visualizations.helpers.store.parsers as help
 
 from . import prom as workload_prom
 
+from . import FLAVOR, RAY_FLAVOR, FMS_FLAVOR, ILAB_FLAVOR
+
 register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.CLUSTER_DUMP_PROM_DB_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
 artifact_dirnames.RHODS_CAPTURE_STATE_DIR = "*__rhods__capture_state"
-artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
+if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
+    artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR = "*__fine_tuning__run_fine_tuning_job"
+
 artifact_paths = types.SimpleNamespace()
 
 IMPORTANT_FILES = [
@@ -25,16 +29,15 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.createdAt",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE_DIR}/rhods.version",
 
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
-
     f"*/test_start_end.json", f"test_start_end.json",
     "config.yaml",
     ".uuid",
     ".matbench_prom_db_dir",
 ]
 
-
+if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
+    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
@@ -58,12 +61,11 @@ def parse_once(results, dirname):
 
     results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
-    # won't be populated if FINE_TUNING_RUN_FINE_TUNING_DIR is missing
-    results.has_fine_tuning_dir = bool(artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR)
-
     results.locations = _prepare_file_locations(dirname)
-    results.job_config = _parse_job_config(dirname)
-    results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
+
+    if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
+        results.job_config = _parse_job_config(dirname)
+        results.tuning_config = _parse_tuning_config(dirname, results.locations.tuning_config_file)
 
 
 def _extract_metrics(dirname):
@@ -111,8 +113,7 @@ def _find_test_timestamps(dirname):
 def _prepare_file_locations(dirname):
     locations = types.SimpleNamespace()
 
-
-    if artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR:
+    if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
         locations.tuning_config_file = artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "src" / "config_final.json"
     else:
         locations.tuning_config_file = None
