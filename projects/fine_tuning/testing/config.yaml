@@ -369,7 +369,6 @@ ci_presets:
     fine_tuning.pvc.storage_class_name: nfs-csi
 
   cluster_ibm_dgx:
-    extends: ["metal"]
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
     tests.fine_tuning.namespace: rhoai-tuning-test
     fine_tuning.pvc.name: rhoai-tuning-test
