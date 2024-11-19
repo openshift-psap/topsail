@@ -18,7 +18,7 @@
 
 - name: Store the name of the objects
   set_fact:
-    download_name: download-{{ data_source_name }}-to-{{ storage_download_to_pvc_pvc_name }}
+    download_name: download-{{ data_source_name | lower }}-to-{{ storage_download_to_pvc_pvc_name | lower }}
 
 - name: Delete the creds secret, if it exists
   command:
