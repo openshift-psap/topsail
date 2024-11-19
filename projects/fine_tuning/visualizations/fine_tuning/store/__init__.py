@@ -45,11 +45,20 @@ if FLAVOR == FMS_FLAVOR:
         models_kpis=models_kpi.KPIs,
         get_kpi_labels=lts_parser.get_kpi_labels,
     )
+else:
+    # not LTS/KPI configuration for the other flavors, for the time being.
+    pass
 
 local_store = helpers_store.BaseStore(
-    cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
-    artifact_dirnames=parsers.artifact_dirnames, artifact_paths=parsers.artifact_paths,
-    parse_always=parsers.parse_always, parse_once=parsers.parse_once,
+    cache_filename=CACHE_FILENAME,
+    important_files=IMPORTANT_FILES,
+
+    artifact_dirnames=parsers.artifact_dirnames,
+    artifact_paths=parsers.artifact_paths,
+
+    parse_always=parsers.parse_always,
+    parse_once=parsers.parse_once,
+
     **store_conf
 )
 
