@@ -541,7 +541,7 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       dataset_replication: 1
-      pod_count: null
+      pod_count: 1
       container_image: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
