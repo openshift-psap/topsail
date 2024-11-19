@@ -480,6 +480,7 @@ fine_tuning:
     name: fine-tuning-storage
     access_mode: ReadWriteOnce
     size: 80Gi
+    storage_class_name: null
   model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
   sources:
     dmf:

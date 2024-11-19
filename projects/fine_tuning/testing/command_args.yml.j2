@@ -103,6 +103,9 @@ storage download_to_pvc:
   pvc_name: "{{ fine_tuning.pvc.name }}"
   pvc_access_mode: "{{ fine_tuning.pvc.access_mode }}"
   pvc_size: "{{ fine_tuning.pvc.size }}"
+{% if fine_tuning.pvc.storage_class_name %}
+  pvc_storage_class_name: "{{ fine_tuning.pvc.storage_class_name }}"
+{% endif %}
   namespace: "{{ tests.fine_tuning.namespace }}"
 
   source: SET_AT_RUNTIME
