@@ -35,6 +35,9 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
     for entry in entries:
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
             continue
+        if not entry.results.ilab_metrics.progress:
+            # no progress results available
+            continue
 
         datum = dict()
         if x_key == "gpu":
