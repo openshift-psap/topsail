@@ -346,7 +346,7 @@ ci_presets:
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
-    tests.fine_tuning.test_settings.dataset_name: sdg_data.jsonl
+    tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
     tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3b-code-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
@@ -360,7 +360,7 @@ ci_presets:
     extends: [ilab]
 
     tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
-    tests.fine_tuning.test_settings.dataset_name: [train_all_pruned_SDG.jsonl, ilab_skills.jsonl]
+    tests.fine_tuning.test_settings.dataset_name: [ilab_skills_data.jsonl, ilab_knowledge_data.jsonl]
 
     tests.fine_tuning.test_settings.pod_count: 2
     tests.fine_tuning.test_settings.gpu: 1
@@ -515,23 +515,25 @@ fine_tuning:
       source_dir: /manually/populated
       response_template: "\n### Response:"
 
-    sdg_data.jsonl:
+    ilab_skills_data.jsonl:
       type: dataset
-      response_template: null
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 
-    ilab_skills.jsonl:
+    ilab_knowledge_data.jsonl:
       type: dataset
-      response_template: null
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
 
-      source_dir: '/usr/share/instructlab/sdg/datasets'
-      download_pod_image_key: "tests.fine_tuning.ilab.image"
-
-    train_all_pruned_SDG.jsonl:
+    ilab_large_skills_data.jsonl:
       type: dataset
-      response_template: null
-      source_dir: https://raw.githubusercontent.com/instructlab/training/refs/heads/main/sample-data/
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
+    ilab_large_knowledge_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
 
     alpaca_data.json:
       type: dataset
