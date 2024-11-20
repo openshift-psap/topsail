@@ -516,6 +516,18 @@ fine_tuning:
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 
+    ilab_skills.jsonl:
+      type: dataset
+      response_template: null
+
+      source_dir: '/usr/share/instructlab/sdg/datasets'
+      download_pod_image_key: "tests.fine_tuning.ilab.image"
+
+    train_all_pruned_SDG.jsonl:
+      type: dataset
+      response_template: null
+      source_dir: https://raw.githubusercontent.com/instructlab/training/refs/heads/main/sample-data/
+
     alpaca_data.json:
       type: dataset
       source_dir: 'https://raw.githubusercontent.com/gururise/AlpacaDataCleaned/main'
