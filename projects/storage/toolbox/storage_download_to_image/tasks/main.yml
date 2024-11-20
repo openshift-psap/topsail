@@ -1,0 +1,175 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+# Find the builder secret (to access the imagestream)
+
+- name: Find and store the builder-dockercfg secret
+  block:
+  - name: Find the name of the builder-dockercfg secret
+    shell:
+      set -o pipefail;
+      oc get secrets -oname -n "{{ storage_download_to_image_namespace }}"
+         | cut -d/ -f2
+         | grep builder-dockercfg
+    register: builder_secret_cmd
+
+  - name: Store the name of the secret in a variable
+    set_fact:
+      builder_secret: "{{ builder_secret_cmd.stdout }}"
+  rescue:
+  - name: Failed to find the builder-dockercfg secret
+    fail: msg="No builder-dockercfg secret in the '"{{ storage_download_to_image_namespace }}"' namespace ..."
+
+- name: Create namespace for images if does not exist
+  shell:
+    set -o pipefail;
+    oc create namespace "{{ storage_download_to_image_namespace }}"
+       --dry-run=client
+       -oyaml
+    | tee "{{ artifact_extra_logs_dir }}/src/000_namespace.yml"
+    | oc apply -f-
+
+- name: Create the imagestream, if does not exist
+  shell:
+    set -o pipefail &&
+    oc create imagestream "{{ storage_download_to_image_image_name }}"
+       --dry-run=client
+       -oyaml
+    | tee "{{ artifact_extra_logs_dir }}/src/001_imagestream.yml"
+    | oc create
+         -f-
+         -n "{{ storage_download_to_image_namespace }}"
+  # this task may safely fail if the imagestream is created by this role running in parallel for another image
+  failed_when: false
+
+- name: Ensure that the imagestream exists
+  command:
+    oc get imagestream "{{ storage_download_to_image_image_name }}"
+       -n "{{ storage_download_to_image_namespace }}"
+       -oname
+
+- name: Check if the image is already built
+  command:
+    oc get
+       "istag/{{ storage_download_to_image_image_name }}:{{ storage_download_to_image_image_tag }}"
+       -n "{{ storage_download_to_image_namespace }}"
+  register: has_image
+  failed_when: false
+
+- name: Store the safe name of the data source
+  set_fact:
+    data_source_name: "{{ storage_download_to_image_source | replace(':', '-') | replace('/', '-') | replace('.', '-') | replace('_', '-') | lower }}"
+
+- name: Store the name of the objects
+  set_fact:
+    download_name: download-{{ data_source_name }}-to-{{ storage_download_to_image_image_name }}
+
+- name: Delete the creds secret, if it exists
+  command:
+    oc delete secret/{{ download_name }}
+       -n {{ storage_download_to_image_namespace }}
+       --ignore-not-found=true
+  when: storage_download_to_image_creds | length > 0
+
+- name: Create the s3 secret
+  command:
+    oc create secret generic {{ download_name }}
+       -n {{ storage_download_to_image_namespace }}
+       --from-file=cred={{ storage_download_to_image_creds }}
+  when: storage_download_to_image_creds | length > 0
+
+- name: Create the entrypoint ConfigMap file
+  shell:
+    oc create cm {{ download_name }}-entrypoint
+       --from-file="entrypoint.sh={{ entrypoint }}"
+       -n {{ storage_download_to_image_namespace }}
+       --dry-run=client
+       -oyaml
+       > {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
+
+- name: Create the entrypoint ConfigMap resource
+  command:
+    oc apply -f {{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml
+
+- name: Apply the Pod template
+  template:
+    src: "{{ pod_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+    mode: '0400'
+
+- name: Delete the Pod, if it exists
+  command:
+    oc delete -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+       --ignore-not-found=true
+
+- name: Create a Pod for downloading the dataset
+  command:
+    oc apply -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+
+- name: Wait for the download and delete the secret
+  block:
+  - name: Wait for the downloader Pod to start
+    shell:
+      set -o pipefail;
+
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+         --no-headers
+         | awk '{print $3}'
+    register: wait_downloader_pod_start_status
+    until: "'Pending' not in wait_downloader_pod_start_status.stdout "
+    retries: 30
+    delay: 10
+
+  - name: Wait for the downloader Pod to terminate
+    shell:
+      set -o pipefail;
+
+      oc get -f "{{ artifact_extra_logs_dir }}/src/pod.yaml"
+         --no-headers
+         | awk '{print $3}'
+
+    register: wait_downloader_pod_cmd
+    until: "'Completed' in wait_downloader_pod_cmd.stdout
+    or 'Failed' in wait_downloader_pod_cmd.stdout
+    or 'Error' in wait_downloader_pod_cmd.stdout
+    or 'ErrImagePull' in wait_downloader_pod_cmd.stdout
+    or 'ImagePullBackOff' in wait_downloader_pod_cmd.stdout
+    or not wait_downloader_pod_cmd.stdout"
+    retries: 900
+    delay: 20
+  always:
+  - name: Delete the creds secret, if it was created
+    command:
+      oc delete secret/{{ download_name }}
+         -n {{ storage_download_to_image_namespace }}
+         --ignore-not-found=true
+    when: storage_download_to_image_creds | length > 0
+
+  - name: Get the logs of the download Pod (debug)
+    shell:
+      oc logs {{ download_name }}
+         -n {{ storage_download_to_image_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.log
+    ignore_errors: true
+
+  - name: Get the description of the download Pod (debug)
+    shell:
+      oc describe pod/{{ download_name }}
+         -n {{ storage_download_to_image_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod.desc
+    ignore_errors: true
+
+
+- name: Fail if the the downloader Pod failed
+  when: "'Completed' not in wait_downloader_pod_cmd.stdout"
+  fail: msg="The download failed ({{ wait_downloader_pod_cmd.stdout }})..."

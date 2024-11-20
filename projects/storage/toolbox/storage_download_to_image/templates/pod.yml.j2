@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: {{ download_name }}
+ namespace: {{ storage_download_to_image_namespace }}
+ labels:
+   download-to-image: "yes"
+spec:
+  securityContext:
+    fsGroup: 1000850000
+    seLinuxOptions:
+      level: s0:c29,c19
+  serviceAccountName: modelcars
+  restartPolicy: Never
+  containers:
+  - name: downloader
+    securityContext:
+      capabilities:
+        add:
+          - "SYS_ADMIN"
+          - "MKNOD"
+          - "SYS_CHROOT"
+          - "SETFCAP"
+          - "CAP_SETUID"
+          - "CAP_SETGID"
+    image: quay.io/podman/stable:v5
+    command: [bash, /mnt/entrypoint/entrypoint.sh]
+    env:
+    - name: DOWNLOAD_SOURCE
+      value: "{{ storage_download_to_image_source }}"
+{% if storage_download_to_image_creds | length %}
+    - name: CRED_FILE
+      value: /mnt/download-secret/cred
+{% endif %}
+    - name: SOURCE_NAME
+      value: {{ storage_download_to_image_image_name }}
+    - name: STORAGE_DIR
+      value: {{ storage_download_to_image_storage_dir }}
+    - name: IMAGE_TAG
+      value: {{ storage_download_to_image_image_tag }}
+    - name: REMOTE_IMAGE
+      value: "image-registry.openshift-image-registry.svc:5000/{{ storage_download_to_image_org_name }}/{{ storage_download_to_image_image_name }}:{{ storage_download_to_image_image_tag }}"
+    - name: BASE_IMAGE
+      value: {{ storage_download_to_image_base_image }}
+    volumeMounts:
+{% if storage_download_to_image_creds | length %}
+    - name: download-secret
+      mountPath: /mnt/download-secret
+      readOnly: true
+{% endif %}
+    - name: entrypoint-cm
+      mountPath: /mnt/entrypoint/entrypoint.sh
+      readOnly: true
+      subPath: entrypoint.sh
+    - mountPath: /var/run/secrets/openshift.io/push
+      name: builder-dockercfg
+      readOnly: true
+  volumes:
+{% if storage_download_to_image_creds | length %}
+  - name: download-secret
+    secret:
+      secretName: {{ download_name }}
+{% endif %}
+  - name: entrypoint-cm
+    configMap:
+      defaultMode: 0777
+      name: {{ download_name }}-entrypoint
+  - name: builder-dockercfg
+    secret:
+      defaultMode: 384
+      secretName: "{{ builder_secret }}"
+  resources:
+    requests:
+      cpu: "1"
+      memory: 1Gi
