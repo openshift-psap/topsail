@@ -7,9 +7,12 @@ TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 RHODS_OPERATOR_MANIFEST_NAME = "rhods-operator"
 RHODS_NAMESPACE = "redhat-ods-operator"
-def _setup_brew_registry(token_file):
-    brew_setup_script = TOPSAIL_DIR / "projects" / "rhods" / "utils" / "brew.registry.redhat.io" / "setup.sh"
+def _setup_brew_registry(token_file, image_repo):
+    brew_setup_script = TOPSAIL_DIR / "projects" / "rhods" / "utils" / "setup.sh"
 
+    if image_repo is not None:
+        return run.run(f'"{brew_setup_script}" "{token_file}" "{image_repo}"')
+    
     return run.run(f'"{brew_setup_script}" "{token_file}"')
 
 # ---
@@ -36,7 +39,7 @@ def is_rhoai_installed():
     return "No resources found" not in installed_csv_cmd.stderr
 
 
-def install(token_file=None, force=False):
+def install(token_file=None, image_repo=None, force=False):
     if is_rhoai_installed():
         logging.info(f"Operator '{RHODS_OPERATOR_MANIFEST_NAME}' is already installed.")
 
@@ -44,7 +47,7 @@ def install(token_file=None, force=False):
             return
 
     if token_file:
-        _setup_brew_registry(token_file)
+        _setup_brew_registry(token_file, image_repo)
 
     with env.NextArtifactDir("install_rhoai"):
         install_servicemesh()

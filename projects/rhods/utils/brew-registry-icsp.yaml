@@ -15,5 +15,6 @@ spec:
       mirrors:
         - brew.registry.redhat.io/rhods
     - mirrors:
+        - quay.io/rhoai
         - brew.registry.redhat.io/rhoai
       source: registry.redhat.io/rhoai

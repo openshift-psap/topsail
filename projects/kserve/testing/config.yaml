@@ -454,7 +454,7 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  rhoai_token_file: quay.io.token
   model_s3_cred: .awscred
   kserve_model_secret_settings: watsonx-models.yaml
   opensearch_instances: opensearch.yaml
@@ -521,10 +521,10 @@ clusters:
 
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 832635
+    image: quay.io/rhoai/rhoai-fbc-fragment
+    tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
     channel: fast
-    version: 2.14.0
+    version: 2.16.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false

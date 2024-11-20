@@ -8,7 +8,6 @@ set -o errtrace
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 OCP_PULL_SECRET="secret/pull-secret -n openshift-config"
-SERVER=brew.registry.redhat.io
 IMAGE_CONTENT_SOURCE_POLICY="$THIS_DIR/brew-registry-icsp.yaml"
 IMAGE_CONFIG="$THIS_DIR/image-config.yaml"
 
@@ -17,6 +16,8 @@ if oc get -f $IMAGE_CONTENT_SOURCE_POLICY  2>/dev/null; then
     echo "Brew ICSP already exists, assuming that Brew is already configured."
     exit 0
 fi
+
+SERVER=${2:-"brew.registry.redhat.io"}
 
 TOKEN_FILE=${1:-}
 if [[ -z "${TOKEN_FILE}" || ! -e "${TOKEN_FILE}" ]]; then
