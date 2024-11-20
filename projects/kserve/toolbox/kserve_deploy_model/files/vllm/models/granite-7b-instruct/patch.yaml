@@ -7,12 +7,13 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
-      storageUri: s3://psap-hf-models/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct/
+      storageUri: s3://psap-1474-blog-models/ibm-granite/granite-7b-instruct/ 
       args:
-      #- --num-scheduler-steps=8
+      - --dtype=bfloat16
       - --tensor-parallel-size=1
-      - --enable-chunked-prefill
-      # - --max-model-len=4096
+      - --max-model-len=4096
+      - --gpu-memory-utilization=0.95
+      - --num-scheduler-steps=5
       resources:
         requests:
           cpu: "2"
