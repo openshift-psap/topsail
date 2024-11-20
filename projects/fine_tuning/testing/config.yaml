@@ -529,7 +529,7 @@ tests:
       timespan: 0
     fms:
       enabled: true
-      image: image-registry.openshift-image-registry.svc:5000/rhoai-tuning-test/fms-hf-tuning@sha256:35e935d0bed5a34b3a70f0f247523ad053de79e26833f5dd2fa498658ba2f363
+      image: quay.io/modh/fms-hf-tuning:v2.1.0
     quality_evaluation:
       enabled: false
       image: registry.redhat.io/ubi9
