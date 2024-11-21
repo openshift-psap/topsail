@@ -266,13 +266,10 @@ ci_presets:
 
   metal:
     clusters.sutest.is_metal: true
-    clusters.driver.is_metal: true
     clusters.sutest.compute.dedicated: false
-    clusters.driver.compute.dedicated: false
 
   not_metal:
     clusters.sutest.is_metal: false
-    clusters.driver.is_metal: false
 
   use_intlab_os:
     matbench.lts.opensearch.index_prefix: "psap-rhoai."
@@ -364,7 +361,7 @@ ci_presets:
 
     tests.fine_tuning.test_settings.pod_count: 2
     tests.fine_tuning.test_settings.gpu: 1
-
+    clusters.sutest.compute.machineset.count: 4
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 8
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
@@ -372,8 +369,10 @@ ci_presets:
   # ---
 
   cluster_instructlab:
-    clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
     fine_tuning.pvc.storage_class_name: nfs-csi
+    clusters.sutest.is_metal: false
+    clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
+    clusters.sutest.compute.machineset.name: instructlab-standalon-6rjg8-worker-1
 
   cluster_ibm_dgx:
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
@@ -445,20 +444,9 @@ clusters:
         name: workload-pods
         type: m6i.2xlarge
         count: null
+        rest_count: 0
         taint:
           key: only-workload-pods
-          value: "yes"
-          effect: NoSchedule
-  driver:
-    is_metal: false
-    compute:
-      dedicated: true
-      machineset:
-        name: test-pods
-        count: null
-        type: m6i.2xlarge
-        taint:
-          key: only-test-pods
           value: "yes"
           effect: NoSchedule
   cleanup_on_exit: false
