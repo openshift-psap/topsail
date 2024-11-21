@@ -157,8 +157,8 @@ ci_presets:
       peft_method: "lora"
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [16, 24, 32, 40, 48]
-      max_seq_length: 1024
+      per_device_train_batch_size: 1
+      max_seq_length: 512
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
