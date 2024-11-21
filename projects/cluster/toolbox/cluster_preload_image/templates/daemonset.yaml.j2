@@ -29,6 +29,7 @@ spec:
         - sleep
         - 1d
         securityContext:
+          runAsUser: 999
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
