@@ -22,14 +22,23 @@ gpu_operator enable_time_sharing:
 
 sutest/cluster preload_image/kserve-runtime:
   namespace: "{{ tests.fine_tuning.namespace }}"
-  name: SET_AT_RUNTIME
-  image: SET_AT_RUNTIME
+  name: fine-tuning-image
+{% if tests.fine_tuning.fms.enabled %}
+  image: {{ tests.fine_tuning.fms.image }}
+{% elif tests.fine_tuning.ray.enabled %}
+  image: {{ tests.fine_tuning.ray.enabled }}
+{% elif tests.fine_tuning.ilab.enabled %}
+  image: {{ tests.fine_tuning.ilab.enabled }}
+{% else %}
+  image: invalid_configuration
+{% endif %}
 
+{% if clusters.sutest.compute.dedicated %}
   node_selector_key: {{ clusters.sutest.compute.machineset.taint.key }}
   node_selector_value: "{{ clusters.sutest.compute.machineset.taint.value }}"
   pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
   pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
-
+{% endif %}
 #
 # deploy RHODS
 #
