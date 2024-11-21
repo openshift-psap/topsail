@@ -226,3 +226,24 @@
          > {{ artifact_extra_logs_dir }}/artifacts/pytorchjob.desc
     ignore_errors: true
     when: fine_tuning_run_fine_tuning_job_capture_artifacts | bool
+
+  - name: Get the name of the job pods
+    shell:
+      set -o pipefail;
+
+      oc get pods -ltraining.kubeflow.org/job-name={{ job_name_safe }}
+         --no-headers
+         -oname
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+    failed_when: false
+    register: job_pod_name_cmd
+
+  - name: Save the job pod logs
+    shell:
+      set -o pipefail;
+
+      oc logs {{ item }} --all-containers
+         -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+         > {{ artifact_extra_logs_dir }}/artifacts/pod_{{ item | replace('pod/', '') }}.log
+    failed_when: false
+    loop: "{{ job_pod_name_cmd.stdout_lines }}"
