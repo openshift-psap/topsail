@@ -20,7 +20,9 @@
   shell:
     set -o pipefail;
     oc get nodes -oname
+    {% if cluster_preload_image_node_selector_key %}
        -l{{ cluster_preload_image_node_selector_key }}={{ cluster_preload_image_node_selector_value }}
+    {% endif %}
        | wc -l
   register: number_target_nodes
 
