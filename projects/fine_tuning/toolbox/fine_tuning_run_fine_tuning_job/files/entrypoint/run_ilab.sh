@@ -23,7 +23,17 @@ mkdir -p "$CACHE_DIR"
 echo "Removing CUDA-Compat library from LD_LIBRARY_PATH ..."
 export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 
-torchrun \
+echo "STARTING TORCHRUN | $(date)"
+SECONDS=0
+ret=0
+if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
-    $(cat "$CONFIG_JSON_PATH" | jq -r '. | to_entries | .[] | ("--" + .key + " " + (.value | tostring))' | sed "s/ true//")
+    $(cat "$CONFIG_JSON_PATH" | jq -r '. | to_entries | .[] | ("--" + .key + " " + (.value | tostring))' | sed "s/ true//");
+then
+    ret=1
+    echo "TORCHRUN FAILED :/ (retcode=$ret)"
+fi
+echo "TORCHRUN FINISHED after $SECONDS seconds | $(date)"
+
+exit $ret
