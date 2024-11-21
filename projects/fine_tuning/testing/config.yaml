@@ -151,7 +151,7 @@ ci_presets:
     tests.fine_tuning.test_settings.model_name: null
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.5
-    tests.fine_tuning.test_settings.gpu: 4
+    tests.fine_tuning.test_settings.gpu: 8
 
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
