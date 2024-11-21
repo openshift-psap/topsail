@@ -1,7 +1,7 @@
 ---
 # long args only
 nnodes: {{ fine_tuning_run_fine_tuning_job_pod_count }}
-nproc_per_node: 1
+nproc_per_node: {{ fine_tuning_run_fine_tuning_job_gpu }}
 
 module: instructlab.training.main_ds
 
