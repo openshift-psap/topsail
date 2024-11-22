@@ -40,9 +40,7 @@ fine_tuning_run_fine_tuning_job_dataset_prefer_cache: true
 fine_tuning_run_fine_tuning_job_dataset_prepare_cache_only: false
 
 # the delimiter marking the beginning of the response in the dataset samples
-fine_tuning_run_fine_tuning_job_dataset_response_template: '
-
-  ### Label:'
+fine_tuning_run_fine_tuning_job_dataset_response_template: null
 
 # the image to use for the fine-tuning container
 fine_tuning_run_fine_tuning_job_container_image: quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3

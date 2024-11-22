@@ -76,8 +76,6 @@ Parameters
 
 * The delimiter marking the beginning of the response in the dataset samples
 
-* default value: ``\n### Label:``
-
 
 ``container_image``  
 
