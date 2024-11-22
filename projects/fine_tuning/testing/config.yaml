@@ -346,7 +346,7 @@ ci_presets:
     tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
-    tests.fine_tuning.test_settings.dataset_name: sdg_data.jsonl
+    tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
     tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3b-code-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
@@ -359,8 +359,13 @@ ci_presets:
   ilab_scale:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.pod_count: [1, 2]
-    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: [1, 4, 8]
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
+    tests.fine_tuning.test_settings.dataset_name: [ilab_skills_data.jsonl, ilab_knowledge_data.jsonl]
+
+    tests.fine_tuning.test_settings.pod_count: 2
+    tests.fine_tuning.test_settings.gpu: 1
+
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 8
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
 
@@ -510,9 +515,23 @@ fine_tuning:
       source_dir: /manually/populated
       response_template: "\n### Response:"
 
-    sdg_data.jsonl:
+    ilab_skills_data.jsonl:
       type: dataset
-      response_template: null
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
+    ilab_knowledge_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
+    ilab_large_skills_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
+    ilab_large_knowledge_data.jsonl:
+      type: dataset
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 

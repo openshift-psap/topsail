@@ -21,9 +21,6 @@ def prepare():
         parallel.delayed(prepare_gpu)
         parallel.delayed(prepare_namespace, test_settings)
 
-    with run.Parallel("prepare3") as parallel:
-        parallel.delayed(preload_image)
-
 
 def prepare_gpu():
     if not config.project.get_config("gpu.prepare_cluster"):
@@ -222,7 +219,10 @@ def prepare_namespace(test_settings):
 
     with env.NextArtifactDir("prepare_namespace"):
         set_namespace_annotations()
-        download_data_sources(test_settings)
+
+        with run.Parallel("download") as parallel:
+            parallel.delayed(download_data_sources, test_settings)
+            parallel.delayed(preload_image)
 
     if not dry_mode:
         run.run(f"oc delete pytorchjobs -n {namespace} --all")
@@ -290,26 +290,13 @@ def preload_image():
     if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    if not config.project.get_config("clusters.sutest.compute.dedicated"):
-        return
+    RETRIES = 3
+    for i in range(RETRIES):
+        try:
+            run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest")
 
-    def preload(image, name):
-        RETRIES = 3
-        extra = dict(image=image, name=name)
-
-        for i in range(RETRIES):
-            try:
-                run.run_toolbox_from_config("cluster", "preload_image", prefix="sutest", suffix="kserve-runtime", extra=extra)
-
-                break
-            except Exception:
-                logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
-                if i+1 == RETRIES:
-                    raise
-    do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
-    do_fms = config.project.get_config("tests.fine_tuning.ray.enabled")
-    if do_fms:
-        preload(config.project.get_config("tests.fine_tuning.fms.image"), "fine-tuning-image")
-
-    elif do_ray:
-        preload(config.project.get_config("tests.fine_tuning.ray.image"), "fine-tuning-image")
+            break
+        except Exception:
+            logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
+            if i+1 == RETRIES:
+                raise

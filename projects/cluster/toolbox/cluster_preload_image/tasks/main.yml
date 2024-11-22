@@ -20,7 +20,9 @@
   shell:
     set -o pipefail;
     oc get nodes -oname
+    {% if cluster_preload_image_node_selector_key %}
        -l{{ cluster_preload_image_node_selector_key }}={{ cluster_preload_image_node_selector_value }}
+    {% endif %}
        | wc -l
   register: number_target_nodes
 
@@ -66,8 +68,8 @@
          -n {{ cluster_preload_image_namespace }}
          | jq '.status.desiredNumberScheduled - .status.numberReady'
     register: current_number_not_ready_cmd
-    retries: 20
-    delay: 30
+    retries: 90
+    delay: 10
     until: current_number_not_ready_cmd.stdout | int == 0
 
   - name: Get the final desired number
