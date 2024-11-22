@@ -96,6 +96,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
         if (response_template := dataset_source.get("response_template")) is not None:
             test_settings["dataset_response_template"] = response_template
+        elif (default_response_template := config.project.get_config("fine_tuning.default_response_template")) is not None:
+            test_settings["dataset_response_template"] = default_response_template
 
     remove_none_values(test_settings)
 

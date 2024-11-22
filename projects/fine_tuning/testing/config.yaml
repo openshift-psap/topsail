@@ -304,12 +304,17 @@ ci_presets:
   #
 
   fms:
-    tests.fine_tuning.fms.enabled: false
+    tests.fine_tuning.fms.enabled: true
     matbench.workload: projects.fine_tuning.visualizations.fms_hf_tuning
     matbench.prom_workload: projects.fine_tuning.visualizations.fms_prom
+    fine_tuning.default_response_template: "\n### Label:"
+
+  not_fms:
+    tests.fine_tuning.fms.enabled: false
+    fine_tuning.default_response_template: null
 
   ray:
-    tests.fine_tuning.fms.enabled: false
+    extends: [not_fms]
     tests.fine_tuning.ray.enabled: true
     tests.capture_prom: false # not needed for the time being
     tests.fine_tuning.test_settings.hyper_parameters: {}
@@ -338,9 +343,9 @@ ci_presets:
   # ---
 
   ilab:
+    extends: [not_fms]
     ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: sdg_data.jsonl
     ci_presets.light["tests.fine_tuning.test_settings.model_name"]: ibm-granite/granite-3b-code-instruct@hf
-    tests.fine_tuning.fms.enabled: false
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
     tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
@@ -476,6 +481,8 @@ fine_tuning:
     size: 80Gi
     storage_class_name: null
   model_registry: null # if set to a fine_tuning_sources.* model registry, all the lookups will be done in this registry
+  default_response_template: "\n### Label:"
+
   sources:
     dmf:
       type: model-registry
