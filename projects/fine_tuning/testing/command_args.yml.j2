@@ -26,9 +26,9 @@ sutest/cluster preload_image:
 {% if tests.fine_tuning.fms.enabled %}
   image: {{ tests.fine_tuning.fms.image }}
 {% elif tests.fine_tuning.ray.enabled %}
-  image: {{ tests.fine_tuning.ray.enabled }}
+  image: {{ tests.fine_tuning.ray.image }}
 {% elif tests.fine_tuning.ilab.enabled %}
-  image: {{ tests.fine_tuning.ilab.enabled }}
+  image: {{ tests.fine_tuning.ilab.image }}
 {% else %}
   image: invalid_configuration
 {% endif %}
