@@ -23,6 +23,11 @@ df -h "$STORAGE_DIR"
 
 echo "---"
 
+if [[ -e "$STORAGE_DIR/$SOURCE_NAME" ]]; then
+    echo "Warning: $STORAGE_DIR/$SOURCE_NAME already exists :/  Cleaning it up."
+    rm -rfv "$STORAGE_DIR/$SOURCE_NAME"
+fi
+
 if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
