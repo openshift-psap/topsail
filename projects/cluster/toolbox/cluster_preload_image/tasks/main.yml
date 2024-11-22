@@ -89,6 +89,7 @@
       oc describe pods -l name={{ cluster_preload_image_name }}
          -n {{ cluster_preload_image_namespace }}
          > "{{ artifact_extra_logs_dir }}/pods.descr"
+    failed_when: false
 
   - name: Get the status of the preload Pods
     shell:
@@ -96,6 +97,7 @@
          -owide
          -n {{ cluster_preload_image_namespace }}
          > "{{ artifact_extra_logs_dir }}/pods.status"
+    failed_when: false
 
   - name: Get the yaml of the daemonset
     shell:
@@ -103,12 +105,14 @@
          -oyaml
          -n {{ cluster_preload_image_namespace }}
          > "{{ artifact_extra_logs_dir }}/daemonset.yaml"
+    failed_when: false
 
   - name: Get the status of the daemonset
     shell:
       oc get ds/{{ cluster_preload_image_name }}
          -n {{ cluster_preload_image_namespace }}
          > "{{ artifact_extra_logs_dir }}/daemonset.status"
+    failed_when: false
 
   - name: Delete the DaemonSet, it it exists
     command:
