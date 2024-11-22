@@ -244,7 +244,8 @@ def cluster_scale_up():
     node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
 
     if node_count is None:
-        node_count = 1
+        logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
+        return
 
     extra = dict(scale=node_count)
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra, artifact_dir_suffix="_sutest")
@@ -270,6 +271,10 @@ def cleanup_sutest_ns():
 
 def cluster_scale_down(to_zero=None):
     if config.project.get_config("clusters.sutest.is_metal"):
+        return
+
+    if config.project.get_config("clusters.sutest.compute.machineset.count") is None:
+        logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
         return
 
     machineset_name = config.project.get_config("clusters.sutest.compute.machineset.name")
