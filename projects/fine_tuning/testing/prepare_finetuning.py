@@ -298,6 +298,6 @@ def preload_image():
 
             break
         except Exception:
-            logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
+            logging.warning(f"Image preloading try #{i+1}/{RETRIES} failed :/")
             if i+1 == RETRIES:
                 raise
