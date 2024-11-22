@@ -344,7 +344,7 @@ ci_presets:
 
   ilab:
     extends: [not_fms]
-    ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: sdg_data.jsonl
+    ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: ilab_skills_data.jsonl
     ci_presets.light["tests.fine_tuning.test_settings.model_name"]: ibm-granite/granite-3b-code-instruct@hf
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
@@ -513,6 +513,8 @@ fine_tuning:
       source_dir: /manually/populated
       response_template: "\n### Response:"
 
+    # ---
+
     ilab_skills_data.jsonl:
       type: dataset
       source_dir: 's3://instructlab-standalone/data'
@@ -528,10 +530,17 @@ fine_tuning:
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 
+    ilab_large_10000samples_skills_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
     ilab_large_knowledge_data.jsonl:
       type: dataset
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
+
+    # ---
 
     alpaca_data.json:
       type: dataset
