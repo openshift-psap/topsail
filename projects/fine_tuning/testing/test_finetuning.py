@@ -290,7 +290,7 @@ def _run_test_and_visualize(test_override_values=None):
 
     if not dry_mode:
         with env.NextArtifactDir("prepare_nodes"):
-            prepare_finetuning.cluster_scale_up()
+            prepare_finetuning.cluster_scale_up(wait_gpu=True)
 
     test_artifact_dir_p = [None]
     try:

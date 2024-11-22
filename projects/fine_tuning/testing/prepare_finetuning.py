@@ -237,7 +237,7 @@ def prepare_namespace(test_settings):
     prepare_kueue_queue(False, namespace, local_kueue_name)
 
 
-def cluster_scale_up():
+def cluster_scale_up(wait_gpu=False):
     if config.project.get_config("clusters.sutest.is_metal"):
         return
 
@@ -250,6 +250,8 @@ def cluster_scale_up():
     extra = dict(scale=node_count)
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra, artifact_dir_suffix="_sutest")
 
+    if wait_gpu:
+        prepare_gpu_operator.wait_ready(enable_time_sharing=False, wait_stack_deployed=True, wait_metrics=False)
 
 def cleanup_rhoai(mute=True):
     prepare_rhoai_mod.uninstall(mute)
