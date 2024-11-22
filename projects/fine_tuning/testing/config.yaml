@@ -375,6 +375,8 @@ ci_presets:
 
   cluster_instructlab:
     fine_tuning.pvc.storage_class_name: nfs-csi
+    fine_tuning.pvc.access_mode: ReadWriteMany
+    fine_tuning.pvc.size: 500Gi
     clusters.sutest.is_metal: false
     clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
     clusters.sutest.compute.machineset.name: instructlab-standalon-6rjg8-worker-1
@@ -576,6 +578,7 @@ tests:
       dataset_replication: 1
       pod_count: 1
       container_image: null
+      ephemeral_output_pvc_size: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:
