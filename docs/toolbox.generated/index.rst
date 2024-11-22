@@ -326,4 +326,5 @@ Toolbox Documentation
                 
 * :doc:`deploy_aws_efs <Storage.deploy_aws_efs>`	 Deploy AWS EFS CSI driver and configure AWS accordingly.
 * :doc:`deploy_nfs_provisioner <Storage.deploy_nfs_provisioner>`	 Deploy NFS Provisioner
+* :doc:`download_to_image <Storage.download_to_image>`	 Downloads the a dataset into an image in the internal registry
 * :doc:`download_to_pvc <Storage.download_to_pvc>`	 Downloads the a dataset into a PVC of the cluster
