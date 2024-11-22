@@ -29,7 +29,8 @@ spec:
         - sleep
         - 1d
         securityContext:
-          runAsUser: 999
+          # prevent the image from requesting to run as root
+          runAsUser: {{ run_as_user }}
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]

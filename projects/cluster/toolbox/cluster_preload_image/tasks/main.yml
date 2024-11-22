@@ -5,6 +5,17 @@
     state: directory
     mode: '0755'
 
+- name: Lookup the namespace user ID range
+  shell:
+    set -o pipefail;
+
+    oc get ns {{ cluster_preload_image_namespace }} -ojsonpath={.metadata.annotations} | jq  -r '.["openshift.io/sa.scc.uid-range"]' | cut -d/ -f1
+  register: namespace_uid_range_cmd
+
+- name: Save the namespace uid as run_as_user
+  set_fact:
+    run_as_user: "{{ namespace_uid_range_cmd.stdout }}"
+
 - name: Apply the DaemonSet template
   template:
     src: "{{ cluster_preload_image_ds_template }}"
