@@ -17,6 +17,7 @@ ci_presets:
 
   light:
     extends: [light_cluster]
+    clusters.sutest.compute.dedicated: false
     tests.fine_tuning.matbenchmarking.enabled: false
     tests.fine_tuning.test_settings.gpu: null
     tests.fine_tuning.test_settings.dataset_replication: 1
@@ -344,9 +345,14 @@ ci_presets:
   # ---
 
   ilab:
-    extends: [not_fms]
+    extends: [not_fms, gpu]
     ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: ilab_skills_data.jsonl
     ci_presets.light["tests.fine_tuning.test_settings.model_name"]: ibm-granite/granite-3b-code-instruct@hf
+    ci_presets.light["tests.fine_tuning.test_settings.gpu"]: 1
+    ci_presets.gpu["clusters.sutest.compute.machineset.type"]: g5.xlarge
+    clusters.sutest.compute.machineset.type: g5.xlarge
+
+
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
     tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
