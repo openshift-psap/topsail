@@ -8,15 +8,15 @@ spec:
       storageUri: s3://psap-hf-models/granite-20b-code-instruct/granite-20b-code-instruct
       args:
       - --dtype=bfloat16
-      - --tensor-parallel-size=2
+      - --tensor-parallel-size=1
       - --max-model-len=4096
       resources:
         requests:
           cpu: "8"
           memory: "20Gi"
-          nvidia.com/gpu: "2"
+          nvidia.com/gpu: "1"
         limits:
-          nvidia.com/gpu: "2"
+          nvidia.com/gpu: "1"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
