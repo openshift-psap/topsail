@@ -232,7 +232,7 @@ def _get_network_usage_metrics(cluster_role, register, label_sets, network_metri
             network_queries, f"Prom: {plot_name}: Network usage",
             get_metrics=get_metrics(cluster_role),
             as_timestamp=True,
-            title="Network usage", y_title="in Mbps",
+            title="Network usage", y_title="in MBps",
             y_divisor=1024*1024,
         )
 
