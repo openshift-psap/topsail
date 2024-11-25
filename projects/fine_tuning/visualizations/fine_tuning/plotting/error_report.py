@@ -90,6 +90,13 @@ def _get_test_setup(entry):
         if metrics and (metrics.get("progress") or metrics.get("summary")):
             exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
 
+    elif entry.results.locations.has_ilab:
+        metrics = yaml.safe_load(json.dumps(entry.results.ilab_metrics, default=functools.partial(json_dumper, strict=False)))
+        if metrics and metrics.get("progress"):
+            exec_info += [html.Li([f"Fine-tuning last progress metrics:", html.Code(yaml.dump([metrics["progress"][-1]]), style={"white-space": "pre-wrap"})])]
+        if metrics and metrics.get("summary"):
+            exec_info += [html.Li([f"Fine-tuning summary metrics:", html.Code(yaml.dump([metrics["summary"]]), style={"white-space": "pre-wrap"})])]
+
     elif entry.results.locations.has_ray:
         metrics = yaml.safe_load(json.dumps(entry.results.ray_metrics, default=functools.partial(json_dumper, strict=False)))
         if metrics.get("progress") or metrics.get("summary"):
