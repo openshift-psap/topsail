@@ -108,6 +108,9 @@ class Plot():
         if not as_timeline:
             show_test_timestamps = False
 
+        metric_queries = set()
+        metric_labels_by_group = defaultdict(set)
+
         data = []
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = entry.get_name(variables)
@@ -118,6 +121,7 @@ class Plot():
             for _metric in self.metrics:
                 metric_name, metric_query = list(_metric.items())[0] if isinstance(_metric, dict) else (_metric, _metric)
 
+                metric_queries.add(metric_query)
                 for metric in self.filter_metrics(entry, self.get_metrics(entry, metric_name)):
                     if not metric: continue
 
@@ -139,6 +143,9 @@ class Plot():
 
                     if legend_group: legend_group = str(legend_group)
                     else: legend_group = None
+
+                    if metric.metric:
+                        metric_labels_by_group[legend_group].add(str(metric.metric))
 
                     if self.as_timestamp:
                         x_values = [datetime.datetime.fromtimestamp(x) for x in x_values]
@@ -189,5 +196,18 @@ class Plot():
             )
 
         msg = []
+        # if metric_queries:
+        #     msg += [html.H3("Metric queries")]
+
+        #     for metric_query in metric_queries:
+        #         msg += [html.Ul(html.Li(html.Code(str(metric_query))))]
+
+        if metric_labels_by_group:
+            msg += [html.H3("Metric labels")]
+
+            for group, labelss in metric_labels_by_group.items():
+                msg += [html.H4(group if group else "no group")]
+                for labels in labelss:
+                    msg += [html.Ul(html.Li(html.Code(str(labels))))]
 
         return fig, msg
