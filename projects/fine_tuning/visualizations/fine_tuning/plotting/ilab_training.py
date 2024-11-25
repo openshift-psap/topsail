@@ -35,9 +35,12 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
     for entry in entries:
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
             continue
-        if not entry.results.ilab_metrics.progress:
-            # no progress results available
-            continue
+
+
+        summary_value = getattr(entry.results.ilab_metrics.summary, summary_key,
+                                getattr(entry.results.ilab_metrics.progress[-1], summary_key, None))
+
+        if not summary_value: continue
 
         datum = dict()
         if x_key == "gpu":
@@ -47,7 +50,7 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
         else:
             datum[x_key] = entry.settings.__dict__[x_key]
 
-        datum[summary_key] = getattr(entry.results.ilab_metrics.progress[-1], summary_key, None)
+        datum[summary_key] = summary_value
 
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
         datum["text"] = "{:.2f}".format(datum[summary_key]) if datum[summary_key] is not None else "None"
@@ -107,7 +110,14 @@ class ILabSummary():
 
         from ..store import parsers
 
-        summary_key_properties = parsers.ILAB_PROGRESS_KEYS[cfg__summary_key]
+
+        summary_key_properties = parsers.ILAB_SUMMARY_KEYS.get(
+            cfg__summary_key,
+            parsers.ILAB_PROGRESS_KEYS.get(cfg__summary_key)
+        )
+        if not summary_key_properties:
+            raise ValueError(f"Couldn't find the summary key '{cfg__summary_key}' in the summary/progress dicts ...")
+
         y_lower_better = summary_key_properties.lower_better
 
         if not cfg__summary_key:
@@ -272,7 +282,7 @@ class ILabProgress():
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        x_key = "epoch"
+        x_key = "timestamp"
 
         data = generateILabProgressData(entries, x_key, variables, cfg__progress_key)
         df = pd.DataFrame(data)
@@ -291,7 +301,7 @@ class ILabProgress():
             fig.data[i].update(mode='lines+markers+text')
             fig.update_yaxes(rangemode='tozero')
 
-        fig.update_xaxes(title="epochs")
+        fig.update_xaxes(title=x_key)
 
         y_title = f"Training {y_key}. "
         title = f"Fine-tuning '{y_key}' progress over the training {x_key}s"
