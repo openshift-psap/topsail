@@ -76,8 +76,6 @@ Parameters
 
 * The delimiter marking the beginning of the response in the dataset samples
 
-* default value: ``\n### Label:``
-
 
 ``container_image``  
 
@@ -142,4 +140,9 @@ Parameters
 ``sleep_forever``  
 
 * If true, sleeps forever instead of running the fine-tuning command.
+
+
+``ephemeral_output_pvc_size``  
+
+* If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
 

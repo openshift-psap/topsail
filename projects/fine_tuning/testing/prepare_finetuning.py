@@ -13,7 +13,7 @@ PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env
 def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
-        parallel.delayed(scale_up_sutest)
+        parallel.delayed(cluster_scale_up)
 
 
     test_settings = config.project.get_config("tests.fine_tuning.test_settings")
@@ -220,9 +220,9 @@ def prepare_namespace(test_settings):
     with env.NextArtifactDir("prepare_namespace"):
         set_namespace_annotations()
 
-        with run.Parallel("download") as parallel:
-            parallel.delayed(download_data_sources, test_settings)
-            parallel.delayed(preload_image)
+    with run.Parallel("prepare_data") as parallel:
+        parallel.delayed(download_data_sources, test_settings)
+        parallel.delayed(preload_image)
 
     if not dry_mode:
         run.run(f"oc delete pytorchjobs -n {namespace} --all")
@@ -237,18 +237,21 @@ def prepare_namespace(test_settings):
     prepare_kueue_queue(False, namespace, local_kueue_name)
 
 
-def scale_up_sutest():
+def cluster_scale_up(wait_gpu=False):
     if config.project.get_config("clusters.sutest.is_metal"):
         return
 
     node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
 
     if node_count is None:
-        node_count = 1
+        logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
+        return
 
     extra = dict(scale=node_count)
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra, artifact_dir_suffix="_sutest")
 
+    if wait_gpu:
+        prepare_gpu_operator.wait_ready(enable_time_sharing=False, wait_stack_deployed=True, wait_metrics=False)
 
 def cleanup_rhoai(mute=True):
     prepare_rhoai_mod.uninstall(mute)
@@ -263,17 +266,17 @@ def cleanup_cluster():
 
 
 def cleanup_sutest_ns():
-    cleanup_namespace_test()
-
-
-def cleanup_sutest_ns():
     namespace = config.project.get_config("tests.fine_tuning.namespace")
     # do not delete it ... (to save the PVC)
     # empty the namespace
 
 
-def cluster_scale_down(to_zero):
+def cluster_scale_down(to_zero=None):
     if config.project.get_config("clusters.sutest.is_metal"):
+        return
+
+    if config.project.get_config("clusters.sutest.compute.machineset.count") is None:
+        logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
         return
 
     machineset_name = config.project.get_config("clusters.sutest.compute.machineset.name")
@@ -282,7 +285,12 @@ def cluster_scale_down(to_zero):
         logging.info(f"No {machineset_name} machineset. Nothing to scale down.")
         return
 
-    replicas = 0 if to_zero else 1
+    if to_zero:
+        replicas = 0
+    else:
+        replicas = config.project.get_config("clusters.sutest.compute.machineset.rest_count")
+        if replicas is None: replicas = 1
+
     run.run(f"oc scale --replicas={replicas} machineset/{machineset_name} -n openshift-machine-api")
 
 
@@ -297,6 +305,6 @@ def preload_image():
 
             break
         except Exception:
-            logging.warning(f"Preloading of '{image}' try #{i+1}/{RETRIES} failed :/")
+            logging.warning(f"Image preloading try #{i+1}/{RETRIES} failed :/")
             if i+1 == RETRIES:
                 raise

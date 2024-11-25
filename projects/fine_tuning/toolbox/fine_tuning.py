@@ -27,7 +27,7 @@ class Fine_Tuning:
             dataset_transform=None,
             dataset_prefer_cache=True,
             dataset_prepare_cache_only=False,
-            dataset_response_template="\n### Label:",
+            dataset_response_template=None,
             container_image="quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3",
 
             gpu=0,
@@ -44,6 +44,8 @@ class Fine_Tuning:
 
             capture_artifacts=True,
             sleep_forever=False,
+
+            ephemeral_output_pvc_size=None,
     ):
         """
         Run a simple fine-tuning Job.
@@ -77,6 +79,8 @@ class Fine_Tuning:
 
           capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
+
+          ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
         """
 
         return RunAnsibleRole(locals())

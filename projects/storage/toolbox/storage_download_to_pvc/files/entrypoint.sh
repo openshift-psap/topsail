@@ -19,9 +19,14 @@ chmod ugo+w "$STORAGE_DIR" || true
 
 echo "---"
 
-df -h "${STORAGE_DIR}"
+df -h "$STORAGE_DIR"
 
 echo "---"
+
+if [[ -e "$STORAGE_DIR/$SOURCE_NAME" ]]; then
+    echo "Warning: $STORAGE_DIR/$SOURCE_NAME already exists :/  Cleaning it up."
+    rm -rfv "$STORAGE_DIR/$SOURCE_NAME"
+fi
 
 if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
@@ -30,21 +35,21 @@ then
     if [[ "${CRED_FILE:-}" ]];
     then
         echo "Enabling git 'store' credential helper ..."
-        sha256sum "${CRED_FILE}"
+        sha256sum "$CRED_FILE"
 
         git config --global credential.helper "store --file=$CRED_FILE"
     else
         echo "No credential file passed."
     fi
 
-    if ! time git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/${SOURCE_NAME}" --depth=1 \
+    if ! time git clone "$DOWNLOAD_SOURCE" "$STORAGE_DIR/$SOURCE_NAME" --depth=1 \
         |& grep -v 'unable to get credential storage lock in 1000 ms: Read-only file system'
     then
-        rm -rf "$STORAGE_DIR/${SOURCE_NAME}"
+        rm -rf "$STORAGE_DIR/$SOURCE_NAME"
         echo "Clone failed :/"
         exit 1
     fi
-    rm -rf "$STORAGE_DIR/${SOURCE_NAME}/.git"
+    rm -rf "$STORAGE_DIR/$SOURCE_NAME/.git"
 
 elif [[ "$DOWNLOAD_SOURCE" == "s3://"* ]];
 then
@@ -53,7 +58,7 @@ then
         echo "ERROR: no credentials provided :/"
         exit 1
     fi
-    if [[ ! -f "${CRED_FILE}" ]]; then
+    if [[ ! -f "$CRED_FILE" ]]; then
         echo "ERROR: credentials file does not exist :/"
         exit 1
     fi
@@ -82,7 +87,7 @@ then
 
     if ! time aws s3 cp "$DOWNLOAD_SOURCE" "$STORAGE_DIR/$SOURCE_NAME" $args
     then
-        rm -rf "${STORAGE_DIR}/${SOURCE_NAME}"
+        rm -rf "$STORAGE_DIR/$SOURCE_NAME"
         echo "Copy failed :/"
         exit 1
     fi
@@ -96,13 +101,13 @@ then
         echo "ERROR: no credentials provided :/"
         exit 1
     fi
-    if [[ ! -f "${CRED_FILE}" ]]; then
+    if [[ ! -f "$CRED_FILE" ]]; then
         echo "ERROR: credentials file does not exist :/"
         exit 1
     fi
 
     DMF_VERSION=1.7.1
-    DMF_WHL_NAME=dmf_lib-${DMF_VERSION}-py3-none-any.whl
+    DMF_WHL_NAME="dmf_lib-${DMF_VERSION}-py3-none-any.whl"
     DMF_WHL_FILE="$STORAGE_DIR/../binaries/$DMF_WHL_NAME"
     if [[ ! -f "$DMF_WHL_FILE" ]]; then
         echo "ERROR: DMF wheel file does not exist ($DMF_WHL_FILE) :/"
@@ -116,7 +121,7 @@ then
 lakehouse:
   environment: PROD
   # please generate your token from https://watsonx-data.cash.sl.cloud9.ibm.com/token
-  token: $(cat ${CRED_FILE})
+  token: $(cat "$CRED_FILE")
 EOF
 
     namespace=$(echo "$DOWNLOAD_SOURCE" | cut -d/ -f3)
@@ -128,36 +133,36 @@ EOF
     # this ^^^ stores the model in $dir/$model_label.$revision ...
 
     echo "Moving the model to its final storage location ..."
-    mv "$STORAGE_DIR/${SOURCE_NAME}.tmp"/* "$STORAGE_DIR/${SOURCE_NAME}/"
+    mv "$STORAGE_DIR/${SOURCE_NAME}.tmp"/* "$STORAGE_DIR/$SOURCE_NAME/"
     rmdir "$STORAGE_DIR/${SOURCE_NAME}.tmp"
 
 else
-    cd "${STORAGE_DIR}"
+    cd "$STORAGE_DIR"
 
     echo "Downloading $DOWNLOAD_SOURCE ..."
 
     if ! time curl -O \
          --silent  --fail --show-error \
-         "${DOWNLOAD_SOURCE}";
+         "$DOWNLOAD_SOURCE";
     then
-        echo "FATAL: failed to download from ${DOWNLOAD_SOURCE} ..."
+        echo "FATAL: failed to download from $DOWNLOAD_SOURCE ..."
         exit 1
     fi
 fi
 
 echo "All done!"
 
-cd "${STORAGE_DIR}"
+cd "$STORAGE_DIR"
 
-time find "./${SOURCE_NAME}" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
-
-echo "---"
-
-du -sh "./${SOURCE_NAME}"
+time find "./$SOURCE_NAME" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
 
 echo "---"
 
-df -h "${STORAGE_DIR}"
+du -sh "./$SOURCE_NAME"
+
+echo "---"
+
+df -h "$STORAGE_DIR"
 
 echo "---"
 

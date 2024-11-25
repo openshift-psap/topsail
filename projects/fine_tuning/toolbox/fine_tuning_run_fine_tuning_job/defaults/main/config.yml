@@ -40,9 +40,7 @@ fine_tuning_run_fine_tuning_job_dataset_prefer_cache: true
 fine_tuning_run_fine_tuning_job_dataset_prepare_cache_only: false
 
 # the delimiter marking the beginning of the response in the dataset samples
-fine_tuning_run_fine_tuning_job_dataset_response_template: '
-
-  ### Label:'
+fine_tuning_run_fine_tuning_job_dataset_response_template: null
 
 # the image to use for the fine-tuning container
 fine_tuning_run_fine_tuning_job_container_image: quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3
@@ -76,3 +74,6 @@ fine_tuning_run_fine_tuning_job_capture_artifacts: true
 
 # if true, sleeps forever instead of running the fine-tuning command.
 fine_tuning_run_fine_tuning_job_sleep_forever: false
+
+# if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
+fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size: null

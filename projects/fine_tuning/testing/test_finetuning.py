@@ -96,6 +96,8 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
         if (response_template := dataset_source.get("response_template")) is not None:
             test_settings["dataset_response_template"] = response_template
+        elif (default_response_template := config.project.get_config("fine_tuning.default_response_template")) is not None:
+            test_settings["dataset_response_template"] = default_response_template
 
     remove_none_values(test_settings)
 
@@ -245,6 +247,7 @@ def _run_test_quality_evaluation(test_settings):
 
 def _run_test_and_visualize(test_override_values=None):
     failed = True
+    dry_mode = config.project.get_config("tests.dry_mode")
     do_matbenchmarking = test_override_values is None and config.project.get_config("tests.fine_tuning.matbenchmarking.enabled")
     do_multi_model = config.project.get_config("tests.fine_tuning.multi_model.enabled")
 
@@ -285,6 +288,10 @@ def _run_test_and_visualize(test_override_values=None):
         logging.error(msg)
         raise RuntimeError(msg)
 
+    if not dry_mode:
+        with env.NextArtifactDir("prepare_nodes"):
+            prepare_finetuning.cluster_scale_up(wait_gpu=True)
+
     test_artifact_dir_p = [None]
     try:
         if do_multi_model:
@@ -302,7 +309,9 @@ def _run_test_and_visualize(test_override_values=None):
             failed = _run_test(test_artifact_dir_p, test_override_values)
 
     finally:
-        dry_mode = config.project.get_config("tests.dry_mode")
+        if not dry_mode:
+            prepare_finetuning.cluster_scale_down()
+
         if not config.project.get_config("tests.visualize"):
             logging.info(f"Visualization disabled.")
 

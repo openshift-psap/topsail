@@ -20,15 +20,15 @@ sutest/cluster set_scale:
 gpu_operator enable_time_sharing:
   replicas: {{ gpu.time_sharing.replicas }}
 
-sutest/cluster preload_image/kserve-runtime:
+sutest/cluster preload_image:
   namespace: "{{ tests.fine_tuning.namespace }}"
   name: fine-tuning-image
 {% if tests.fine_tuning.fms.enabled %}
   image: {{ tests.fine_tuning.fms.image }}
 {% elif tests.fine_tuning.ray.enabled %}
-  image: {{ tests.fine_tuning.ray.enabled }}
+  image: {{ tests.fine_tuning.ray.image }}
 {% elif tests.fine_tuning.ilab.enabled %}
-  image: {{ tests.fine_tuning.ilab.enabled }}
+  image: {{ tests.fine_tuning.ilab.image }}
 {% else %}
   image: invalid_configuration
 {% endif %}
