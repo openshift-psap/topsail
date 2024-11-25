@@ -190,16 +190,26 @@ class ILabSummary():
         x_name = (x_key or "single expe").replace("hyper_parameters.", "")
 
         y_lower_better = summary_key_properties.lower_better
-        what = f", in {y_units}"
+
+        what = f", in {y_units}" if y_units else ""
 
         y_title = f"Fine-tuning {y_title}{what}. "
-        title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+
+        if y_lower_better is None:
+            title = y_title
+        else:
+            title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
 
         if cfg__filter_key == "gpu":
             gpu_count = cfg__filter_value
             title += f". {gpu_count} GPU{'s' if gpu_count > 1 else ''}."
 
-        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        if y_lower_better is None:
+            y_axes_title = y_title
+        else:
+            y_axes_title = ("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else "")
+
+        fig.update_yaxes(title=y_axes_title)
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
 
@@ -295,6 +305,13 @@ class ILabProgress():
         y_key = cfg__progress_key
         y_lower_better = progress_key_properties.lower_better
 
+        if y_title_val := getattr(progress_key_properties, "title", None):
+            y_key_title = f"{y_title_val} ({y_key})"
+            y_title = y_title_val
+        else:
+            y_key_title = f"'{y_key}'"
+            y_title = f"Training {y_key}. "
+
         fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
         for i in range(len(fig.data)):
@@ -303,11 +320,12 @@ class ILabProgress():
 
         fig.update_xaxes(title=x_key)
 
-        y_title = f"Training {y_key}. "
-        title = f"Fine-tuning '{y_key}' progress over the training {x_key}s"
-        title += "<br>"+("Lower is better" if y_lower_better else "Higher is better")
-        y_title += ("Lower is better" if y_lower_better else "Higher is better")
-        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        title = f"Fine-tuning {y_key_title} progress over the training {x_key}s"
+        if y_lower_better is not None:
+            title += "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+            y_title += ("Lower is better" if y_lower_better else "Higher is better")
+            y_title = ("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else "")
+        fig.update_yaxes(title=y_title)
         fig.update_layout(title=title, title_x=0.5)
         fig.update_layout(legend_title_text="Configuration")
 

@@ -211,6 +211,8 @@ def _parse_fms_logs(dirname):
 ILAB_PROGRESS_KEYS = {
     "overall_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="througput"),
     "cuda_mem_allocated": types.SimpleNamespace(lower_better=True, units="Gi"),
+    "lr": types.SimpleNamespace(lower_better=None, title="Learning rate", units=""),
+    "total_loss": types.SimpleNamespace(lower_better=None, title="Training loss", units=""),
 }
 
 ILAB_SUMMARY_KEYS = {
