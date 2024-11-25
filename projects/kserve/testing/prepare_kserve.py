@@ -102,14 +102,18 @@ def prepare():
 
     token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.rhoai_token_file")
 
-    if not config.project.get_config("kserve.raw_deployment.enabled"):
-        with run.Parallel("prepare_kserve") as parallel:
-            for operator in config.project.get_config("prepare.operators"):
-                parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
-                                 catalog=operator['catalog'],
-                                 manifest_name=operator['name'],
-                                 namespace=operator['namespace'],
-                                 artifact_dir_suffix=operator['name'])
+    prepare_operators = config.project.get_config("prepare.operators")
+    if config.project.get_config("kserve.raw_deployment.enabled"):
+        prepare_operators = [ prepare_operators[item] for item in range(len(prepare_operators)) if "raw" in prepare_operators[item]["kserve_mode"] ]
+
+    with run.Parallel("prepare_kserve") as parallel:
+        for operator in prepare_operators:
+            parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
+                             catalog=operator['catalog'],
+                             manifest_name=operator['name'],
+                             namespace=operator['namespace'],
+                             artifact_dir_suffix=operator['name']
+                             )
 
     prepare_rhoai.install(token_file)
 
@@ -158,10 +162,13 @@ def undeploy_operator(operator, mute=True):
 def cleanup(mute=True):
     prepare_rhoai.uninstall(mute)
 
-    if not config.project.get_config("kserve.raw_deployment.enabled"):
-        with run.Parallel("cleanup_kserve") as parallel:
-            for operator in config.project.get_config("prepare.operators"):
-                undeploy_operator(operator)
+    prepare_operators = config.project.get_config("prepare.operators")
+    if config.project.get_config("kserve.raw_deployment.enabled"):
+        prepare_operators = [ prepare_operators[item] for item in range(len(prepare_operators)) if "raw" in prepare_operators[item]["kserve_mode"] ]
+
+    with run.Parallel("cleanup_kserve") as parallel:
+        for operator in prepare_operators:
+            undeploy_operator(operator)
 
 
 def update_serving_runtime_images(runtime=None):

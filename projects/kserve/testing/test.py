@@ -348,7 +348,7 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.pre_cluster_ci = cleanup_cluster
+        self.pre_cleanup_ci = cleanup_cluster
         self.cleanup_cluster = cleanup_cluster
         self.cleanup_rhoai = cleanup_rhoai
 
