@@ -306,6 +306,11 @@ ci_presets:
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
+    - name: granite-3-0-8b-instruct
+      model: granite-3.0-8b-instruct
+      testing:
+        size: small
+        max_concurrency: 64
     - name: llama-3-8b-instruct
       testing:
        size: small
