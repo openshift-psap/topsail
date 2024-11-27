@@ -592,6 +592,7 @@ tests:
       dataset_replication: 1
       pod_count: 1
       container_image: null
+      use_roce: null
       ephemeral_output_pvc_size: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
