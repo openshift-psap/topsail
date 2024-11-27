@@ -146,3 +146,8 @@ Parameters
 
 * If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
 
+
+``use_roce``  
+
+* If enabled, activates the flags required to use RoCE fast network
+

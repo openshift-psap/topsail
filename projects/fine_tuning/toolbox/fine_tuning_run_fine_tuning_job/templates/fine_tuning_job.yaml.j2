@@ -9,11 +9,31 @@ spec:
       replicas: 1
       restartPolicy: Never
       template: &job_template
+        metadata:
+          annotations:
+{% if fine_tuning_run_fine_tuning_job_use_roce %}
+            k8s.v1.cni.cncf.io/networks:
+              '[
+                {
+                  "name": "network-port-1",
+                  "namespace": "default"
+                }
+              ]'
+{% endif %}
         spec:
           containers:
           - name: pytorch
             image: {{ fine_tuning_run_fine_tuning_job_container_image }}
             imagePullPolicy: IfNotPresent
+{% if fine_tuning_run_fine_tuning_job_use_roce %}
+            securityContext:
+              capabilities:
+                add:
+                - IPC_LOCK
+                - SYS_RESOURCE
+                - NET_ADMIN
+                - NET_RAW
+{% endif %}
             command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
             env:
             - name: CONFIG_JSON_PATH
@@ -57,6 +77,10 @@ spec:
 {% endif %}
             - name: MODEL_NAME
               value: "{{ fine_tuning_run_fine_tuning_job_model_name}}"
+{% if fine_tuning_run_fine_tuning_job_use_roce %}
+            - name: NCCL_SOCKET_IFNAME
+              value: "net1"
+{% endif %}
             volumeMounts:
             - name: storage-volume
               mountPath: /mnt/storage
@@ -78,6 +102,9 @@ spec:
 {% elif fine_tuning_run_fine_tuning_job_gpu %}
               limits:
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
+{% endif %}
+{% if fine_tuning_run_fine_tuning_job_use_roce %}
+                openshift.io/port1: "1"
 {% endif %}
           volumes:
           - name: storage-volume
