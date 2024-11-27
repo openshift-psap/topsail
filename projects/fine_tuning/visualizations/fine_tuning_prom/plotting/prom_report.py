@@ -51,8 +51,10 @@ class SutestCpuMemoryReport():
             header += report.Plot_and_Text(f"Prom: {plot_name}: CPU usage", args_as_timeline)
             header += report.Plot_and_Text(f"Prom: {plot_name}: Mem usage", args_as_timeline)
             if plot_name == "Fine-tuning Pods":
-                header += report.Plot_and_Text(f"Prom: {plot_name}: Disk usage", args_as_timeline)
-                header += report.Plot_and_Text(f"Prom: {plot_name}: Network usage", args_as_timeline)
+                header += report.Plot_and_Text(f"Prom: {plot_name}: Disk total usage", args_as_timeline)
+                header += report.Plot_and_Text(f"Prom: {plot_name}: Disk rate usage", args_as_timeline)
+                header += report.Plot_and_Text(f"Prom: {plot_name}: Network total usage", args_as_timeline)
+                header += report.Plot_and_Text(f"Prom: {plot_name}: Network rate usage", args_as_timeline)
 
         header += [html.H2("SUTest Cluster")]
         header += report.Plot_and_Text("Prom: sutest cluster memory usage", args_as_timeline)

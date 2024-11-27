@@ -35,9 +35,12 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
     for entry in entries:
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
             continue
-        if not entry.results.ilab_metrics.progress:
-            # no progress results available
-            continue
+
+
+        summary_value = getattr(entry.results.ilab_metrics.summary, summary_key,
+                                getattr(entry.results.ilab_metrics.progress[-1], summary_key, None))
+
+        if not summary_value: continue
 
         datum = dict()
         if x_key == "gpu":
@@ -47,7 +50,7 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
         else:
             datum[x_key] = entry.settings.__dict__[x_key]
 
-        datum[summary_key] = getattr(entry.results.ilab_metrics.progress[-1], summary_key, None)
+        datum[summary_key] = summary_value
 
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
         datum["text"] = "{:.2f}".format(datum[summary_key]) if datum[summary_key] is not None else "None"
@@ -107,7 +110,14 @@ class ILabSummary():
 
         from ..store import parsers
 
-        summary_key_properties = parsers.ILAB_PROGRESS_KEYS[cfg__summary_key]
+
+        summary_key_properties = parsers.ILAB_SUMMARY_KEYS.get(
+            cfg__summary_key,
+            parsers.ILAB_PROGRESS_KEYS.get(cfg__summary_key)
+        )
+        if not summary_key_properties:
+            raise ValueError(f"Couldn't find the summary key '{cfg__summary_key}' in the summary/progress dicts ...")
+
         y_lower_better = summary_key_properties.lower_better
 
         if not cfg__summary_key:
@@ -180,16 +190,26 @@ class ILabSummary():
         x_name = (x_key or "single expe").replace("hyper_parameters.", "")
 
         y_lower_better = summary_key_properties.lower_better
-        what = f", in {y_units}"
+
+        what = f", in {y_units}" if y_units else ""
 
         y_title = f"Fine-tuning {y_title}{what}. "
-        title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+
+        if y_lower_better is None:
+            title = y_title
+        else:
+            title = y_title + "<br>"+("Lower is better" if y_lower_better else "Higher is better")
 
         if cfg__filter_key == "gpu":
             gpu_count = cfg__filter_value
             title += f". {gpu_count} GPU{'s' if gpu_count > 1 else ''}."
 
-        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        if y_lower_better is None:
+            y_axes_title = y_title
+        else:
+            y_axes_title = ("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else "")
+
+        fig.update_yaxes(title=y_axes_title)
         fig.update_layout(title=title, title_x=0.5,)
         fig.update_layout(legend_title_text="Configuration")
 
@@ -272,7 +292,7 @@ class ILabProgress():
 
         entries = common.Matrix.all_records(settings, setting_lists)
 
-        x_key = "epoch"
+        x_key = "timestamp"
 
         data = generateILabProgressData(entries, x_key, variables, cfg__progress_key)
         df = pd.DataFrame(data)
@@ -285,19 +305,27 @@ class ILabProgress():
         y_key = cfg__progress_key
         y_lower_better = progress_key_properties.lower_better
 
+        if y_title_val := getattr(progress_key_properties, "title", None):
+            y_key_title = f"{y_title_val} ({y_key})"
+            y_title = y_title_val
+        else:
+            y_key_title = f"'{y_key}'"
+            y_title = f"Training {y_key}. "
+
         fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color="name")
 
         for i in range(len(fig.data)):
             fig.data[i].update(mode='lines+markers+text')
             fig.update_yaxes(rangemode='tozero')
 
-        fig.update_xaxes(title="epochs")
+        fig.update_xaxes(title=x_key)
 
-        y_title = f"Training {y_key}. "
-        title = f"Fine-tuning '{y_key}' progress over the training {x_key}s"
-        title += "<br>"+("Lower is better" if y_lower_better else "Higher is better")
-        y_title += ("Lower is better" if y_lower_better else "Higher is better")
-        fig.update_yaxes(title=("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else ""))
+        title = f"Fine-tuning {y_key_title} progress over the training {x_key}s"
+        if y_lower_better is not None:
+            title += "<br>"+("Lower is better" if y_lower_better else "Higher is better")
+            y_title += ("Lower is better" if y_lower_better else "Higher is better")
+            y_title = ("❮ " if y_lower_better else "") + y_title + (" ❯" if not y_lower_better else "")
+        fig.update_yaxes(title=y_title)
         fig.update_layout(title=title, title_x=0.5)
         fig.update_layout(legend_title_text="Configuration")
 

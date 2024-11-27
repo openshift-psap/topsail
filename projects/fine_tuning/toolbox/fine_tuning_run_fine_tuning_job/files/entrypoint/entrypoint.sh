@@ -95,7 +95,7 @@ bash run_fms.sh
 EOF
     elif [[ "${WORKLOAD:-}" == ilab ]]; then
         cat <<EOF
-...
+bash run_ilab.sh
 EOF
     fi
     exec sleep inf

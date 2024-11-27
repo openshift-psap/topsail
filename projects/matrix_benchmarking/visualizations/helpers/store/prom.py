@@ -114,25 +114,47 @@ def _get_cluster_cpu_queries(cluster_role):
     ]
 
 
-def _get_pod_disk_queries(cluster_role, labels):
+def _get_pod_disk_rate_queries(cluster_role, labels):
     labels_str = _labels_to_string(labels, exclude="container")
 
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
 
     return [
-        {f"{cluster_role}__container_fs_reads_bytes_total{metric_name}": "(sum(irate(container_fs_reads_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
-        {f"{cluster_role}__container_fs_writes_bytes_total{metric_name}": "(sum(irate(container_fs_writes_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
+        {f"{cluster_role}__container_fs_reads_bytes_irate{metric_name}": "(sum(irate(container_fs_reads_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
+        {f"{cluster_role}__container_fs_writes_bytes_irate{metric_name}": "(sum(irate(container_fs_writes_bytes_total{"+labels_str+"}[5m])) by (pod, namespace))"},
     ]
 
 
-def _get_pod_network_queries(cluster_role, labels):
+def _get_pod_disk_total_queries(cluster_role, labels):
     labels_str = _labels_to_string(labels, exclude="container")
 
     metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
 
     return [
-        {f"{cluster_role}__container_network_receive_bytes_total__{metric_name}": "(sum(irate(container_network_receive_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
-        {f"{cluster_role}__container_network_transmit_bytes_total__{metric_name}": "(sum(irate(container_network_transmit_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+        {f"{cluster_role}__container_fs_reads_bytes_total{metric_name}": "(sum(container_fs_reads_bytes_total{"+labels_str+"})) by (pod, namespace))"},
+        {f"{cluster_role}__container_fs_writes_bytes_total{metric_name}": "(sum(container_fs_writes_bytes_total{"+labels_str+"}) by (pod, namespace))"},
+    ]
+
+
+def _get_pod_network_rate_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
+
+    return [
+        {f"{cluster_role}__container_network_receive_bytes_irate__{metric_name}": "(sum(irate(container_network_receive_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+        {f"{cluster_role}__container_network_transmit_bytes_irate__{metric_name}": "(sum(irate(container_network_transmit_bytes_total{"+labels_str+"}[5m])) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+    ]
+
+
+def _get_pod_network_total_queries(cluster_role, labels):
+    labels_str = _labels_to_string(labels, exclude="container")
+
+    metric_name = "_".join(f"{k}={v}" for k, v in labels.items() if k != "container")
+
+    return [
+        {f"{cluster_role}__container_network_receive_bytes_total__{metric_name}": "(sum(container_network_receive_bytes_total{"+labels_str+"}) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
+        {f"{cluster_role}__container_network_transmit_bytes_total__{metric_name}": "(sum(container_network_transmit_bytes_total{"+labels_str+"}) by (pod, namespace, interface)) + on(namespace,pod,interface) group_left(network_name) (pod_network_name_info)"},
     ]
 
 # ---
@@ -198,18 +220,36 @@ def _get_disk_usage_metrics(cluster_role, register, label_sets, disk_metrics_nam
         plot_name, labels = list(plot_name_labels.items())[0]
         if plot_name not in disk_metrics_names: continue
 
-        disk_queries = _get_pod_disk_queries(cluster_role, labels)
+        disk_queries = _get_pod_disk_total_queries(cluster_role, labels)
 
         all_metrics += disk_queries
 
         if not register: continue
 
         plotting_prom.Plot(
-            disk_queries, f"Prom: {plot_name}: Disk usage",
+            disk_queries, f"Prom: {plot_name}: Disk total usage",
             get_metrics=get_metrics(cluster_role),
             as_timestamp=True,
-            title="Disk usage", y_title="in MB/s",
-            y_divisor=1024*1024,
+            title="Disk total usage", y_title="in GB",
+            y_divisor=1000*1000*1000,
+        )
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in disk_metrics_names: continue
+
+        disk_queries = _get_pod_disk_rate_queries(cluster_role, labels)
+
+        all_metrics += disk_queries
+
+        if not register: continue
+
+        plotting_prom.Plot(
+            disk_queries, f"Prom: {plot_name}: Disk rate usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Disk rate usage", y_title="in MB/s",
+            y_divisor=1000*1000,
         )
 
     return all_metrics
@@ -222,18 +262,36 @@ def _get_network_usage_metrics(cluster_role, register, label_sets, network_metri
         plot_name, labels = list(plot_name_labels.items())[0]
         if plot_name not in network_metrics_names: continue
 
-        network_queries = _get_pod_network_queries(cluster_role, labels)
+        network_queries = _get_pod_network_total_queries(cluster_role, labels)
         all_metrics += network_queries
 
         if not register: continue
 
 
         plotting_prom.Plot(
-            network_queries, f"Prom: {plot_name}: Network usage",
+            network_queries, f"Prom: {plot_name}: Network total usage",
             get_metrics=get_metrics(cluster_role),
             as_timestamp=True,
-            title="Network usage", y_title="in Mbps",
-            y_divisor=1024*1024,
+            title="Network total usage", y_title="in GB",
+            y_divisor=1000*1000*1000,
+        )
+
+    for plot_name_labels in label_sets:
+        plot_name, labels = list(plot_name_labels.items())[0]
+        if plot_name not in network_metrics_names: continue
+
+        network_queries = _get_pod_network_rate_queries(cluster_role, labels)
+        all_metrics += network_queries
+
+        if not register: continue
+
+
+        plotting_prom.Plot(
+            network_queries, f"Prom: {plot_name}: Network rate usage",
+            get_metrics=get_metrics(cluster_role),
+            as_timestamp=True,
+            title="Network rate usage", y_title="in MBps",
+            y_divisor=1000*1000,
         )
 
     return all_metrics

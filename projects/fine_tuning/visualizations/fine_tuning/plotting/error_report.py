@@ -70,9 +70,12 @@ def _get_test_setup(entry):
 
     setup_info += [html.Li([f"Test UUID:", html.Code(entry.results.test_uuid, style={"white-space": "pre-wrap"})])]
 
+    setup_info += [html.Li([f"Job configuration:",
+                            html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
+
     setup_info += [html.Li([f"Workload configuration:",
                             html.A(html.Code("config_final.json"), href=artifacts_basedir / entry.results.locations.workload_config_file, target="_blank"),
-                            html.Code(yaml.dump(entry.results.job_config), style={"white-space": "pre-wrap"})])]
+                            html.Code(yaml.dump(entry.results.workload_config), style={"white-space": "pre-wrap"})])]
 
     setup_info += [html.Li([f"Job execution"])]
     exec_info = []
@@ -86,6 +89,13 @@ def _get_test_setup(entry):
         metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
         if metrics and (metrics.get("progress") or metrics.get("summary")):
             exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
+
+    elif entry.results.locations.has_ilab:
+        metrics = yaml.safe_load(json.dumps(entry.results.ilab_metrics, default=functools.partial(json_dumper, strict=False)))
+        if metrics and metrics.get("progress"):
+            exec_info += [html.Li([f"Fine-tuning last progress metrics:", html.Code(yaml.dump([metrics["progress"][-1]]), style={"white-space": "pre-wrap"})])]
+        if metrics and metrics.get("summary"):
+            exec_info += [html.Li([f"Fine-tuning summary metrics:", html.Code(yaml.dump([metrics["summary"]]), style={"white-space": "pre-wrap"})])]
 
     elif entry.results.locations.has_ray:
         metrics = yaml.safe_load(json.dumps(entry.results.ray_metrics, default=functools.partial(json_dumper, strict=False)))

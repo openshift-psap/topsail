@@ -211,6 +211,12 @@ def _parse_fms_logs(dirname):
 ILAB_PROGRESS_KEYS = {
     "overall_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="througput"),
     "cuda_mem_allocated": types.SimpleNamespace(lower_better=True, units="Gi"),
+    "lr": types.SimpleNamespace(lower_better=None, title="Learning rate", units=""),
+    "total_loss": types.SimpleNamespace(lower_better=None, title="Training loss", units=""),
+}
+
+ILAB_SUMMARY_KEYS = {
+    "torchrun_exec_time": types.SimpleNamespace(lower_better=True, units="minutes"),
 }
 
 """
@@ -237,11 +243,27 @@ def _parse_ilab_logs(dirname):
     ilab_metrics.progress = []
     ilab_metrics.dataset_stats = types.SimpleNamespace()
 
+    def extract_torchrun_execution_time(line):
+        if not line.startswith("TORCHRUN"):
+            return
+
+        _not_used, has_it, after = line.partition("TORCHRUN FINISHED after ")
+        if not has_it: return
+
+        time_str, has_it, after = after.partition(" seconds |")
+        if not has_it:
+            log.error(f"Invalid TORCHRUN FINISH line :/ '{line}'")
+            return
+
+        ilab_metrics.summary.torchrun_exec_time = int(time_str) / 60 # convert from seconds to minutes
+
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
         # metrics lines are printed in green. Look them up.
         in_green = False
         current_json = ""
         for line in f.readlines():
+            extract_torchrun_execution_time(line)
+
             if not in_green:
                 before, green_found, after = line.partition("[92m")
                 if not green_found:

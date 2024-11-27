@@ -76,6 +76,8 @@ class Plot():
         data_rq = []
         data_lm = []
 
+        metrics_by_group = defaultdict(set)
+
         for entry in common.Matrix.all_records(settings, setting_lists):
             entry_name = entry.get_name(variables)
 
@@ -101,6 +103,9 @@ class Plot():
                     else:
                         legend_group = metric.metric.get("pod", "<no podname>") + "/" + metric.metric.get("container", self.container_name) \
                             if not self.is_cluster else None
+
+                    if metric.metric:
+                        metrics_by_group[legend_group].add(str(metric.metric))
 
                     if self.as_timestamp:
                         x_values = [datetime.datetime.fromtimestamp(x) for x in x_values]
@@ -191,4 +196,9 @@ class Plot():
                                 line=dict(color='red', width=5, dash='dot'))
 
         msg = []
+        for group, queries in metrics_by_group.items():
+            msg += [html.H4(group if group else "no group")]
+            for query in queries:
+                msg += [html.Ul(html.Li(html.Code(str(query))))]
+
         return fig, msg
