@@ -101,7 +101,6 @@ def prepare():
         raise RuntimeError(f"Path with the secrets (PSAP_ODS_SECRET_PATH={PSAP_ODS_SECRET_PATH}) does not exists.")
 
     token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.rhoai_token_file")
-    rhoai_image_repo = config.project.get_config("rhods.catalog.image")
 
     if not config.project.get_config("kserve.raw_deployment.enabled"):
         with run.Parallel("prepare_kserve") as parallel:
@@ -112,10 +111,7 @@ def prepare():
                                  namespace=operator['namespace'],
                                  artifact_dir_suffix=operator['name'])
 
-    if "quay.io/rhoai" in rhoai_image_repo:
-        prepare_rhoai.install(token_file, "quay.io/rhoai")
-    else:
-        prepare_rhoai.install(token_file)
+    prepare_rhoai.install(token_file)
 
     dsc_enable_kserve()
 
