@@ -115,10 +115,6 @@
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml"
 
-- name: Finish here if sleeping forever
-  when: fine_tuning_run_fine_tuning_job_sleep_forever | bool
-  meta: end_play
-
 - name: Wait for the job completion
   block:
   - name: Wait for the Pod to start running
@@ -153,6 +149,10 @@
       - name: Fail if the Pod did not start successfully
         fail: msg="Pod in error state"
         when: wait_pod_fetch.stdout in ["Error", "Init:Error", "CrashLoopBackOff", "ImagePullBackOff"]
+
+  - name: Finish here if sleeping forever
+    when: fine_tuning_run_fine_tuning_job_sleep_forever | bool
+    meta: end_play
 
   - name: Wait for the main container to finish running
     shell:

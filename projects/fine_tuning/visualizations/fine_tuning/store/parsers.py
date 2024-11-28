@@ -209,14 +209,15 @@ def _parse_fms_logs(dirname):
 
 
 ILAB_PROGRESS_KEYS = {
-    "overall_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="througput"),
-    "cuda_mem_allocated": types.SimpleNamespace(lower_better=True, units="Gi"),
+    "overall_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="Throughput"),
+    "cuda_mem_allocated": types.SimpleNamespace(lower_better=True, units="Gi", title="GPU Memory used (on 1 GPU)"),
     "lr": types.SimpleNamespace(lower_better=None, title="Learning rate", units=""),
     "total_loss": types.SimpleNamespace(lower_better=None, title="Training loss", units=""),
+    "batch_size": types.SimpleNamespace(lower_better=None, title="Effective batch size", units=""),
 }
 
 ILAB_SUMMARY_KEYS = {
-    "torchrun_exec_time": types.SimpleNamespace(lower_better=True, units="minutes"),
+    "torchrun_exec_time": types.SimpleNamespace(lower_better=True, units="minutes", title="Execution wall-time"),
 }
 
 """

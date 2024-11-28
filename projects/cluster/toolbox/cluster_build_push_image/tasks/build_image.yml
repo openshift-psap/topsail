@@ -46,7 +46,7 @@
           -ojsonpath={.status.phase}
           -n "{{ cluster_build_push_image_namespace }}"
     register: wait_pod_running
-    until: "'Running' in wait_pod_running.stdout or 'Failed' in wait_pod_running.stdout or 'Complete' in wait_pod_running.stdout"
+    until: "'Running' in wait_pod_running.stdout or 'Failed' in wait_pod_running.stdout or 'Complete' in wait_pod_running.stdout or 'Error' in wait_pod_running.stdout"
     retries: 12
     delay: 15
 
