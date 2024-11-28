@@ -198,7 +198,7 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  rhoai_token_file: quay.io.token
   opensearch_instances: opensearch.yaml
 clusters:
   metal_profiles:
