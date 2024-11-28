@@ -42,7 +42,7 @@ if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
         echo "New address $MASTER_ADDR found in the shared storage."
     fi
 
-    ulimit -l unlimited
+    #ulimit -l unlimited
 
     export MASTER_ADDR
     export PET_MASTER_ADDR=$MASTER_ADDR
