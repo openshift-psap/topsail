@@ -238,31 +238,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: llama-2-13b-chat-hf
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: mpt-7b-instruct2
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: mistral-7b-instruct-v02
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: llama-3-70b-instruct
-      testing:
-        size: large
-    - name: codellama-34b-instruct-hf
-      testing:
-        size: large
-    - name: granite-3b-code-instruct
-      testing:
-        size: small
-    - name: granite-8b-code-instruct
-      testing:
-        size: small
-        max_concurrency: 64
     - name: granite-20b-code-instruct
       testing:
         size: large
