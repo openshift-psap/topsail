@@ -531,10 +531,10 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
+    tag: rhoai-2.16@sha256:d3d9d17e465d167fc5c98687aa7ece65c66f21ed0c917956d4f9e1c0fb0287a0
     channel: fast
     version: 2.16.0
-    version_name: rc1
+    version_name: rc2
     opendatahub: false
     managed_rhoai: false
   operator:
