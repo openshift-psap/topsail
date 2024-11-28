@@ -110,6 +110,7 @@
        --image=${IMAGE} \
        -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
        -- pip freeze > "{{ artifact_extra_logs_dir }}/artifacts/pip-freeze.txt"
+  when: fine_tuning_run_fine_tuning_job_capture_artifacts | bool
 
 - name: Create the fine-tuning job
   command:
