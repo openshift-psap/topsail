@@ -260,11 +260,11 @@ ldap:
     prefix: psapuser
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 848125
+    image: quay.io/rhoai/rhoai-fbc-fragment
+    tag: rhoai-2.16@sha256:d3d9d17e465d167fc5c98687aa7ece65c66f21ed0c917956d4f9e1c0fb0287a0
     channel: fast
-    version: 2.15.0
-    version_name: rc1
+    version: 2.16.0
+    version_name: rc2
   pipelines:
     application:
       name: sample
