@@ -385,6 +385,13 @@ ci_presets:
     clusters.sutest.compute.machineset.count: null
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
+  ilab_ipi_scale:
+    extends: [ilab_scale]
+    tests.fine_tuning.test_settings.pod_count: [1, 2, 4]
+    tests.fine_tuning.test_settings.gpu: [2]
+    clusters.sutest.compute.machineset.count: null
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
   # ---
 
   cluster_instructlab:
