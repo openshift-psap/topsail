@@ -26,13 +26,13 @@ spec:
             image: {{ fine_tuning_run_fine_tuning_job_container_image }}
             imagePullPolicy: IfNotPresent
 {% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
-#             securityContext:
-#               capabilities:
-#                 add:
-#                 - IPC_LOCK
-#                 - SYS_RESOURCE
-#                 - NET_ADMIN
-#                 - NET_RAW
+            securityContext:
+              capabilities:
+                add:
+                - IPC_LOCK
+                - SYS_RESOURCE
+                - NET_ADMIN
+                - NET_RAW
 {% endif %}
             command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
             env:
@@ -80,6 +80,10 @@ spec:
 {% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             - name: NCCL_SOCKET_IFNAME
               value: "net1"
+            - name: NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
 {% endif %}
             volumeMounts:
             - name: storage-volume
