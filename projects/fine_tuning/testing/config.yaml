@@ -404,6 +404,7 @@ ci_presets:
     clusters.sutest.compute.machineset.taint: null
     clusters.sutest.compute.machineset.rest_count: 1
     tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
+    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
 
   cluster_ibm_dgx:
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
@@ -424,7 +425,7 @@ ci_presets:
     clusters.sutest.compute.machineset.type: "Cluster Kubecon-RoCE"
     clusters.sutest.is_metal: true
     fine_tuning.pvc.storage_class_name: trident-sc
-    tests.fine_tuning.test_settings.use_roce: true
+    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
 
   gating:
     extends: [use_intlab_os]
@@ -606,7 +607,7 @@ tests:
       dataset_replication: 1
       pod_count: 1
       container_image: null
-      use_roce: null
+      use_secondary_nic: null
       ephemeral_output_pvc_size: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
