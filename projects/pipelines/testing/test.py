@@ -106,7 +106,7 @@ def prepare_rhods():
     Prepares the cluster for running RHODS pipelines scale tests.
     """
 
-    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.brew_registry_redhat_io_token_file")
+    token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.rhoai_token_file")
     prepare_rhoai.install(token_file)
 
     has_dsc = run.run("oc get dsc -oname", capture_stdout=True).stdout
