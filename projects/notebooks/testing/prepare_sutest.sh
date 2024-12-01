@@ -50,9 +50,17 @@ prepare_sutest_cluster() {
 }
 
 setup_brew_registry() {
-    local token_file=$PSAP_ODS_SECRET_PATH/$(get_config secrets.brew_registry_redhat_io_token_file)
+    local token_file=$PSAP_ODS_SECRET_PATH/$(get_config secrets.rhoai_token_file)
+    local image=$(get_config rhods.catalog.image)
 
-    ./projects/rhods/utils/brew.registry.redhat.io/setup.sh "$token_file"
+    if [[ image == "brew.registry"* ]]; then
+        image_repo="brew.registry.redhat.io"
+    else
+        # image: quay.io/rhoai/rhoai-fbc-fragment
+        image_repo=$(dirname "$image")
+    fi
+
+    ./projects/rhods/utils/setup.sh "$token_file" "$image_repo"
 }
 
 prepare_ocp_sutest_deploy_rhods() {
