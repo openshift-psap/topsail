@@ -80,6 +80,12 @@ else
     echo "No GPU seem to be available."
 fi
 
+if [[ "${WORKLOAD:-}" == fms ]]; then
+    CMD="bash $THIS_DIR/run_fms.sh"
+elif [[ "${WORKLOAD:-}" == ilab ]]; then
+    CMD="bash $THIS_DIR/run_ilab.sh"
+fi
+
 if [[ "${SLEEP_FOREVER:-}" ]]; then
     set +x
     echo "Sleep flag enabled, sleeping forever."
@@ -88,21 +94,10 @@ if [[ "${SLEEP_FOREVER:-}" ]]; then
 oc rsh -n $(cat /run/secrets/kubernetes.io/serviceaccount/namespace) $(cat /proc/sys/kernel/hostname)
 cp \$CONFIG_JSON_PATH .
 export CONFIG_JSON_PATH=\$PWD/config.json
+
+$CMD
 EOF
-    if [[ "${WORKLOAD:-}" == fms ]]; then
-        cat <<EOF
-bash run_fms.sh
-EOF
-    elif [[ "${WORKLOAD:-}" == ilab ]]; then
-        cat <<EOF
-bash run_ilab.sh
-EOF
-    fi
     exec sleep inf
 fi
 
-if [[ "${WORKLOAD:-}" == fms ]]; then
-    exec bash "$THIS_DIR"/run_fms.sh
-elif [[ "${WORKLOAD:-}" == ilab ]]; then
-    exec bash "$THIS_DIR"/run_ilab.sh
-fi
+exec $CMD

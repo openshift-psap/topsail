@@ -36,6 +36,8 @@ rendered automatically when executing from the project’s root folder:
 
 ::
 
+    ./run_toolbox.py repo generate_toolbox_related_files
+    # or
     ./run_toolbox.py repo generate_ansible_default_settings
 
 

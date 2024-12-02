@@ -78,5 +78,5 @@ fine_tuning_run_fine_tuning_job_sleep_forever: false
 # if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
 fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size: null
 
-# if enabled, activates the flags required to use RoCE fast network
-fine_tuning_run_fine_tuning_job_use_roce: false
+# if enabled, activates the secondary NIC
+fine_tuning_run_fine_tuning_job_use_secondary_nic: false

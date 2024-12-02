@@ -11,12 +11,12 @@ spec:
       template: &job_template
         metadata:
           annotations:
-{% if fine_tuning_run_fine_tuning_job_use_roce %}
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             k8s.v1.cni.cncf.io/networks:
               '[
                 {
-                  "name": "network-port-1",
-                  "namespace": "default"
+                  "name": "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic }}",
+                  "namespace": "{{ fine_tuning_run_fine_tuning_job_namespace }}"
                 }
               ]'
 {% endif %}
@@ -25,7 +25,7 @@ spec:
           - name: pytorch
             image: {{ fine_tuning_run_fine_tuning_job_container_image }}
             imagePullPolicy: IfNotPresent
-{% if fine_tuning_run_fine_tuning_job_use_roce %}
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             securityContext:
               capabilities:
                 add:
@@ -77,9 +77,13 @@ spec:
 {% endif %}
             - name: MODEL_NAME
               value: "{{ fine_tuning_run_fine_tuning_job_model_name}}"
-{% if fine_tuning_run_fine_tuning_job_use_roce %}
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             - name: NCCL_SOCKET_IFNAME
               value: "net1"
+            - name: NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
 {% endif %}
             volumeMounts:
             - name: storage-volume
@@ -90,6 +94,10 @@ spec:
               mountPath: /mnt/config
             - name: output-volume
               mountPath: /mnt/output
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
+            - name: nic-mapping-volume
+              mountPath: /mnt/nic-mapping
+{% endif %}
             resources:
               requests: &request_block
 {% if fine_tuning_run_fine_tuning_job_gpu %}
@@ -103,9 +111,6 @@ spec:
               limits:
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
 {% endif %}
-{% if fine_tuning_run_fine_tuning_job_use_roce %}
-                openshift.io/port1: "1"
-{% endif %}
           volumes:
           - name: storage-volume
             persistentVolumeClaim:
@@ -116,6 +121,11 @@ spec:
           - name: entrypoint-volume
             configMap:
               name: {{ job_name_safe }}-entrypoint
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
+          - name: nic-mapping-volume
+            configMap:
+              name: {{ job_name_safe }}-nic-mapping
+{% endif %}
 {% if fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size %}
           - name: output-volume
             ephemeral:

@@ -46,7 +46,7 @@ class Fine_Tuning:
             sleep_forever=False,
 
             ephemeral_output_pvc_size=None,
-            use_roce=False,
+            use_secondary_nic=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -82,7 +82,7 @@ class Fine_Tuning:
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
 
           ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
-          use_roce: if enabled, activates the flags required to use RoCE fast network
+          use_secondary_nic: if enabled, activates the secondary NIC
         """
 
         return RunAnsibleRole(locals())
