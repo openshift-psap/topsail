@@ -392,6 +392,9 @@ ci_presets:
     clusters.sutest.compute.machineset.count: null
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
+  ilab_secondary_nic:
+    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
+
   # ---
 
   cluster_instructlab:
@@ -404,7 +407,6 @@ ci_presets:
     clusters.sutest.compute.machineset.taint: null
     clusters.sutest.compute.machineset.rest_count: 1
     tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
-    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
 
   cluster_ibm_dgx:
     clusters.sutest.compute.machineset.type: "IBM-DGX A100-80GB"
