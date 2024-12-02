@@ -210,4 +210,7 @@ class Plot():
                 for labels in labelss:
                     msg += [html.Ul(html.Li(html.Code(str(labels))))]
 
+        if msg:
+            msg = html.Details([html.Summary("Prometheus queries labels")] + msg)
+
         return fig, msg
