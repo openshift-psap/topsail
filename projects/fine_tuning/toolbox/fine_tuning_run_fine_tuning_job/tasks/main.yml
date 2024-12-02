@@ -27,8 +27,8 @@
 - name: Prepare the config file template
   template:
     src: "{% if fine_tuning_run_fine_tuning_job_workload == 'fms' -%}
-    {{ fine_tuning_job_fms_config_template }}
-{%- elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
+    {{ fine_tuning_job_fms_config_template }}{%-
+elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
     {{ fine_tuning_job_ilab_config_template }}
 {%- endif %}"
     dest: "{{ artifact_extra_logs_dir }}/src/config_base.yaml"
