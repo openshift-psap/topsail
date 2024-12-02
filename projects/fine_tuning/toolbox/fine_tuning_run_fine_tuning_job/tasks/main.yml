@@ -89,7 +89,7 @@
 
 - name: Capture the IP of the secondary NIC of the GPU nodes
   when:
-  - fine_tuning_run_fine_tuning_job_use_secondary_nic | length > 0
+  - fine_tuning_run_fine_tuning_job_use_secondary_nic | default('', true) | length > 0
   - not fine_tuning_run_fine_tuning_job_prepare_only | bool
   block:
   - name: List the GPU nodes

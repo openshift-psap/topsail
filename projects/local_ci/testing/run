@@ -102,6 +102,7 @@ def local_ci_run(
         test_args=None,
         test_identifier=None,
         test_description=None,
+        user=True,
         wait=False,
 ):
     """
@@ -118,8 +119,9 @@ def local_ci_run(
       pr_config: Optional path to a PR config file (avoids fetching Github PR json).
       retrieve_artifacts: If False, do not retrieve locally the test artifacts.
       test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
-      test_identifier: A simple identifier
+      test_identifier: A simple identifier. Used only as part of the test identifier when exporting.
       test_description: A text file to upload along with the artifacts, that can describe what is being tested
+      user: identifer of the user who launched the test, or $USER if passed without a value. Used only as part of the test identifier when exporting.
       wait: If true, wait for the namespace to have no Pod running before running (instead of failing).
     """
     namespace = config.project.get_config("base_image.namespace")
@@ -177,15 +179,24 @@ def local_ci_run(
     if workload_identifier is None:
         workload_identifier = workload
 
-    ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    test_id = ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+
+    if user:
+        if user is True:
+            user = os.environ["USER"]
+
+        if not user.isalnum():
+            logging.fatal(f"Invalid user identifier --user='{user}'. Should be alphanumeric")
+            sys.exit(1)
+
+        test_id += f"__{user}"
 
     if test_identifier:
         if not test_identifier.replace(" ", "").isalnum():
             logging.fatal(f"Invalid test identifier --test_identifier='{test_identifier}'. Should be alphanumeric+space.")
             sys.exit(1)
 
-        ts_id += "__" + test_identifier.replace(" ", "_")
-
+        test_id += "__" + test_identifier.replace(" ", "_")
 
     if step and step not in workload_data["steps"]:
         logging.fatal(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
@@ -229,7 +240,7 @@ def local_ci_run(
         extra = dict(
             ci_command=command,
             pr_number=pr_number,
-            export_test_run_identifier=f"{ts_id}/{step_dirname}",
+            export_test_run_identifier=f"{test_id}/{step_dirname}",
             export=export,
             pod_name=f"{workload}-{step_idx:03d}-{step_name}".replace("_", "-"),
             test_name=f"{command_group}/{workload_identifier}",
