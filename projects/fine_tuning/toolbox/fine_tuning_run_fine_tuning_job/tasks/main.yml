@@ -63,7 +63,7 @@
        --dry-run=client \
        -oyaml \
        | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
-       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
+       | tee "{{ artifact_extra_logs_dir }}/src/configmap_config.yaml" \
        | oc apply -f-
 
 - name: Prepare the entrypoint ConfigMap
@@ -76,7 +76,7 @@
        --dry-run=client \
        -oyaml \
        | yq -Y '. | .metadata.labels = {"topsail.fine-tuning-jobname": "{{ job_name_safe }}"}' \
-       | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
+       | tee "{{ artifact_extra_logs_dir }}/src/configmap_entrypoint.yaml" \
        | oc apply -f-
 
 - name: Delete the fine-tuning job, if it exists
