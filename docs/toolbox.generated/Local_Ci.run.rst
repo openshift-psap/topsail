@@ -92,6 +92,11 @@ Parameters
 * List of arguments to give to the test.
 
 
+``test_description``  
+
+* A text file to upload along with the artifacts, that can describe what is being tested
+
+
 ``init_command``  
 
 * Command to run in the container before running anything else.

@@ -40,6 +40,9 @@ local_ci_run_test_name: local-ci-test
 # List of arguments to give to the test.
 local_ci_run_test_args: []
 
+# A text file to upload along with the artifacts, that can describe what is being tested
+local_ci_run_test_description: null
+
 # Command to run in the container before running anything else.
 local_ci_run_init_command: null
 

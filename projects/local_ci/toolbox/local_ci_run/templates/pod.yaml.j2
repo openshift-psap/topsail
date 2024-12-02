@@ -85,6 +85,12 @@ spec:
 {% endif %}
       EOF
 
+{% if local_ci_run_test_description %}
+      cat > "$ARTIFACT_DIR/TEST_DESCRIPTION" <<EOF
+      {{ local_ci_run_test_description_content_cmd.stdout | indent(6) }}
+      EOF
+{% endif %}
+
 {% if local_ci_run_init_command %}
       echo "Running the init command ..."
       {{ local_ci_run_init_command }} &> "${ARTIFACT_DIR}/init.log"

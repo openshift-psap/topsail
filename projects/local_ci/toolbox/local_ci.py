@@ -27,6 +27,7 @@ class Local_Ci:
             secret_env_key=None,
             test_name="local-ci-test",
             test_args=[],
+            test_description=None,
             init_command=None,
             export_bucket_name=None,
             export_test_run_identifier="default",
@@ -51,6 +52,7 @@ class Local_Ci:
             secret_env_key: Name of the environment variable with which the secret path will be exposed in the Pod.
             test_name: Name of the test being executed.
             test_args: List of arguments to give to the test.
+            test_description: A text file to upload along with the artifacts, that can describe what is being tested
             init_command: Command to run in the container before running anything else.
             export_bucket_name: Name of the S3 bucket where the artifacts should be exported.
             export_test_run_identifier: Identifier of the test being executed (will be a dirname).

@@ -5,6 +5,12 @@
     cat "{{ local_ci_run_pr_config }}"
   register: local_ci_run_pr_config_content_cmd
 
+- name: Get the content of the test description file, if it is enabled
+  when: local_ci_run_test_description | default('', true) | trim
+  command:
+    cat "{{ local_ci_run_test_description }}"
+  register: local_ci_run_test_description_content_cmd
+
 - name: Ensure that the CI image exists
   command: oc get istag -n "{{ local_ci_run_namespace }}" "{{ local_ci_run_istag }}"
 
