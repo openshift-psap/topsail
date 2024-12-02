@@ -22,14 +22,9 @@ mkdir -p "$CACHE_DIR"
 
 if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
 
-    MAPPING="
-instructlab-standalon-6rjg8-worker-1-l6rlv=10.249.64.29
-instructlab-standalon-6rjg8-worker-1-zz2cj=10.249.64.32
-instructlab-standalon-6rjg8-worker-1-dmwgv=10.249.64.31
-instructlab-standalon-6rjg8-worker-1-7mcrk=10.249.64.30
-"
+    MAPPING="$(cat /mnt/nic-mapping/nodename_ip_mapping.yaml)"
     current_ip=$(ip route | grep "$NCCL_SOCKET_IFNAME" | cut -d" " -f9)
-    correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | cut -d= -f2)
+    correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | cut -d: -f2 | xargs)
 
     # will fail without a privileged container ...
     ip addr del "$current_ip/24" dev "$NCCL_SOCKET_IFNAME"

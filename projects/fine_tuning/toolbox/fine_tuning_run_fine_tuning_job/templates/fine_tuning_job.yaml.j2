@@ -94,6 +94,10 @@ spec:
               mountPath: /mnt/config
             - name: output-volume
               mountPath: /mnt/output
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
+            - name: nic-mapping-volume
+              mountPath: /mnt/nic-mapping
+{% endif %}
             resources:
               requests: &request_block
 {% if fine_tuning_run_fine_tuning_job_gpu %}
@@ -117,6 +121,11 @@ spec:
           - name: entrypoint-volume
             configMap:
               name: {{ job_name_safe }}-entrypoint
+{% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
+          - name: nic-mapping-volume
+            configMap:
+              name: {{ job_name_safe }}-nic-mapping
+{% endif %}
 {% if fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size %}
           - name: output-volume
             ephemeral:
