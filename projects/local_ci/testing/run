@@ -89,9 +89,21 @@ def local_ci_prepare():
 
 
 @entrypoint()
-def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True, step=None,
-                 check_clean_diff=True, check_branch_synced=True, pr_config=None, retrieve_artifacts=True,
-                 test_args=None, wait=False):
+def local_ci_run(
+        workload,
+        workload_identifier=None,
+        pr_number=None,
+        export=True,
+        step=None,
+        check_clean_diff=True,
+        check_branch_synced=True,
+        pr_config=None,
+        retrieve_artifacts=True,
+        test_args=None,
+        test_identifier=None,
+        test_description=None,
+        wait=False,
+):
     """
     Runs a CI workload.
 
@@ -106,12 +118,18 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
       pr_config: Optional path to a PR config file (avoids fetching Github PR json).
       retrieve_artifacts: If False, do not retrieve locally the test artifacts.
       test_args: List of arguments to give to the test. Overrides what is found in the configuration file.
+      test_identifier: A simple identifier
+      test_description: A text file to upload along with the artifacts, that can describe what is being tested
       wait: If true, wait for the namespace to have no Pod running before running (instead of failing).
     """
     namespace = config.project.get_config("base_image.namespace")
 
     if pr_config and not pathlib.Path(pr_config).exists():
         logging.fatal(f"--pr-config={pr_config} config file does not exist, aborting.")
+        sys.exit(1)
+
+    if test_description and not pathlib.Path(test_description).exists():
+        logging.fatal(f"--test-description={test_description} text file does not exist, aborting.")
         sys.exit(1)
 
     try:
@@ -160,6 +178,14 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
         workload_identifier = workload
 
     ts_id = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+
+    if test_identifier:
+        if not test_identifier.replace(" ", "").isalnum():
+            logging.fatal(f"Invalid test identifier --test_identifier='{test_identifier}'. Should be alphanumeric+space.")
+            sys.exit(1)
+
+        ts_id += "__" + test_identifier.replace(" ", "_")
+
 
     if step and step not in workload_data["steps"]:
         logging.fatal(f"Invalid step name {step} for workload {workload}. Expected one of '{', '.join(workload_data['steps'])}'")
@@ -210,6 +236,9 @@ def local_ci_run(workload, workload_identifier=None, pr_number=None, export=True
             test_args=test_args,
             retrieve_artifacts=retrieve_artifacts,
         )
+
+        if test_description:
+            extra["test_description"] = test_description
 
         if pr_config is not None:
             extra["pr_config"] = pr_config
