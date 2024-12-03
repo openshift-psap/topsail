@@ -462,7 +462,7 @@ clusters:
     ocp:
       # list of tags to apply to the machineset when creating the cluster
       tags:
-        # TicketId: "..."
+        TicketId: null
         Project: PSAP/Project/FineTuning
       deploy_cluster:
         target: cluster
