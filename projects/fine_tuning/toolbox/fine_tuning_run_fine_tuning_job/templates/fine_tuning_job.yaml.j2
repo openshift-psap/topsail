@@ -21,6 +21,10 @@ spec:
               ]'
 {% endif %}
         spec:
+{% if fine_tuning_run_fine_tuning_job_use_host_network %}
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
+{% endif %}
           containers:
           - name: pytorch
             image: {{ fine_tuning_run_fine_tuning_job_container_image }}

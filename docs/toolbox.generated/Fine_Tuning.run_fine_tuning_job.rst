@@ -151,3 +151,8 @@ Parameters
 
 * If enabled, activates the secondary NIC
 
+
+``use_host_network``  
+
+* If enabled, activates the host network
+
