@@ -39,6 +39,11 @@ sutest/cluster preload_image:
   pod_toleration_effect: {{ clusters.sutest.compute.machineset.taint.effect }}
   pod_toleration_key: {{ clusters.sutest.compute.machineset.taint.key }}
 {% endif %}
+
+
+storage deploy_nfs_provisioner:
+  pvc_size: {{ nfs_provisioner.storage_size }}
+
 #
 # deploy RHODS
 #

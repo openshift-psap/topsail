@@ -505,6 +505,10 @@ rhods:
     # set to true to stop the RHODS operator
     stop: false
 
+nfs_provisioner:
+  enabled: false
+  storage_size: 250Gi
+
 gpu:
   prepare_cluster: false
   time_sharing:

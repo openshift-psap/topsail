@@ -14,7 +14,7 @@ def prepare():
     with run.Parallel("prepare1") as parallel:
         parallel.delayed(prepare_rhoai)
         parallel.delayed(cluster_scale_up)
-
+        parallel.delayed(prepare_storage)
 
     test_settings = config.project.get_config("tests.fine_tuning.test_settings")
     with run.Parallel("prepare2") as parallel:
@@ -34,6 +34,23 @@ def prepare_gpu():
         prepare_gpu_operator.add_toleration(toleration_effect, toleration_key)
 
     prepare_gpu_operator.wait_ready(enable_time_sharing=False, wait_stack_deployed=False, wait_metrics=False)
+
+
+def prepare_storage():
+    storage_class = config.project.get_config("fine_tuning.pvc.storage_class_name")
+
+    if not config.project.get_config("nfs_provisioner.enabled"):
+        if storage_class == "nfs-provisioner":
+            raise ValueError(f"The storage class is set to {storage_class}, but the NFS provisioner isn't enabled. Aborting.")
+
+        logging.info("prepare_storage: NFS provisioner deployment not enabled.")
+        return
+
+    storage_class = config.project.get_config("fine_tuning.pvc.storage_class_name")
+    if storage_class != "nfs-provisioner":
+        logging.warning(f"prepare_storage: not using the NFS storage class (using '{storage_class}').")
+
+    run.run_toolbox_from_config("storage", "deploy_nfs_provisioner")
 
 
 def prepare_rhoai():
