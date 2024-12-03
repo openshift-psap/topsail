@@ -348,10 +348,6 @@ ci_presets:
     extends: [not_fms, gpu]
     ci_presets.light["tests.fine_tuning.test_settings.dataset_name"]: ilab_skills_data.jsonl
     ci_presets.light["tests.fine_tuning.test_settings.model_name"]: ibm-granite/granite-3b-code-instruct@hf
-    ci_presets.light["tests.fine_tuning.test_settings.gpu"]: 1
-    ci_presets.gpu["clusters.sutest.compute.machineset.type"]: g5.xlarge
-    clusters.sutest.compute.machineset.type: g5.xlarge
-
 
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
@@ -394,6 +390,40 @@ ci_presets:
 
   ilab_secondary_nic:
     tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
+
+  ilab_aws:
+    extends: [gpu, ilab]
+    ci_presets.light["tests.fine_tuning.test_settings.gpu"]: 1
+    ci_presets.gpu["clusters.sutest.compute.machineset.type"]: g5.2xlarge
+    clusters.sutest.compute.machineset.type: g5.2xlarge
+
+    fine_tuning.pvc.access_mode: ReadWriteMany
+    fine_tuning.pvc.size: 200Gi
+    fine_tuning.pvc.storage_class_name: nfs-provisioner
+    nfs_provisioner.enabled: true
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: true
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+    tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 100Gi
+
+  ilab_aws_scale:
+    extends: [ilab_aws]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    clusters.sutest.compute.machineset.spot: true
+    clusters.sutest.compute.machineset.type: g6e.12xlarge
+
+    tests.fine_tuning.test_settings.pod_count: [2, 1]
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+    tests.fine_tuning.test_settings.gpu: 4
+
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+    tests.fine_tuning.node_count_equal_pod_count: true
+
 
   # ---
 
@@ -485,6 +515,7 @@ clusters:
         name: workload-pods
         type: m6i.2xlarge
         count: null
+        spot: false
         rest_count: 0
         taint:
           key: only-workload-pods
