@@ -402,6 +402,7 @@ ci_presets:
     fine_tuning.pvc.storage_class_name: nfs-provisioner
     nfs_provisioner.enabled: true
 
+    tests.fine_tuning.node_count_equal_pod_count: true
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
@@ -627,6 +628,7 @@ tests:
   dry_mode: false
   fine_tuning:
     namespace: fine-tuning-testing
+    node_count_equal_pod_count: false
     matbenchmarking:
       enabled: false
       visu_file:
@@ -638,11 +640,11 @@ tests:
         replicas: 2
     test_settings:
       name: fine-tuning
+      pod_count: 1
       model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
       gpu: 1
       dataset_replication: 1
-      pod_count: 1
       container_image: null
       use_secondary_nic: null
       ephemeral_output_pvc_size: null

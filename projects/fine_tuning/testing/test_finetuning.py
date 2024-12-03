@@ -101,7 +101,12 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     remove_none_values(test_settings)
 
+    if config.project.get_config("tests.fine_tuning.node_count_equal_pod_count"):
+        pod_count = test_settings.get("pod_count")
+        prepare_finetuning.cluster_scale_up(wait_gpu=False, node_count=pod_count)
+
     prepare_finetuning.prepare_namespace(test_settings)
+
     failed = True
 
     _start_ts = datetime.datetime.now()
@@ -289,8 +294,11 @@ def _run_test_and_visualize(test_override_values=None):
         raise RuntimeError(msg)
 
     if not dry_mode:
-        with env.NextArtifactDir("prepare_nodes"):
-            prepare_finetuning.cluster_scale_up(wait_gpu=True)
+        if not config.project.get_config("tests.fine_tuning.node_count_equal_pod_count"):
+            with env.NextArtifactDir("prepare_nodes"):
+                prepare_finetuning.cluster_scale_up(wait_gpu=True)
+        else:
+            logging.info("tests.fine_tuning.node_count_equal_pod_count is set. The cluster will be scaled up as part of the test configuration.")
 
     test_artifact_dir_p = [None]
     try:

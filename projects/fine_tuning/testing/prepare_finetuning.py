@@ -254,15 +254,19 @@ def prepare_namespace(test_settings):
     prepare_kueue_queue(False, namespace, local_kueue_name)
 
 
-def cluster_scale_up(wait_gpu=False):
+def cluster_scale_up(wait_gpu=False, node_count=None):
     if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
+    if node_count is None:
+        node_count = config.project.get_config("clusters.sutest.compute.machineset.count")
 
     if node_count is None:
-        logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
+        logging.info("cluster_scale_up(node_count=None) and clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
         return
+
+    if node_count == 0:
+        raise ValueError("Trying to scale UP the cluster to zero nodes. Aborting.")
 
     extra = dict(scale=node_count)
     run.run_toolbox_from_config("cluster", "set_scale", prefix="sutest", extra=extra, artifact_dir_suffix="_sutest")
@@ -292,7 +296,10 @@ def cluster_scale_down(to_zero=None):
     if config.project.get_config("clusters.sutest.is_metal"):
         return
 
-    if config.project.get_config("clusters.sutest.compute.machineset.count") is None:
+    if config.project.get_config("tests.fine_tuning.node_count_equal_pod_count"):
+        logging.info("tests.fine_tuning.node_count_equal_pod_count is set. Scale down enabled.")
+
+    elif config.project.get_config("clusters.sutest.compute.machineset.count") is None:
         logging.info("clusters.sutest.compute.machineset.count isn't set. Not touching the cluster scale.")
         return
 
