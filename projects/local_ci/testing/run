@@ -192,8 +192,8 @@ def local_ci_run(
         test_id += f"__{user}"
 
     if test_identifier:
-        if not test_identifier.replace(" ", "").isalnum():
-            logging.fatal(f"Invalid test identifier --test_identifier='{test_identifier}'. Should be alphanumeric+space.")
+        if not test_identifier.replace(" ", "").replace(".", "").replace("_", "").isalnum():
+            logging.fatal(f"Invalid test identifier --test_identifier='{test_identifier}'. Should be alphanumeric+[space, dot, underscore].")
             sys.exit(1)
 
         test_id += "__" + test_identifier.replace(" ", "_")
