@@ -6,15 +6,15 @@
   failed_when: false
   register: has_aws_efs_csi_cmd
 
-- name: Run the operator deployment colr
+- name: Run the operator deployment role
   when: not has_aws_efs_csi_cmd.stdout
   include_role:
-    name: storage_deploy_operator
+    name: cluster_deploy_operator
   vars:
-    storage_deploy_operator_catalog: redhat-operators
-    storage_deploy_operator_manifest_name: aws-efs-csi-driver-operator
-    storage_deploy_operator_all_namespaces: "True"
-    storage_deploy_operator_namespace: openshift-operators
+    cluster_deploy_operator_catalog: redhat-operators
+    cluster_deploy_operator_manifest_name: aws-efs-csi-driver-operator
+    cluster_deploy_operator_all_namespaces: "True"
+    cluster_deploy_operator_namespace: openshift-operators
 
 - name: Create the AWS EFS filesystem
   include_tasks: aws-efs.yaml

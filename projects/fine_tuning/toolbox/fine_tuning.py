@@ -47,6 +47,7 @@ class Fine_Tuning:
 
             ephemeral_output_pvc_size=None,
             use_secondary_nic=False,
+            use_host_network=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -83,7 +84,11 @@ class Fine_Tuning:
 
           ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
           use_secondary_nic: if enabled, activates the secondary NIC
+          use_host_network: if enabled, activates the host network
         """
+
+        if use_host_network and use_secondary_nic:
+            raise ValueError("Cannot use  --use_host_network and --use_secondary_nic simultaneously.")
 
         return RunAnsibleRole(locals())
 
