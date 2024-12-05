@@ -230,6 +230,12 @@ fi
 
 #############
 
+sleep 600
+exit 1
+
+#############
+
+
 echo "$(date) Test of '$@' started." | tee "$ARTIFACT_DIR/STARTED"
 start_time=$(date +%s)
 
