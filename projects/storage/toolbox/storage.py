@@ -78,3 +78,32 @@ class Storage:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("storage_download_to_image")
+    @AnsibleMappedParams
+    def download_to_image(
+            self,
+            source,
+            image_name,
+            namespace,
+            image_tag="latest",
+            org_name="modelcars",
+            creds="",
+            storage_dir="/",
+            base_image="registry.access.redhat.com/ubi9/ubi",
+    ):
+        """
+        Downloads the a dataset into an image in the internal registry
+
+        Args:
+            source: URL of the source data
+            image_name: Name of the imagestream that will be create or used to store the dataset files.
+            namespace: Name of the namespace in which the imagestream will be created
+            image_tag: tag to push the image with
+            org_name: image will be pushed to <org_name>/<image_name>:<image_tag>
+            creds: Path to credentials to use for accessing the dataset.
+            storage_dir: path to the data in the final image
+            base_image: base image for the image containing the data
+        """
+
+        return RunAnsibleRole(locals())
