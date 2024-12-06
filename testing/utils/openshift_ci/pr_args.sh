@@ -105,25 +105,52 @@ fi
 
 pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_anchor" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
+
+args_list=""
 if [[ "$pos_args" ]]; then
-    echo "PR_POSITIONAL_ARGS: $pos_args" >> "$DEST"
-    echo "PR_POSITIONAL_ARG_0: $test_name" >> "$DEST"
+    args_list="$args_list
+PR_POSITIONAL_ARGS: $pos_args
+PR_POSITIONAL_ARG_0: $test_name"
     i=1
     for pos_arg in $pos_args; do
-        echo "PR_POSITIONAL_ARG_$i: $pos_arg" >> "$DEST"
+        args_list="$args_list
+PR_POSITIONAL_ARG_$i: $pos_arg"
         i=$((i + 1))
     done
 else
-    echo "PR_POSITIONAL_ARG_0: $test_name" >> "$DEST"
+    args_list="$args_list
+PR_POSITIONAL_ARG_0: $test_name"
 fi
 
+skip_list=""
+var_list=""
 while read line; do
-    [[ $line != "/var "* ]] && continue
-
-    yaml_line=$(echo "$line" | cut -b6-)
-    if ! echo "$yaml_line" | yq &>/dev/null; then
-        echo "ERROR: '$(echo "$line")' not a valid yaml line :/"
-        exit 1
+    if [[ "$line" != "/var "* ]] && [[ "$line" != "/skip"* ]]; then
+        continue
     fi
-    echo "$yaml_line" >> "$DEST"
+    anchor=$(echo "$line" | cut -d" " -f1)
+    anchor_length=$(echo "$anchor " | wc -c)
+
+    line_content=$(echo "$line" | cut -b${anchor_length}-)
+
+    if [[ "$anchor" == "/var" ]]; then
+        if ! echo "$line_content" | yq &>/dev/null; then
+            echo "ERROR: '$(echo "$line")' not a valid /var line. Must be valid yaml :/"
+            exit 1
+        fi
+
+        var_list="$var_list
+$line_content"
+    else # line == /skip ...
+        for skip in $line_content; do
+            skip_list="$skip_list
+skip_list.$skip: true"
+        done
+    fi
 done <<< $(echo "$pr_body"; echo "$last_user_test_comment")
+
+cat <<EOF | sed '/^$/d' >> "$DEST"
+$args_list
+$skip_list
+$var_list
+EOF
