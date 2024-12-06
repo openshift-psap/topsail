@@ -42,11 +42,6 @@ elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
         mkdir -p "$SHARED_DIR"
     fi
 
-    if [[ -z "${SHARED_DIR:-}" ]]; then
-        echo "ERROR: running in OpenShift CI, but SHARED_DIR not defined." >&2
-        exit 1
-    fi
-
 else
     echo "ERROR: not running in OpenShift CI and TEST_NAME not defined." >&2
     exit 1
@@ -54,8 +49,13 @@ fi
 
 test_anchor="/test $test_name"
 
-echo "PR URL: $PR_URL" >&2
+echo "# PR URL: $PR_URL" >&2
 if [[ "${OPENSHIFT_CI:-}" == true ]]; then
+    if [[ -z "${SHARED_DIR:-}" ]]; then
+        echo "ERROR: running in OpenShift CI, but SHARED_DIR not defined." >&2
+        exit 1
+    fi
+
     PR_FILE="${SHARED_DIR}/pr.json"
     if [[ ! -e "$PR_FILE" ]]; then
         echo "PR file '$PR_FILE' does not exist. Downloading it from Github ..."
@@ -92,7 +92,7 @@ fi
 REQUIRED_AUTHOR=$(jq -r .user.login <<< "$pr_json")
 REQUIRED_AUTHOR_ASSOCIATION=CONTRIBUTOR
 
-echo "PR comments URL: $PR_COMMENTS_URL" >&2
+echo "# PR comments URL: $PR_COMMENTS_URL" >&2
 last_user_test_comment=$(echo "$last_comment_page_json" \
                              | jq '.[] | select(.author_association == "'$REQUIRED_AUTHOR_ASSOCIATION'"), select(.user.login == "'$REQUIRED_AUTHOR'") | .body' \
                              | (grep "$test_anchor" || true) \
