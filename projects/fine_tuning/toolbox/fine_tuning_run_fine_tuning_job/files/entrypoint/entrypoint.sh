@@ -74,6 +74,8 @@ else
 fi
 
 if [[ -e /dev/nvidiactl ]]; then
+    echo "# GPU Driver"
+    nvidia-smi | grep NVIDIA-SMI -A1 -B1
     echo "# GPU available:"
     nvidia-smi -L
 else

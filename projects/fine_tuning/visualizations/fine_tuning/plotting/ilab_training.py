@@ -36,9 +36,11 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
             continue
 
-
-        summary_value = getattr(entry.results.ilab_metrics.summary, summary_key,
-                                getattr(entry.results.ilab_metrics.progress[-1], summary_key, None))
+        try:
+            summary_value = getattr(entry.results.ilab_metrics.summary, summary_key,
+                                    getattr(entry.results.ilab_metrics.progress[-1], summary_key, None))
+        except IndexError:
+            continue
 
         if not summary_value: continue
 
