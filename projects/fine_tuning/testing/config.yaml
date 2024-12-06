@@ -725,3 +725,8 @@ export_artifacts:
   bucket: rhoai-cpt-artifacts
   path_prefix: cpt/fine-tuning
   dest: null # will be set by the export code
+skip_list:
+  pre_cleanup_ci: false
+  prepare_ci: false
+  test_ci: false
+  post_cleanup_ci: false
