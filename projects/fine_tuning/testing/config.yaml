@@ -631,7 +631,7 @@ tests:
       timespan: 0
     fms:
       enabled: true
-      image: quay.io/modh/fms-hf-tuning:v2.0.1
+      image: quay.io/modh/fms-hf-tuning:v2.1.0
     quality_evaluation:
       enabled: false
       image: registry.redhat.io/ubi9
