@@ -228,15 +228,34 @@ class RunAnsibleRole:
                                                     prefix="tmp_play_{}_".format(artifact_extra_logs_dir.name),
                                                     suffix=".yaml",
                                                     dir=os.getcwd(), delete=False)
+
         generated_play = [
             dict(name=f"Run {self.role_name} role",
-                 connection="local",
                  gather_facts=False,
-                 hosts="localhost",
                  roles=[self.role_name],
                  vars=self.ansible_vars,
                  )
         ]
+
+        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
+        if remote_host:
+            # run remotely
+            generated_play[0]["hosts"] = "remote"
+            inventory_fd, path = tempfile.mkstemp()
+            os.remove(path) # using only the FD. Ensures that the file disappears when this process terminates
+            inventory_f = os.fdopen(inventory_fd, 'w')
+            inventory_content = f"""
+[all:vars]
+
+[remote]
+{remote_host}
+"""
+            print(inventory_content, file=inventory_f)
+            inventory_f.flush()
+        else:
+            # run locally
+            generated_play[0]["connection"] = "local"
+            generated_play[0]["hosts"] = "localhost"
 
         generated_play_path = artifact_extra_logs_dir / "_ansible.play.yaml"
         with open(generated_play_path, "w") as f:
@@ -251,6 +270,10 @@ class RunAnsibleRole:
 
         with open(artifact_extra_logs_dir / "_python.cmd", "w") as f:
             print(" ".join(map(shlex.quote, sys.argv)), file=f)
+
+
+        if remote_host:
+            cmd += ["--inventory-file", f"/proc/{os.getpid()}/fd/{inventory_fd}"]
 
         sys.stdout.flush()
         sys.stderr.flush()
