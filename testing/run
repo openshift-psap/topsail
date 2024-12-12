@@ -41,9 +41,11 @@ precheck_artifact_dir() {
     if [ -z "${ARTIFACT_DIR:-}" ]; then
         if [[ "${OPENSHIFT_CI:-}" == true ]]; then
             echo "ARTIFACT_DIR not set, cannot proceed without it in OpenShift CI."
+            false
             exit 1
         elif [[ "${PERFLAB_CI:-}" == true ]]; then
             echo "ARTIFACT_DIR not set, cannot proceed without it in PerfLab CI."
+            false
             exit 1
         else
             echo "ARTIFACT_DIR not set, but not running in a CI. Creating a directory for it ..."
@@ -61,6 +63,7 @@ precheck_artifact_dir() {
 prechecks() {
     if [ -e "$ARTIFACT_DIR/FAILURES" ]; then
         echo "File '$ARTIFACT_DIR/FAILURES' already exists, cannot continue."
+        false
         exit 1
     fi
 
@@ -71,6 +74,7 @@ prechecks() {
             msg="ERROR: run: a pod is running in the local-ci namespace ($LOCAL_CI_NAMESPACE), aborting."
             echo $msg | tee -a "$ARTIFACT_DIR/_ERROR"
             oc get pods -n "$LOCAL_CI_NAMESPACE" | tee -a "$ARTIFACT_DIR/_ERROR"
+            false
             exit 1
         fi
     fi
@@ -183,7 +187,7 @@ postchecks() {
     fi
     echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
 
-    if [[ "$reason" == ERR || "$3" == "test_ci" || "$3" == "generate_plots_from_pr_args" ]]; then
+    if [[ "$reason" == ERR || "${3:-}" == "test_ci" || "${3:-}" == "generate_plots_from_pr_args" ]]; then
         if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
             log_file="$ARTIFACT_DIR/send_job_completion_notification.log"
             ./run_toolbox.py repo send_job_completion_notification "$reason" "$status" 2> "$log_file" || true
@@ -239,6 +243,7 @@ if [[ -z "${1:-}" ]]; then
     echo
     list_available
 
+    false
     exit 1
 fi
 
@@ -311,4 +316,5 @@ echo "FATAL: Unknown entrypoint '${second_target}' inside '${target}' directory 
 echo
 list_available "$target_entrypoint_dir"
 
+false
 exit 1
