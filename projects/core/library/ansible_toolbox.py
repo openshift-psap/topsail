@@ -257,6 +257,17 @@ class RunAnsibleRole:
             generated_play[0]["connection"] = "local"
             generated_play[0]["hosts"] = "localhost"
 
+        if extra_vars_fname := env.get("TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"):
+            try:
+                with open(extra_vars_fname) as f:
+                    extra_vars_dict = yaml.safe_load(f)
+
+            except yaml.parser.ParserError:
+                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars}' as yaml ...")
+                raise
+
+            generated_play[0]["vars"] |= extra_vars_dict
+
         generated_play_path = artifact_extra_logs_dir / "_ansible.play.yaml"
         with open(generated_play_path, "w") as f:
             yaml.dump(generated_play, f)
