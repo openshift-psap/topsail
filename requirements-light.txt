@@ -1,0 +1,9 @@
+yq
+pyyaml
+fire
+ansible
+jinja2==3.0.*
+joblib
+jsonpath_ng
+pyjwt
+slack_sdk==3.33.0
