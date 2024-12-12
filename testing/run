@@ -89,24 +89,28 @@ prechecks() {
         fi
     fi
 
-    if ! oc version; then
-        if [[ -z "${KUBECONFIG}" ]]
-        then
-            echo "KUBECONFIG not set, cannot continue."
-            false
+    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]]; then
+        echo "Running in TOPSAIL light image. Skipping some cluster access checks."
+    else
+        if ! oc version 2>/dev/null; then
+            if [[ -z "${KUBECONFIG:-}" ]]
+            then
+                echo "KUBECONFIG not set, cannot continue."
+                false
+            fi
+            if [[ ! -e "${KUBECONFIG}" ]]
+            then
+                echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
+                false
+            fi
+            echo "Using KUBECONFIG=${KUBECONFIG}"
         fi
-        if [[ ! -e "${KUBECONFIG}" ]]
-        then
-            echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
-            false
-        fi
-        echo "Using KUBECONFIG=${KUBECONFIG}"
-    fi
 
-    if ! which oc &>/dev/null;
-    then
-        echo "oc not found, this is unexpected in the CI image. Can't continue."
-        false
+        if ! which oc &>/dev/null;
+        then
+            echo "oc not found, this is unexpected in the CI image. Can't continue."
+            false
+        fi
     fi
 
     if ! which jq &>/dev/null;
@@ -132,15 +136,17 @@ prechecks() {
         curl -sSf "$PR_COMMENTS_URL" -o "${ARTIFACT_DIR}/pull_request-comments.json" || echo "WARNING: Failed to download the PR comments from $PR_COMMENTS_URL"
     fi
 
-    # check that the OCP cluster can be reached
-    ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
-    if [[ -z "$ocp_version" ]]; then
-        echo "Cluster cannot be accessed. Can't continue."
-        false
-    fi
+    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" != true ]]; then
+        # check that the OCP cluster can be reached
+        ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
+        if [[ -z "$ocp_version" ]]; then
+            echo "Cluster cannot be accessed. Can't continue."
+            false
+        fi
 
-    # store the OCP version of the cluster
-    echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
+        # store the OCP version of the cluster
+        echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
+    fi
 }
 
 postchecks() {
