@@ -303,10 +303,12 @@ if [[ -e "${target_entrypoint_file_sh}" ]]; then
     exit 0
 fi
 
-if [[ -e "projects/${target}/testing/${second_target}.sh" || -e "projects/${target}/testing/${second_target}.py" ]]; then
+if [[ -e "projects/${target}/testing/${second_target}" || -e "projects/${target}/testing/${second_target}.sh" || -e "projects/${target}/testing/${second_target}.py" ]]; then
     shift # eat second_target
 
-    if [[ -e "projects/${target}/testing/${second_target}.py" ]]; then
+    if [[ -e "projects/${target}/testing/${second_target}" ]]; then
+        target_entrypoint_file="projects/${target}/testing/${second_target}"
+    elif [[ -e "projects/${target}/testing/${second_target}.py" ]]; then
         target_entrypoint_file="projects/${target}/testing/${second_target}.py"
     else
         target_entrypoint_file="projects/${target}/testing/${second_target}.sh"
