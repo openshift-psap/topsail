@@ -31,6 +31,20 @@ if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
     ip addr add "$correct_ip/24" dev "$NCCL_SOCKET_IFNAME"
 fi
 
+config_json=$(jq . "$CONFIG_JSON_PATH")
+
+NCCL_SOCKET_NTHREADS=$(echo "$config_json" | jq -r .NCCL_SOCKET_NTHREADS)
+if [[ "$NCCL_SOCKET_NTHREADS" ]]; then
+    echo "Using NCCL_SOCKET_NTHREADS=$NCCL_SOCKET_NTHREADS"
+    export NCCL_SOCKET_NTHREADS
+
+    # remove NCCL_SOCKET_NTHREADS from the config
+    config_json=$(echo "$config_json" | jq "del(.NCCL_SOCKET_NTHREADS)")
+else
+    # just for consistency
+    unset NCCL_SOCKET_NTHREADS
+fi
+
 echo "Removing CUDA-Compat library from LD_LIBRARY_PATH ..."
 export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 
@@ -40,7 +54,7 @@ ret=0
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
-    $(cat "$CONFIG_JSON_PATH" | jq -r '. | to_entries | .[] | ("--" + .key + " " + (.value | tostring))' | sed "s/ true//");
+    $(echo "$config_json" | jq -r '. | to_entries | .[] | ("--" + .key + " " + (.value | tostring))' | sed "s/ true//");
 then
     ret=1
     echo "TORCHRUN FAILED :/ (retcode=$ret)"
