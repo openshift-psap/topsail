@@ -212,6 +212,9 @@ def download_data_sources(test_settings):
     for source_name in sources_name:
         if "@" in source_name or (config.project.get_config("fine_tuning.model_registry") and source_name not in sources):
             download_from_registry(source_name)
+        elif isinstance(source_name, list):
+            for src_name in source_name:
+                download_from_source(src_name)
         else:
             download_from_source(source_name)
 
