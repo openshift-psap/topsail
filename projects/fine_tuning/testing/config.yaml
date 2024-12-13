@@ -551,6 +551,8 @@ rhods:
 nfs_provisioner:
   enabled: false
   storage_size: 250Gi
+  enforce_enabled_when_sc_used: true
+  pvc_sc:
 
 gpu:
   prepare_cluster: false

@@ -40,7 +40,7 @@ def prepare_storage():
     storage_class = config.project.get_config("fine_tuning.pvc.storage_class_name")
 
     if not config.project.get_config("nfs_provisioner.enabled"):
-        if storage_class == "nfs-provisioner":
+        if storage_class == "nfs-provisioner" and config.project.get_config("nfs_provisioner.enforce_enabled_when_sc_used"):
             raise ValueError(f"The storage class is set to {storage_class}, but the NFS provisioner isn't enabled. Aborting.")
 
         logging.info("prepare_storage: NFS provisioner deployment not enabled.")
