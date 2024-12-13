@@ -1,6 +1,6 @@
 import logging
 logging.getLogger().setLevel(logging.INFO)
-import os
+import os, sys
 import pathlib
 import yaml
 import shutil
@@ -317,3 +317,17 @@ def init(testing_dir, apply_preset_from_pr_args=False):
         project.apply_preset_from_pr_args()
         # reapply to force overrides on top of presets
         project.apply_config_overrides()
+
+    if len(sys.argv) >= 2:
+        current_subcommand = sys.argv[1]
+        logging.info(f"Currently running the subcommand '{current_subcommand}'")
+
+        skip_list = project.get_config("skip_list", None)
+        if skip_list is None:
+            logging.warning("The skip_list isn't defined in this project.")
+            skip_list = {}
+
+        skip_this_subcommand = skip_list.get(current_subcommand, False)
+        if skip_this_subcommand:
+            logging.fatal(f"Subcommand '{current_subcommand}' is part of the skip list. Stopping happily this execution.")
+            raise SystemExit(0)

@@ -1,0 +1,53 @@
+FROM registry.access.redhat.com/ubi9/ubi
+
+MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
+
+LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
+      	io.k8s.description="A lightweight image for running TOPSAIL in a remote host" \
+ 	name="topsail" \
+	url="https://github.com/openshift-psap/"
+
+RUN yum install -y --quiet \
+	        git jq vim wget rsync time file psmisc \
+		python3.9 python3-pip python3-setuptools  \
+  && yum clean all \
+  && rm -rf $HOME/.cache && rm -rf /var/cache/yum
+
+
+# Set up the runner user
+ENV USER_NAME=psap-ci-runner \
+    USER=psap-ci-runner \
+    HOME=/opt/topsail/src \
+    INSIDE_CI_IMAGE="y" \
+    TOPSAIL_LIGHT_IMAGE="true"
+
+ENV PYTHONPATH=$HOME
+
+# Ensure directory permissions are properly set
+
+# This should run after all the `pip` commands.  It is necessary so
+# that we can `pip install` from inside the image.
+
+RUN echo -e '#!/usr/bin/env bash \n\
+cd /opt/topsail/src  \n\
+exec /opt/topsail/src/testing/run "$@" \n\
+' > /usr/local/bin/run; chmod ugo+x /usr/local/bin/run \
+ && mkdir -p ${HOME}/.ansible/tmp \
+    && ln -s /usr/bin/python3 /usr/bin/python
+
+
+# Disable git dubious ownership detection in the image
+#RUN git config --global --add safe.directory '*'
+
+COPY . ${HOME}/
+
+RUN chgrp -R 0 "$HOME" \
+    && chmod -R g=u "$HOME"
+
+# Install Python requirements
+
+RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements-light.txt
+
+WORKDIR ${HOME}
+
+CMD ["bash"]

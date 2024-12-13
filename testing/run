@@ -41,9 +41,11 @@ precheck_artifact_dir() {
     if [ -z "${ARTIFACT_DIR:-}" ]; then
         if [[ "${OPENSHIFT_CI:-}" == true ]]; then
             echo "ARTIFACT_DIR not set, cannot proceed without it in OpenShift CI."
+            false
             exit 1
         elif [[ "${PERFLAB_CI:-}" == true ]]; then
             echo "ARTIFACT_DIR not set, cannot proceed without it in PerfLab CI."
+            false
             exit 1
         else
             echo "ARTIFACT_DIR not set, but not running in a CI. Creating a directory for it ..."
@@ -61,6 +63,7 @@ precheck_artifact_dir() {
 prechecks() {
     if [ -e "$ARTIFACT_DIR/FAILURES" ]; then
         echo "File '$ARTIFACT_DIR/FAILURES' already exists, cannot continue."
+        false
         exit 1
     fi
 
@@ -71,6 +74,7 @@ prechecks() {
             msg="ERROR: run: a pod is running in the local-ci namespace ($LOCAL_CI_NAMESPACE), aborting."
             echo $msg | tee -a "$ARTIFACT_DIR/_ERROR"
             oc get pods -n "$LOCAL_CI_NAMESPACE" | tee -a "$ARTIFACT_DIR/_ERROR"
+            false
             exit 1
         fi
     fi
@@ -85,24 +89,28 @@ prechecks() {
         fi
     fi
 
-    if ! oc version; then
-        if [[ -z "${KUBECONFIG}" ]]
-        then
-            echo "KUBECONFIG not set, cannot continue."
-            false
+    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]]; then
+        echo "Running in TOPSAIL light image. Skipping some cluster access checks."
+    else
+        if ! oc version 2>/dev/null; then
+            if [[ -z "${KUBECONFIG:-}" ]]
+            then
+                echo "KUBECONFIG not set, cannot continue."
+                false
+            fi
+            if [[ ! -e "${KUBECONFIG}" ]]
+            then
+                echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
+                false
+            fi
+            echo "Using KUBECONFIG=${KUBECONFIG}"
         fi
-        if [[ ! -e "${KUBECONFIG}" ]]
-        then
-            echo "KUBECONFIG file doesn't exist, can't continue. (KUBECONFIG=${KUBECONFIG})"
-            false
-        fi
-        echo "Using KUBECONFIG=${KUBECONFIG}"
-    fi
 
-    if ! which oc &>/dev/null;
-    then
-        echo "oc not found, this is unexpected in the CI image. Can't continue."
-        false
+        if ! which oc &>/dev/null;
+        then
+            echo "oc not found, this is unexpected in the CI image. Can't continue."
+            false
+        fi
     fi
 
     if ! which jq &>/dev/null;
@@ -128,15 +136,17 @@ prechecks() {
         curl -sSf "$PR_COMMENTS_URL" -o "${ARTIFACT_DIR}/pull_request-comments.json" || echo "WARNING: Failed to download the PR comments from $PR_COMMENTS_URL"
     fi
 
-    # check that the OCP cluster can be reached
-    ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
-    if [[ -z "$ocp_version" ]]; then
-        echo "Cluster cannot be accessed. Can't continue."
-        false
-    fi
+    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" != true ]]; then
+        # check that the OCP cluster can be reached
+        ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
+        if [[ -z "$ocp_version" ]]; then
+            echo "Cluster cannot be accessed. Can't continue."
+            false
+        fi
 
-    # store the OCP version of the cluster
-    echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
+        # store the OCP version of the cluster
+        echo "$ocp_version" > ${ARTIFACT_DIR}/ocp.version
+    fi
 }
 
 postchecks() {
@@ -183,7 +193,7 @@ postchecks() {
     fi
     echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
 
-    if [[ "$reason" == ERR || "$3" == "test_ci" || "$3" == "generate_plots_from_pr_args" ]]; then
+    if [[ "$reason" == ERR || "${3:-}" == "test_ci" || "${3:-}" == "generate_plots_from_pr_args" ]]; then
         if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
             log_file="$ARTIFACT_DIR/send_job_completion_notification.log"
             ./run_toolbox.py repo send_job_completion_notification "$reason" "$status" 2> "$log_file" || true
@@ -239,6 +249,7 @@ if [[ -z "${1:-}" ]]; then
     echo
     list_available
 
+    false
     exit 1
 fi
 
@@ -292,10 +303,12 @@ if [[ -e "${target_entrypoint_file_sh}" ]]; then
     exit 0
 fi
 
-if [[ -e "projects/${target}/testing/${second_target}.sh" || -e "projects/${target}/testing/${second_target}.py" ]]; then
+if [[ -e "projects/${target}/testing/${second_target}" || -e "projects/${target}/testing/${second_target}.sh" || -e "projects/${target}/testing/${second_target}.py" ]]; then
     shift # eat second_target
 
-    if [[ -e "projects/${target}/testing/${second_target}.py" ]]; then
+    if [[ -e "projects/${target}/testing/${second_target}" ]]; then
+        target_entrypoint_file="projects/${target}/testing/${second_target}"
+    elif [[ -e "projects/${target}/testing/${second_target}.py" ]]; then
         target_entrypoint_file="projects/${target}/testing/${second_target}.py"
     else
         target_entrypoint_file="projects/${target}/testing/${second_target}.sh"
@@ -311,4 +324,5 @@ echo "FATAL: Unknown entrypoint '${second_target}' inside '${target}' directory 
 echo
 list_available "$target_entrypoint_dir"
 
+false
 exit 1
