@@ -460,6 +460,16 @@ ci_presets:
     fine_tuning.pvc.storage_class_name: trident-sc
     tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
 
+  cluster_h100:
+    extends: [metal]
+    fine_tuning.pvc.storage_class_name: nfs-provisioner
+    nfs_provisioner.enabled: true
+    nfs_provisioner.storage_size: 6500Gi
+    nfs_provisioner.pvc_sc: lvms-vg1
+    fine_tuning.pvc.access_mode: ReadWriteMany
+    fine_tuning.pvc.size: 2000Gi
+    clusters.sutest.compute.machineset.type: "gx3d-160x1792x8h100"
+
   gating:
     extends: [use_intlab_os]
     matbench.lts.opensearch.export.enabled: true
@@ -486,6 +496,7 @@ clusters:
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
     instructlab-standalon-6rjg8-master-0: cluster_instructlab
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
+    tosokin-ilab-cluster-556dc-master-0: cluster_h100
   create:
     type: single # can be: single, ocp, managed
     keep: false
