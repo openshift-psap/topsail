@@ -537,11 +537,11 @@ clusters:
 
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 852862
+    image: quay.io/rhoai/rhoai-fbc-fragment
+    tag: rhoai-2.16@sha256:eff91203dad4f49cf8d9b8a2d8e5d1f205789dd300f4281a171d8446ad21535c
     channel: fast
-    version: 2.15.0
-    version_name: rc2
+    version: 2.16.0
+    version_name: rc3
     opendatahub: false
     managed_rhoi: true
   operator:
