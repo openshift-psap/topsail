@@ -40,7 +40,7 @@ def prepare_storage():
     storage_class = config.project.get_config("fine_tuning.pvc.storage_class_name")
 
     if not config.project.get_config("nfs_provisioner.enabled"):
-        if storage_class == "nfs-provisioner":
+        if storage_class == "nfs-provisioner" and config.project.get_config("nfs_provisioner.enforce_enabled_when_sc_used"):
             raise ValueError(f"The storage class is set to {storage_class}, but the NFS provisioner isn't enabled. Aborting.")
 
         logging.info("prepare_storage: NFS provisioner deployment not enabled.")
@@ -212,6 +212,9 @@ def download_data_sources(test_settings):
     for source_name in sources_name:
         if "@" in source_name or (config.project.get_config("fine_tuning.model_registry") and source_name not in sources):
             download_from_registry(source_name)
+        elif isinstance(source_name, list):
+            for src_name in source_name:
+                download_from_source(src_name)
         else:
             download_from_source(source_name)
 

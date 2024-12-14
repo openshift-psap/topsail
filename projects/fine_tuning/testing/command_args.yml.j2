@@ -43,6 +43,9 @@ sutest/cluster preload_image:
 
 storage deploy_nfs_provisioner:
   pvc_size: {{ nfs_provisioner.storage_size }}
+{% if nfs_provisioner.pvc_sc %}
+  pvc_sc: {{ nfs_provisioner.pvc_sc }}
+{% endif %}
 
 #
 # deploy RHODS
