@@ -120,11 +120,6 @@ class RunAnsibleRole:
         if not self.role_name:
             raise RuntimeError("Role not set :/")
 
-        version_override = os.environ.get("OCP_VERSION")
-
-        if version_override is not None:
-            self.ansible_vars["openshift_release"] = version_override
-
         if self.ansible_mapped_params:
             py_params = self.ansible_vars
             self.ansible_vars = {
