@@ -1,0 +1,29 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Jump_Ci.prepare_topsail
+
+# Parameters
+# Name of the cluster lock to use
+# Mandatory value
+jump_ci_prepare_topsail_cluster_lock:
+
+# PR number to use for the test. If none, use the main branch.
+jump_ci_prepare_topsail_pr_number: null
+
+# Name of the Github repo owner
+jump_ci_prepare_topsail_repo_owner: openshift-psap
+
+# Name of the TOPSAIL github repo
+jump_ci_prepare_topsail_repo_name: topsail
+
+# Name to use when building TOPSAIL image
+jump_ci_prepare_topsail_image_name: localhost/topsail
+
+# Name to give to the tag, or computed if empty
+jump_ci_prepare_topsail_image_tag: null
+
+# Name/path of the Dockerfile to use to build the image
+jump_ci_prepare_topsail_dockerfile_name: build/Dockerfile
+
+# if disabled, don't cleanup the old images
+jump_ci_prepare_topsail_cleanup_old_pr_images: true

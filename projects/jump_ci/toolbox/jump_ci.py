@@ -53,12 +53,32 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_prepare_topsail")
     @AnsibleMappedParams
-    def prepare_topsail(self):
+    def prepare_topsail(
+            self,
+            cluster_lock,
+            pr_number=None,
+            repo_owner="openshift-psap",
+            repo_name="topsail",
+            image_name="localhost/topsail",
+            image_tag=None,
+            dockerfile_name="build/Dockerfile",
+            cleanup_old_pr_images=True,
+    ):
         """
-        Prepares the jump host for running TOPSAIL
+        Prepares the jump host for running TOPSAIL:
+        - clones TOPSAIL repository
+        - builds TOPSAIL image in the remote host
 
         Args:
-          pass
+          cluster_lock: Name of the cluster lock to use
+          pr_number: PR number to use for the test. If none, use the main branch.
+
+          repo_owner: Name of the Github repo owner
+          repo_name: Name of the TOPSAIL github repo
+          image_name: Name to use when building TOPSAIL image
+          image_tag: Name to give to the tag, or computed if empty
+          dockerfile_name: Name/path of the Dockerfile to use to build the image
+          cleanup_old_pr_images: if disabled, don't cleanup the old images
         """
 
         return RunAnsibleRole(locals())
