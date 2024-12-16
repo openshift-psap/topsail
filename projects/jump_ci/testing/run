@@ -18,7 +18,10 @@ def jump_ci(command):
         """
         *Jump-CI* Runs the command in the Jump Host.
     """
-        prepare_jump_ci()
+        cluster_lock = "icelake"
+        run.run_toolbox("jump_ci", "ensure_lock", cluster_lock)
+
+        print(f"### Running {command}")
 
     return do_jump_ci
 
