@@ -243,12 +243,18 @@ class RunAnsibleRole:
             inventory_fd, path = tempfile.mkstemp()
             os.remove(path) # using only the FD. Ensures that the file disappears when this process terminates
             inventory_f = os.fdopen(inventory_fd, 'w')
+
+            host_properties = []
+            if "@" in remote_host:
+                host_properties.append("ansible_user="+remote_host.split("@")[0])
+
             inventory_content = f"""
 [all:vars]
 
 [remote]
-{remote_host}
+{remote_host} {" ".join(host_properties)}
 """
+
             print(inventory_content, file=inventory_f)
             inventory_f.flush()
         else:
