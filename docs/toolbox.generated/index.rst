@@ -115,6 +115,20 @@ Toolbox Documentation
 * :doc:`wait_deployment <Gpu_Operator.wait_deployment>`	 Waits for the GPU operator to deploy
 * :doc:`wait_stack_deployed <Gpu_Operator.wait_stack_deployed>`	 Waits for the GPU Operator stack to be deployed on the GPU nodes
 
+``jump_ci``
+***********
+
+::
+
+    Commands to run TOPSAIL scripts in a jump host
+    
+
+                
+* :doc:`ensure_lock <Jump_Ci.ensure_lock>`	 Ensure that cluster lock with a given name is taken. Fails otherwise.
+* :doc:`prepare_topsail <Jump_Ci.prepare_topsail>`	 Prepares the jump host for running TOPSAIL: - clones TOPSAIL repository - builds TOPSAIL image in the remote host
+* :doc:`release_lock <Jump_Ci.release_lock>`	 Release a cluster lock with a given name on a remote node
+* :doc:`take_lock <Jump_Ci.take_lock>`	 Take a lock with a given cluster name on a remote node
+
 ``kepler``
 **********
 
