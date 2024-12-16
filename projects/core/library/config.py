@@ -322,7 +322,7 @@ def init(testing_dir, apply_preset_from_pr_args=False):
         current_subcommand = sys.argv[1]
         logging.info(f"Currently running the subcommand '{current_subcommand}'")
 
-        skip_list = project.get_config("skip_list", None)
+        skip_list = project.get_config("skip_list", None, print=False)
         if skip_list is None:
             logging.warning("The skip_list isn't defined in this project.")
             skip_list = {}
