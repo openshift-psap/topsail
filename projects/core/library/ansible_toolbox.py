@@ -131,6 +131,8 @@ class RunAnsibleRole:
         # do not modify the `os.environ` of this Python process
         env = os.environ.copy()
 
+        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
+
         if env.get("ARTIFACT_DIR") is None:
             topsail_base_dir = pathlib.Path(env.get("TOPSAIL_BASE_DIR", "/tmp"))
             env["ARTIFACT_DIR"] = str(topsail_base_dir / f"topsail_{time.strftime('%Y%m%d')}")
@@ -174,8 +176,11 @@ class RunAnsibleRole:
         print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
         self.ansible_vars["artifact_dir"] = env["ARTIFACT_DIR"]
 
-        print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
-        self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
+        if not remote_host:
+            print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
+            self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
+        else:
+            print(f"Running remotely. Not passing the 'artifact_extra_logs_dir' variable to Ansible.")
 
         if env.get("ANSIBLE_LOG_PATH") is None:
             env["ANSIBLE_LOG_PATH"] = str(artifact_extra_logs_dir / "_ansible.log")
@@ -232,7 +237,6 @@ class RunAnsibleRole:
                  )
         ]
 
-        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
         if remote_host:
             # run remotely
             generated_play[0]["hosts"] = "remote"
