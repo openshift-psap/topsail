@@ -12,20 +12,6 @@ configure_logging()
 
 from projects.jump_ci.testing import utils, prepare_jump_ci, tunnelling
 
-def jump_ci(command):
-    @utils.entrypoint()
-    def do_jump_ci():
-        """
-        *Jump-CI* Runs the command in the Jump Host.
-    """
-        cluster_lock = "icelake"
-        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster_lock)
-
-        print(f"### Running {command}")
-
-    return do_jump_ci
-
-
 class JumpCi:
     """
     Commands for launching the Jump CI
@@ -34,12 +20,6 @@ class JumpCi:
     def __init__(self):
         self.lock_cluster = prepare_jump_ci.lock_cluster
         self.unlock_cluster = prepare_jump_ci.unlock_cluster
-
-        self.pre_cleanup_ci = jump_ci("pre_cleanup_ci")
-        self.post_cleanup_ci = jump_ci("post_cleanup_ci")
-        self.prepare_ci = jump_ci("prepare_ci")
-        self.test_ci = jump_ci("test_ci")
-        self.generate_plots_from_pr_args = jump_ci("generate_plots_from_pr_args")
 
         self.test_tunnel = tunnelling.open_tunnel
         self.prepare_jump_ci = prepare_jump_ci.prepare
