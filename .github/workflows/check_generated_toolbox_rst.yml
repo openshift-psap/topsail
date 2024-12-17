@@ -37,7 +37,7 @@ jobs:
               There is a mismatch between the roles
               defaults and the Python entrypoints.
               Make sure you run:
-              ./run_toolbox.py repo generate_toolbox_rst_documentation
+              ./run_toolbox.py repo generate_toolbox_related_files
               When making changes to the Python entrypoints.
               "
               exit  1
