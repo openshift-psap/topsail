@@ -80,7 +80,7 @@ def entrypoint(allow_no_config_file=False):
 def prepare_matbench():
 
     run.run(f"""
-    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/matrix_benchmarking/subproject/requirements.txt"
+    pip install --quiet --requirement "{TOPSAIL_DIR}/projects/matrix_benchmarking/subproject/requirements.txt" numpy==1.26.4 certifi==2023.5.7
     """)
 
 
