@@ -483,6 +483,7 @@ ci_presets:
     fine_tuning.pvc.access_mode: ReadWriteMany
     fine_tuning.pvc.size: 2000Gi
     clusters.sutest.compute.machineset.type: "gx3d-160x1792x8h100"
+    tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
 
   gating:
     extends: [use_intlab_os]
