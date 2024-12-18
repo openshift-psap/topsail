@@ -1,0 +1,8 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Jump_Ci.ensure_lock
+
+# Parameters
+# name of the cluster lock to test
+# Mandatory value
+jump_ci_ensure_lock_cluster:

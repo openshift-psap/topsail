@@ -1,0 +1,13 @@
+---
+- name: Log whoami
+  shell:
+    whoami
+
+- name: Get the stats of the lock directory
+  stat:
+    path: "/tmp/{{ jump_ci_ensure_lock_cluster }}"
+  register: lock_directory_stat
+
+- name: Fail if the lock directory doesn't exist
+  fail: msg="The lock directory does not exists"
+  when: not lock_directory_stat.stat.exists

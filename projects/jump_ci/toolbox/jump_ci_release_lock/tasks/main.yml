@@ -1,0 +1,16 @@
+---
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_release_lock_cluster }}"
+
+- name: Retrieve the info about the lock owner
+  shell:
+    cat "/tmp/{{ jump_ci_release_lock_cluster }}/lock_info"
+  failed_when: false
+
+- name: Release the lock directory
+  ansible.builtin.file:
+    state: absent
+    path: "/tmp/{{ jump_ci_release_lock_cluster }}"

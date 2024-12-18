@@ -120,11 +120,6 @@ class RunAnsibleRole:
         if not self.role_name:
             raise RuntimeError("Role not set :/")
 
-        version_override = os.environ.get("OCP_VERSION")
-
-        if version_override is not None:
-            self.ansible_vars["openshift_release"] = version_override
-
         if self.ansible_mapped_params:
             py_params = self.ansible_vars
             self.ansible_vars = {
@@ -135,6 +130,8 @@ class RunAnsibleRole:
 
         # do not modify the `os.environ` of this Python process
         env = os.environ.copy()
+
+        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
 
         if env.get("ARTIFACT_DIR") is None:
             topsail_base_dir = pathlib.Path(env.get("TOPSAIL_BASE_DIR", "/tmp"))
@@ -179,8 +176,11 @@ class RunAnsibleRole:
         print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
         self.ansible_vars["artifact_dir"] = env["ARTIFACT_DIR"]
 
-        print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
-        self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
+        if not remote_host:
+            print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
+            self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
+        else:
+            print(f"Running remotely. Not passing the 'artifact_extra_logs_dir' variable to Ansible.")
 
         if env.get("ANSIBLE_LOG_PATH") is None:
             env["ANSIBLE_LOG_PATH"] = str(artifact_extra_logs_dir / "_ansible.log")
@@ -237,19 +237,24 @@ class RunAnsibleRole:
                  )
         ]
 
-        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
         if remote_host:
             # run remotely
             generated_play[0]["hosts"] = "remote"
             inventory_fd, path = tempfile.mkstemp()
             os.remove(path) # using only the FD. Ensures that the file disappears when this process terminates
             inventory_f = os.fdopen(inventory_fd, 'w')
+
+            host_properties = []
+            if "@" in remote_host:
+                host_properties.append("ansible_user="+remote_host.split("@")[0])
+
             inventory_content = f"""
 [all:vars]
 
 [remote]
-{remote_host}
+{remote_host} {" ".join(host_properties)}
 """
+
             print(inventory_content, file=inventory_f)
             inventory_f.flush()
         else:

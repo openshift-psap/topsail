@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi
+FROM quay.io/centos/centos:stream9
 
 MAINTAINER OpenShift PSAP Team <openshift-psap@redhat.com>
 
@@ -7,10 +7,10 @@ LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
  	name="topsail" \
 	url="https://github.com/openshift-psap/"
 
-RUN yum install -y --quiet \
+RUN dnf install -y --quiet \
 	        git jq vim wget rsync time file psmisc \
-		python3.9 python3-pip python3-setuptools  \
-  && yum clean all \
+		python3 python3-pip python3-setuptools gcc g++ \
+  && dnf clean all \
   && rm -rf $HOME/.cache && rm -rf /var/cache/yum
 
 

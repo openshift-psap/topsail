@@ -121,6 +121,12 @@ class CallbackModule(default_CallbackModule):
 
         self.__display_result(result, color)
 
+    def v2_runner_on_unreachable(self, result):
+        del result._result["unreachable"] # no need for `__display_result` to tell that, we already do it here
+        self._display.display(f"----- HOST UNREACHABLE ({result._host})----", C.COLOR_ERROR)
+        self.__display_result(result, C.COLOR_VERBOSE, False)
+        self._display.display("----- HOST UNREACHABLE ----", C.COLOR_ERROR)
+
     # items are handled as part of the 'normal' task logging
     def v2_runner_item_on_failed(self, result): pass
     def v2_runner_item_on_ok(self, result): pass

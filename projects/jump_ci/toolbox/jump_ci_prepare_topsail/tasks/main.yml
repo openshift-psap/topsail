@@ -1,0 +1,133 @@
+---
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_topsail_cluster_lock }}"
+
+- name: Generate the artifact dirname
+  set_fact:
+    artifact_dir: "/tmp/{{ jump_ci_prepare_topsail_cluster_lock }}/logs"
+
+- name: Ensure that the logs directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ artifact_dir }}"
+    mode: '0755'
+
+- name: Compute the indiex of the next logs directory
+  shell:
+    set -o pipefail;
+    printf "%03d" $(ls "{{ artifact_dir }}/0*" -d 2>/dev/null | wc -l)
+  register: next_artifact_dir_count
+
+- name: Set the logs directory name
+  set_fact:
+    artifact_extra_logs_dir: "{{ artifact_dir }}/{{ next_artifact_dir_count.stdout }}__jump_ci__prepare_topsail"
+
+- name: Ensure that the top artifacts directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ artifact_extra_logs_dir }}"
+    mode: '0755'
+
+- name: Ensure that the artifacts directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    mode: '0755'
+
+- name: Ensure that the src directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ artifact_extra_logs_dir }}/src"
+    mode: '0755'
+
+- name: Show the artifacts dir
+  debug: msg="Using '{{ artifact_extra_logs_dir }}' as artifacts directory"
+
+- name: Set TOPSAIL's directory
+  set_fact:
+    topsail_home: "/tmp/{{ jump_ci_prepare_topsail_cluster_lock }}/topsail"
+
+- name: Set git command
+  set_fact:
+    git: git -C "{{ topsail_home }}"
+    git_src: "{% if jump_ci_prepare_topsail_pr_number %}pr-{{ jump_ci_prepare_topsail_pr_number }}{% else %}main{% endif %}"
+
+- name: Git checkout
+  ansible.builtin.git:
+    repo: 'https://github.com/{{ jump_ci_prepare_topsail_repo_owner }}/{{ jump_ci_prepare_topsail_repo_name }}.git'
+    dest: "{{ topsail_home }}"
+    version: "main"
+
+- name: Fetch TOPSAIL repository
+  block:
+  - name: Fetch TOPSAIL's branch
+    command: |
+      {{ git }} fetch --quiet origin refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
+
+    when: jump_ci_prepare_topsail_pr_number
+
+  - name: Switch to TOPSAIL's branch
+    command: |
+      {{ git }} reset --hard FETCH_HEAD
+
+    when: jump_ci_prepare_topsail_pr_number
+
+  - name: Fetch the submodules
+    command: |
+      {{ git }} submodule --quiet update --init --recursive
+
+  - name: Show the submodules version
+    command: |
+      {{ git }} submodule
+
+- name: Get the relevant git commit
+  shell: |
+    {% if jump_ci_prepare_topsail_pr_number %}
+      set -o pipefail;
+      {{ git }} log --pretty=%P -n 1 | cut -d\  -f2 # second parent
+    {% else %}
+      {{ git }} rev-parse HEAD
+    {% endif %}
+  register: git_commit_cmd
+
+- name: Show the commit
+  shell: |
+    set -o pipefail;
+    {{ git }} show {{ git_commit_cmd.stdout }} | tee "{{ artifact_extra_logs_dir }}/src/topsail.git-version"
+
+- name: Generate the image tag
+  set_fact:
+    image_tag: "{% if jump_ci_prepare_topsail_image_tag %}{{ jump_ci_prepare_topsail_image_tag }}{% else %}{{ git_src }}-{{ git_commit_cmd.stdout[:9] }}{% endif %}"
+
+- name: Generate the image full name
+  set_fact:
+    image_full_name: "{{ jump_ci_prepare_topsail_image_name }}:{{ image_tag }}"
+
+- name: Check if the image tag already exists
+  shell:
+    podman inspect {{ image_full_name }} > /dev/null
+      && echo "Image '{{ image_full_name }}' already exists. No need to rebuild it."
+  register: has_image
+  failed_when: false
+
+- name: Prune old images
+  command:
+    podman image prune --force
+           --filter until=48h
+           --filter label=jump-ci=true
+  when:
+  - jump_ci_prepare_topsail_cleanup_old_pr_images
+  - has_image.rc != 0
+
+- name: Build image {{ image_full_name }}
+  shell:
+    time podman build --squash
+      --label jump-ci=true
+      --tag "{{ image_full_name }}"
+      --file "{{ jump_ci_prepare_topsail_dockerfile_name }}"
+      "{{ topsail_home }}" > "{{ artifact_extra_logs_dir }}/artifacts/image.log"
+  when:
+  - has_image.rc != 0
