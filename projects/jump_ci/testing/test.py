@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-import sys
+import sys, os, shlex
 import subprocess
 import fire
+import pathlib
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
@@ -17,11 +18,37 @@ def jump_ci(command):
     def do_jump_ci():
         """
         *Jump-CI* Runs the command in the Jump Host.
-    """
-        cluster_lock = "icelake"
-        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster_lock)
+        """
 
-        print(f"### Running {command}")
+        # Open the tunnel
+        tunnelling.prepare()
+
+        cluster = config.project.get_config("cluster.name")
+
+        #run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
+
+        env_fd_path, env_file = utils.get_tmp_fd()
+        for k, v in os.environ.items():
+            print(f"export {k}={shlex.quote(v)}", file=env_file)
+
+        variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
+        if not variable_overrides_file.exists():
+            raise FileNotFoundError(f"File '{variable_overrides_file}' does not exist :/")
+
+        extra_variables_overrides = {
+            "_rhoai_.skip_args": 2,
+        }
+
+        run.run_toolbox(
+            "jump_ci", "prepare_step",
+            cluster=cluster,
+            step=command,
+            env_file=env_fd_path,
+            variables_overrides_file=variable_overrides_file,
+            extra_variables_overrides=extra_variables_overrides,
+        )
+
+        #tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test_artifacts/{step}")
 
     return do_jump_ci
 

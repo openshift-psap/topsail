@@ -3,63 +3,77 @@ import os
 from projects.core.library import env, config, run
 from projects.jump_ci.testing import utils, tunnelling
 
-CLUSTER_LOCK = "icelake"
-
 @utils.entrypoint()
-def lock_cluster(cluster_lock=CLUSTER_LOCK,):
+def lock_cluster(cluster=None):
     """
     Take the lock on a given cluster
 
     Args:
-      cluster_lock: Name of the cluster lock to use
+      cluster: Name of the cluster lock to use
     """
+    if os.environ.get("OPENSHIFT_CI") == "true":
+        config.project.set_config("ssh_tunnel.enabled", "true")
+
+        override_cluster = config.project.get_config("overrides.PR_POSITIONAL_ARG_1")
+        config.project.set_config("cluster.name", override_cluster)
+
+    if cluster is None:
+        cluster = config.project.get_config("cluster.name")
+
     # Open the tunnel
     tunnelling.prepare()
 
-    run.run_toolbox("jump_ci", "take_lock", cluster=CLUSTER_LOCK)
+    run.run_toolbox("jump_ci", "take_lock", cluster=cluster)
 
-    prepare()
 
 
 @utils.entrypoint()
-def unlock_cluster(cluster_lock=CLUSTER_LOCK,):
+def unlock_cluster(cluster=None):
     """
     Release the lock on a given cluster
 
     Args:
-      cluster_lock: Name of the cluster lock to use
+      cluster: Name of the cluster lock to use
     """
     # Open the tunnel
     tunnelling.prepare()
 
-    run.run_toolbox("jump_ci", "release_lock", cluster=CLUSTER_LOCK)
+    if cluster is None:
+        cluster = config.project.get_config("cluster.name")
+
+    run.run_toolbox("jump_ci", "release_lock", cluster=cluster)
 
 
 @utils.entrypoint()
 def prepare(
-        cluster_lock=CLUSTER_LOCK,
+        cluster=None,
         repo_owner=None,
         repo_name=None,
+        git_ref=None,
         pr_number=None,
 ):
     """
     Prepares the jump-host for running TOPSAIL commands.
     Args:
-      cluster_lock: Name of the cluster lock to use
+      cluster: Name of the cluster to use
       owner: Name of the Github repo owner
       repo: Name of the TOPSAIL github repo
+      git_ref: Commit to use in the TOPSAIL repo
       pr_number: PR number to use for the test. If none, use the main branch.
     """
 
     # Open the tunnel
     tunnelling.prepare()
 
+    if cluster is None:
+        cluster = config.project.get_config("cluster.name")
+
     # Lock the cluster
-    run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster_lock)
+    #run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
 
     # Clone the Git Repository
     # Build the image
-    prepare_topsail_args = dict(cluster_lock=cluster_lock)
+    prepare_topsail_args = dict(cluster=cluster)
     if any([repo_owner, repo_name, pr_number]):
         if not all([repo_owner, repo_name, pr_number]):
             raise RuntimeError("Missing parameters in the CLI arguments ...")
@@ -73,11 +87,12 @@ def prepare(
         prepare_topsail_args |= dict(
             repo_owner=os.environ["REPO_OWNER"],
             repo_name=os.environ["REPO_NAME"],
-            pr_number=os.environ["PULL_NUMBER"]
+            pr_number=os.environ["PULL_NUMBER"],
+            git_ref=os.environ["PULL_PULL_SHA"]
         )
 
     else:
-        raise RuntimeError("Couldn't determine the CI environment ...")
+        raise RuntimeError("No flag provided and couldn't determine the CI environment ... Aborting.")
 
     run.run_toolbox("jump_ci", "prepare_topsail", **prepare_topsail_args,)
 
