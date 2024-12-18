@@ -3,9 +3,9 @@
 # Source component: Jump_Ci.prepare_topsail
 
 # Parameters
-# Name of the cluster lock to use
+# Name of the cluster to use
 # Mandatory value
-jump_ci_prepare_topsail_cluster_lock:
+jump_ci_prepare_topsail_cluster:
 
 # PR number to use for the test. If none, use the main branch.
 jump_ci_prepare_topsail_pr_number: null
@@ -15,6 +15,9 @@ jump_ci_prepare_topsail_repo_owner: openshift-psap
 
 # Name of the TOPSAIL github repo
 jump_ci_prepare_topsail_repo_name: topsail
+
+# the ref (commit/branch) to use in the git repository. Use the PR's `/merge` if not specify, or the main branch if no PR number is specified.
+jump_ci_prepare_topsail_git_ref: null
 
 # Name to use when building TOPSAIL image
 jump_ci_prepare_topsail_image_name: localhost/topsail

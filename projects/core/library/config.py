@@ -175,6 +175,20 @@ class Config:
         with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
             print(command_template, file=f)
 
+    def save_config_overrides(self):
+        variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
+
+        if not variable_overrides_path.exists():
+            logging.debug(f"save_config_overrides: {variable_overrides_path} does not exist, nothing to save.")
+
+            return
+
+        with open(variable_overrides_path) as f:
+            variable_overrides = yaml.safe_load(f)
+
+        self.config["overrides"] = variable_overrides
+
+
     def apply_preset_from_pr_args(self):
         for config_key in self.get_config("$", print=False).keys():
             if not config_key.startswith(PR_ARG_KEY): continue
@@ -297,7 +311,7 @@ def get_jsonpath(config, jsonpath):
     return jsonpath_ng.parse(jsonpath).find(config)[0].value
 
 
-def init(testing_dir, apply_preset_from_pr_args=False):
+def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=True):
     global project
 
     if project:
@@ -309,6 +323,11 @@ def init(testing_dir, apply_preset_from_pr_args=False):
 
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
         logging.info("config.init: running in a local-ci multi Pod, skipping apply_config_overrides and apply_preset_from_pr_args.")
+        return
+
+    if not apply_config_overrides:
+        logging.info("config.init: running with 'apply_config_overrides', skipping the overrides. Saving it as 'overrides' field in the project configuration.")
+        project.save_config_overrides()
         return
 
     project.apply_config_overrides()

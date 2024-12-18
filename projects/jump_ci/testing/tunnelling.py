@@ -5,8 +5,8 @@ import os
 import functools
 import atexit
 import time
-import tempfile
 import subprocess
+import yaml
 
 from projects.core.library import env, config, run, configure_logging
 
@@ -62,22 +62,20 @@ def prepare(
         logging.info("ssh_tunnel.enabled is disabled, connecting directly to the bastion")
         remote_host = bastion_host
         remote_host_port = 22
-        probe_ssh_endpoint(bastion_user, bastion_host, remote_host_port, private_key_path, SSH_FLAGS, verbose)
+        # probe_ssh_endpoint(
+        #     bastion_user,
+        #     bastion_host,
+        #     remote_host_port,
+        #     private_key_path,
+        #     SSH_FLAGS,
+        #     verbose,
+        # )
 
     os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"] = remote_host
 
-    # generate a fd-only temporary file
-    extra_vars_fd, extra_vars_path = tempfile.mkstemp()
+    extra_vars_fd_path, extra_vars_file = utils.get_tmp_fd()
 
-    # using only the FD. Ensures that the file disappears when this
-    # process terminates
-    os.remove(extra_vars_path)
-
-    # this makes sure the FD isn't closed when the var goes out of
-    # scope
-    global extra_vars_file
-    extra_vars_file = os.fdopen(extra_vars_fd, 'w')
-    os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"] = f"/proc/{os.getpid()}/fd/{extra_vars_fd}"
+    os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"] = extra_vars_fd_path
 
     extra_vars_yaml_content = f"""
 ansible_port: {remote_host_port}
@@ -161,3 +159,17 @@ def probe_ssh_endpoint(user, host, port, private_key_path, ssh_flags, verbose):
     run.run(f"ssh {' '.join(ssh_flags)} -i {private_key_path} {user + '@' if user else ''}{host} -p {port} true",
             capture_stderr=True,
             log_command=verbose)
+
+def run_with_ansible_ssh_conf(cmd):
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
+        ansible_ssh_config = yaml.safe_load(f)
+
+    ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
+    host = os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"]
+    port = ansible_ssh_config["ansible_port"]
+    user = ansible_ssh_config["ansible_ssh_user"]
+    private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
+
+    logging.info(f"Running on the jump host: {cmd}")
+    run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- {cmd}",
+            log_command=False)
