@@ -3,7 +3,7 @@
   shell:
     whoami
 
-- name: Get the stats of the lock directory
+- name: "Get the stats of the lock directory: {{ jump_ci_ensure_lock_cluster }}"
   stat:
     path: "/tmp/{{ jump_ci_ensure_lock_cluster }}"
   register: lock_directory_stat

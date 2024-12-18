@@ -1,0 +1,55 @@
+---
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_step_cluster }}"
+
+- name: Fetch the name of the image to use
+  shell:
+    cat "/tmp/{{ jump_ci_prepare_step_cluster }}/pod.image"
+  register: pod_image_cmd
+  failed_when: false
+
+- name: Fail if the image file is not set
+  when: pod_image_cmd.rc != 0
+  fail: msg="The pod image isn't prepared. Did the 'prepare_topsail' step run?"
+
+- name: Generate the step artifacts dirname
+  set_fact:
+    step_artifact_dir: "/tmp/{{ jump_ci_prepare_step_cluster }}/test/{{ jump_ci_prepare_step_step }}"
+
+- name: Ensure that the step artifacts dirname directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ step_artifact_dir }}"
+    mode: '0755'
+
+- name: Copy the env file
+  ansible.builtin.copy:
+    src: "{{ jump_ci_prepare_step_env_file }}"
+    dest: "{{ step_artifact_dir }}/test_env"
+    mode: '0644'
+
+- name: Copy the variables_overrides file
+  ansible.builtin.copy:
+    src: "{{ jump_ci_prepare_step_variables_overrides_file }}"
+    dest: "{{ step_artifact_dir }}/variable_overrides.yaml"
+    mode: '0644'
+
+- name: Append the extra variables_overrides
+  shell: |
+    cat <<EOF >> {{ step_artifact_dir }}/variable_overrides.yaml
+    {% for k, v in (jump_ci_prepare_step_extra_variables_overrides or {}).items() %}
+    {{ k }}: {{ v }}
+    {% endfor %}
+    EOF
+
+- name: Prepare the entrypoint script
+  shell: |
+    cat <<EOF >> {{ step_artifact_dir }}/entrypoint.sh
+    source "{{ step_artifact_dir }}/test_env"
+    command="run rhoai test {{ jump_ci_prepare_step_step }}"
+    image="{{ pod_image_cmd.stdout | trim}}"
+    echo run podman $command ...
+    EOF

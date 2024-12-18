@@ -1,0 +1,24 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Jump_Ci.prepare_step
+
+# Parameters
+# Name of the cluster lock to use
+# Mandatory value
+jump_ci_prepare_step_cluster:
+
+# Name of the step to execute
+# Mandatory value
+jump_ci_prepare_step_step:
+
+# Path to the env file to use
+# Mandatory value
+jump_ci_prepare_step_env_file:
+
+# Path to the variable_overrides.yaml file
+# Mandatory value
+jump_ci_prepare_step_variables_overrides_file:
+
+# Dictionnary with additional values to add to the variables_overrides.yaml file
+# Mandatory value
+jump_ci_prepare_step_extra_variables_overrides:

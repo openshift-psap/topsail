@@ -23,6 +23,9 @@ class Jump_Ci:
           cluster: name of the cluster lock to take
         """
 
+        if not cluster:
+            raise ValueError("--cluster must be set")
+
         return RunAnsibleRole(locals())
 
 
@@ -36,6 +39,9 @@ class Jump_Ci:
           cluster: name of the cluster lock to test
         """
 
+        if not cluster:
+            raise ValueError("--cluster must be set")
+
         return RunAnsibleRole(locals())
 
     @AnsibleRole("jump_ci_release_lock")
@@ -47,6 +53,9 @@ class Jump_Ci:
         Args:
           cluster: name of the cluster lock to release
         """
+
+        if not cluster:
+            raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
 
@@ -82,5 +91,34 @@ class Jump_Ci:
           dockerfile_name: Name/path of the Dockerfile to use to build the image
           cleanup_old_pr_images: if disabled, don't cleanup the old images
         """
+
+        if not cluster:
+            raise ValueError("--cluster must be set")
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("jump_ci_prepare_step")
+    @AnsibleMappedParams
+    def prepare_step(
+            self,
+            cluster,
+            step,
+            env_file,
+            variables_overrides_file,
+            extra_variables_overrides,
+    ):
+        """
+        Prepares the jump host for running a CI test step:
+
+        Args:
+          cluster: Name of the cluster lock to use
+          step: Name of the step to execute
+          env_file: Path to the env file to use
+          variables_overrides_file: Path to the variable_overrides.yaml file
+          extra_variables_overrides: Dictionnary with additional values to add to the variables_overrides.yaml file
+        """
+
+        if not cluster:
+            raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
