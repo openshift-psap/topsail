@@ -7,10 +7,10 @@
 storage_deploy_nfs_provisioner_namespace: nfs-provisioner
 
 # The name of the storage class to use for the NFS-provisioner PVC
-storage_deploy_nfs_provisioner_pvc_sc: gp3-csi
+storage_deploy_nfs_provisioner_pvc_sc: null
 
 # The size of the PVC to give to the NFS-provisioner
-storage_deploy_nfs_provisioner_pvc_size: 10Gi
+storage_deploy_nfs_provisioner_pvc_size: 150Gi
 
 # The name of the storage class that will be created
 storage_deploy_nfs_provisioner_storage_class_name: nfs-provisioner
