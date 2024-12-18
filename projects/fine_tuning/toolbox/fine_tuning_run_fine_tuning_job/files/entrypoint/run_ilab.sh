@@ -23,12 +23,14 @@ mkdir -p "$CACHE_DIR"
 if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
 
     MAPPING="$(cat /mnt/nic-mapping/nodename_ip_mapping.yaml)"
-    current_ip=$(ip route | grep "$NCCL_SOCKET_IFNAME" | cut -d" " -f9)
-    correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | cut -d: -f2 | xargs)
+    for ifname in $(echo $NCCL_SOCKET_IFNAME | tr , " "); do
+        current_ip=$(ip route | grep "$ifname" | cut -d" " -f9)
+        correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | grep "$ifname" | cut -d: -f4)
 
-    # will fail without a privileged container ...
-    ip addr del "$current_ip/24" dev "$NCCL_SOCKET_IFNAME"
-    ip addr add "$correct_ip/24" dev "$NCCL_SOCKET_IFNAME"
+        # will fail without a privileged container ...
+        ip addr del "$current_ip/24" dev "$ifname"
+        ip addr add "$correct_ip/24" dev "$ifname"
+    done
 fi
 
 config_json=$(jq . "$CONFIG_JSON_PATH")
