@@ -14,10 +14,12 @@ spec:
 {% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             k8s.v1.cni.cncf.io/networks:
               '[
+{% for secondary_nic in fine_tuning_run_fine_tuning_job_use_secondary_nic %}
                 {
-                  "name": "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic }}",
+                  "name": "{{ secondary_nic }}",
                   "namespace": "{{ fine_tuning_run_fine_tuning_job_namespace }}"
-                }
+                }{% if secondary_nic != fine_tuning_run_fine_tuning_job_use_secondary_nic[-1] %},{% endif %}
+{% endfor %}
               ]'
 {% endif %}
         spec:
@@ -83,7 +85,7 @@ spec:
               value: "{{ fine_tuning_run_fine_tuning_job_model_name}}"
 {% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
             - name: NCCL_SOCKET_IFNAME
-              value: "net1"
+              value: "{{ nccl_socket_ifname }}"
             - name: NODE_HOSTNAME
               valueFrom:
                 fieldRef:

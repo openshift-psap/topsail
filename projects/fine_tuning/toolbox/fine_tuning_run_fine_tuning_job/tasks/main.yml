@@ -97,36 +97,56 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
       oc get nodes -oname -lnvidia.com/gpu.present=true
     register: gpu_node_names_cmd
 
+  - name: Prepare the secondary nic list
+    set_fact:
+      secondary_nics: "{% if fine_tuning_run_fine_tuning_job_use_secondary_nic is string %}{{ [fine_tuning_run_fine_tuning_job_use_secondary_nic] }}{% else %}{{ fine_tuning_run_fine_tuning_job_use_secondary_nic or [] }}{% endif %}"
+
+  - name: Generate the iface names (net1,net2,...)
+    command:
+      python -c 'print(",".join(f"net{1+i}" for i in range(len("{{ secondary_nics }}".split(",")))))'
+    register: nccl_socket_ifname_cmd
+
+  - name: Prepare the nccl iface names
+    set_fact:
+      nccl_socket_ifname: "{{ nccl_socket_ifname_cmd.stdout }}"
+
   - name: Fetch the NetworkAttachmentDefinition
     shell:
-      oc get Network-Attachment-Definition/{{ fine_tuning_run_fine_tuning_job_use_secondary_nic }}
+      oc get Network-Attachment-Definition/{{ secondary_nic }}
          -oyaml
          -n {{ fine_tuning_run_fine_tuning_job_namespace }}
-         > "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition.yaml"
+         > "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_{{ secondary_nic }}.yaml"
+    loop: "{{ secondary_nics }}"
+    loop_control:
+      loop_var: secondary_nic
 
   - name: Ensure that the NetworkAttachmentDefinition has the expected host-device type
     shell:
       set -o pipefail;
 
-      cat "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition.yaml"
+      cat "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_{{ secondary_nic }}.yaml"
           | yq .spec.config -r
           | jq .type -r
     register: secondary_nic_type_cmd
     failed_when: secondary_nic_type_cmd.stdout | trim != "host-device"
+    loop: "{{ secondary_nics }}"
+    loop_control:
+      loop_var: secondary_nic
 
   - name: Extract the name of the secondary NIC
-    shell:
+    shell: |
       set -o pipefail;
 
-      cat "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition.yaml"
-          | yq .spec.config -r
-          | jq .device -r
-    register: secondary_nic_name_cmd
-    failed_when: not secondary_nic_name_cmd.stdout | trim | length
+      for nad in {{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_*.yaml; do
+        cat "$nad" | yq .spec.config -r
+      done | jq .device -r
+
+    register: secondary_nic_names_cmd
+    failed_when: not secondary_nic_names_cmd.stdout | trim | length
 
   - name: Save the NIC name
     set_fact:
-      secondary_nic_name: "{{ secondary_nic_name_cmd.stdout }}"
+      secondary_nic_names: "{{ ' '.join(secondary_nic_names_cmd.stdout_lines) }}"
 
   - name: Ensure that there is no PyTorchJob Pod running in the namespace
     shell:
@@ -146,13 +166,17 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
   - name: Save the host/IP mapping in a file
     shell: |
       set -o pipefail;
-
-      ip=$(oc debug {{ node_name }} -- bash -c "ip route | grep {{ secondary_nic_name }} | cut -d' ' -f9" 2>/dev/null)
-      if [[ -z "$ip" ]]; then
-        echo "Couldn't find the IP of NIC/{{ secondary_nic_name }} on {{ node_name }} :/ "
-        exit 1
-      fi
-      echo "$(echo "{{ node_name }}" | cut -d/ -f2): $ip" | tee -a "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml"
+      route=$(oc debug {{ node_name }} -- bash -c "ip route" 2>/dev/null)
+      nic_idx=1
+      for nic_name in {{ secondary_nic_names }}; do
+        ip=$(echo "$route" | grep $nic_name | cut -d' ' -f9)
+        if [[ -z "$ip" ]]; then
+          echo "Couldn't find the IP of NIC/$nic_name on {{ node_name }} :/ "
+          exit 1
+        fi
+        echo "$(echo "{{ node_name }}" | cut -d/ -f2):$nic_name:net$nic_idx:$ip" | tee -a "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml"
+        nic_idx=$((nic_idx+1))
+      done
     loop: "{{ gpu_node_names_cmd.stdout_lines }}"
     loop_control:
       loop_var: node_name
