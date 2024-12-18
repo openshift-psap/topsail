@@ -512,6 +512,7 @@ clusters:
     instructlab-standalon-6rjg8-master-0: cluster_instructlab
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
     tosokin-ilab-cluster-556dc-master-0: cluster_h100
+    dagray-psap-ext-7kr6c-master-0: cluster_h100
   create:
     type: single # can be: single, ocp, managed
     keep: false
