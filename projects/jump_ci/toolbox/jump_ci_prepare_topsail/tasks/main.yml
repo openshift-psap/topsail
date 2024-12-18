@@ -3,11 +3,11 @@
   include_role:
     name: jump_ci_ensure_lock
   vars:
-    jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_topsail_cluster_lock }}"
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_topsail_cluster }}"
 
 - name: Generate the artifact dirname
   set_fact:
-    artifact_dir: "/tmp/{{ jump_ci_prepare_topsail_cluster_lock }}/logs"
+    artifact_dir: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/jump_ci_artifacts"
 
 - name: Ensure that the logs directory exists
   ansible.builtin.file:
@@ -15,7 +15,7 @@
     path: "{{ artifact_dir }}"
     mode: '0755'
 
-- name: Compute the indiex of the next logs directory
+- name: Compute the index of the next logs directory
   shell:
     set -o pipefail;
     printf "%03d" $(ls "{{ artifact_dir }}/0*" -d 2>/dev/null | wc -l)
@@ -48,7 +48,7 @@
 
 - name: Set TOPSAIL's directory
   set_fact:
-    topsail_home: "/tmp/{{ jump_ci_prepare_topsail_cluster_lock }}/topsail"
+    topsail_home: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/topsail"
 
 - name: Set git command
   set_fact:
@@ -59,14 +59,21 @@
   ansible.builtin.git:
     repo: 'https://github.com/{{ jump_ci_prepare_topsail_repo_owner }}/{{ jump_ci_prepare_topsail_repo_name }}.git'
     dest: "{{ topsail_home }}"
+    # always clone the main branch at this stage. The exact commit will be fetched next.
     version: "main"
 
 - name: Fetch TOPSAIL repository
   block:
   - name: Fetch TOPSAIL's branch
     command: |
-      {{ git }} fetch --quiet origin refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
-
+      {{ git }} fetch --quiet origin
+      {% if jump_ci_prepare_topsail_git_ref -%}
+         {{ jump_ci_prepare_topsail_git_ref }}
+      {%- elif jump_ci_prepare_topsail_pr_number -%}
+        refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
+      {%- else -%}
+        main
+      {%- endif -%}
     when: jump_ci_prepare_topsail_pr_number
 
   - name: Switch to TOPSAIL's branch
@@ -96,7 +103,7 @@
 - name: Show the commit
   shell: |
     set -o pipefail;
-    {{ git }} show {{ git_commit_cmd.stdout }} | tee "{{ artifact_extra_logs_dir }}/src/topsail.git-version"
+    {{ git }} show --quiet {{ git_commit_cmd.stdout }} | tee "{{ artifact_extra_logs_dir }}/src/topsail.git-version"
 
 - name: Generate the image tag
   set_fact:
@@ -131,3 +138,7 @@
       "{{ topsail_home }}" > "{{ artifact_extra_logs_dir }}/artifacts/image.log"
   when:
   - has_image.rc != 0
+
+- name: Save the name of the image to use
+  shell:
+    echo "{{ image_full_name }}" > "/tmp/{{ jump_ci_prepare_topsail_cluster }}/pod.image"

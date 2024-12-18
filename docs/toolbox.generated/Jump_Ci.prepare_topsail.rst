@@ -18,9 +18,9 @@ Parameters
 ----------
 
 
-``cluster_lock``  
+``cluster``  
 
-* Name of the cluster lock to use
+* Name of the cluster to use
 
 
 ``pr_number``  
@@ -40,6 +40,11 @@ Parameters
 * Name of the TOPSAIL github repo
 
 * default value: ``topsail``
+
+
+``git_ref``  
+
+* The ref (commit/branch) to use in the git repository. Use the PR's `/merge` if not specify, or the main branch if no PR number is specified.
 
 
 ``image_name``  

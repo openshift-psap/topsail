@@ -55,10 +55,11 @@ class Jump_Ci:
     @AnsibleMappedParams
     def prepare_topsail(
             self,
-            cluster_lock,
+            cluster,
             pr_number=None,
             repo_owner="openshift-psap",
             repo_name="topsail",
+            git_ref=None,
             image_name="localhost/topsail",
             image_tag=None,
             dockerfile_name="build/Dockerfile",
@@ -70,11 +71,12 @@ class Jump_Ci:
         - builds TOPSAIL image in the remote host
 
         Args:
-          cluster_lock: Name of the cluster lock to use
+          cluster: Name of the cluster to use
           pr_number: PR number to use for the test. If none, use the main branch.
 
           repo_owner: Name of the Github repo owner
           repo_name: Name of the TOPSAIL github repo
+          git_ref: the ref (commit/branch) to use in the git repository. Use the PR's `/merge` if not specify, or the main branch if no PR number is specified.
           image_name: Name to use when building TOPSAIL image
           image_tag: Name to give to the tag, or computed if empty
           dockerfile_name: Name/path of the Dockerfile to use to build the image
