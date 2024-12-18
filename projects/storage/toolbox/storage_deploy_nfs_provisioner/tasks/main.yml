@@ -9,7 +9,11 @@
     set -o pipefail;
     cat "{{ nfs_provisioner_files }}/export-pv-claim.yaml"
        |  yq --arg storage_size "{{ storage_deploy_nfs_provisioner_pvc_size }}" '.spec.resources.requests.storage = $storage_size'
+    {% if storage_deploy_nfs_provisioner_pvc_sc %}
        |  yq --arg storage_sc "{{ storage_deploy_nfs_provisioner_pvc_sc }}" '.spec.storageClassName = $storage_sc'
+    {% else %}
+       |  yq 'del(.spec.storageClassName)'
+    {% endif %}
        | oc apply -f- -n "{{ storage_deploy_nfs_provisioner_namespace }}"
 
 - name: Create the SCC
