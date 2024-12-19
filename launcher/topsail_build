@@ -21,14 +21,14 @@ CONTAINER_NAME=$image_name
 podman build \
        "$TOPSAIL_HOME" \
        -f "$CONTAINER_FILE" \
-       -t "$CONTAINER_IMAGE" 
+       -t "$CONTAINER_IMAGE"
 
 # FROM isn't used, as '--from $CONTAINER_IMAGE' is passed to 'podman build'
 OVERLAY="FROM hell
 ENTRYPOINT []
 CMD []
 
-RUN dnf install -y --quiet zsh flatpak-spawn
+RUN dnf install -y --quiet zsh flatpak-spawn passwd
 "
 
 podman build \
