@@ -35,10 +35,11 @@ def jump_ci(command):
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
         if not variable_overrides_file.exists():
-            raise FileNotFoundError(f"File '{variable_overrides_file}' does not exist :/")
+            logging.fatal(f"File '{variable_overrides_file}' does not exist :/")
+            raise SystemExit(1)
 
         extra_variables_overrides = {
-            "_rhoai_.skip_args": 2,
+            "_rhoai_.skip_args": 1,
         }
 
         run.run_toolbox(
@@ -51,7 +52,16 @@ def jump_ci(command):
             secrets_path_env_key=secrets_path_env_key,
         )
 
-        #tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test_artifacts/{step}")
+        try:
+            tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test/{command}/entrypoint.sh")
+            logging.info(f"Test step '{command}' on cluster '{cluster}' succeeded.")
+            failed = False
+        except subprocess.CalledProcessError as e:
+            logging.fatal(f"Test step '{command}' on cluster '{cluster}' FAILED.")
+            failed = True
+
+        if failed:
+            raise SystemExit(1)
 
     return do_jump_ci
 
