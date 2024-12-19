@@ -66,9 +66,21 @@ Parameters
 * default value: ``build/Dockerfile``
 
 
+``update_from_imagetag``  
+
+* If set, update the git tree from this image instead of building from scratch
+
+* default value: ``main``
+
+
 ``cleanup_old_pr_images``  
 
 * If disabled, don't cleanup the old images
 
 * default value: ``True``
+
+
+``secrets_path_env_key``  
+
+* If provided, the env key will be used to locate the secret directories to upload to the jump host
 

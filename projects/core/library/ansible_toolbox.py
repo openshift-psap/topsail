@@ -231,7 +231,7 @@ class RunAnsibleRole:
 
         generated_play = [
             dict(name=f"Run {self.role_name} role",
-                 gather_facts=False,
+                 gather_facts=True if remote_host else False,
                  roles=[self.role_name],
                  vars=self.ansible_vars,
                  )

@@ -72,7 +72,9 @@ class Jump_Ci:
             image_name="localhost/topsail",
             image_tag=None,
             dockerfile_name="build/Dockerfile",
+            update_from_imagetag="main",
             cleanup_old_pr_images=True,
+            secrets_path_env_key=None,
     ):
         """
         Prepares the jump host for running TOPSAIL:
@@ -90,6 +92,8 @@ class Jump_Ci:
           image_tag: Name to give to the tag, or computed if empty
           dockerfile_name: Name/path of the Dockerfile to use to build the image
           cleanup_old_pr_images: if disabled, don't cleanup the old images
+          update_from_imagetag: if set, update the git tree from this image instead of building from scratch
+          secrets_path_env_key: if provided, the env key will be used to locate the secret directories to upload to the jump host
         """
 
         if not cluster:
