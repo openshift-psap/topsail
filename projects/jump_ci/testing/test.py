@@ -27,6 +27,8 @@ def jump_ci(command):
 
         #run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
 
+        secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
+
         env_fd_path, env_file = utils.get_tmp_fd()
         for k, v in os.environ.items():
             print(f"export {k}={shlex.quote(v)}", file=env_file)
@@ -46,6 +48,7 @@ def jump_ci(command):
             env_file=env_fd_path,
             variables_overrides_file=variable_overrides_file,
             extra_variables_overrides=extra_variables_overrides,
+            secrets_path_env_key=secrets_path_env_key,
         )
 
         #tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test_artifacts/{step}")
