@@ -29,14 +29,12 @@ Parameters
 
 * The name of the storage class to use for the NFS-provisioner PVC
 
-* default value: ``gp3-csi``
-
 
 ``pvc_size``  
 
 * The size of the PVC to give to the NFS-provisioner
 
-* default value: ``10Gi``
+* default value: ``150Gi``
 
 
 ``storage_class_name``  

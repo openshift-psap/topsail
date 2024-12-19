@@ -27,9 +27,13 @@ class Storage:
 
     @AnsibleRole("storage_deploy_nfs_provisioner")
     @AnsibleMappedParams
-    def deploy_nfs_provisioner(self, namespace="nfs-provisioner",
-                               pvc_sc="gp3-csi", pvc_size="10Gi",
-                               storage_class_name="nfs-provisioner", default_sc=False):
+    def deploy_nfs_provisioner(
+            self,
+            namespace="nfs-provisioner",
+            pvc_sc=None, pvc_size="150Gi",
+            storage_class_name="nfs-provisioner",
+            default_sc=False
+    ):
         """
         Deploy NFS Provisioner
 
