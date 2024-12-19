@@ -375,6 +375,11 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
 
+  ilab_tanya_test:
+    extends: [ ilab_scale ]
+
+    tests.fine_tuning.test_settings.dataset_name: [ ilab_large_knowledge_data.jsonl ]
+
   ilab_ib_scale:
     extends: [ilab_scale]
     tests.fine_tuning.test_settings.pod_count: [1, 2]
