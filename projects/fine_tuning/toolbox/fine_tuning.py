@@ -46,6 +46,7 @@ class Fine_Tuning:
             sleep_forever=False,
 
             ephemeral_output_pvc_size=None,
+            use_primary_nic=True,
             use_secondary_nic=False,
             use_host_network=False,
     ):
@@ -83,6 +84,7 @@ class Fine_Tuning:
           sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
 
           ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
+          use_primary_nic: if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
           use_secondary_nic: if enabled, activates the secondary NIC
           use_host_network: if enabled, activates the host network
         """

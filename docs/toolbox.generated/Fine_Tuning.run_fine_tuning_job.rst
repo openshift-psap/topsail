@@ -147,6 +147,13 @@ Parameters
 * If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
 
 
+``use_primary_nic``  
+
+* If enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
+
+* default value: ``True``
+
+
 ``use_secondary_nic``  
 
 * If enabled, activates the secondary NIC
