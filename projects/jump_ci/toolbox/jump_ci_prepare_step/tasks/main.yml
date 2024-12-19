@@ -20,6 +20,12 @@
   set_fact:
     step_artifact_dir: "/tmp/{{ jump_ci_prepare_step_cluster }}/test/{{ jump_ci_prepare_step_step }}"
 
+- name: Ensure that the step artifacts dirname directory is empty
+  ansible.builtin.file:
+    state: absent
+    path: "{{ step_artifact_dir }}"
+    mode: '0755'
+
 - name: Ensure that the step artifacts dirname directory exists
   ansible.builtin.file:
     state: directory
@@ -62,26 +68,41 @@
 
 - name: Prepare the entrypoint script
   shell: |
-    cat <<EOF >> {{ step_artifact_dir }}/entrypoint.sh
-    source ""
+    cat <<EOF > {{ step_artifact_dir }}/entrypoint.sh
+    #! /bin/bash
 
-    image=
-    echo run podman $command ...
+    set -o pipefail
+    set -o errexit
+    set -o nounset
+    set -o errtrace
+    set -x
 
-    podman run \
-      --name topsail-on-{{ jump_ci_prepare_step_cluster }} \
-      \
-      --volume "{{ step_artifact_dir }}:/logs/artifacts" \
-      --env ARTIFACT_DIR="/logs/artifacts" \
-      \
-      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets:/run/secrets \
-      --env {{ jump_ci_prepare_topsail_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_topsail_secrets_path_env_key }}" \
-      \
-      --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig \
-      --env KUBECONFIG="/run/secrets/kubeconfig" \
-      \
-      --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env
-      \
-      "{{ pod_image_cmd.stdout | trim}}" \
-      bash -ce "source /run/secrets/test_env; exec $run rhoai test {{ jump_ci_prepare_step_step }}"
+    cleanup() {
+      echo "Cleaning up the secrets .."
+      rm -rf "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets"
+    }
+    trap cleanup INT TERM ERR
+
+    podman run \\
+      --rm \\
+      --name topsail-on-{{ jump_ci_prepare_step_cluster }} \\
+      \\
+      --volume "{{ step_artifact_dir }}:/logs/artifacts" \\
+      --env ARTIFACT_DIR="/logs/artifacts" \\
+      \\
+      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets:/run/secrets \\
+      --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \\
+      \\
+      --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig \\
+      --env KUBECONFIG="/run/secrets/kubeconfig" \\
+      \\
+      --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env \\
+      \\
+      "{{ pod_image_cmd.stdout | trim}}" \\
+      bash -ce "source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
+
+    cleanup
     EOF
+
+- name: Show the launch command
+  debug: msg="run 'bash {{ step_artifact_dir }}/entrypoint.sh' in the remote host"
