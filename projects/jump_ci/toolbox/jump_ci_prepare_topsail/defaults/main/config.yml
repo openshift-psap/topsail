@@ -28,5 +28,8 @@ jump_ci_prepare_topsail_image_tag: null
 # Name/path of the Dockerfile to use to build the image
 jump_ci_prepare_topsail_dockerfile_name: build/Dockerfile
 
+# if set, update the git tree from this image instead of building from scratch
+jump_ci_prepare_topsail_update_from_imagetag: main
+
 # if disabled, don't cleanup the old images
 jump_ci_prepare_topsail_cleanup_old_pr_images: true

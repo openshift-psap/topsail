@@ -127,9 +127,24 @@
            --filter label=jump-ci=true
   when:
   - jump_ci_prepare_topsail_cleanup_old_pr_images
-  - has_image.rc != 0
 
-- name: Build image {{ image_full_name }}
+- name: "Build image as an update {{ image_full_name }}"
+  shell: |
+    OVERLAY="FROM hell
+    ENTRYPOINT []
+    CMD []
+
+    RUN dnf install -y --quiet zsh flatpak-spawn
+    "
+    time podman build \
+      --tag "{{ image_full_name }}" \
+      --file <(echo "$OVERLAY") \
+      --from "{{ jump_ci_prepare_topsail_image_name }}:{{ jump_ci_prepare_topsail_update_from_imagetag }}"
+  when:
+  - has_image.rc != 0
+  - jump_ci_prepare_topsail_update_from_imagetag | default('', true) | length >= 0
+
+- name: "Build image from scatch {{ image_full_name }}"
   shell:
     time podman build --squash
       --label jump-ci=true
@@ -138,6 +153,7 @@
       "{{ topsail_home }}" > "{{ artifact_extra_logs_dir }}/artifacts/image.log"
   when:
   - has_image.rc != 0
+  - jump_ci_prepare_topsail_update_from_imagetag | default('', true) | length == 0
 
 - name: Save the name of the image to use
   shell:
