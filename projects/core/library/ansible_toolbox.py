@@ -231,13 +231,16 @@ class RunAnsibleRole:
 
         generated_play = [
             dict(name=f"Run {self.role_name} role",
-                 gather_facts=False,
                  roles=[self.role_name],
                  vars=self.ansible_vars,
                  )
         ]
 
         if remote_host:
+            # gather only env values
+            generated_play[0]["gather_facts"] = True
+            generated_play[0]["gather_subset"] = ['env','!all','!min']
+
             # run remotely
             generated_play[0]["hosts"] = "remote"
             inventory_fd, path = tempfile.mkstemp()
@@ -261,6 +264,7 @@ class RunAnsibleRole:
             # run locally
             generated_play[0]["connection"] = "local"
             generated_play[0]["hosts"] = "localhost"
+            generated_play[0]["gather_facts"] = False
 
         if extra_vars_fname := env.get("TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"):
             try:
