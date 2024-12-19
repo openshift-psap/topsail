@@ -42,3 +42,8 @@ Parameters
 
 * Dictionnary with additional values to add to the variables_overrides.yaml file
 
+
+``secrets_path_env_key``  
+
+* If provided, the env key will be used to locate the secret directories to upload to the jump host
+

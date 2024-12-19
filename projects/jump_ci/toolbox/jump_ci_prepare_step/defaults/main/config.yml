@@ -22,3 +22,6 @@ jump_ci_prepare_step_variables_overrides_file:
 # Dictionnary with additional values to add to the variables_overrides.yaml file
 # Mandatory value
 jump_ci_prepare_step_extra_variables_overrides:
+
+# if provided, the env key will be used to locate the secret directories to upload to the jump host
+jump_ci_prepare_step_secrets_path_env_key: null

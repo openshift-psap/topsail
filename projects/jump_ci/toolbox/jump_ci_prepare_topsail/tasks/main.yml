@@ -71,8 +71,7 @@
         refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
       {%- else -%}
         main
-      {%- endif -%}
-      "
+      {%- endif -%}"
 
 - name: Fetch TOPSAIL repository
   block:
