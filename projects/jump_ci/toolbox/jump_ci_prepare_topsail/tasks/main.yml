@@ -71,8 +71,7 @@
         refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
       {%- else -%}
         main
-      {%- endif -%}
-      "
+      {%- endif -%}"
 
 - name: Fetch TOPSAIL repository
   block:
@@ -169,3 +168,10 @@
 - name: Save the name of the image to use
   shell:
     echo "{{ image_full_name }}" > "/tmp/{{ jump_ci_prepare_topsail_cluster }}/pod.image"
+
+- name: Copy the secrets to the jump host
+  ansible.builtin.copy:
+    src: "{{lookup('env', jump_ci_prepare_topsail_secrets_path_env_key) }}"
+    dest: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/secrets/{{ jump_ci_prepare_topsail_secrets_path_env_key }}"
+    mode: '0600'
+  when: jump_ci_prepare_topsail_secrets_path_env_key

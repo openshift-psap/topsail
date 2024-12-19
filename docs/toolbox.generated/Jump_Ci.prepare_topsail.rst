@@ -79,3 +79,8 @@ Parameters
 
 * default value: ``True``
 
+
+``secrets_path_env_key``  
+
+* If provided, the env key will be used to locate the secret directories to upload to the jump host
+

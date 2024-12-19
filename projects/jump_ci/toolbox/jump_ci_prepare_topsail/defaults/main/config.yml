@@ -33,3 +33,6 @@ jump_ci_prepare_topsail_update_from_imagetag: main
 
 # if disabled, don't cleanup the old images
 jump_ci_prepare_topsail_cleanup_old_pr_images: true
+
+# if provided, the env key will be used to locate the secret directories to upload to the jump host
+jump_ci_prepare_topsail_secrets_path_env_key: null
