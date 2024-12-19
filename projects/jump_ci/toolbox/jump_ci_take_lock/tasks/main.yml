@@ -8,6 +8,8 @@
     if ! mkdir "/tmp/{{ jump_ci_take_lock_cluster }}" 2>/dev/null; then
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' already taken ..."
       exit 1
+    else
+      echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' acquired.";
     fi
   register: lock_directory_created_cmd
   until: lock_directory_created_cmd.rc == 0
