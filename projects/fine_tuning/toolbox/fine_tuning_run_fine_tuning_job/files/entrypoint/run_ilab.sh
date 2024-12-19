@@ -31,6 +31,13 @@ if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
         ip addr del "$current_ip/24" dev "$ifname"
         ip addr add "$correct_ip/24" dev "$ifname"
     done
+
+    if [[ "$USE_PRIMARY_NIC" == "True" ]]; then
+        primary_nic_name=$(ip addr | grep ": eth0" | tr : " " | awk '{ print $2}')
+        export NCCL_SOCKET_IFNAME="$primary_nic_name,$NCCL_SOCKET_IFNAME"
+    fi
+
+    echo "Using NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME"
 fi
 
 config_json=$(jq . "$CONFIG_JSON_PATH")
