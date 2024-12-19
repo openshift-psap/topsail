@@ -390,7 +390,7 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ilab_secondary_nic:
-    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
+    tests.fine_tuning.test_settings.use_secondary_nic: ["network-port-1"]
 
   ilab_aws:
     extends: [gpu, ilab]
