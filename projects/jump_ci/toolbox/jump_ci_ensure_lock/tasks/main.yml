@@ -3,6 +3,19 @@
   shell:
     whoami
 
+- name: Prepare the cluster kubeconfig path
+  set_fact:
+    cluster_kubeconfig: "{{ ansible_env.HOME }}/.kube/config.{{ jump_ci_ensure_lock_cluster }}"
+
+- name: Ensure that the KUBECONFIG file exists
+  stat:
+    path: "{{ cluster_kubeconfig }}"
+  register: cluster_kubeconfig_stat
+
+- name: Fail if the cluster's KUBECONFIG file doesn't exist
+  fail: msg="The cluster KUBECONFIG ({{ cluster_kubeconfig }}) does not exists"
+  when: not cluster_kubeconfig_stat.stat.exists
+
 - name: "Get the stats of the lock directory: {{ jump_ci_ensure_lock_cluster }}"
   stat:
     path: "/tmp/{{ jump_ci_ensure_lock_cluster }}"
