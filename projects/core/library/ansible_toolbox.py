@@ -252,7 +252,7 @@ class RunAnsibleRole:
 [all:vars]
 
 [remote]
-{remote_host} {" ".join(host_properties)}
+{remote_host.rpartition("@")[-1]} {" ".join(host_properties)}
 """
 
             print(inventory_content, file=inventory_f)
