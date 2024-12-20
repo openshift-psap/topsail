@@ -61,6 +61,7 @@
     dest: "{{ topsail_home }}"
     # always clone the main branch at this stage. The exact commit will be fetched next.
     version: "main"
+    force: true
 
 - name: Save git ref
   set_fact:
