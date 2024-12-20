@@ -28,7 +28,7 @@ def jump_ci(command):
 
         cluster = config.project.get_config("cluster.name")
 
-        #run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
+        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
 
         secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
 
