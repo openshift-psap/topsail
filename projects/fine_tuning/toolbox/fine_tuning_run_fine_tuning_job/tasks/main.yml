@@ -167,6 +167,8 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
     shell: |
       set -o pipefail;
       route=$(oc debug {{ node_name }} -- bash -c "ip route" 2>/dev/null)
+      echo "Route of {{ node_name }}"
+      echo "$route"
       nic_idx=1
       for nic_name in {{ secondary_nic_names }}; do
         ip=$(echo "$route" | grep $nic_name | cut -d' ' -f9)
