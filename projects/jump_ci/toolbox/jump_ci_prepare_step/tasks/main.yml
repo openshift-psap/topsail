@@ -84,6 +84,15 @@
     set -o errtrace
     set -x
 
+    interactive=""
+    cmd="source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
+
+    if [[ "\${1:-}" == enter ]]; then
+      echo "Entering the container instead of running '\$cmd'"
+      interactive="-it"
+      cmd="bash"
+    fi
+
     cleanup() {
       # Not cleaning up the secrets for now. They are safe anyway
       echo Nothing to do for cleanup.
@@ -107,9 +116,9 @@
       --env KUBECONFIG="/run/secrets/kubeconfig" \\
       \\
       --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \\
-      \\
+      \$interactive \\
       "{{ pod_image_cmd.stdout | trim}}" \\
-      bash -ce "source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
+      bash -ce "\$cmd"
 
     cleanup
     EOF
