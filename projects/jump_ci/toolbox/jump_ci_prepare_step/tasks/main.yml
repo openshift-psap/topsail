@@ -86,6 +86,7 @@
 
     interactive=""
     cmd="source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
+    image="{{ pod_image_cmd.stdout | trim}}"
 
     if [[ "\${1:-}" == enter ]]; then
       echo "Entering the container instead of running '\$cmd'"
@@ -102,6 +103,8 @@
     }
     trap cleanup INT TERM ERR
 
+    echo "### Running '\$cmd' against image '\$image' ###"
+
     podman run \\
       --rm \\
       --name topsail-on-{{ jump_ci_prepare_step_cluster }} \\
@@ -117,7 +120,7 @@
       \\
       --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \\
       \$interactive \\
-      "{{ pod_image_cmd.stdout | trim}}" \\
+      "\$image" \\
       bash -ce "\$cmd"
 
     cleanup
