@@ -126,3 +126,27 @@ class Jump_Ci:
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("jump_ci_retrieve_artifacts")
+    @AnsibleMappedParams
+    def retrieve_artifacts(
+            self,
+            cluster,
+            remote_dir,
+            local_dir="artifacts",
+            skip_cluster_lock=False
+    ):
+        """
+        Prepares the jump host for running a CI test step:
+
+        Args:
+          cluster: Name of the cluster lock to use
+          remote_dir: name of remote directory to retrieve.
+          local_dir: name of the local dir where to store the results, within the extra logs artifacts directory.
+          skip_cluster_lock: if True, skip the cluster is lock check (eg, when included from another role).
+        """
+
+        if not cluster:
+            raise ValueError("--cluster must be set")
+
+        return RunAnsibleRole(locals())
