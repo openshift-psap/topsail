@@ -6,7 +6,7 @@ import fire
 import pathlib
 import logging
 logging.getLogger().setLevel(logging.INFO)
-
+import yaml
 
 from projects.core.library import env, config, run, configure_logging
 configure_logging()
@@ -15,9 +15,12 @@ from projects.jump_ci.testing import utils, prepare_jump_ci, tunnelling
 
 def jump_ci(command):
     @utils.entrypoint()
-    def do_jump_ci():
+    def do_jump_ci(test_args=""):
         """
-        *Jump-CI* Runs the command in the Jump Host.
+        Runs a command in the Jump Host.
+
+        Args:
+          test_args: the test args to pass to the test command
         """
 
         # Open the tunnel
@@ -34,9 +37,22 @@ def jump_ci(command):
             print(f"export {k}={shlex.quote(v)}", file=env_file)
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
-        if not variable_overrides_file.exists():
-            logging.fatal(f"File '{variable_overrides_file}' does not exist :/")
+
+        if not test_args and not variable_overrides_file.exists():
+            logging.fatal(f"File '{variable_overrides_file}' does not exist, and --test_args not passed. Please specify one of them :/")
             raise SystemExit(1)
+
+        if test_args:
+            variable_overrides_dict = dict(
+                PR_POSITIONAL_ARGS=test_args,
+                PR_POSITIONAL_ARG_0="jump-ci",
+            )
+
+            for idx, arg in enumerate(test_args.split()):
+                variable_overrides_dict[f"PR_POSITIONAL_ARG_{idx+1}"] = arg
+
+            with open(variable_overrides_file, "w") as f:
+                print(yaml.dump(variable_overrides_dict), file=f)
 
         extra_variables_overrides = {
             "_rhoai_.skip_args": 1,
