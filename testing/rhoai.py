@@ -21,15 +21,14 @@ def main():
     variable_overrides_path = ARTIFACT_DIR / "variable_overrides.yaml"
     if not variable_overrides_path.exists():
         logging.fatal(f"File {variable_overrides_path.absolute()} does not exist. Cannot proceed.")
-        raise FileNotFoundError(variable_overrides)
+        raise SystemExit(1)
 
     with open(variable_overrides_path) as f:
         old_variable_overrides = yaml.safe_load(f)
 
     if not isinstance(old_variable_overrides, dict):
-        msg = f"Wrong type for the variable overrides file. Expected a dictionnary, got {old_variable_overrides.__class__.__name__}"
-        logging.fatal(msg)
-        raise ValueError(msg)
+        logging.fatal(f"Wrong type for the variable overrides file. Expected a dictionnary, got {old_variable_overrides.__class__.__name__}")
+        raise SystemExit(1)
 
     for key, value in old_variable_overrides.items():
         _, found, new_key = key.partition(RHOAI_CONFIG_KEY)
@@ -39,7 +38,8 @@ def main():
         logging.info(f"RHOAI launcher configuration: {new_key} --> {value}")
 
         if new_key not in rhoai_configuration:
-            raise KeyError(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+            logging.fatal(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+            raise SystemExit(1)
 
         rhoai_configuration[new_key] = value
 
@@ -80,7 +80,7 @@ def main():
         test_name = old_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}_0"]
     except KeyError:
         logging.fatal(f"RHOAI launcher: the 0th PR parameter ({PR_POSITIONAL_ARG_KEY}_0) must contain the test name ...")
-        return 1
+        raise SystemExit(1)
 
     try:
         project_name = old_all_args[0]
