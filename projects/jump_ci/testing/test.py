@@ -80,6 +80,14 @@ def jump_ci(command):
             logging.fatal(f"Test step '{command}' on cluster '{cluster}' FAILED.")
             failed = True
 
+        run.run_toolbox(
+            "jump_ci", "retrieve_artifacts",
+            cluster=cluster,
+            remote_dir=f"test/{command}/artifacts",
+            local_dir=f"../test-artifacts", # copy to the main artifact directory
+            mute_stdout=True,
+        )
+
         if failed:
             raise SystemExit(1)
 
