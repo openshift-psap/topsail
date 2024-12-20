@@ -26,10 +26,16 @@
     path: "{{ step_artifact_dir }}"
     mode: '0755'
 
-- name: Ensure that the step artifacts dirname directory exists
+- name: Ensure that the step test dirname directory exists
   ansible.builtin.file:
     state: directory
     path: "{{ step_artifact_dir }}"
+    mode: '0755'
+
+- name: Ensure that the step test artifacts dirname directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ step_artifact_dir }}/artifacts"
     mode: '0755'
 
 - name: Copy the env file
@@ -38,15 +44,15 @@
     dest: "{{ step_artifact_dir }}/test_env"
     mode: '0644'
 
-- name: Copy the variables_overrides file
+- name: Copy the variables_overrides file to the artifacts directory
   ansible.builtin.copy:
     src: "{{ jump_ci_prepare_step_variables_overrides_file }}"
-    dest: "{{ step_artifact_dir }}/variable_overrides.yaml"
+    dest: "{{ step_artifact_dir }}/artifacts/variable_overrides.yaml"
     mode: '0644'
 
 - name: Append the extra variables_overrides
   shell: |
-    cat <<EOF >> {{ step_artifact_dir }}/variable_overrides.yaml
+    cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
     {% for k, v in (jump_ci_prepare_step_extra_variables_overrides or {}).items() %}
     {{ k }}: {{ v }}
     {% endfor %}
@@ -63,6 +69,7 @@
     src: "{{ lookup('env', jump_ci_prepare_step_secrets_path_env_key) }}/"
     dest: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}/"
     mode: "push"
+  no_log: true
   when: jump_ci_prepare_step_secrets_path_env_key
 
 
@@ -90,16 +97,16 @@
       --rm \\
       --name topsail-on-{{ jump_ci_prepare_step_cluster }} \\
       \\
-      --volume "{{ step_artifact_dir }}:/logs/artifacts" \\
+      --volume "{{ step_artifact_dir }}/artifacts:/logs/artifacts" \\
       --env ARTIFACT_DIR="/logs/artifacts" \\
       \\
-      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets:/run/secrets \\
+      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \\
       --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \\
       \\
-      --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig \\
+      --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig:ro \\
       --env KUBECONFIG="/run/secrets/kubeconfig" \\
       \\
-      --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env \\
+      --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \\
       \\
       "{{ pod_image_cmd.stdout | trim}}" \\
       bash -ce "source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
