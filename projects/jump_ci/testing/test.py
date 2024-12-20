@@ -33,7 +33,11 @@ def jump_ci(command):
         secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
 
         env_fd_path, env_file = utils.get_tmp_fd()
-        for k, v in os.environ.items():
+        extra_env = dict(
+            TOPSAIL_JUMP_CI="true",
+            TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
+        )
+        for k, v in (os.environ | extra_env).items():
             print(f"export {k}={shlex.quote(v)}", file=env_file)
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
