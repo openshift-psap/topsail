@@ -78,8 +78,11 @@
     set -x
 
     cleanup() {
-      echo "Cleaning up the secrets .."
-      rm -rf "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets"
+      # Not cleaning up the secrets for now. They are safe anyway
+      echo Nothing to do for cleanup.
+
+      # echo Cleaning up the secrets ..
+      # rm -rf /tmp/{{ jump_ci_prepare_step_cluster }}/secrets
     }
     trap cleanup INT TERM ERR
 
