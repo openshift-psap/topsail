@@ -47,8 +47,8 @@ def unlock_cluster(cluster=None):
 @utils.entrypoint()
 def prepare(
         cluster=None,
-        repo_owner=None,
-        repo_name=None,
+        repo_owner="openshift-psap",
+        repo_name="topsail",
         git_ref=None,
         pr_number=None,
 ):
@@ -74,25 +74,30 @@ def prepare(
     # Clone the Git Repository
     # Build the image
     prepare_topsail_args = dict(cluster=cluster)
-    if any([repo_owner, repo_name, pr_number]):
-        if not all([repo_owner, repo_name, pr_number]):
-            raise RuntimeError("Missing parameters in the CLI arguments ...")
-        prepare_topsail_args |= dict(
-            repo_owner=repo_owner,
-            repo_name=repo_name,
-            pr_number=pr_number,
-        )
 
-    elif os.environ.get("OPENSHIFT_CI") == "true":
+    if os.environ.get("OPENSHIFT_CI") == "true":
         prepare_topsail_args |= dict(
             repo_owner=os.environ["REPO_OWNER"],
             repo_name=os.environ["REPO_NAME"],
             pr_number=os.environ["PULL_NUMBER"],
             git_ref=os.environ["PULL_PULL_SHA"]
         )
+    elif any([pr_number, git_ref]):
+        if not all([repo_owner, repo_name, pr_number]):
+            logging.fatal("Missing parameters in the CLI arguments. Please pass at least --pr-number")
+            raise SystemExit(1)
+
+        prepare_topsail_args |= dict(
+            repo_owner=repo_owner,
+            repo_name=repo_name,
+            pr_number=pr_number,
+            git_ref=git_ref,
+        )
 
     else:
-        raise RuntimeError("No flag provided and couldn't determine the CI environment ... Aborting.")
+        logging.fatal("No flag provided and couldn't determine the CI environment ... Aborting.")
+        logging.info("Outside of the CI, please pass at least --pr-number")
+        raise SystemExit(1)
 
     run.run_toolbox("jump_ci", "prepare_topsail", **prepare_topsail_args,)
 
