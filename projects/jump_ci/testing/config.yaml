@@ -16,4 +16,5 @@ ssh:
   flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
+  - -o LogLevel=ERROR
 skip_list: {}
