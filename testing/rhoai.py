@@ -59,8 +59,8 @@ def main():
     for idx, arg in enumerate(old_all_args):
         # ... without the arg0 and arg1
         if idx == 0: continue
-        # ... and `rhoai_configuration["skip_args"]` args
-        if idx < skip_args: continue
+        # ... and `rhoai_configuration["skip_args"]` args (including the 0th arg)
+        if idx < (skip_args - 1): continue
 
         # ... without RHOAI config flags
         rhoai_conf = False
@@ -83,7 +83,7 @@ def main():
         raise SystemExit(1)
 
     try:
-        project_name = old_all_args[0]
+        project_name = old_all_args[0 + skip_args]
         logging.info(f"RHOAI launcher: project to run: {project_name}")
     except IndexError:
         logging.fatal(f"RHOAI launcher: the first PR parameter ({PR_POSITIONAL_ARG_KEY}_1) must contain the name of the project to test ...")

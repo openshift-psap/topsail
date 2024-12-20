@@ -59,7 +59,7 @@ def jump_ci(command):
                 print(yaml.dump(variable_overrides_dict), file=f)
 
         extra_variables_overrides = {
-            "_rhoai_.skip_args": 1,
+            "_rhoai_.skip_args": 2
         }
 
         run.run_toolbox(
