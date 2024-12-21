@@ -107,6 +107,10 @@ def main():
            (key_suffix := key.replace(f"{PR_POSITIONAL_ARG_KEY}_", "")).isdigit():
             continue
 
+        # skip rhoai-entrypoint config variables
+        if key.startswith(RHOAI_CONFIG_KEY):
+            continue
+
         # pass untouched everything else
         new_variable_overrides[key] = value
 
