@@ -341,12 +341,27 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         current_subcommand = sys.argv[1]
         logging.info(f"Currently running the subcommand '{current_subcommand}'")
 
-        skip_list = project.get_config("skip_list", None, print=False)
-        if skip_list is None:
-            logging.warning("The skip_list isn't defined in this project.")
-            skip_list = {}
+        exec_list = project.get_config("exec_list", None, print=False)
+        if exec_list is None:
+            logging.warning("The exec_list isn't defined in this project.")
+            exec_list = {}
 
-        skip_this_subcommand = skip_list.get(current_subcommand, False)
-        if skip_this_subcommand:
-            logging.fatal(f"Subcommand '{current_subcommand}' is part of the skip list. Stopping happily this execution.")
+        exec_this_subcommand = exec_list.get(current_subcommand, False)
+        if exec_this_subcommand is False:
+            logging.fatal(f"Subcommand '{current_subcommand}' is disabled in the exec list. Stopping happily this execution.")
+            with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
+                print("Skipped because part of the \skip list", file=f)
             raise SystemExit(0)
+
+        if exec_this_subcommand is not True and exec_list.get("_only_", False):
+            logging.fatal(f"Only flag is set, and subcommand '{current_subcommand}' is not enabled in the exec list. Stopping happily this execution.")
+            with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
+                print("Skipped because not part of the \only list", file=f)
+
+            raise SystemExit(0)
+
+        # not in the skip list
+        # not the only command to execute
+        # continue happilly =:-)
+
+        pass
