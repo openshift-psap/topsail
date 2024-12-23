@@ -109,7 +109,7 @@
       --volume "{{ step_artifact_dir }}/artifacts:/logs/artifacts" \\
       --env ARTIFACT_DIR="/logs/artifacts" \\
       \\
-      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \\
+      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \\
       --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \\
       \\
       --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig:ro \\
