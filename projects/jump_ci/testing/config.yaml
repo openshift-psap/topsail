@@ -11,10 +11,14 @@ ssh_tunnel:
   local_host_port: 2500
   verbose: false # will leak host names if enabled
 cluster:
-  name: null
+  name: icelake
 ssh:
   flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
   - -o LogLevel=ERROR
 skip_list: {}
+env:
+  skip_list:
+    by_name: [PATH, KUBECONFIG, HOME, PWD, DISPLAY, LANG, USER, LOGNAME, SHELL, _, OLDPWD, DBUS_SESSION_BUS_ADDRESS, LC_CTYPE, LSCOLOR, ARTIFACT_DIR, PYTHONPATH, PSAP_ODS_SECRET_PATH]
+    by_prefix: [BASH_, XDG_, TOPSAIL_]

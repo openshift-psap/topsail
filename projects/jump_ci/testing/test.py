@@ -74,8 +74,16 @@ def jump_ci(command):
             TOPSAIL_JUMP_CI="true",
             TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
         )
+
+        env_skip_list = config.project.get_config("env.skip_list.by_name")
+        env_skip_list_prefix = config.project.get_config("env.skip_list.by_prefix")
+
         for k, v in (os.environ | extra_env).items():
+            if k in env_skip_list: continue
+            if any([k.startswith(prefix) for prefix in env_skip_list_prefix]): continue
+
             print(f"{k}={shlex.quote(v)}", file=env_file)
+        env_file.flush()
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
