@@ -13,20 +13,57 @@ configure_logging()
 
 from projects.jump_ci.testing import utils, prepare_jump_ci, tunnelling
 
+def rewrite_variables_overrides(variable_overrides_dict):
+    new_variable_overrides = dict()
+
+    old_args = variable_overrides_dict["PR_POSITIONAL_ARGS"].split()
+    # remove the 2 first args of the jump-ci test (project and cluster)
+    NUMBER_OF_ARGS_TO_SKIP = 2
+    new_args = old_args[NUMBER_OF_ARGS_TO_SKIP:]
+
+    new_args_str = new_variable_overrides[f"PR_POSITIONAL_ARGS"] = " ".join(new_args)
+    new_variable_overrides["PR_POSITIONAL_ARGS"] = variable_overrides_dict["PR_POSITIONAL_ARG_0"]
+    logging.info(f"New args to execute on the jump host: {new_args_str}")
+    for idx, value in enumerate(new_args):
+        new_variable_overrides[f"PR_POSITIONAL_ARG_{idx+1}"] = value
+
+    for k, v in variable_overrides_dict.items():
+        if k.startswith("PR_POSITIONAL_ARG"): continue
+
+        NOT_FOUND = object()
+        found = config.project.get_config(k, NOT_FOUND, print=False, warn=False)
+        if found != NOT_FOUND:
+            # the key 'k' was found in the jump-ci config.
+            # It belongs to us, do *not* pass it over to the new test.
+            logging.info(f"NOT passing '{k}: {v}' to the new variables overrides")
+
+            continue
+
+        # the key 'k' was not found in the jump-ci config
+        # It doesn't belong to us, pass it to the new test
+        new_variable_overrides[k] = v
+        logging.info(f"Passing '{k}: {v}' to the new variables overrides")
+
+    return new_variable_overrides
+
+
 def jump_ci(command):
     @utils.entrypoint()
-    def do_jump_ci(test_args=""):
+    def do_jump_ci(cluster=None, project=None, test_args=""):
         """
         Runs a command in the Jump Host.
 
         Args:
+          cluster: the name of the cluster to run on
+          project: the name of the project to launch
           test_args: the test args to pass to the test command
         """
 
         # Open the tunnel
         tunnelling.prepare()
 
-        cluster = config.project.get_config("cluster.name")
+        if cluster is None:
+            cluster = config.project.get_config("cluster.name")
 
         run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
 
@@ -38,7 +75,7 @@ def jump_ci(command):
             TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
         )
         for k, v in (os.environ | extra_env).items():
-            print(f"export {k}={shlex.quote(v)}", file=env_file)
+            print(f"{k}={shlex.quote(v)}", file=env_file)
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
@@ -46,29 +83,38 @@ def jump_ci(command):
             logging.fatal(f"File '{variable_overrides_file}' does not exist, and --test_args not passed. Please specify one of them :/")
             raise SystemExit(1)
 
+        if test_args and not project:
+            logging.fatal(f"The --project flag must be specificed when --test_args is passed")
+            raise SystemExit(1)
+
         if test_args:
-            variable_overrides_dict = dict(
+            variables_overrides_dict = dict(
                 PR_POSITIONAL_ARGS=test_args,
                 PR_POSITIONAL_ARG_0="jump-ci",
             )
 
             for idx, arg in enumerate(test_args.split()):
-                variable_overrides_dict[f"PR_POSITIONAL_ARG_{idx+1}"] = arg
+                variables_overrides_dict[f"PR_POSITIONAL_ARG_{idx+1}"] = arg
 
-            with open(variable_overrides_file, "w") as f:
-                print(yaml.dump(variable_overrides_dict), file=f)
+            config.project.set_config("overrides", variable_overrides_dict)
 
-        extra_variables_overrides = {
-            "_rhoai_.skip_args": 2
-        }
+        else:
+            if not os.environ.get("OPENSHIFT_CI") == "true":
+                logging.fatal("Not running in OpenShift CI. Don't know how to rewrite the variable_overrides_file. Aborting.")
+                raise SystemExit(1)
+            project = config.project.get_config("overrides.PR_POSITIONAL_ARG_2")
+
+            variables_overrides_dict = rewrite_variables_overrides(
+                config.project.get_config("overrides")
+            )
 
         run.run_toolbox(
             "jump_ci", "prepare_step",
             cluster=cluster,
+            project=project,
             step=command,
             env_file=env_fd_path,
-            variables_overrides_file=variable_overrides_file,
-            extra_variables_overrides=extra_variables_overrides,
+            variables_overrides_dict=variables_overrides_dict,
             secrets_path_env_key=secrets_path_env_key,
         )
 
