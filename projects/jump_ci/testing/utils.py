@@ -18,6 +18,9 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
     env.init()
     config.init(TESTING_THIS_DIR, apply_config_overrides=False)
+    config.project.apply_config_overrides(ignore_not_found=True)
+
+    config.test_skip_list()
 
 
 def entrypoint(ignore_secret_path=False):
