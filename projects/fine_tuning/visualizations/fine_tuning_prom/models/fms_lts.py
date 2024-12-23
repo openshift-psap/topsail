@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 import matrix_benchmarking.models as matbench_models
 
-from . import kpi
+from . import fms_kpi as kpi
 
 KPI_SETTINGS_VERSION = "1.2"
 # 1.2: expose more labels, to match the fine_tuning KPI labels

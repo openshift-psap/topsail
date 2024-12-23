@@ -232,6 +232,7 @@ def _get_disk_usage_metrics(cluster_role, register, label_sets, disk_metrics_nam
             as_timestamp=True,
             title="Disk total usage", y_title="in GB",
             y_divisor=1000*1000*1000,
+            substract_first=True,
         )
 
     for plot_name_labels in label_sets:
@@ -274,6 +275,7 @@ def _get_network_usage_metrics(cluster_role, register, label_sets, network_metri
             as_timestamp=True,
             title="Network total usage", y_title="in GB",
             y_divisor=1000*1000*1000,
+            substract_first=False,
         )
 
     for plot_name_labels in label_sets:

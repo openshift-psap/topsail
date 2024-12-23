@@ -28,23 +28,31 @@ logging.info(f"Running with the {FLAVOR} of the fine_tuning visualization packag
 ### (keep this below the FLAVOR lookup, so that it can be used)
 
 from . import parsers
-from . import lts_parser
-from ..models import kpi as models_kpi
+from . import fms_lts_parser, ilab_lts_parser
+from ..models import fms_kpi, ilab_kpi
 
 CACHE_FILENAME = "fine-tuning-prom.cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 TEST_DIR_FILE = ".matbench_prom_db_dir"
 
-from ..models import lts as models_lts
+from ..models import fms_lts, ilab_lts
 
 store_conf = dict()
 if FLAVOR == FMS_FLAVOR:
     store_conf |= dict(
-        lts_payload_model=models_lts.Payload,
-        generate_lts_payload=lts_parser.generate_lts_payload,
+        lts_payload_model=fms_lts.Payload,
+        generate_lts_payload=fms_lts_parser.generate_lts_payload,
 
-        models_kpis=models_kpi.KPIs,
-        get_kpi_labels=lts_parser.get_kpi_labels,
+        models_kpis=fms_kpi.KPIs,
+        get_kpi_labels=fms_lts_parser.get_kpi_labels,
+    )
+elif FLAVOR == ILAB_FLAVOR:
+    store_conf |= dict(
+        lts_payload_model=ilab_lts.Payload,
+        generate_lts_payload=ilab_lts_parser.generate_lts_payload,
+
+        models_kpis=ilab_kpi.KPIs,
+        get_kpi_labels=ilab_lts_parser.get_kpi_labels,
     )
 else:
     # not LTS/KPI configuration for the other flavors, for the time being.

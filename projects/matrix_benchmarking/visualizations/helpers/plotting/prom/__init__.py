@@ -62,6 +62,7 @@ class Plot():
                  show_legend=True,
                  y_divisor=1,
                  higher_better=False,
+                 substract_first=False,
                  ):
         self.name = name
         self.id_name = f"prom_overview_{''.join( c for c in self.name if c not in '?:!/;()' ).replace(' ', '_').lower()}"
@@ -75,6 +76,7 @@ class Plot():
         self.get_legend_name = get_legend_name
         self.show_metrics_in_title = show_metrics_in_title
         self.show_queries_in_title = show_queries_in_title
+        self.substract_first = substract_first
         self.show_legend = show_legend
         self.higher_better = higher_better
 
@@ -127,6 +129,10 @@ class Plot():
 
                     x_values = [x for x, y in metric.values.items()]
                     y_values = [y/self.y_divisor for x, y in metric.values.items()]
+
+                    if self.substract_first and y_values:
+                        first = y_values[0]
+                        y_values = [y - first for y in y_values]
 
                     if self.get_legend_name:
                         legend_name, legend_group = self.get_legend_name(metric_name, metric.metric)
