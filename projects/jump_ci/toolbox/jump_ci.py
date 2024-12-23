@@ -104,6 +104,7 @@ class Jump_Ci:
     def prepare_step(
             self,
             cluster,
+            project,
             step,
             env_file,
             variables_overrides_dict,
@@ -114,6 +115,7 @@ class Jump_Ci:
 
         Args:
           cluster: Name of the cluster lock to use
+          project: Name of the project to execute
           step: Name of the step to execute
           env_file: Path to the env file to use
           variables_overrides_dict: Dictionnary to save as the variable overrides file

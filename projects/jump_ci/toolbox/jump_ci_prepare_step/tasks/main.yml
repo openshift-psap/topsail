@@ -79,7 +79,7 @@
     set -x
 
     interactive=""
-    cmd="source /run/secrets/test_env; exec run rhoai test {{ jump_ci_prepare_step_step }}"
+    cmd="set -a; source /run/secrets/test_env; set +a; exec run {{ jump_ci_prepare_step_project }} test {{ jump_ci_prepare_step_step }}"
     image="{{ pod_image_cmd.stdout | trim}}"
 
     if [[ "\${1:-}" == enter ]]; then
