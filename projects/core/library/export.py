@@ -73,7 +73,7 @@ def export_artifacts(artifacts_dirname, test_step=None):
         run_id += f"/{test_step}"
 
     export_dest = f"s3://{bucket}/{path_prefix}/{run_id}"
-    export_url = f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{run_id}/"
+    export_url = f"https://{bucket}.s3.amazonaws.com/index.html#{path_prefix}/{run_id}/"
     with open(env.ARTIFACT_DIR / "export.url", "w") as f:
         print(export_url, file=f)
 
