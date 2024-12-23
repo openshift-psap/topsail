@@ -97,6 +97,9 @@
     }
     trap cleanup INT TERM ERR
 
+    # makes it easier to rerun manually after a failure
+    rm -f "{{ step_artifact_dir }}/artifacts/FAILURES"
+
     echo "### Running '\$cmd' against image '\$image' ###"
 
     podman run \\
