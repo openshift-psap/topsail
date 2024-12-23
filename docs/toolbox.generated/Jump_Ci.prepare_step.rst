@@ -33,14 +33,9 @@ Parameters
 * Path to the env file to use
 
 
-``variables_overrides_file``  
+``variables_overrides_dict``  
 
-* Path to the variable_overrides.yaml file
-
-
-``extra_variables_overrides``  
-
-* Dictionnary with additional values to add to the variables_overrides.yaml file
+* Dictionnary to save as the variable overrides file
 
 
 ``secrets_path_env_key``  

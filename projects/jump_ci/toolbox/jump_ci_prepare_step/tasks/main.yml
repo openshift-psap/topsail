@@ -44,16 +44,10 @@
     dest: "{{ step_artifact_dir }}/test_env"
     mode: '0644'
 
-- name: Copy the variables_overrides file to the artifacts directory
-  ansible.builtin.copy:
-    src: "{{ jump_ci_prepare_step_variables_overrides_file }}"
-    dest: "{{ step_artifact_dir }}/artifacts/variable_overrides.yaml"
-    mode: '0644'
-
-- name: Append the extra variables_overrides
+- name: Populate the variables_overrides files
   shell: |
     cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
-    {% for k, v in (jump_ci_prepare_step_extra_variables_overrides or {}).items() %}
+    {% for k, v in (jump_ci_prepare_step_variables_overrides_dict or {}).items() %}
     {{ k }}: {{ v }}
     {% endfor %}
     EOF

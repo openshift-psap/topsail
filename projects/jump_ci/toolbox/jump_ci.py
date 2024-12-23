@@ -106,8 +106,7 @@ class Jump_Ci:
             cluster,
             step,
             env_file,
-            variables_overrides_file,
-            extra_variables_overrides,
+            variables_overrides_dict,
             secrets_path_env_key=None,
     ):
         """
@@ -117,9 +116,8 @@ class Jump_Ci:
           cluster: Name of the cluster lock to use
           step: Name of the step to execute
           env_file: Path to the env file to use
-          variables_overrides_file: Path to the variable_overrides.yaml file
-          extra_variables_overrides: Dictionnary with additional values to add to the variables_overrides.yaml file
-          secrets_path_env_key: if provided, the env key will be used to locate the secret directories to upload to the jump host
+          variables_overrides_dict: Dictionnary to save as the variable overrides file
+          secrets_path_env_key: If provided, the env key will be used to locate the secret directories to upload to the jump host
         """
 
         if not cluster: # don't accept the empty string value
