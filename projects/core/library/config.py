@@ -52,7 +52,7 @@ class Config:
             self.config = yaml.safe_load(config_f)
 
 
-    def apply_config_overrides(self):
+    def apply_config_overrides(self, ignore_not_found=False):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
@@ -72,6 +72,9 @@ class Config:
             MAGIC_DEFAULT_VALUE = object()
             current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
             if current_value == MAGIC_DEFAULT_VALUE:
+                if ignore_not_found:
+                    continue
+
                 if "." in key:
                     raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
 
