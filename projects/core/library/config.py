@@ -180,7 +180,7 @@ class Config:
 
         if not variable_overrides_path.exists():
             logging.debug(f"save_config_overrides: {variable_overrides_path} does not exist, nothing to save.")
-
+            self.config["overrides"] = {}
             return
 
         with open(variable_overrides_path) as f:
