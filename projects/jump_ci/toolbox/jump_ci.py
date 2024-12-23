@@ -23,7 +23,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to take
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -39,7 +39,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to test
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -54,7 +54,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to release
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -94,7 +94,7 @@ class Jump_Ci:
           update_from_imagetag: if set, update the git tree from this image instead of building from scratch
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -122,7 +122,7 @@ class Jump_Ci:
           secrets_path_env_key: if provided, the env key will be used to locate the secret directories to upload to the jump host
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -146,7 +146,7 @@ class Jump_Ci:
           skip_cluster_lock: if True, skip the cluster is lock check (eg, when included from another role).
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
