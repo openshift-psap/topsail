@@ -22,3 +22,14 @@ env:
   skip_list:
     by_name: [PATH, KUBECONFIG, HOME, PWD, DISPLAY, LANG, USER, LOGNAME, SHELL, _, OLDPWD, DBUS_SESSION_BUS_ADDRESS, LC_CTYPE, LSCOLOR, ARTIFACT_DIR, PYTHONPATH, PSAP_ODS_SECRET_PATH]
     by_prefix: [BASH_, XDG_, TOPSAIL_]
+exec_list:
+  _only_: false
+  # keep these steps enabled for the jump-ci to work
+  lock_cluster: true
+  prepare_jump_ci: true
+  unlock_cluster: true
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
