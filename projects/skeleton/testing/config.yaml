@@ -144,3 +144,10 @@ export_artifacts:
   bucket: rhoai-cpt-artifacts
   path_prefix: cpt/skeleton
   dest: null # will be set by the export code
+exec_list:
+  _only_: false
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
