@@ -13,7 +13,7 @@ def get_sutest_metrics(register=False):
     cluster_role = "sutest"
 
     all_metrics = []
-    all_metrics += helper_prom_store.get_cluster_metrics(cluster_role, gpu=False, register=register)
+    all_metrics += helper_prom_store.get_cluster_metrics(cluster_role, gpu_container=False, register=register)
 
     return all_metrics
 

@@ -61,19 +61,25 @@
     dest: "{{ topsail_home }}"
     # always clone the main branch at this stage. The exact commit will be fetched next.
     version: "main"
+    force: true
 
-- name: Fetch TOPSAIL repository
-  block:
-  - name: Fetch TOPSAIL's branch
-    command: |
-      {{ git }} fetch --quiet origin
+- name: Save git ref
+  set_fact:
+    git_ref: "\
       {% if jump_ci_prepare_topsail_git_ref -%}
          {{ jump_ci_prepare_topsail_git_ref }}
       {%- elif jump_ci_prepare_topsail_pr_number -%}
         refs/pull/{{ jump_ci_prepare_topsail_pr_number }}/merge
       {%- else -%}
         main
-      {%- endif -%}
+      {%- endif -%}"
+
+- name: Fetch TOPSAIL repository
+  block:
+  - name: Fetch TOPSAIL's branch
+    command: |
+      {{ git }} fetch --quiet origin {{ git_ref }}
+
     when: jump_ci_prepare_topsail_pr_number
 
   - name: Switch to TOPSAIL's branch
@@ -123,13 +129,33 @@
 - name: Prune old images
   command:
     podman image prune --force
-           --filter until=48h
+           --filter until=4h
            --filter label=jump-ci=true
   when:
   - jump_ci_prepare_topsail_cleanup_old_pr_images
-  - has_image.rc != 0
 
-- name: Build image {{ image_full_name }}
+- name: "Build image as an update {{ image_full_name }}"
+  shell: |
+    cat > /tmp/overlay.containerfile <<EOF
+    FROM hell
+    ENTRYPOINT []
+    CMD []
+
+    RUN git fetch --quiet origin {{ git_ref }}
+    RUN git reset --hard FETCH_HEAD
+    RUN git submodule --quiet update --init --recursive
+    RUN git submodule
+    EOF
+
+    time podman build \
+      --tag "{{ image_full_name }}" \
+      --file /tmp/overlay.containerfile \
+      --from "{{ jump_ci_prepare_topsail_image_name }}:{{ jump_ci_prepare_topsail_update_from_imagetag }}"
+  when:
+  - has_image.rc != 0
+  - jump_ci_prepare_topsail_update_from_imagetag | default('', true) | length >= 0
+
+- name: "Build image from scatch {{ image_full_name }}"
   shell:
     time podman build --squash
       --label jump-ci=true
@@ -138,6 +164,7 @@
       "{{ topsail_home }}" > "{{ artifact_extra_logs_dir }}/artifacts/image.log"
   when:
   - has_image.rc != 0
+  - jump_ci_prepare_topsail_update_from_imagetag | default('', true) | length == 0
 
 - name: Save the name of the image to use
   shell:

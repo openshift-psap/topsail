@@ -2,6 +2,7 @@
 - name: Ensure that the lock is owned
   include_role:
     name: jump_ci_ensure_lock
+    # sets cluster_kubeconfig
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_step_cluster }}"
 
@@ -19,10 +20,22 @@
   set_fact:
     step_artifact_dir: "/tmp/{{ jump_ci_prepare_step_cluster }}/test/{{ jump_ci_prepare_step_step }}"
 
-- name: Ensure that the step artifacts dirname directory exists
+- name: Ensure that the step artifacts dirname directory is empty
+  ansible.builtin.file:
+    state: absent
+    path: "{{ step_artifact_dir }}"
+    mode: '0755'
+
+- name: Ensure that the step test dirname directory exists
   ansible.builtin.file:
     state: directory
     path: "{{ step_artifact_dir }}"
+    mode: '0755'
+
+- name: Ensure that the step test artifacts dirname directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ step_artifact_dir }}/artifacts"
     mode: '0755'
 
 - name: Copy the env file
@@ -31,25 +44,84 @@
     dest: "{{ step_artifact_dir }}/test_env"
     mode: '0644'
 
-- name: Copy the variables_overrides file
-  ansible.builtin.copy:
-    src: "{{ jump_ci_prepare_step_variables_overrides_file }}"
-    dest: "{{ step_artifact_dir }}/variable_overrides.yaml"
-    mode: '0644'
-
-- name: Append the extra variables_overrides
+- name: Populate the variables_overrides files
   shell: |
-    cat <<EOF >> {{ step_artifact_dir }}/variable_overrides.yaml
-    {% for k, v in (jump_ci_prepare_step_extra_variables_overrides or {}).items() %}
+    cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
+    {% for k, v in (jump_ci_prepare_step_variables_overrides_dict or {}).items() %}
     {{ k }}: {{ v }}
     {% endfor %}
     EOF
 
+- name: Ensure that the secrets directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}"
+    mode: '0755'
+
+- name: Copy the secrets to the jump host
+  ansible.posix.synchronize:
+    src: "{{ lookup('env', jump_ci_prepare_step_secrets_path_env_key) }}/"
+    dest: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}/"
+    mode: "push"
+  no_log: true
+  when: jump_ci_prepare_step_secrets_path_env_key
+
+
 - name: Prepare the entrypoint script
   shell: |
-    cat <<EOF >> {{ step_artifact_dir }}/entrypoint.sh
-    source "{{ step_artifact_dir }}/test_env"
-    command="run rhoai test {{ jump_ci_prepare_step_step }}"
+    cat <<EOF > {{ step_artifact_dir }}/entrypoint.sh
+    #! /bin/bash
+
+    set -o pipefail
+    set -o errexit
+    set -o nounset
+    set -o errtrace
+    set -x
+
+    interactive=""
+    cmd="set -a; source /run/secrets/test_env; set +a; exec run {{ jump_ci_prepare_step_project }} test {{ jump_ci_prepare_step_step }}"
     image="{{ pod_image_cmd.stdout | trim}}"
-    echo run podman $command ...
+
+    if [[ "\${1:-}" == enter ]]; then
+      echo "Entering the container instead of running '\$cmd'"
+      interactive="-it"
+      cmd="bash"
+    fi
+
+    cleanup() {
+      # Not cleaning up the secrets for now. They are safe anyway
+      echo Nothing to do for cleanup.
+
+      # echo Cleaning up the secrets ..
+      # rm -rf /tmp/{{ jump_ci_prepare_step_cluster }}/secrets
+    }
+    trap cleanup INT TERM ERR
+
+    # makes it easier to rerun manually after a failure
+    rm -f "{{ step_artifact_dir }}/artifacts/FAILURES"
+
+    echo "### Running '\$cmd' against image '\$image' ###"
+
+    podman run \\
+      --rm \\
+      --name topsail-on-{{ jump_ci_prepare_step_cluster }} \\
+      \\
+      --volume "{{ step_artifact_dir }}/artifacts:/logs/artifacts" \\
+      --env ARTIFACT_DIR="/logs/artifacts" \\
+      \\
+      --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \\
+      --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \\
+      \\
+      --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig:ro \\
+      --env KUBECONFIG="/run/secrets/kubeconfig" \\
+      \\
+      --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \\
+      \$interactive \\
+      "\$image" \\
+      bash -ce "\$cmd"
+
+    cleanup
     EOF
+
+- name: Show the launch command
+  debug: msg="run 'bash {{ step_artifact_dir }}/entrypoint.sh' in the remote host"

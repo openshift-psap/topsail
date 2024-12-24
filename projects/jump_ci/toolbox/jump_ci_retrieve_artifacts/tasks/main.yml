@@ -1,0 +1,23 @@
+---
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_retrieve_artifacts_cluster }}"
+  when: not jump_ci_retrieve_artifacts_skip_cluster_lock
+
+- name: Compute the path of the directory to retrieve
+  set_fact:
+    remote_dir_path: "/tmp/{{ jump_ci_retrieve_artifacts_cluster }}/{{ jump_ci_retrieve_artifacts_remote_dir }}"
+
+- name: Get the size of the directory to retrieve
+  command:
+    du -sh "{{ remote_dir_path }}"
+
+- name: Copy all the files locally
+  ansible.posix.synchronize:
+    src: "{{ remote_dir_path }}/"
+    dest: "{{ artifact_extra_logs_dir }}/{{ jump_ci_retrieve_artifacts_local_dir }}"
+    mode: "pull"
+    recursive: true
+  no_log: true # too verbose

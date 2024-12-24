@@ -1,0 +1,18 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Jump_Ci.retrieve_artifacts
+
+# Parameters
+# Name of the cluster lock to use
+# Mandatory value
+jump_ci_retrieve_artifacts_cluster:
+
+# name of remote directory to retrieve.
+# Mandatory value
+jump_ci_retrieve_artifacts_remote_dir:
+
+# name of the local dir where to store the results, within the extra logs artifacts directory.
+jump_ci_retrieve_artifacts_local_dir: artifacts
+
+# if True, skip the cluster is lock check (eg, when included from another role).
+jump_ci_retrieve_artifacts_skip_cluster_lock: false

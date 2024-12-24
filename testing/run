@@ -79,7 +79,7 @@ prechecks() {
         fi
     fi
 
-    if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
+    if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
         DEST="${ARTIFACT_DIR}/variable_overrides.yaml"
         "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
         if [[ -f "$DEST" ]]; then
@@ -157,9 +157,12 @@ postchecks() {
         find "$ARTIFACT_DIR" -name FAILURE | sort | xargs -I% bash -c "(echo -n '% | '  ; cat %)" \; > "$ARTIFACT_DIR/FAILURES"
         touch "$ARTIFACT_DIR/FAILURES"
 
-        if ! oc version >/dev/null 2>&1; then
-            mkdir -p "$ARTIFACT_DIR/_FLAKE"
-            echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
+        # in the jump-ci jobs, don't test the FLAKE if outside of the jump host
+        if [[ "${JOB_NAME:-}" != *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
+            if ! oc version >/dev/null 2>&1; then
+                mkdir -p "$ARTIFACT_DIR/_FLAKE"
+                echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
+            fi
         fi
 
         return

@@ -66,6 +66,13 @@ Parameters
 * default value: ``build/Dockerfile``
 
 
+``update_from_imagetag``  
+
+* If set, update the git tree from this image instead of building from scratch
+
+* default value: ``main``
+
+
 ``cleanup_old_pr_images``  
 
 * If disabled, don't cleanup the old images

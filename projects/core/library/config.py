@@ -52,7 +52,7 @@ class Config:
             self.config = yaml.safe_load(config_f)
 
 
-    def apply_config_overrides(self):
+    def apply_config_overrides(self, ignore_not_found=False):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
@@ -72,6 +72,9 @@ class Config:
             MAGIC_DEFAULT_VALUE = object()
             current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
             if current_value == MAGIC_DEFAULT_VALUE:
+                if ignore_not_found:
+                    continue
+
                 if "." in key:
                     raise ValueError(f"Config key '{key}' does not exist, and cannot create it at the moment :/")
 
@@ -180,7 +183,7 @@ class Config:
 
         if not variable_overrides_path.exists():
             logging.debug(f"save_config_overrides: {variable_overrides_path} does not exist, nothing to save.")
-
+            self.config["overrides"] = {}
             return
 
         with open(variable_overrides_path) as f:
@@ -311,6 +314,40 @@ def get_jsonpath(config, jsonpath):
     return jsonpath_ng.parse(jsonpath).find(config)[0].value
 
 
+def test_skip_list():
+    if len(sys.argv) < 2:
+        logging.info(f"test_skip_list: cannot determinate the current subcommand. Not processing the skip list.")
+        return
+
+    current_subcommand = sys.argv[1]
+    logging.info(f"Currently running the subcommand '{current_subcommand}'")
+
+    exec_list = project.get_config("exec_list", None, print=False)
+    if exec_list is None:
+        logging.warning("The exec_list isn't defined in this project.")
+        exec_list = {}
+
+    exec_this_subcommand = exec_list.get(current_subcommand, False)
+    if exec_this_subcommand is False:
+        logging.fatal(f"Subcommand '{current_subcommand}' is disabled in the exec list. Stopping happily this execution.")
+        with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
+            print("Skipped because part of the \skip list", file=f)
+        raise SystemExit(0)
+
+    if exec_this_subcommand is not True and exec_list.get("_only_", False):
+        logging.fatal(f"Only flag is set, and subcommand '{current_subcommand}' is not enabled in the exec list. Stopping happily this execution.")
+        with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
+            print("Skipped because not part of the \only list", file=f)
+
+        raise SystemExit(0)
+
+    # not in the skip list
+    # not the only command to execute
+    # continue happilly =:-)
+
+    pass
+
+
 def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=True):
     global project
 
@@ -337,16 +374,4 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         # reapply to force overrides on top of presets
         project.apply_config_overrides()
 
-    if len(sys.argv) >= 2:
-        current_subcommand = sys.argv[1]
-        logging.info(f"Currently running the subcommand '{current_subcommand}'")
-
-        skip_list = project.get_config("skip_list", None, print=False)
-        if skip_list is None:
-            logging.warning("The skip_list isn't defined in this project.")
-            skip_list = {}
-
-        skip_this_subcommand = skip_list.get(current_subcommand, False)
-        if skip_this_subcommand:
-            logging.fatal(f"Subcommand '{current_subcommand}' is part of the skip list. Stopping happily this execution.")
-            raise SystemExit(0)
+    test_skip_list()

@@ -23,7 +23,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to take
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -39,7 +39,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to test
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -54,7 +54,7 @@ class Jump_Ci:
           cluster: name of the cluster lock to release
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -72,6 +72,7 @@ class Jump_Ci:
             image_name="localhost/topsail",
             image_tag=None,
             dockerfile_name="build/Dockerfile",
+            update_from_imagetag="main",
             cleanup_old_pr_images=True,
     ):
         """
@@ -90,9 +91,10 @@ class Jump_Ci:
           image_tag: Name to give to the tag, or computed if empty
           dockerfile_name: Name/path of the Dockerfile to use to build the image
           cleanup_old_pr_images: if disabled, don't cleanup the old images
+          update_from_imagetag: if set, update the git tree from this image instead of building from scratch
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())
@@ -102,23 +104,49 @@ class Jump_Ci:
     def prepare_step(
             self,
             cluster,
+            project,
             step,
             env_file,
-            variables_overrides_file,
-            extra_variables_overrides,
+            variables_overrides_dict,
+            secrets_path_env_key=None,
     ):
         """
         Prepares the jump host for running a CI test step:
 
         Args:
           cluster: Name of the cluster lock to use
+          project: Name of the project to execute
           step: Name of the step to execute
           env_file: Path to the env file to use
-          variables_overrides_file: Path to the variable_overrides.yaml file
-          extra_variables_overrides: Dictionnary with additional values to add to the variables_overrides.yaml file
+          variables_overrides_dict: Dictionnary to save as the variable overrides file
+          secrets_path_env_key: If provided, the env key will be used to locate the secret directories to upload to the jump host
         """
 
-        if not cluster:
+        if not cluster: # don't accept the empty string value
+            raise ValueError("--cluster must be set")
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("jump_ci_retrieve_artifacts")
+    @AnsibleMappedParams
+    def retrieve_artifacts(
+            self,
+            cluster,
+            remote_dir,
+            local_dir="artifacts",
+            skip_cluster_lock=False
+    ):
+        """
+        Prepares the jump host for running a CI test step:
+
+        Args:
+          cluster: Name of the cluster lock to use
+          remote_dir: name of remote directory to retrieve.
+          local_dir: name of the local dir where to store the results, within the extra logs artifacts directory.
+          skip_cluster_lock: if True, skip the cluster is lock check (eg, when included from another role).
+        """
+
+        if not cluster: # don't accept the empty string value
             raise ValueError("--cluster must be set")
 
         return RunAnsibleRole(locals())

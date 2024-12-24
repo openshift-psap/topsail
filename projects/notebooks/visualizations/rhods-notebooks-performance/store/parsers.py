@@ -364,7 +364,7 @@ def _parse_env(dirname, test_config):
             s3_path = f"middleware_jenkins/{job_id}/{build_number}"
 
         from_env.test.urls |= dict(
-            RHOAI_CPT_S3=f"https://{bucket}.s3.eu-central-1.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
+            RHOAI_CPT_S3=f"https://{bucket}.s3.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
         )
 
     return from_env

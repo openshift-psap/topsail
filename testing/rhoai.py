@@ -13,7 +13,6 @@ PR_POSITIONAL_ARG_KEY = "PR_POSITIONAL_ARG"
 RHOAI_CONFIG_KEY = "_rhoai_."
 rhoai_configuration = {
     "subproject": None, # _rhoai_.subproject allows overriding the subproject received as sys.argv[1]
-    "skip_args": 0, # _rhoai_.skip_args allows skipping some arguments when generating the new variable_overrides
 }
 
 def main():
@@ -21,15 +20,14 @@ def main():
     variable_overrides_path = ARTIFACT_DIR / "variable_overrides.yaml"
     if not variable_overrides_path.exists():
         logging.fatal(f"File {variable_overrides_path.absolute()} does not exist. Cannot proceed.")
-        raise FileNotFoundError(variable_overrides)
+        raise SystemExit(1)
 
     with open(variable_overrides_path) as f:
         old_variable_overrides = yaml.safe_load(f)
 
     if not isinstance(old_variable_overrides, dict):
-        msg = f"Wrong type for the variable overrides file. Expected a dictionnary, got {old_variable_overrides.__class__.__name__}"
-        logging.fatal(msg)
-        raise ValueError(msg)
+        logging.fatal(f"Wrong type for the variable overrides file. Expected a dictionnary, got {old_variable_overrides.__class__.__name__}")
+        raise SystemExit(1)
 
     for key, value in old_variable_overrides.items():
         _, found, new_key = key.partition(RHOAI_CONFIG_KEY)
@@ -39,7 +37,8 @@ def main():
         logging.info(f"RHOAI launcher configuration: {new_key} --> {value}")
 
         if new_key not in rhoai_configuration:
-            raise KeyError(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+            logging.fatal(f"{new_key} is an invalid RHOAI launch configuration key. Expected one of [{', '.join(rhoai_configuration.keys())}]")
+            raise SystemExit(1)
 
         rhoai_configuration[new_key] = value
 
@@ -54,13 +53,10 @@ def main():
         perflab_test_name = old_all_args.pop(0)
         logging.info(f"Perflab test name: {perflab_test_name}")
 
-    skip_args = rhoai_configuration["skip_args"]
     new_all_args = []
     for idx, arg in enumerate(old_all_args):
         # ... without the arg0 and arg1
         if idx == 0: continue
-        # ... and `rhoai_configuration["skip_args"]` args
-        if idx < skip_args: continue
 
         # ... without RHOAI config flags
         rhoai_conf = False
@@ -80,7 +76,7 @@ def main():
         test_name = old_variable_overrides[f"{PR_POSITIONAL_ARG_KEY}_0"]
     except KeyError:
         logging.fatal(f"RHOAI launcher: the 0th PR parameter ({PR_POSITIONAL_ARG_KEY}_0) must contain the test name ...")
-        return 1
+        raise SystemExit(1)
 
     try:
         project_name = old_all_args[0]
@@ -105,6 +101,10 @@ def main():
         # reduce of 1 the positional indexes
         if key.startswith(PR_POSITIONAL_ARG_KEY) and \
            (key_suffix := key.replace(f"{PR_POSITIONAL_ARG_KEY}_", "")).isdigit():
+            continue
+
+        # skip rhoai-entrypoint config variables
+        if key.startswith(RHOAI_CONFIG_KEY):
             continue
 
         # pass untouched everything else

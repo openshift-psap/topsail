@@ -176,11 +176,8 @@ class RunAnsibleRole:
         print(f"Using '{env['ARTIFACT_DIR']}' to store the test artifacts.")
         self.ansible_vars["artifact_dir"] = env["ARTIFACT_DIR"]
 
-        if not remote_host:
-            print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
-            self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
-        else:
-            print(f"Running remotely. Not passing the 'artifact_extra_logs_dir' variable to Ansible.")
+        print(f"Using '{artifact_extra_logs_dir}' to store extra log files.")
+        self.ansible_vars["artifact_extra_logs_dir"] = str(artifact_extra_logs_dir)
 
         if env.get("ANSIBLE_LOG_PATH") is None:
             env["ANSIBLE_LOG_PATH"] = str(artifact_extra_logs_dir / "_ansible.log")
@@ -231,13 +228,16 @@ class RunAnsibleRole:
 
         generated_play = [
             dict(name=f"Run {self.role_name} role",
-                 gather_facts=False,
                  roles=[self.role_name],
                  vars=self.ansible_vars,
                  )
         ]
 
         if remote_host:
+            # gather only env values
+            generated_play[0]["gather_facts"] = True
+            generated_play[0]["gather_subset"] = ['env','!all','!min']
+
             # run remotely
             generated_play[0]["hosts"] = "remote"
             inventory_fd, path = tempfile.mkstemp()
@@ -252,7 +252,7 @@ class RunAnsibleRole:
 [all:vars]
 
 [remote]
-{remote_host} {" ".join(host_properties)}
+{remote_host.rpartition("@")[-1]} {" ".join(host_properties)}
 """
 
             print(inventory_content, file=inventory_f)
@@ -261,6 +261,7 @@ class RunAnsibleRole:
             # run locally
             generated_play[0]["connection"] = "local"
             generated_play[0]["hosts"] = "localhost"
+            generated_play[0]["gather_facts"] = False
 
         if extra_vars_fname := env.get("TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"):
             try:

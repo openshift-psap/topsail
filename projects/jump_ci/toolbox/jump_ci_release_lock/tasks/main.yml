@@ -11,6 +11,5 @@
   failed_when: false
 
 - name: Release the lock directory
-  ansible.builtin.file:
-    state: absent
-    path: "/tmp/{{ jump_ci_release_lock_cluster }}"
+  command:
+    rm -rf "/tmp/{{ jump_ci_release_lock_cluster }}"

@@ -23,6 +23,11 @@ Parameters
 * Name of the cluster lock to use
 
 
+``project``  
+
+* Name of the project to execute
+
+
 ``step``  
 
 * Name of the step to execute
@@ -33,12 +38,12 @@ Parameters
 * Path to the env file to use
 
 
-``variables_overrides_file``  
+``variables_overrides_dict``  
 
-* Path to the variable_overrides.yaml file
+* Dictionnary to save as the variable overrides file
 
 
-``extra_variables_overrides``  
+``secrets_path_env_key``  
 
-* Dictionnary with additional values to add to the variables_overrides.yaml file
+* If provided, the env key will be used to locate the secret directories to upload to the jump host
 

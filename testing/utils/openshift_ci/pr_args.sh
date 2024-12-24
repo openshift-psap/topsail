@@ -122,10 +122,10 @@ else
 PR_POSITIONAL_ARG_0: $test_name"
 fi
 
-skip_list=""
+exec_list=""
 var_list=""
 while read line; do
-    if [[ "$line" != "/var "* ]] && [[ "$line" != "/skip"* ]]; then
+    if [[ "$line" != "/var "* ]] && [[ "$line" != "/skip "* ]] && [[ "$line" != "/only "* ]]; then
         continue
     fi
     anchor=$(echo "$line" | cut -d" " -f1)
@@ -141,16 +141,22 @@ while read line; do
 
         var_list="$var_list
 $line_content"
-    else # line == /skip ...
+    elif [[ "$line" == "/skip "* ]]; then
         for skip in $line_content; do
-            skip_list="$skip_list
-skip_list.$skip: true"
+            exec_list="$exec_list
+exec_list.$skip: false"
+        done
+    else # [[ "$line" == "/only "* ]]; then
+        for only in $line_content; do
+            exec_list="$exec_list
+exec_list._only_: true
+exec_list.$only: true"
         done
     fi
 done <<< $(echo "$pr_body"; echo "$last_user_test_comment")
 
 cat <<EOF | sed '/^$/d' >> "$DEST"
 $args_list
-$skip_list
+$exec_list
 $var_list
 EOF
