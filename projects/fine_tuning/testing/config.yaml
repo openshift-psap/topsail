@@ -101,8 +101,6 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
-    tests.fine_tuning.test_settings.hyper_parameters.gradient_checkpointing: true
-    tests.fine_tuning.test_settings.hyper_parameters.packing: false
 
     tests.fine_tuning.test_extra_settings:
     - model_name:
@@ -127,6 +125,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
     tests.fine_tuning.test_settings.hyper_parameters.r: 4
     tests.fine_tuning.test_settings.hyper_parameters.lora_alpha: 16
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_checkpointing: true
     tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj", "v_proj"]}
 
 
