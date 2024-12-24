@@ -93,40 +93,26 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
-    tests.fine_tuning.test_settings.dataset_replication: 0.2
+    tests.fine_tuning.test_settings.dataset_replication: 0.5
 
     tests.fine_tuning.test_settings.gpu: 8
 
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 4
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
     tests.fine_tuning.test_extra_settings:
     - model_name:
-      - meta-llama/Llama-2-13b-hf
-      hyper_parameters.per_device_train_batch_size: 1
-
-    - model_name:
-      - meta-llama/Meta-Llama-3.1-70B
-      hyper_parameters.max_seq_length: 512
-      hyper_parameters.per_device_train_batch_size: 1
-      hyper_parameters.skip_if: {peft_method: "none"}
-
-    - model_name:
+      # - meta-llama/Llama-2-13b-hf
+      # - meta-llama/Meta-Llama-3.1-70B
       - ibm-granite/granite-3b-code-instruct
-      - instructlab/granite-7b-lab
-      - ibm-granite/granite-8b-code-base
-
-      - meta-llama/Meta-Llama-3.1-8B
-
-      - mistralai/Mistral-7B-v0.3
-      hyper_parameters.per_device_train_batch_size: 4
-
-    - model_name:
-      - mistralai/Mixtral-8x7B-v0.1
-      hyper_parameters.per_device_train_batch_size: 1
-      hyper_parameters.skip_if: {peft_method: "none"}
+      # - instructlab/granite-7b-lab
+      # - ibm-granite/granite-8b-code-base
+      # - meta-llama/Meta-Llama-3.1-8B
+      # - mistralai/Mistral-7B-v0.3
+      # - mistralai/Mixtral-8x7B-v0.1
 
   ibm_80gb_models:
     extends: [hf_evaluation, dgx_small_footprint]
@@ -140,7 +126,8 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
     tests.fine_tuning.test_settings.hyper_parameters.r: 4
     tests.fine_tuning.test_settings.hyper_parameters.lora_alpha: 16
-    tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj"]}
+    tests.fine_tuning.test_settings.hyper_parameters.gradient_checkpointing: true
+    tests.fine_tuning.test_settings.hyper_parameters.raw_lists: {target_modules: ["q_proj", "k_proj", "v_proj"]}
 
 
   ibm_lora_qlora_models:
@@ -196,7 +183,7 @@ ci_presets:
     # - rhoai/llama-3.1-405b-gptq
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.2
-    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.gpu: 4
     fine_tuning.model_registry: dmf
 
     tests.fine_tuning.test_settings.hyper_parameters:
@@ -204,7 +191,7 @@ ci_presets:
       use_flash_attn: true
       max_steps: -1
       per_device_train_batch_size: 1
-      max_seq_length: 1024
+      max_seq_length: 512
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
@@ -442,6 +429,12 @@ ci_presets:
 
   # ---
 
+  cluster_rhoai_2x8h100:
+    clusters.sutest.compute.machineset.type: "2x8xH100-80GB"
+
+  cluster_rhoai_4h100:
+    clusters.sutest.compute.machineset.type: "4xH100-80GB"
+
   cluster_instructlab:
     fine_tuning.pvc.storage_class_name: nfs-csi
     fine_tuning.pvc.access_mode: ReadWriteMany
@@ -505,6 +498,8 @@ secrets:
   dmf_token: dmf.token
 clusters:
   metal_profiles:
+    tosokin-ilab-cluster-556dc-worker-1-gs8qj: cluster_rhoai_2x8h100
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_4h100
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
@@ -707,7 +702,7 @@ tests:
       timespan: 0
     fms:
       enabled: true
-      image: quay.io/modh/fms-hf-tuning:v2.0.1
+      image: quay.io/modh/fms-hf-tuning:v2.2.1
     quality_evaluation:
       enabled: false
       image: registry.redhat.io/ubi9
