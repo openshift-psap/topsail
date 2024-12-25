@@ -327,7 +327,12 @@ def test_skip_list():
         logging.warning("The exec_list isn't defined in this project.")
         exec_list = {}
 
-    exec_this_subcommand = exec_list.get(current_subcommand, False)
+    NOT_FOUND = object()
+    exec_this_subcommand = exec_list.get(current_subcommand, NOT_FOUND)
+    if exec_this_subcommand is NOT_FOUND:
+        logging.info(f"Subcommand '{current_subcommand}' is not defined in the exec list. Executing this command by default.")
+        return
+
     if exec_this_subcommand is False:
         logging.fatal(f"Subcommand '{current_subcommand}' is disabled in the exec list. Stopping happily this execution.")
         with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
