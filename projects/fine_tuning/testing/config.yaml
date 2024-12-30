@@ -104,11 +104,11 @@ ci_presets:
 
     tests.fine_tuning.test_extra_settings:
     - model_name:
-      # - meta-llama/Llama-2-13b-hf
+      - meta-llama/Llama-2-13b-hf
       # - meta-llama/Meta-Llama-3.1-70B
       # - ibm-granite/granite-3b-code-instruct
       # - instructlab/granite-7b-lab
-      - ibm-granite/granite-8b-code-base
+      # - ibm-granite/granite-8b-code-base
       # - meta-llama/Meta-Llama-3.1-8B
       # - mistralai/Mistral-7B-v0.3
       # - mistralai/Mixtral-8x7B-v0.1
