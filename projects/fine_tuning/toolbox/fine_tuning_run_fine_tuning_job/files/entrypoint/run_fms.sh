@@ -21,7 +21,23 @@ else
     echo "Running with a $NUM_GPUS GPUs"
 fi
 
-time python /app/accelerate_launch.py
+python -m torch.distributed.run \
+     --nproc_per_node=$NUM_GPUS \
+     --nnodes=$WORLD_SIZE \
+     --node_rank=$RANK \
+     --master_addr=$MASTER_ADDR \
+     --master_port=$MASTER_PORT \
+     --module \
+     tuning.sft_trainer \
+     --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
+     --fsdp_backward_prefetch="BACKWARD_PRE" \
+     --fsdp_forward_prefetch=False \
+     --fsdp_sharding_strategy="FULL_SHARD" \
+     --fsdp_offload_params=False \
+     --fsdp_state_dict_type="FULL_STATE_DICT" \
+     --fsdp_cpu_ram_efficient_loading=True \
+     --fsdp_sync_module_states=True \
+     --fsdp_use_orig_params=False
 
 if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
     # NOTE: Write here the code to copy any file you want to export to the test artifacts
