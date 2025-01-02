@@ -8,9 +8,23 @@ set -x
 
 export SFT_TRAINER_CONFIG_JSON_PATH=$CONFIG_JSON_PATH
 
+<<<<<<< HEAD
 if [[ $WORLD_SIZE != 1 ]]; then
     echo "Running with a multi-node configuration. This is not supported at the moment, aborting."
     exit 1
+=======
+if [[ $WORLD_SIZE == 1 ]]; then
+    echo "Running on a single machine."
+
+    if [[ -z "${NUM_GPUS:-1}" || "${NUM_GPUS:-1}" == 1 ]]; then
+        echo "Running with a single GPU"
+    else
+        echo "Running with a $NUM_GPUS GPUs"
+    fi
+    export LOG_LEVEL=DEBUG
+    time python /app/accelerate_launch.py
+    exit 0
+>>>>>>> 79363281 ([fine_tuning]: debug accelerate launch)
 fi
 
 echo "Running on a single machine."
