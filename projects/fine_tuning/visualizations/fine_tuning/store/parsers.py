@@ -284,6 +284,14 @@ def _parse_ilab_logs(dirname):
             current_json = ""
             in_green = False
 
+        throughput_sum = 0
+        for progress_result in ilab_metrics.progress:
+            throughput_sum += progress_result.overall_throughput
+
+        num_steps = ilab_metrics.progress[-1].step
+        average_throughput = throughput_sum/num_steps
+        ilab_metrics.summary.average_throughput = average_throughput
+
     return ilab_metrics
 
 
