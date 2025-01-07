@@ -75,14 +75,17 @@ def jump_ci(command):
             TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
         )
 
-        env_skip_list = config.project.get_config("env.skip_list.by_name")
-        env_skip_list_prefix = config.project.get_config("env.skip_list.by_prefix")
+        env_pass_lists = config.project.get_config("env.pass_lists", print=False)
+
+        env_pass_list = set()
+        for _, pass_list in (env_pass_lists or {}).items():
+            env_pass_list.update(pass_list)
 
         for k, v in (os.environ | extra_env).items():
-            if k in env_skip_list: continue
-            if any([k.startswith(prefix) for prefix in env_skip_list_prefix]): continue
+            if k not in env_pass_list: continue
 
             print(f"{k}={shlex.quote(v)}", file=env_file)
+
         env_file.flush()
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
@@ -110,6 +113,7 @@ def jump_ci(command):
             if not os.environ.get("OPENSHIFT_CI") == "true":
                 logging.fatal("Not running in OpenShift CI. Don't know how to rewrite the variable_overrides_file. Aborting.")
                 raise SystemExit(1)
+
             project = config.project.get_config("overrides.PR_POSITIONAL_ARG_2")
 
             variables_overrides_dict = rewrite_variables_overrides(
