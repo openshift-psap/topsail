@@ -101,6 +101,14 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     remove_none_values(test_settings)
 
+    if secondary_nic_count := test_settings.pop("secondary_nic_count"):
+        secondary_nic_prefix = test_settings.pop("secondary_nic_prefix")
+        if not secondary_nic_prefix:
+            raise ValueError("secondary_nic_prefix must be set along with secondary_nic_count")
+
+        test_settings["use_secondary_nic"] = [f"{secondary_nic_prefix}{idx:02d}" for idx in range(1, secondary_nic_count+1)]
+        logging.info(f"Using use_secondary_nic={test_settings['use_secondary_nic']}")
+
     if config.project.get_config("tests.fine_tuning.node_count_equal_pod_count"):
         pod_count = test_settings.get("pod_count")
         prepare_finetuning.cluster_scale_up(wait_gpu=False, node_count=pod_count)
