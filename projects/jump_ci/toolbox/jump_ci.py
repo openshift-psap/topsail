@@ -15,12 +15,13 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_take_lock")
     @AnsibleMappedParams
-    def take_lock(self, cluster):
+    def take_lock(self, cluster, owner):
         """
         Take a lock with a given cluster name on a remote node
 
         Args:
           cluster: name of the cluster lock to take
+          owner: name of the lock owner
         """
 
         if not cluster: # don't accept the empty string value
@@ -31,12 +32,14 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_ensure_lock")
     @AnsibleMappedParams
-    def ensure_lock(self, cluster):
+    def ensure_lock(self, cluster, owner, check_kubeconfig=True):
         """
         Ensure that cluster lock with a given name is taken. Fails otherwise.
 
         Args:
           cluster: name of the cluster lock to test
+          owner: name of the lock owner
+          check_kubeconfig: if enabled, ensure that the cluster's kubeconfig file exists
         """
 
         if not cluster: # don't accept the empty string value
@@ -46,12 +49,13 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_release_lock")
     @AnsibleMappedParams
-    def release_lock(self, cluster):
+    def release_lock(self, cluster, owner):
         """
         Release a cluster lock with a given name on a remote node
 
         Args:
           cluster: name of the cluster lock to release
+          owner: name of the lock owner
         """
 
         if not cluster: # don't accept the empty string value
@@ -65,6 +69,7 @@ class Jump_Ci:
     def prepare_topsail(
             self,
             cluster,
+            lock_owner,
             pr_number=None,
             repo_owner="openshift-psap",
             repo_name="topsail",
@@ -82,6 +87,7 @@ class Jump_Ci:
 
         Args:
           cluster: Name of the cluster to use
+          lock_owner: name of the lock owner
           pr_number: PR number to use for the test. If none, use the main branch.
 
           repo_owner: Name of the Github repo owner
@@ -104,6 +110,7 @@ class Jump_Ci:
     def prepare_step(
             self,
             cluster,
+            lock_owner,
             project,
             step,
             env_file,
@@ -115,6 +122,7 @@ class Jump_Ci:
 
         Args:
           cluster: Name of the cluster lock to use
+          lock_owner: name of the lock owner
           project: Name of the project to execute
           step: Name of the step to execute
           env_file: Path to the env file to use
@@ -132,6 +140,7 @@ class Jump_Ci:
     def retrieve_artifacts(
             self,
             cluster,
+            lock_owner,
             remote_dir,
             local_dir="artifacts",
             skip_cluster_lock=False
@@ -141,6 +150,7 @@ class Jump_Ci:
 
         Args:
           cluster: Name of the cluster lock to use
+          lock_owner: name of the lock owner
           remote_dir: name of remote directory to retrieve.
           local_dir: name of the local dir where to store the results, within the extra logs artifacts directory.
           skip_cluster_lock: if True, skip the cluster is lock check (eg, when included from another role).

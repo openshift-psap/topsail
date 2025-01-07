@@ -22,3 +22,15 @@ Parameters
 
 * Name of the cluster lock to test
 
+
+``owner``  
+
+* Name of the lock owner
+
+
+``check_kubeconfig``  
+
+* If enabled, ensure that the cluster's kubeconfig file exists
+
+* default value: ``True``
+

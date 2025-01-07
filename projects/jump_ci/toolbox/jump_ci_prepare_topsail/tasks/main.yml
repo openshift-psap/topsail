@@ -4,6 +4,7 @@
     name: jump_ci_ensure_lock
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_topsail_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_prepare_topsail_lock_owner }}"
 
 - name: Generate the artifact dirname
   set_fact:

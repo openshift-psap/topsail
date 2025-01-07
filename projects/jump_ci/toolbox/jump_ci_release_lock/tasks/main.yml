@@ -4,11 +4,7 @@
     name: jump_ci_ensure_lock
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_release_lock_cluster }}"
-
-- name: Retrieve the info about the lock owner
-  shell:
-    cat "/tmp/{{ jump_ci_release_lock_cluster }}/lock_info"
-  failed_when: false
+    jump_ci_ensure_lock_owner: "{{ jump_ci_release_lock_owner }}"
 
 - name: Release the lock directory
   command:

@@ -23,6 +23,11 @@ Parameters
 * Name of the cluster to use
 
 
+``lock_owner``  
+
+* Name of the lock owner
+
+
 ``pr_number``  
 
 * PR number to use for the test. If none, use the main branch.

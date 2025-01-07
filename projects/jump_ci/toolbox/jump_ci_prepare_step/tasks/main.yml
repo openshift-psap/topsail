@@ -5,6 +5,7 @@
     # sets cluster_kubeconfig
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_step_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_prepare_step_lock_owner }}"
 
 - name: Fetch the name of the image to use
   shell:

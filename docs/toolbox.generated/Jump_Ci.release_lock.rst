@@ -22,3 +22,8 @@ Parameters
 
 * Name of the cluster lock to release
 
+
+``owner``  
+
+* Name of the lock owner
+

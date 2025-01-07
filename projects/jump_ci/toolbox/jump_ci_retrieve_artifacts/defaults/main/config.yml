@@ -7,6 +7,10 @@
 # Mandatory value
 jump_ci_retrieve_artifacts_cluster:
 
+# name of the lock owner
+# Mandatory value
+jump_ci_retrieve_artifacts_lock_owner:
+
 # name of remote directory to retrieve.
 # Mandatory value
 jump_ci_retrieve_artifacts_remote_dir:

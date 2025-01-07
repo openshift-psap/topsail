@@ -7,6 +7,10 @@
 # Mandatory value
 jump_ci_prepare_topsail_cluster:
 
+# name of the lock owner
+# Mandatory value
+jump_ci_prepare_topsail_lock_owner:
+
 # PR number to use for the test. If none, use the main branch.
 jump_ci_prepare_topsail_pr_number: null
 
