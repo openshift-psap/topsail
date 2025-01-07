@@ -65,7 +65,7 @@ def jump_ci(command):
         if cluster is None:
             cluster = config.project.get_config("cluster.name")
 
-        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
+        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
         secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
 
@@ -123,6 +123,7 @@ def jump_ci(command):
         run.run_toolbox(
             "jump_ci", "prepare_step",
             cluster=cluster,
+            lock_owner=utils.get_lock_owner(),
             project=project,
             step=command,
             env_file=env_fd_path,
@@ -141,6 +142,7 @@ def jump_ci(command):
         run.run_toolbox(
             "jump_ci", "retrieve_artifacts",
             cluster=cluster,
+            lock_owner=utils.get_lock_owner(),
             remote_dir=f"test/{command}/artifacts",
             local_dir=f"../test-artifacts", # copy to the main artifact directory
             mute_stdout=True,
