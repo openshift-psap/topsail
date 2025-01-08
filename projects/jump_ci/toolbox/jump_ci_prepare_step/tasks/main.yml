@@ -75,6 +75,11 @@
   no_log: true
   when: jump_ci_prepare_step_secrets_path_env_key
 
+- name: Ensure that the secret dirs have the right permission
+  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets" -type d -exec chmod 0755 {} \;
+
+- name: Ensure that the secret files have the right permission
+  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/" -type f -exec chmod 0644 {} \;
 
 - name: Prepare the entrypoint script
   shell: |
