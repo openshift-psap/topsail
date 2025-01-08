@@ -45,6 +45,14 @@
     dest: "{{ step_artifact_dir }}/test_env"
     mode: '0644'
 
+- name: Copy all the jump-host env file locally
+  ansible.posix.synchronize:
+    src: "{{ step_artifact_dir }}/test_env"
+    dest: "{{ artifact_extra_logs_dir }}/jump_host.env"
+    mode: "pull"
+    recursive: true
+  no_log: true # too verbose
+
 - name: Populate the variables_overrides files
   shell: |
     cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
@@ -123,6 +131,14 @@
 
     cleanup
     EOF
+
+- name: Copy all the entrypoint file locally
+  ansible.posix.synchronize:
+    src: "{{ step_artifact_dir }}/entrypoint.sh"
+    dest: "{{ artifact_extra_logs_dir }}/entrypoint.sh"
+    mode: "pull"
+    recursive: true
+  no_log: true # too verbose
 
 - name: Show the launch command
   debug: msg="run 'bash {{ step_artifact_dir }}/entrypoint.sh' in the remote host"
