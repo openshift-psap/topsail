@@ -182,7 +182,6 @@ postchecks() {
 
     # reason == EXIT, we're at the end of the script execution
     if [[ "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
-        echo "Generating the reports index ..."
         testing/utils/generate_plot_index.py > "$ARTIFACT_DIR/reports_index.html" || true
         # don't keep it if empty
         [[ -s  "$ARTIFACT_DIR/reports_index.html" ]] || rm "$ARTIFACT_DIR/reports_index.html"
