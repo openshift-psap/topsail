@@ -22,6 +22,7 @@ env:
   pass_lists:
     OPENSHIFT_CI_job: [JOB_TYPE, ENTRYPOINT_OPTIONS, JOB_NAME, JOB_SPEC, OPENSHIFT_CI, JOB_NAME_SAFE, BUILD_ID]
     OPENSHIFT_CI_git_pr: [PULL_PULL_SHA, PULL_NUMBER, PULL_BASE_REF, REPO_NAME, REPO_OWNER, PULL_BASE_SHA, JOB_NAME, PULL_TITLE, PULL_REFS, PULL_HEAD_REF]
+    OPENSHIFT_CI_topsail: [TOPSAIL_OPENSHIFT_CI_STEP_DIR]
   _only_: false
   # keep these steps enabled for the jump-ci to work
   lock_cluster: true
