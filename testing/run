@@ -8,6 +8,10 @@ set -o nounset
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+if [[ "${JOB_NAME:-}" == *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
+    TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST=true
+fi
+
 save_run_logs() {
     LOG_FILE=$ARTIFACT_DIR/run.log
     if [[ -f "$LOG_FILE" ]]; then
