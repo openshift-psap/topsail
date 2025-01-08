@@ -84,7 +84,7 @@ def jump_ci(command):
             env_pass_list.update(pass_list)
 
         for k, v in (os.environ | extra_env).items():
-            if k not in env_pass_list: continue
+            if k not in (env_pass_list | extra_env.keys()): continue
 
             print(f"{k}={shlex.quote(v)}", file=env_file)
 
