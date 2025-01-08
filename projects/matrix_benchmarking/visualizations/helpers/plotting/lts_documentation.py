@@ -62,7 +62,7 @@ def generateOneLtsDocumentationReport(entry, kpi_data):
     header += [html.H2("metadata")]
     metadata = []
 
-    metadata += [html.Li([html.B("urls:"), html.Ul([html.Li(html.A(k, href=v) for k, v in lts.metadata.settings.urls.items())])])]
+    metadata += [html.Li([html.B("urls:"), html.Ul([html.Li(html.A(k, href=v)) for k, v in lts.metadata.settings.urls.items()])])]
     metadata += [html.Li([html.B("start:"), html.Code(lts.metadata.start)])]
     metadata += [html.Li([html.B("presets:"), html.Code(", ".join(lts.metadata.presets))])]
     metadata += [html.Li([html.B("labels:"), html.Ul([html.Li(f"{k}: {v}") for k, v in lts.metadata.settings.__dict__.items() if k not in common.LTS_META_KEYS])])]

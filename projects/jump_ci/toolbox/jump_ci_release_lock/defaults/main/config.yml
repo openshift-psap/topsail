@@ -6,3 +6,7 @@
 # name of the cluster lock to release
 # Mandatory value
 jump_ci_release_lock_cluster:
+
+# name of the lock owner
+# Mandatory value
+jump_ci_release_lock_owner:

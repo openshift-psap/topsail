@@ -7,6 +7,10 @@
 # Mandatory value
 jump_ci_prepare_step_cluster:
 
+# name of the lock owner
+# Mandatory value
+jump_ci_prepare_step_lock_owner:
+
 # Name of the project to execute
 # Mandatory value
 jump_ci_prepare_step_project:

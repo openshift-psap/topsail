@@ -8,6 +8,10 @@ set -o nounset
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+if [[ "${JOB_NAME:-}" == *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
+    TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST=true
+fi
+
 save_run_logs() {
     LOG_FILE=$ARTIFACT_DIR/run.log
     if [[ -f "$LOG_FILE" ]]; then
@@ -87,6 +91,10 @@ prechecks() {
             cat "$DEST"
             echo "---"
         fi
+
+        if [[ -z "${TOPSAIL_OPENSHIFT_CI_STEP_DIR:-}" ]]; then
+            export TOPSAIL_OPENSHIFT_CI_STEP_DIR="${HOSTNAME/$JOB_NAME_SAFE-/}/artifacts"
+        fi
     fi
 
     if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]]; then
@@ -158,7 +166,7 @@ postchecks() {
         touch "$ARTIFACT_DIR/FAILURES"
 
         # in the jump-ci jobs, don't test the FLAKE if outside of the jump host
-        if [[ "${JOB_NAME:-}" != *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
+        if [[ "${TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST:-}" != true ]]; then
             if ! oc version >/dev/null 2>&1; then
                 mkdir -p "$ARTIFACT_DIR/_FLAKE"
                 echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
@@ -174,7 +182,6 @@ postchecks() {
 
     # reason == EXIT, we're at the end of the script execution
     if [[ "${TOPSAIL_LOCAL_CI_MULTI:-}" != true ]]; then
-        echo "Generating the reports index ..."
         testing/utils/generate_plot_index.py > "$ARTIFACT_DIR/reports_index.html" || true
         # don't keep it if empty
         [[ -s  "$ARTIFACT_DIR/reports_index.html" ]] || rm "$ARTIFACT_DIR/reports_index.html"
@@ -197,7 +204,9 @@ postchecks() {
     echo "$(date) $status" | tee "$ARTIFACT_DIR/FINISHED"
 
     if [[ "$reason" == ERR || "${3:-}" == "test_ci" || "${3:-}" == "generate_plots_from_pr_args" ]]; then
-        if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
+        if [[ "${OPENSHIFT_CI:-}" == true || "${PERFLAB_CI:-}" == true || "${TOPSAIL_LOCAL_CI:-}" == true ]] \
+               && [[ "${TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST:-}" != true ]];
+        then
             log_file="$ARTIFACT_DIR/send_job_completion_notification.log"
             ./run_toolbox.py repo send_job_completion_notification "$reason" "$status" 2> "$log_file" || true
             # don't keep it if empty

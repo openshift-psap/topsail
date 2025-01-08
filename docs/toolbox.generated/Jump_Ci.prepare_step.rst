@@ -23,6 +23,11 @@ Parameters
 * Name of the cluster lock to use
 
 
+``lock_owner``  
+
+* Name of the lock owner
+
+
 ``project``  
 
 * Name of the project to execute

@@ -4,6 +4,7 @@
     name: jump_ci_ensure_lock
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_retrieve_artifacts_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_retrieve_artifacts_lock_owner }}"
   when: not jump_ci_retrieve_artifacts_skip_cluster_lock
 
 - name: Compute the path of the directory to retrieve

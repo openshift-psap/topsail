@@ -6,3 +6,7 @@
 # name of the cluster lock to take
 # Mandatory value
 jump_ci_take_lock_cluster:
+
+# name of the lock owner
+# Mandatory value
+jump_ci_take_lock_owner:

@@ -23,6 +23,11 @@ Parameters
 * Name of the cluster lock to use
 
 
+``lock_owner``  
+
+* Name of the lock owner
+
+
 ``remote_dir``  
 
 * Name of remote directory to retrieve.

@@ -24,7 +24,7 @@ def lock_cluster(cluster=None):
     # Open the tunnel
     tunnelling.prepare()
 
-    run.run_toolbox("jump_ci", "take_lock", cluster=cluster)
+    run.run_toolbox("jump_ci", "take_lock", cluster=cluster, owner=utils.get_lock_owner())
 
 
 
@@ -42,7 +42,7 @@ def unlock_cluster(cluster=None):
     if cluster is None:
         cluster = config.project.get_config("cluster.name")
 
-    run.run_toolbox("jump_ci", "release_lock", cluster=cluster)
+    run.run_toolbox("jump_ci", "release_lock", cluster=cluster, owner=utils.get_lock_owner())
 
 
 @utils.entrypoint()
@@ -70,11 +70,14 @@ def prepare(
         cluster = config.project.get_config("cluster.name")
 
     # Lock the cluster
-    #run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
+    run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
     # Clone the Git Repository
     # Build the image
-    prepare_topsail_args = dict(cluster=cluster)
+    prepare_topsail_args = dict(
+        cluster=cluster,
+        lock_owner=utils.get_lock_owner(),
+    )
 
     if os.environ.get("OPENSHIFT_CI") == "true":
         prepare_topsail_args |= dict(
