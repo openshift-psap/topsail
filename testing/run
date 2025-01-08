@@ -87,6 +87,10 @@ prechecks() {
             cat "$DEST"
             echo "---"
         fi
+
+        if [[ -z "${TOPSAIL_OPENSHIFT_CI_STEP_DIR:-}" ]]; then
+            export TOPSAIL_OPENSHIFT_CI_STEP_DIR="${HOSTNAME/$JOB_NAME_SAFE-/}/artifacts"
+        fi
     fi
 
     if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]]; then
