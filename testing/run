@@ -166,7 +166,7 @@ postchecks() {
         touch "$ARTIFACT_DIR/FAILURES"
 
         # in the jump-ci jobs, don't test the FLAKE if outside of the jump host
-        if [[ "${JOB_NAME:-}" != *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
+        if [[ "${TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST:-}" != true ]]; then
             if ! oc version >/dev/null 2>&1; then
                 mkdir -p "$ARTIFACT_DIR/_FLAKE"
                 echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
