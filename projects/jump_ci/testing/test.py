@@ -150,6 +150,10 @@ def jump_ci(command):
             mute_stdout=True,
         )
 
+        jump_ci_artifacts = env.ARTIFACT_DIR / "jump-ci-artifacts"
+        jump_ci_artifacts.mkdir(parents=True, exist_ok=True)
+        run.run(f'mv {env.ARTIFACT_DIR}/0* {jump_ci_artifacts}/')
+
         if failed:
             raise SystemExit(1)
 
