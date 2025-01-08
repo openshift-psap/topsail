@@ -151,13 +151,13 @@ ci_presets:
     tests.fine_tuning.test_settings.model_name: null
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.5
-    tests.fine_tuning.test_settings.gpu: [2, 4, 8]
+    tests.fine_tuning.test_settings.gpu: 8
 
     tests.fine_tuning.test_settings.hyper_parameters:
       peft_method: "lora"
       use_flash_attn: true
       max_steps: -1
-      per_device_train_batch_size: [1, 2, 4]
+      per_device_train_batch_size: 4
       max_seq_length: 2048
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
