@@ -74,6 +74,8 @@ def jump_ci(command):
             TOPSAIL_JUMP_CI="true",
             TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
         )
+        if step_dir := os.environ.get("TOPSAIL_OPENSHIFT_CI_STEP_DIR"):
+            extra_env["TOPSAIL_OPENSHIFT_CI_STEP_DIR"] = f"{step_dir}/test-artifacts" # see "jump_ci retrieve_artifacts" below
 
         env_pass_lists = config.project.get_config("env.pass_lists", print=False)
 
