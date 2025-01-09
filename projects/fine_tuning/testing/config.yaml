@@ -492,6 +492,9 @@ ci_presets:
     clusters.sutest.compute.machineset.type: "gx3d-160x1792x8h100"
     tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
 
+  cluster_rhoai_h100:
+    clusters.sutest.compute.machineset.type: "4xH100-80GB"
+
   gating:
     extends: [use_intlab_os]
     matbench.lts.opensearch.export.enabled: true
@@ -520,6 +523,7 @@ clusters:
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
     tosokin-ilab-cluster-556dc-master-0: cluster_h100
     dagray-psap-ext-7kr6c-master-0: cluster_h100
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_h100
   create:
     type: single # can be: single, ocp, managed
     keep: false
