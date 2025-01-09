@@ -154,8 +154,8 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.pre_cleanup_cluster_ci = cleanup_cluster
-        self.post_cleanup_cluster_ci = cleanup_cluster
+        self.pre_cleanup_ci = cleanup_cluster
+        self.post_cleanup_ci = cleanup_cluster
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 
