@@ -101,7 +101,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     remove_none_values(test_settings)
 
-    if secondary_nic_count := test_settings.pop("secondary_nic_count"):
+    if secondary_nic_count := test_settings.pop("secondary_nic_count", False):
         secondary_nic_prefix = test_settings.pop("secondary_nic_prefix")
         if not secondary_nic_prefix:
             raise ValueError("secondary_nic_prefix must be set along with secondary_nic_count")
