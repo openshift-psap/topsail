@@ -49,7 +49,7 @@ def rewrite_variables_overrides(variable_overrides_dict):
 
 def jump_ci(command):
     @utils.entrypoint()
-    def do_jump_ci(cluster=None, project=None, test_args=""):
+    def do_jump_ci(cluster=None, project=None, test_args=None):
         """
         Runs a command in the Jump Host.
 
@@ -64,8 +64,6 @@ def jump_ci(command):
 
         if cluster is None:
             cluster = config.project.get_config("cluster.name")
-
-        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
         secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
 
@@ -92,15 +90,17 @@ def jump_ci(command):
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
-        if not test_args and not variable_overrides_file.exists():
+        if test_args is None and not variable_overrides_file.exists():
             logging.fatal(f"File '{variable_overrides_file}' does not exist, and --test_args not passed. Please specify one of them :/")
             raise SystemExit(1)
 
-        if test_args and not project:
+        if test_args is not None and not project:
             logging.fatal(f"The --project flag must be specificed when --test_args is passed")
             raise SystemExit(1)
 
-        if test_args:
+        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
+
+        if test_args is not None:
             variables_overrides_dict = dict(
                 PR_POSITIONAL_ARGS=test_args,
                 PR_POSITIONAL_ARG_0="jump-ci",
@@ -109,7 +109,7 @@ def jump_ci(command):
             for idx, arg in enumerate(test_args.split()):
                 variables_overrides_dict[f"PR_POSITIONAL_ARG_{idx+1}"] = arg
 
-            config.project.set_config("overrides", variable_overrides_dict)
+            config.project.set_config("overrides", variables_overrides_dict)
 
         else:
             if not os.environ.get("OPENSHIFT_CI") == "true":
