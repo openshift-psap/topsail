@@ -11,7 +11,7 @@ ssh_tunnel:
   local_host_port: 2500
   verbose: false # will leak host names if enabled
 cluster:
-  name: icelake
+  name: null
 ssh:
   flags:
   - -oStrictHostKeyChecking=no
