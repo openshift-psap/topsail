@@ -80,10 +80,14 @@ def _get_test_setup(entry):
     setup_info += [html.Li([f"Job execution"])]
     exec_info = []
 
-    if entry.results.finish_reason.exit_code:
-        exec_info += [html.Li([f"Exit code:", html.Code(entry.results.finish_reason.exit_code)])]
-    if entry.results.finish_reason.message:
-        exec_info += [html.Li([f"Exit message:", html.Code(entry.results.finish_reason.message, style={"white-space": "pre-wrap"})])]
+
+    if not entry.results.finish_reason:
+        exec_info += [html.Li([f"Container didn't finish"])]
+    else:
+        if entry.results.finish_reason.exit_code:
+            exec_info += [html.Li([f"Exit code:", html.Code(entry.results.finish_reason.exit_code)])]
+        if entry.results.finish_reason.message:
+            exec_info += [html.Li([f"Exit message:", html.Code(entry.results.finish_reason.message, style={"white-space": "pre-wrap"})])]
 
     if entry.results.locations.has_fms:
         metrics = yaml.safe_load(json.dumps(entry.results.sfttrainer_metrics, default=functools.partial(json_dumper, strict=False)))
@@ -107,7 +111,7 @@ def _get_test_setup(entry):
     setup_info += [html.Ul(exec_info)]
 
     if entry.exit_code is not None:
-        setup_info += [html.Li([f"Test exit code:", html.Code(entry.results.finish_reason.exit_code)])]
+        setup_info += [html.Li([f"Test exit code:", html.Code(entry.exit_code)])]
 
     return setup_info
 

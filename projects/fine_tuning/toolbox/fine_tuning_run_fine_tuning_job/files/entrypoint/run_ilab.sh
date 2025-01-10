@@ -24,8 +24,8 @@ if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
 
     MAPPING="$(cat /mnt/nic-mapping/nodename_ip_mapping.yaml)"
     for ifname in $(echo $NCCL_SOCKET_IFNAME | tr , " "); do
-        current_ip=$(ip route | grep "$ifname" | cut -d" " -f9)
-        correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | grep "$ifname" | cut -d: -f4)
+        current_ip=$(ip route | grep "$ifname " | cut -d" " -f9)
+        correct_ip=$(echo "$MAPPING" | grep "$NODE_HOSTNAME" | grep "$ifname:" | cut -d: -f4)
 
         echo "Remapping $ifname from $current_ip to $correct_ip"
         # will fail without a privileged container ...
@@ -37,7 +37,7 @@ if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
             remote_host=$(echo "$remote_mapping" | cut -d: -f1)
             echo "Adding route from $correct_ip to $remote_ip on $remote_host"
             ip route add $remote_ip/32 via "$correct_ip" metric 150
-        done <<< $(echo "$MAPPING" | grep -v "$NODE_HOSTNAME" |  grep "$ifname")
+        done <<< $(echo "$MAPPING" | grep -v "$NODE_HOSTNAME" |  grep "$ifname:")
     done
 
     if [[ "$USE_PRIMARY_NIC" == "True" ]]; then
