@@ -208,7 +208,7 @@ ci_presets:
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
-      gradient_checkpointing: true
+      gradient_checkpointing: false
       packing: false
       r: 4
       lora_alpha: 16
