@@ -138,7 +138,7 @@
       --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \\
       \$interactive \\
       "\$image" \\
-      bash -ce "\$cmd"
+      bash -ce "\$cmd" |& tee -a "{{ step_artifact_dir }}/run.log"
 
     cleanup
     EOF
