@@ -261,11 +261,11 @@ def get_pr_number():
 # returns a tuple (base_link, link_suffix)
 def get_ci_base_link(is_raw_file=False, is_dir=False):
     if os.environ.get("OPENSHIFT_CI") == "true":
-        test_name = os.environ["HOSTNAME"].removeprefix(os.environ['JOB_NAME_SAFE']+"-")
+        test_path = os.environ["TOPSAIL_OPENSHIFT_CI_STEP_DIR"]
 
         return ((f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/" +
                  f"pull/{os.environ['REPO_OWNER']}_{os.environ['REPO_NAME']}/{os.environ['PULL_NUMBER']}" +
-                 f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_name}/artifacts"),
+                 f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_path}"),
                 "")
 
 

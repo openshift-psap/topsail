@@ -360,6 +360,7 @@ ci_presets:
     matbench.lts.generate: false
     tests.fine_tuning.test_settings.hyper_parameters:
       num_epochs: null
+      max_batch_len: null
       NCCL_SOCKET_NTHREADS: null
 
   ilab_scale:
@@ -390,7 +391,8 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ilab_secondary_nic:
-    tests.fine_tuning.test_settings.use_secondary_nic: ["network-port-1"]
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [2, 4, 6, 8]
 
   ilab_aws:
     extends: [gpu, ilab]
@@ -432,13 +434,18 @@ ci_presets:
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
-    tests.fine_tuning.test_settings.pod_count: [1, 2]
     tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
     tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
-    tests.fine_tuning.test_settings.gpu: [4, 8]
 
-    tests.fine_tuning.test_settings.use_secondary_nic: "network-port-1"
-    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 8
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [10, 9, 8, 7, 6, 5, 4]
+
+    # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   # ---
 
@@ -485,6 +492,9 @@ ci_presets:
     clusters.sutest.compute.machineset.type: "gx3d-160x1792x8h100"
     tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
 
+  cluster_rhoai_h100:
+    clusters.sutest.compute.machineset.type: "4xH100-80GB"
+
   gating:
     extends: [use_intlab_os]
     matbench.lts.opensearch.export.enabled: true
@@ -513,6 +523,7 @@ clusters:
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
     tosokin-ilab-cluster-556dc-master-0: cluster_h100
     dagray-psap-ext-7kr6c-master-0: cluster_h100
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_h100
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -676,6 +687,8 @@ tests:
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null
+      secondary_nic_prefix: null
+      secondary_nic_count: null
       ephemeral_output_pvc_size: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html

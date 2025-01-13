@@ -49,7 +49,7 @@ def rewrite_variables_overrides(variable_overrides_dict):
 
 def jump_ci(command):
     @utils.entrypoint()
-    def do_jump_ci(cluster=None, project=None, test_args=""):
+    def do_jump_ci(cluster=None, project=None, test_args=None):
         """
         Runs a command in the Jump Host.
 
@@ -65,8 +65,6 @@ def jump_ci(command):
         if cluster is None:
             cluster = config.project.get_config("cluster.name")
 
-        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster)
-
         secrets_path_env_key = config.project.get_config("secrets.dir.env_key")
 
         env_fd_path, env_file = utils.get_tmp_fd()
@@ -74,28 +72,35 @@ def jump_ci(command):
             TOPSAIL_JUMP_CI="true",
             TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST="true",
         )
+        if step_dir := os.environ.get("TOPSAIL_OPENSHIFT_CI_STEP_DIR"):
+            extra_env["TOPSAIL_OPENSHIFT_CI_STEP_DIR"] = f"{step_dir}/test-artifacts" # see "jump_ci retrieve_artifacts" below
 
-        env_skip_list = config.project.get_config("env.skip_list.by_name")
-        env_skip_list_prefix = config.project.get_config("env.skip_list.by_prefix")
+        env_pass_lists = config.project.get_config("env.pass_lists", print=False)
+
+        env_pass_list = set()
+        for _, pass_list in (env_pass_lists or {}).items():
+            env_pass_list.update(pass_list)
 
         for k, v in (os.environ | extra_env).items():
-            if k in env_skip_list: continue
-            if any([k.startswith(prefix) for prefix in env_skip_list_prefix]): continue
+            if k not in (env_pass_list | extra_env.keys()): continue
 
             print(f"{k}={shlex.quote(v)}", file=env_file)
+
         env_file.flush()
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
-        if not test_args and not variable_overrides_file.exists():
+        if test_args is None and not variable_overrides_file.exists():
             logging.fatal(f"File '{variable_overrides_file}' does not exist, and --test_args not passed. Please specify one of them :/")
             raise SystemExit(1)
 
-        if test_args and not project:
+        if test_args is not None and not project:
             logging.fatal(f"The --project flag must be specificed when --test_args is passed")
             raise SystemExit(1)
 
-        if test_args:
+        run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
+
+        if test_args is not None:
             variables_overrides_dict = dict(
                 PR_POSITIONAL_ARGS=test_args,
                 PR_POSITIONAL_ARG_0="jump-ci",
@@ -104,12 +109,13 @@ def jump_ci(command):
             for idx, arg in enumerate(test_args.split()):
                 variables_overrides_dict[f"PR_POSITIONAL_ARG_{idx+1}"] = arg
 
-            config.project.set_config("overrides", variable_overrides_dict)
+            config.project.set_config("overrides", variables_overrides_dict)
 
         else:
             if not os.environ.get("OPENSHIFT_CI") == "true":
                 logging.fatal("Not running in OpenShift CI. Don't know how to rewrite the variable_overrides_file. Aborting.")
                 raise SystemExit(1)
+
             project = config.project.get_config("overrides.PR_POSITIONAL_ARG_2")
 
             variables_overrides_dict = rewrite_variables_overrides(
@@ -119,6 +125,7 @@ def jump_ci(command):
         run.run_toolbox(
             "jump_ci", "prepare_step",
             cluster=cluster,
+            lock_owner=utils.get_lock_owner(),
             project=project,
             step=command,
             env_file=env_fd_path,
@@ -137,10 +144,15 @@ def jump_ci(command):
         run.run_toolbox(
             "jump_ci", "retrieve_artifacts",
             cluster=cluster,
+            lock_owner=utils.get_lock_owner(),
             remote_dir=f"test/{command}/artifacts",
             local_dir=f"../test-artifacts", # copy to the main artifact directory
             mute_stdout=True,
         )
+
+        jump_ci_artifacts = env.ARTIFACT_DIR / "jump-ci-artifacts"
+        jump_ci_artifacts.mkdir(parents=True, exist_ok=True)
+        run.run(f'mv {env.ARTIFACT_DIR}/0* {jump_ci_artifacts}/')
 
         if failed:
             raise SystemExit(1)

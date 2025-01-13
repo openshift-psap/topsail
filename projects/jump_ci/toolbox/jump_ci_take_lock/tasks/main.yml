@@ -7,6 +7,7 @@
   shell: |
     if ! mkdir "/tmp/{{ jump_ci_take_lock_cluster }}" 2>/dev/null; then
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' already taken ..."
+      cat "/tmp/{{ jump_ci_take_lock_cluster }}/lock_owner 2>/dev/null" || true
       exit 1
     else
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' acquired.";
@@ -18,4 +19,4 @@
 
 - name: Log info about the lock owner
   shell:
-    echo "Lock taken at $(date)" > "/tmp/{{ jump_ci_take_lock_cluster }}/lock_info"
+    echo "{{ jump_ci_take_lock_owner }}" > "/tmp/{{ jump_ci_take_lock_cluster }}/lock_owner"

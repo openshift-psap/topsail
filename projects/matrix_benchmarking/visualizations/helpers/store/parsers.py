@@ -106,7 +106,7 @@ def parse_env(dirname, test_config, capture_state_dir):
         build_id = job_spec["buildid"]
 
         test_name = ansible_env.get("JOB_NAME_SAFE")
-        step_name = entrypoint_options["container_name"]
+        step_dir = ansible_env.get("TOPSAIL_OPENSHIFT_CI_STEP_DIR")
 
         # ---
         # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
@@ -116,7 +116,7 @@ def parse_env(dirname, test_config, capture_state_dir):
         # ---
         from_env.test.urls |= dict(
             PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/",
-            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_name}/artifacts/{from_env.test.test_path}",
+            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_dir}/{from_env.test.test_path}",
         )
 
     if ansible_env.get("PERFLAB_CI") == "true":

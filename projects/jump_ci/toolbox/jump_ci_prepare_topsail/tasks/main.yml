@@ -4,6 +4,7 @@
     name: jump_ci_ensure_lock
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_topsail_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_prepare_topsail_lock_owner }}"
 
 - name: Generate the artifact dirname
   set_fact:
@@ -133,6 +134,7 @@
            --filter label=jump-ci=true
   when:
   - jump_ci_prepare_topsail_cleanup_old_pr_images
+  - has_image.rc != 0
 
 - name: "Build image as an update {{ image_full_name }}"
   shell: |

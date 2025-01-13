@@ -5,6 +5,7 @@
     # sets cluster_kubeconfig
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_prepare_step_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_prepare_step_lock_owner }}"
 
 - name: Fetch the name of the image to use
   shell:
@@ -44,6 +45,13 @@
     dest: "{{ step_artifact_dir }}/test_env"
     mode: '0644'
 
+- name: Copy all the jump-host env file locally
+  ansible.posix.synchronize:
+    src: "{{ step_artifact_dir }}/test_env"
+    dest: "{{ artifact_extra_logs_dir }}/jump_host.env"
+    mode: "pull"
+  no_log: true # not necessary, and leaks the hostnames
+
 - name: Populate the variables_overrides files
   shell: |
     cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
@@ -51,6 +59,13 @@
     {{ k }}: {{ v }}
     {% endfor %}
     EOF
+
+- name: Copy all the jump-host env file locally
+  ansible.posix.synchronize:
+    src: "{{ step_artifact_dir }}/artifacts/variable_overrides.yaml"
+    dest: "{{ artifact_extra_logs_dir }}/variable_overrides.yaml"
+    mode: "pull"
+  no_log: true # not necessary, and leaks the hostnames
 
 - name: Ensure that the secrets directory exists
   ansible.builtin.file:
@@ -63,9 +78,14 @@
     src: "{{ lookup('env', jump_ci_prepare_step_secrets_path_env_key) }}/"
     dest: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}/"
     mode: "push"
-  no_log: true
+  no_log: true # not necessary, and leaks the hostnames and secret filenames (they aren't secret)
   when: jump_ci_prepare_step_secrets_path_env_key
 
+- name: Ensure that the secret dirs have the right permission
+  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets" -type d -exec chmod 0755 {} \;
+
+- name: Ensure that the secret files have the right permission
+  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/" -type f -exec chmod 0644 {} \;
 
 - name: Prepare the entrypoint script
   shell: |
@@ -122,6 +142,13 @@
 
     cleanup
     EOF
+
+- name: Copy all the entrypoint file locally
+  ansible.posix.synchronize:
+    src: "{{ step_artifact_dir }}/entrypoint.sh"
+    dest: "{{ artifact_extra_logs_dir }}/entrypoint.sh"
+    mode: "pull"
+  no_log: true # not necessary, and leaks the hostnames
 
 - name: Show the launch command
   debug: msg="run 'bash {{ step_artifact_dir }}/entrypoint.sh' in the remote host"

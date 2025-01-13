@@ -36,6 +36,9 @@ def generateILabSummaryData(entries, x_key, _variables, summary_key, compute_spe
         if filter_key is not None and entry.get_settings()[filter_key] != filter_value:
             continue
 
+        if not hasattr(entry.results.ilab_metrics, "summary"):
+            continue
+
         try:
             summary_value = getattr(entry.results.ilab_metrics.summary, summary_key,
                                     getattr(entry.results.ilab_metrics.progress[-1], summary_key, None))
@@ -259,6 +262,9 @@ def generateILabProgressData(entries, x_key, variables, progress_key):
     data = []
 
     for entry in entries:
+        if not hasattr(entry.results.ilab_metrics, "progress"):
+            continue
+
         progress_entries = entry.results.ilab_metrics.progress
         entry_name = entry.get_name(variables)
 

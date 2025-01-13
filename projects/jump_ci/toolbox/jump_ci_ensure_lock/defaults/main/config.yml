@@ -6,3 +6,10 @@
 # name of the cluster lock to test
 # Mandatory value
 jump_ci_ensure_lock_cluster:
+
+# name of the lock owner
+# Mandatory value
+jump_ci_ensure_lock_owner:
+
+# if enabled, ensure that the cluster's kubeconfig file exists
+jump_ci_ensure_lock_check_kubeconfig: true
