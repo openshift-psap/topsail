@@ -564,9 +564,6 @@ ci_presets:
   cluster_rhoai_2x8h100:
     clusters.sutest.compute.machineset.type: "2x8xH100-80GB"
 
-  cluster_rhoai_4h100:
-    clusters.sutest.compute.machineset.type: "4xH100-80GB"
-
   cluster_instructlab:
     fine_tuning.pvc.storage_class_name: nfs-csi
     fine_tuning.pvc.access_mode: ReadWriteMany
@@ -634,7 +631,6 @@ secrets:
 clusters:
   metal_profiles:
     tosokin-ilab-cluster-556dc-worker-1-gs8qj: cluster_rhoai_2x8h100
-    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_4h100
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
