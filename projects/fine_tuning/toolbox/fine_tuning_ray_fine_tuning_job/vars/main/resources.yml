@@ -3,5 +3,6 @@ fine_tuning_cluster_template: templates/ray_cluster.yaml.j2
 fine_tuning_job_template: templates/ray_job.yaml.j2
 fine_tuning_job_config_template: templates/base_config.yaml.j2
 
-fine_tuning_job_entrypoint_name: entrypoint.sh
+fine_tuning_job_entrypoint_interpreter: python3
+fine_tuning_job_entrypoint_name: entrypoint.py
 __safe: [fine_tuning_job_entrypoint_name]
