@@ -11,8 +11,9 @@ scale testing of `Red Hat OpenShift
 AI <https://www.redhat.com/en/technologies/cloud-computing/openshift/openshift-ai>`_
 (RHOAI) platform.
 
-To learn about overall architecutre of TOPSAIL and it's components please refer to
-the `page <https://openshift-psap.github.io/topsail/intro.html>`_
+To learn about overall architecture of TOPSAIL and it's components please refer to
+the `page
+<https://openshift-psap.github.io/topsail/intro.html>`_
 
 The automation relies on:
 
