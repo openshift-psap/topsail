@@ -2,7 +2,7 @@ TOPSAIL
 =======
 
 Red Hat/PSAP's Test Orchestrator for Performance and Scalability of AI
-pLatforms
+platforms
 
 |lint| |nbsp| |consistency| |nbsp| |render_ansible| |nbsp| |render_docs|
 
@@ -10,6 +10,10 @@ This repository provides an extensive toolbox for performance and
 scale testing of `Red Hat OpenShift
 AI <https://www.redhat.com/en/technologies/cloud-computing/openshift/openshift-ai>`_
 (RHOAI) platform.
+
+To learn about overall architecture of TOPSAIL and it's components please refer to
+the `page
+<https://openshift-psap.github.io/topsail/intro.html>`_
 
 The automation relies on:
 
