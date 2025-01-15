@@ -131,7 +131,7 @@ while read line; do
     anchor=$(echo "$line" | cut -d" " -f1)
     anchor_length=$(echo "$anchor " | wc -c)
 
-    line_content=$(echo "$line" | cut -b${anchor_length}-)
+    line_content=$(echo "$line" | cut -b${anchor_length}- | tr -d '\n\r')
 
     if [[ "$anchor" == "/var" ]]; then
         if ! echo "$line_content" | yq &>/dev/null; then
