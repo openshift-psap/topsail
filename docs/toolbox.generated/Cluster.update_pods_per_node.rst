@@ -50,3 +50,10 @@ Parameters
 
 * The expected value for the label selector
 
+
+``pod_pids_limit``  
+
+* Missing documentation for pod_pids_limit
+
+* default value: ``4096``
+
