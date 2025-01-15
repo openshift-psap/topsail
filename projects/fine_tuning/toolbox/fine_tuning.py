@@ -85,7 +85,7 @@ class Fine_Tuning:
 
           ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
           use_primary_nic: if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
-          use_secondary_nic: if enabled, activates the secondary NIC
+          use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
           use_host_network: if enabled, activates the host network
         """
 
