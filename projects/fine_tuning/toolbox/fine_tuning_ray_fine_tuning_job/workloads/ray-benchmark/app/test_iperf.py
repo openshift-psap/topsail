@@ -8,6 +8,16 @@ import pathlib
 import ray
 from ray.util.scheduling_strategies import NodeAffinitySchedulingStrategy
 
+def config_logging():
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
 def install_iperf():
     if pathlib.Path("./usr/bin/iperf3").exists():
         logging.info("iperf3 already available, no need to download it.")
@@ -27,29 +37,29 @@ tar xf lksctp-tools-{LKSCTP_VERSION}.x86_64.rpm.tgz
 
     subprocess.run(INSTALL_IPERF, shell=True, check=True)
 
-    os.environ["LD_LIBRARY_PATH"] = "./usr/lib64/"
+    os.environ["LD_LIBRARY_PATH"] = "/opt/app-root/src/usr/lib64/"
 
-    subprocess.run("./usr/bin/iperf3 --version", shell=True, check=True)
+    subprocess.run("/opt/app-root/src/usr/bin/iperf3 --version", shell=True, check=True)
 
 def init_ray():
     ray.init()
 
 
-def run_iperf_server():
-    return subprocess.Popen("./usr/bin/iperf3 -s -p 1234", shell=True) # need to detach it
+def run_iperf_server(port):
+    return subprocess.Popen(f"/opt/app-root/src/usr/bin/iperf3 -s -p {port}", shell=True) # need to detach it
 
 
-def run_iperf_client():
+def run_iperf_client(port):
 
     @ray.remote
-    def run(server_ip):
+    def run(server_ip, _port):
         install_iperf()
 
         with open("/proc/sys/kernel/hostname") as f:
             print(f"Running from remote worker node {f.read().strip()}")
 
         os.environ["LD_LIBRARY_PATH"] = "/opt/app-root/src/usr/lib64/"
-        subprocess.run(f"/opt/app-root/src/usr/bin/iperf3 -c {server_ip} -p 1234", shell=True, check=True)
+        subprocess.run(f"/opt/app-root/src/usr/bin/iperf3 -c {server_ip} -p {_port}", shell=True, check=True)
 
 
     for node in ray.nodes():
@@ -62,23 +72,28 @@ def run_iperf_client():
         raise SystemExit(1)
 
     server_ip = os.environ["MY_POD_IP"] # env var exposed by KubeRay
+    nic_name = subprocess.run(f"echo $(ip route | grep '{server_ip}' | cut -d' ' -f3)", shell=True, check=True, capture_output=True).stdout.decode("ascii").strip()
+    logging.info(f"Running the server on {server_ip} from {nic_name}")
 
     wait = run.options(
         scheduling_strategy=NodeAffinitySchedulingStrategy(
             node_id=worker_node_id,
             soft=False,
-        )).remote(server_ip)
+        )).remote(server_ip, port)
 
     ray.wait([wait])
 
 
 def main():
+    config_logging()
+
     install_iperf()
     init_ray()
 
-    server = run_iperf_server()
+    PORT = 1234
+    server = run_iperf_server(PORT)
     try:
-        run_iperf_client()
+        run_iperf_client(PORT)
     finally:
         server.kill()
         server.wait()

@@ -180,6 +180,8 @@ class Fine_Tuning:
 
             node_selector_key=None,
             node_selector_value=None,
+
+            use_secondary_nic=False,
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -221,6 +223,8 @@ class Fine_Tuning:
 
           node_selector_key: name of a label to select the node on which this job can run
           node_selector_value: value of the label to select the node on which this job can run
+
+          use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
         """
 
         if dataset_name is None:

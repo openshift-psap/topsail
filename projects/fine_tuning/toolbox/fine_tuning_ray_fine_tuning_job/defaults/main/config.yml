@@ -79,3 +79,6 @@ fine_tuning_ray_fine_tuning_job_node_selector_key: null
 
 # value of the label to select the node on which this job can run
 fine_tuning_ray_fine_tuning_job_node_selector_value: null
+
+# if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
+fine_tuning_ray_fine_tuning_job_use_secondary_nic: false

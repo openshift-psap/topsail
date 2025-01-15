@@ -160,3 +160,8 @@ Parameters
 
 * Value of the label to select the node on which this job can run
 
+
+``use_secondary_nic``  
+
+* If enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
+

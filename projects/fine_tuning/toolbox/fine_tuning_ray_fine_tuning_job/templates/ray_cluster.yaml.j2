@@ -16,6 +16,18 @@ spec:
     serviceType: ClusterIP
     template: &head_template
       metadata:
+        annotations:
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+            k8s.v1.cni.cncf.io/networks:
+              '[
+{% for secondary_nic in secondary_nics %}
+                {
+                  "name": "{{ secondary_nic }}",
+                  "namespace": "{{ fine_tuning_ray_fine_tuning_job_namespace }}"
+                }{% if secondary_nic != secondary_nics[-1] %},{% endif %}
+{% endfor %}
+              ]'
+{% endif %}
         labels:
           ray-anti-affinity: "true"
       spec:
@@ -25,6 +37,7 @@ spec:
 {% endif %}
         containers:
         - name: ray-head
+          command: ["python3 /mnt/entrypoint/init_ray_container.py"] # the ray command will be executed after that
           ports:
           - containerPort: 6379
             name: gcs
@@ -36,10 +49,27 @@ spec:
             name: client
             protocol: TCP
           image: &head_image "{{ fine_tuning_ray_fine_tuning_job_container_image }}"
-
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+              - NET_ADMIN
+              - NET_RAW
+{% endif %}
           env: &head_env
           - name: CONFIG_JSON_PATH
             value: /mnt/config/config.json
+          - name: NODE_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          - name: SECONDARY_SOCKET_IFNAME
+            value: "{{ secondary_socket_ifname }}"
+{% endif %}
           resources: &head_resources
             requests: &head_request_block
 {% if fine_tuning_ray_fine_tuning_job_gpu %}
@@ -70,12 +100,21 @@ spec:
             mountPath: /mnt/config
           - name: output-volume
             mountPath: /mnt/output
-
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          - name: nic-mapping-volume
+            mountPath: /mnt/nic-mapping
+{% endif %}
         volumes: &head_volumes
 {% if fine_tuning_ray_fine_tuning_job_pvc_name %}
         - name: storage-volume
           persistentVolumeClaim:
             claimName: {{ fine_tuning_ray_fine_tuning_job_pvc_name }}
+{% endif %}
+
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+        - name: nic-mapping-volume
+          configMap:
+            name: {{ job_name_safe }}-nic-mapping
 {% endif %}
         - name: config-volume
           configMap:
