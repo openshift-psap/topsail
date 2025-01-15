@@ -403,6 +403,7 @@ class Cluster:
                              name="set-max-pods",
                              label="pools.operator.machineconfiguration.openshift.io/worker",
                              label_value="",
+                             pod_pids_limit=4096
                              ):
         """
         Update the maximum number of Pods per Nodes, and Pods per Core
