@@ -18,5 +18,5 @@ cluster_update_pods_per_node_label: pools.operator.machineconfiguration.openshif
 # the expected value for the label selector
 cluster_update_pods_per_node_label_value:
 
-# Missing documentation for pod_pids_limit
+# limit the maximum number of processes that can be created by containers within a pod
 cluster_update_pods_per_node_pod_pids_limit: 4096
