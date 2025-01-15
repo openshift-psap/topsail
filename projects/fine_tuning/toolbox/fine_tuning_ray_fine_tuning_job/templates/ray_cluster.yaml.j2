@@ -96,12 +96,4 @@ spec:
       num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     replicas: {{ fine_tuning_ray_fine_tuning_job_pod_count }}
-    template:
-      spec:
-        containers:
-        - name: machine-learning
-          image: *head_image
-          env: *head_env
-          resources: *head_resources
-          volumeMounts: *head_volume_mounts
-        volumes: *head_volumes
+    template: *head_template
