@@ -14,7 +14,10 @@ spec:
       num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     serviceType: ClusterIP
-    template:
+    template: &head_template
+      metadata:
+        labels:
+          ray-anti-affinity: "true"
       spec:
 {% if fine_tuning_ray_fine_tuning_job_node_selector_key | length %}
         nodeSelector:
@@ -85,6 +88,18 @@ spec:
             name: {{ job_name_safe }}-app
         - name: output-volume
           emptyDir: {}
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: ray-anti-affinity
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: "kubernetes.io/hostname"
 
   rayVersion: {{ fine_tuning_ray_fine_tuning_job_ray_version }}
   workerGroupSpecs:
