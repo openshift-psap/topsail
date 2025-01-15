@@ -29,7 +29,7 @@ class TrainingReport():
         from ..store import parsers
 
         self.summary_keys = parsers.SFT_TRAINER_SUMMARY_KEYS if flavor == "SFTTrainer" \
-            else (parsers.ILAB_SUMMARY_KEYS | parsers.ILAB_PROGRESS_KEYS)
+            else parsers.ILAB_SUMMARY_KEYS
 
         self.progress_keys = parsers.SFT_TRAINER_PROGRESS_KEYS if flavor == "SFTTrainer" \
             else parsers.ILAB_PROGRESS_KEYS

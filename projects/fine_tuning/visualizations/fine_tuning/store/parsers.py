@@ -220,6 +220,7 @@ ILAB_PROGRESS_KEYS = {
 
 ILAB_SUMMARY_KEYS = {
     "torchrun_exec_time": types.SimpleNamespace(lower_better=True, units="minutes", title="Execution wall-time"),
+    "average_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="Average throughput"),
 }
 
 """
@@ -260,12 +261,27 @@ def _parse_ilab_logs(dirname):
 
         ilab_metrics.summary.torchrun_exec_time = int(time_str) / 60 # convert from seconds to minutes
 
-    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
+    def extract_num_of_samples(line):
+        if not line.startswith("Map (num_proc=8): 100%"):
+            return
+
+        _not_used, has_it, after = line.partition("Map (num_proc=8): 100%|██████████| ")
+        if not has_it: return
+
+        num_samples, has_it, after = after.partition("/")
+        if not has_it:
+            log.error(f"Invalid Map line :/ '{line}'")
+            return
+
+        ilab_metrics.summary.num_samples = int(num_samples)
+
+    with (open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f):
         # metrics lines are printed in green. Look them up.
         in_green = False
         current_json = ""
         for line in f.readlines():
             extract_torchrun_execution_time(line)
+            extract_num_of_samples(line)
 
             if not in_green:
                 before, green_found, after = line.partition("[92m")
@@ -286,6 +302,13 @@ def _parse_ilab_logs(dirname):
             current_json = ""
             in_green = False
 
+        first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
+        last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
+        period = (last_step_timestamp - first_step_timestamp).total_seconds()
+        num_samples = ilab_metrics.summary.num_samples - ilab_metrics.progress[0].batch_size
+        num_epochs = ilab_metrics.progress[-1].epoch
+        average_throughput = (num_samples+(ilab_metrics.summary.num_samples*num_epochs))/period
+        ilab_metrics.summary.average_throughput = average_throughput
     return ilab_metrics
 
 
