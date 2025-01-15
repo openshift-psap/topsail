@@ -73,3 +73,9 @@ fine_tuning_ray_fine_tuning_job_capture_artifacts: true
 
 # if True, let the RayJob shutdown the RayCluster when the job terminates
 fine_tuning_ray_fine_tuning_job_shutdown_cluster: false
+
+# name of a label to select the node on which this job can run
+fine_tuning_ray_fine_tuning_job_node_selector_key: null
+
+# value of the label to select the node on which this job can run
+fine_tuning_ray_fine_tuning_job_node_selector_value: null

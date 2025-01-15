@@ -177,6 +177,9 @@ class Fine_Tuning:
             capture_artifacts=True,
 
             shutdown_cluster=False,
+
+            node_selector_key=None,
+            node_selector_value=None,
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -215,6 +218,9 @@ class Fine_Tuning:
           workload: the name of the workload job to run (see the role's workload directory)
 
           shutdown_cluster: if True, let the RayJob shutdown the RayCluster when the job terminates
+
+          node_selector_key: name of a label to select the node on which this job can run
+          node_selector_value: value of the label to select the node on which this job can run
         """
 
         if dataset_name is None:

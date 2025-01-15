@@ -16,6 +16,10 @@ spec:
     serviceType: ClusterIP
     template:
       spec:
+{% if fine_tuning_ray_fine_tuning_job_node_selector_key | length %}
+        nodeSelector:
+          {{ fine_tuning_ray_fine_tuning_job_node_selector_key }}: "{{ fine_tuning_ray_fine_tuning_job_node_selector_value }}"
+{% endif %}
         containers:
         - name: ray-head
           ports:

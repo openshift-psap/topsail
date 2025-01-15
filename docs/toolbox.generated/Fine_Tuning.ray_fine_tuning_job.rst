@@ -150,3 +150,13 @@ Parameters
 
 * If True, let the RayJob shutdown the RayCluster when the job terminates
 
+
+``node_selector_key``  
+
+* Name of a label to select the node on which this job can run
+
+
+``node_selector_value``  
+
+* Value of the label to select the node on which this job can run
+
