@@ -403,6 +403,7 @@ class Cluster:
                              name="set-max-pods",
                              label="pools.operator.machineconfiguration.openshift.io/worker",
                              label_value="",
+                             pod_pids_limit=4096
                              ):
         """
         Update the maximum number of Pods per Nodes, and Pods per Core
@@ -415,6 +416,7 @@ class Cluster:
           name: the name to give to the KubeletConfig object
           label: the label selector for the nodes to update
           label_value: the expected value for the label selector
+          pod_pids_limit: limit the maximum number of processes that can be created by containers within a pod
         """
 
         return RunAnsibleRole(locals())

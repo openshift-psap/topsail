@@ -50,3 +50,10 @@ Parameters
 
 * The expected value for the label selector
 
+
+``pod_pids_limit``  
+
+* Limit the maximum number of processes that can be created by containers within a pod
+
+* default value: ``4096``
+
