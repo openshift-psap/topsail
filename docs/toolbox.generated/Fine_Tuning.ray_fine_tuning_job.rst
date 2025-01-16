@@ -165,3 +165,8 @@ Parameters
 
 * If enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
 
+
+``ephemeral_output_pvc_size``  
+
+* If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
+

@@ -125,8 +125,20 @@ spec:
         - name: app-volume
           configMap:
             name: {{ job_name_safe }}-app
+{% if fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size %}
+        - name: output-volume
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: "{{ fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size }}"
+{% else %}
         - name: output-volume
           emptyDir: {}
+{% endif %}
         affinity:
           podAntiAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:

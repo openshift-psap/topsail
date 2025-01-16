@@ -182,6 +182,9 @@ class Fine_Tuning:
             node_selector_value=None,
 
             use_secondary_nic=False,
+
+            ephemeral_output_pvc_size=None,
+
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -225,6 +228,8 @@ class Fine_Tuning:
           node_selector_value: value of the label to select the node on which this job can run
 
           use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
+
+          ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
         """
 
         if dataset_name is None:
