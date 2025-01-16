@@ -57,6 +57,9 @@ fine_tuning_run_fine_tuning_job_cpu: 1
 # if True, sets the 'limits' of the job with the same value as the request.
 fine_tuning_run_fine_tuning_job_request_equals_limits: false
 
+# amount of shm (in GB) to give to each of the job pods
+fine_tuning_run_fine_tuning_job_shared_memory: 20
+
 # if True, only prepare the environment but do not run the fine-tuning job.
 fine_tuning_run_fine_tuning_job_prepare_only: false
 

@@ -101,10 +101,12 @@ spec:
               mountPath: /mnt/entrypoint
             - name: config-volume
               mountPath: /mnt/config
+{% if fine_tuning_run_fine_tuning_job_shared_memory %}
             - name: shm-volume
               mountPath: /dev/shm
             - name: shared-volume
               mountPath: /mnt/shared
+{% endif %}
             - name: output-volume
               mountPath: /mnt/output
 {% if fine_tuning_run_fine_tuning_job_use_secondary_nic %}
@@ -128,12 +130,14 @@ spec:
           - name: storage-volume
             persistentVolumeClaim:
               claimName: {{ fine_tuning_run_fine_tuning_job_pvc_name }}
+{% if fine_tuning_run_fine_tuning_job_shared_memory %}
           - name: shm-volume
             emptyDir:
               medium: Memory
-              sizeLimit: 20Gi
+              sizeLimit: "{{ fine_tuning_run_fine_tuning_job_shared_memory }}Gi"
           - name: shared-volume
             emptyDir: {}
+{% endif %}
           - name: config-volume
             configMap:
               name: {{ job_name_safe }}-config
