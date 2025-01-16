@@ -324,15 +324,32 @@ ci_presets:
     tests.fine_tuning.test_settings.name: ray
     matbench.prom_workload: projects.fine_tuning.visualizations.ray_prom
 
-  ray_bench:
+  ray_bench_base:
     extends: [ray, no_model]
     matbench.config_file: ray_benchmark.yaml
     matbench.workload: projects.fine_tuning.visualizations.ray_benchmark
+
     tests.fine_tuning.ray.workload: ray-benchmark
     tests.fine_tuning.test_settings.gpu: 0
+    tests.fine_tuning.test_settings.node_selector_key: nvidia.com/gpu.present
+    tests.fine_tuning.test_settings.node_selector_value: "true"
+
+  ray_bench__network_overhead:
+    extends: [ray_bench_base]
+    tests.fine_tuning.test_settings.hyper_parameters:
+      flavor: network_overhead
+      num_samples: 10
+
+  ray_bench__iperf:
+    extends: [ray_bench_base]
 
     tests.fine_tuning.test_settings.hyper_parameters:
-      num_samples: 10
+      flavor: iperf
+
+    tests.fine_tuning.test_settings.pod_count: 2
+    tests.fine_tuning.test_settings.use_secondary_nic: null
+    tests.fine_tuning.matbenchmarking.enabled: false
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
 
   ray_bench_scale:
     extends: [ray_bench]
@@ -690,6 +707,9 @@ tests:
       secondary_nic_prefix: null
       secondary_nic_count: null
       ephemeral_output_pvc_size: null
+      # Ray-specific:
+      node_selector_key: null
+      node_selector_value: null
       # ---
       # https://huggingface.co/transformers/v3.0.2/main_classes/trainer.html
       hyper_parameters:
