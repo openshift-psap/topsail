@@ -451,8 +451,6 @@ ci_presets:
 
     tests.fine_tuning.test_settings.gpu: 8
     tests.fine_tuning.test_settings.pod_count: 2
-    tests.fine_tuning.test.settings.cpu: 16
-    test.fine_tuning.test.settongs.ephemeral_output_pvc_size: 500
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
     tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4]
