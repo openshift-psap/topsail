@@ -176,7 +176,7 @@ class Fine_Tuning:
             sleep_forever=False,
             capture_artifacts=True,
 
-            shutdown_cluster=False,
+            shutdown_cluster=True,
 
             node_selector_key=None,
             node_selector_value=None,

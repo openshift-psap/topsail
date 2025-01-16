@@ -150,6 +150,8 @@ Parameters
 
 * If True, let the RayJob shutdown the RayCluster when the job terminates
 
+* default value: ``True``
+
 
 ``node_selector_key``  
 
