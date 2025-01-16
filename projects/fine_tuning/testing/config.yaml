@@ -459,6 +459,22 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
+  ilab_1x8xh100_scale:
+    extends: [ ilab ]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 1
+
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [20000,60000, 80000, 90000]
+#    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
   # ---
 
   cluster_instructlab:
