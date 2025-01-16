@@ -364,7 +364,7 @@ ci_presets:
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
     tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
-    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3b-code-instruct@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
     matbench.prom_workload: projects.fine_tuning.visualizations.ilab_prom
