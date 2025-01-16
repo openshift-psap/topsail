@@ -126,7 +126,6 @@ spec:
 {% elif fine_tuning_run_fine_tuning_job_gpu %}
               limits:
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
-                cpu: "{{ fine_tuning_run_fine_tuning_job_cpu }}"
                 nvidia.com/roce: "8"
 {% endif %}
           volumes:
