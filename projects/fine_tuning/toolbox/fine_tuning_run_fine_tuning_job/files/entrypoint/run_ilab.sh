@@ -18,9 +18,16 @@ export TRITON_DUMP_DIR=$TRITON_HOME
 export TRITON_CACHE_DIR=$TRITON_HOME
 export TRITON_OVERRIDE_DIR=$TRITON_HOME
 
+export NCCL_TOPO_FILE=/mnt/storage/topo.xml
+export NCCL_IB_HCA="mlx5_7,mlx5_6,mlx5_5,mlx5_4,mlx5_3,mlx5_2,mlx5_1,mlx5_0"
+export NCCL_IB_DISABLE=0
+export NCCL_IB_GID_INDEX=3
+export NCCL_DEBUG=info
+
 mkdir -p "$CACHE_DIR"
 
 if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
+
 
     MAPPING="$(cat /mnt/nic-mapping/nodename_ip_mapping.yaml)"
     for ifname in $(echo $NCCL_SOCKET_IFNAME | tr , " "); do
