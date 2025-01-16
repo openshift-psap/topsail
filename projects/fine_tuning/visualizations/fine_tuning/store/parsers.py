@@ -65,7 +65,7 @@ def parse_always(results, dirname, import_settings):
     pass
 
 
-def parse_once(results, dirname):
+def parse_once(results, dirname, import_settings):
     results.test_config = helpers_store_parsers.parse_test_config(dirname)
     results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
@@ -95,7 +95,8 @@ def parse_once(results, dirname):
         results.finish_reason = _parse_pytorch_finish_reason(dirname)
 
     if results.locations.has_ray:
-        results.ray_metrics = _parse_ray_logs(dirname)
+        flavor = import_settings["hyper_parameters.flavor"]
+        results.ray_metrics = _parse_ray_logs(dirname, flavor)
         results.allocated_resources = _parse_ray_allocated_resources(dirname)
         results.finish_reason = _parse_ray_finish_reason(dirname)
 
@@ -400,18 +401,45 @@ def _parse_workload_config(dirname, locations):
 
 
 @helpers_store_parsers.ignore_file_not_found
-def _parse_ray_logs(dirname):
+def _parse_ray_logs(dirname, flavor):
     ray_metrics = types.SimpleNamespace()
-    ray_metrics.summary = types.SimpleNamespace()
-    ray_metrics.summary.time = None
 
+    ray_metrics.summary = types.SimpleNamespace()
     ray_metrics.progress = []
 
     with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RAY_FINE_TUNING_DIR / "artifacts/job_pod.log")) as f:
-        for line in f.readlines():
-            if not line.startswith("---"):
-                continue
-            ray_metrics.summary.time = float(line.strip().split("::: ")[-1].split()[0])
-            break
+        if flavor == "iperf":
+            _parse_ray_logs__iperf(f, ray_metrics.summary, ray_metrics.progress)
+        elif flavor == "network_overhead":
+            _parse_ray_logs__network_overhead(f, ray_metrics.summary, ray_metrics.progress)
+        else:
+            msg = f"Benchmark flavor not recognized :/ ({flavor})"
+            logging.fatal(msg)
+            raise ValueError(msg)
 
     return ray_metrics
+
+
+def _parse_ray_logs__iperf(f, summary, progress):
+    seen_marker_line = 0
+    for line in f.readlines():
+        # [ ID] Interval           Transfer     Bitrate
+        if line.startswith("[ ID] Interval"):
+            seen_marker_line += 1
+            continue
+        if seen_marker_line != 2:
+            continue
+
+        # [  5]   0.00-10.04  sec  7.79 GBytes  6.66 Gbits/sec                  receiver
+        summary.bitrate = float(line.split()[6])
+        break
+
+    pass
+
+
+def _parse_ray_logs__network_overhead(f, summary, progress):
+    for line in f.readlines():
+        if not line.startswith("---"):
+            continue
+        summary.time = float(line.strip().split("::: ")[-1].split()[0])
+        break

@@ -35,9 +35,14 @@ def generateRaySummaryData(entries, x_key, y_key, _variables):
     for entry in entries:
         datum = dict()
 
+        if not entry.results.ray_metrics: continue
+        if not entry.results.ray_metrics.summary: continue
 
         datum[x_key] = entry.settings.__dict__[x_key] if x_key is not None \
                 else "Single entry"
+
+        if datum[x_key] is None:
+            datum[x_key] = "None"
 
         datum[y_key] = getattr(entry.results.ray_metrics.summary, y_key)
         datum["name"] = entry.get_name(variables).replace("hyper_parameters.", "")
@@ -65,7 +70,17 @@ class RayBenchmarkSummary():
         entries = common.Matrix.all_records(settings, setting_lists)
 
         x_key = ordered_vars[0] if ordered_vars else None
-        y_key = "time"
+
+        benchmark_flavor = settings.get("hyper_parameters.flavor")
+        if not benchmark_flavor:
+            raise ValueError("No benchmark flavor received as setting :/")
+        elif benchmark_flavor == "iperf":
+            y_key = "bitrate"
+        elif benchmark_flavor == "network_overhead":
+            y_key = "bitrate"
+        else:
+            raise ValueError(f"Unknown benchmark flavor received as setting :/ ({benchmark_flavor})")
+
         data = generateRaySummaryData(entries, x_key, y_key, variables)
 
         df = pd.DataFrame(data)
@@ -76,7 +91,7 @@ class RayBenchmarkSummary():
         if x_key is not None:
             df = df.sort_values(by=[x_key], ascending=False)
 
-        color = None if (len(variables) == 1 and not has_speedup) else "name"
+        color = None
         fig = px.line(df, hover_data=df.columns, x=x_key, y=y_key, color=color)
 
         for i in range(len(fig.data)):
