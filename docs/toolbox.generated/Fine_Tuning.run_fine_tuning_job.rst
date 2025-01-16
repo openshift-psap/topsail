@@ -108,6 +108,13 @@ Parameters
 * If True, sets the 'limits' of the job with the same value as the request.
 
 
+``shared_memory``  
+
+* Amount of shm (in GB) to give to each of the job pods
+
+* default value: ``20``
+
+
 ``prepare_only``  
 
 * If True, only prepare the environment but do not run the fine-tuning job.
