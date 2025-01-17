@@ -7,13 +7,11 @@ LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
  	name="topsail" \
 	url="https://github.com/openshift-psap/"
 
-ARG PYTHON_VERSION=3.9.21-1.el9.x86_64
-
 RUN dnf install -y epel-release && \
     dnf install --quiet -y \
          git jq vim wget rsync time gettext httpd-tools make file psmisc \
          python3-pip python3-setuptools procps gcc g++ \
-         python3-$PYTHON_VERSION python3-devel-$PYTHON_VERSION \
+         python3 python3-devel \
          python-kubernetes python3-numpy python3-pyyaml \
   && dnf clean all \
   && pip install virtualenv \
