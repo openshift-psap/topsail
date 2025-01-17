@@ -81,7 +81,7 @@ fine_tuning_run_fine_tuning_job_ephemeral_output_pvc_size: null
 # if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
 fine_tuning_run_fine_tuning_job_use_primary_nic: true
 
-# if enabled, activates the secondary NIC
+# if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
 fine_tuning_run_fine_tuning_job_use_secondary_nic: false
 
 # if enabled, activates the host network

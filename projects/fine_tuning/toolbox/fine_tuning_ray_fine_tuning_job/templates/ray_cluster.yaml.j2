@@ -14,10 +14,30 @@ spec:
       num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     serviceType: ClusterIP
-    template:
+    template: &head_template
+      metadata:
+        annotations:
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+            k8s.v1.cni.cncf.io/networks:
+              '[
+{% for secondary_nic in secondary_nics %}
+                {
+                  "name": "{{ secondary_nic }}",
+                  "namespace": "{{ fine_tuning_ray_fine_tuning_job_namespace }}"
+                }{% if secondary_nic != secondary_nics[-1] %},{% endif %}
+{% endfor %}
+              ]'
+{% endif %}
+        labels:
+          ray-anti-affinity: "true"
       spec:
+{% if fine_tuning_ray_fine_tuning_job_node_selector_key | length %}
+        nodeSelector:
+          {{ fine_tuning_ray_fine_tuning_job_node_selector_key }}: "{{ fine_tuning_ray_fine_tuning_job_node_selector_value }}"
+{% endif %}
         containers:
         - name: ray-head
+          command: ["python3 /mnt/entrypoint/init_ray_container.py"] # the ray command will be executed after that
           ports:
           - containerPort: 6379
             name: gcs
@@ -29,10 +49,27 @@ spec:
             name: client
             protocol: TCP
           image: &head_image "{{ fine_tuning_ray_fine_tuning_job_container_image }}"
-
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          securityContext:
+            runAsUser: 0
+            capabilities:
+              add:
+              - IPC_LOCK
+              - SYS_RESOURCE
+              - NET_ADMIN
+              - NET_RAW
+{% endif %}
           env: &head_env
           - name: CONFIG_JSON_PATH
             value: /mnt/config/config.json
+          - name: NODE_HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          - name: SECONDARY_SOCKET_IFNAME
+            value: "{{ secondary_socket_ifname }}"
+{% endif %}
           resources: &head_resources
             requests: &head_request_block
 {% if fine_tuning_ray_fine_tuning_job_gpu %}
@@ -63,12 +100,21 @@ spec:
             mountPath: /mnt/config
           - name: output-volume
             mountPath: /mnt/output
-
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+          - name: nic-mapping-volume
+            mountPath: /mnt/nic-mapping
+{% endif %}
         volumes: &head_volumes
 {% if fine_tuning_ray_fine_tuning_job_pvc_name %}
         - name: storage-volume
           persistentVolumeClaim:
             claimName: {{ fine_tuning_ray_fine_tuning_job_pvc_name }}
+{% endif %}
+
+{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic %}
+        - name: nic-mapping-volume
+          configMap:
+            name: {{ job_name_safe }}-nic-mapping
 {% endif %}
         - name: config-volume
           configMap:
@@ -79,8 +125,32 @@ spec:
         - name: app-volume
           configMap:
             name: {{ job_name_safe }}-app
+{% if fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size %}
+        - name: output-volume
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: "{{ fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size }}"
+{% else %}
         - name: output-volume
           emptyDir: {}
+{% endif %}
+        affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: ray-anti-affinity
+                    operator: In
+                    values:
+                    - "true"
+                topologyKey: "kubernetes.io/hostname"
 
   rayVersion: {{ fine_tuning_ray_fine_tuning_job_ray_version }}
   workerGroupSpecs:
@@ -92,12 +162,4 @@ spec:
       num-gpus: "{% if fine_tuning_ray_fine_tuning_job_gpu %}{{ fine_tuning_ray_fine_tuning_job_gpu }}{% else %}0{% endif %}"
       resources: '"{}"'
     replicas: {{ fine_tuning_ray_fine_tuning_job_pod_count }}
-    template:
-      spec:
-        containers:
-        - name: machine-learning
-          image: *head_image
-          env: *head_env
-          resources: *head_resources
-          volumeMounts: *head_volume_mounts
-        volumes: *head_volumes
+    template: *head_template

@@ -85,7 +85,7 @@ class Fine_Tuning:
 
           ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
           use_primary_nic: if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
-          use_secondary_nic: if enabled, activates the secondary NIC
+          use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
           use_host_network: if enabled, activates the host network
         """
 
@@ -176,7 +176,15 @@ class Fine_Tuning:
             sleep_forever=False,
             capture_artifacts=True,
 
-            shutdown_cluster=False,
+            shutdown_cluster=True,
+
+            node_selector_key=None,
+            node_selector_value=None,
+
+            use_secondary_nic=False,
+
+            ephemeral_output_pvc_size=None,
+
     ):
         """
         Run a simple Ray fine-tuning Job.
@@ -215,6 +223,13 @@ class Fine_Tuning:
           workload: the name of the workload job to run (see the role's workload directory)
 
           shutdown_cluster: if True, let the RayJob shutdown the RayCluster when the job terminates
+
+          node_selector_key: name of a label to select the node on which this job can run
+          node_selector_value: value of the label to select the node on which this job can run
+
+          use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
+
+          ephemeral_output_pvc_size: if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
         """
 
         if dataset_name is None:

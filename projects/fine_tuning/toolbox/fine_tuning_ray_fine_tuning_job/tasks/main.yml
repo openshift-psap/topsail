@@ -92,6 +92,135 @@
        | tee -a "{{ artifact_extra_logs_dir }}/src/configmap_app.yaml" \
        | oc apply -f-
 
+- name: Delete the Ray jobs and clusters, if they exist
+  command:
+    oc delete raycluster,rayjobs
+       --all
+       -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+       --ignore-not-found
+  when: fine_tuning_ray_fine_tuning_job_delete_other | bool
+
+- name: Capture the IP of the secondary NIC of the GPU nodes
+  when:
+  - fine_tuning_ray_fine_tuning_job_use_secondary_nic | default('', true) | length > 0
+  - not fine_tuning_ray_fine_tuning_job_prepare_only | bool
+  block:
+  - name: List the target nodes
+    command:
+      oc get nodes -oname -l{{ fine_tuning_ray_fine_tuning_job_node_selector_key }}={{ fine_tuning_ray_fine_tuning_job_node_selector_value }}
+    register: target_node_names_cmd
+
+  - name: Prepare the secondary nic list
+    set_fact:
+      secondary_nics: "{% if fine_tuning_ray_fine_tuning_job_use_secondary_nic is string %}{{ [fine_tuning_ray_fine_tuning_job_use_secondary_nic] }}{% else %}{{ fine_tuning_ray_fine_tuning_job_use_secondary_nic or [] }}{% endif %}"
+
+  - name: Generate the iface names (net1,net2,...)
+    command:
+      python -c 'print(",".join(f"net{1+i}" for i in range(len("{{ secondary_nics }}".split(",")))))'
+    register: secondary_socket_ifname_cmd
+
+  - name: Prepare the secondary iface names
+    set_fact:
+      secondary_socket_ifname: "{{ secondary_socket_ifname_cmd.stdout }}"
+
+  - name: Generate the iface names (net1,net2,...)
+    command:
+      python -c 'print(",".join(f"net{1+i}" for i in range(len("{{ secondary_nics }}".split(",")))))'
+    register: secondary_socket_ifname_cmd
+
+  - name: Fetch the NetworkAttachmentDefinition
+    shell:
+      oc get Network-Attachment-Definition/{{ secondary_nic }}
+         -oyaml
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+         > "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_{{ secondary_nic }}.yaml"
+    loop: "{{ secondary_nics }}"
+    loop_control:
+      loop_var: secondary_nic
+
+  - name: Ensure that the NetworkAttachmentDefinition has the expected host-device type
+    shell:
+      set -o pipefail;
+
+      cat "{{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_{{ secondary_nic }}.yaml"
+          | yq .spec.config -r
+          | jq .type -r
+    register: secondary_nic_type_cmd
+    failed_when: secondary_nic_type_cmd.stdout | trim != "host-device"
+    loop: "{{ secondary_nics }}"
+    loop_control:
+      loop_var: secondary_nic
+
+  - name: Extract the name of the secondary NIC
+    shell: |
+      set -o pipefail;
+
+      for nad in {{ artifact_extra_logs_dir }}/artifacts/Network-Attachment-Definition_*.yaml; do
+        cat "$nad" | yq .spec.config -r
+      done | jq .device -r
+
+    register: secondary_nic_names_cmd
+    failed_when: not secondary_nic_names_cmd.stdout | trim | length
+
+  - name: Save the NIC name
+    set_fact:
+      secondary_nic_names: "{{ ' '.join(secondary_nic_names_cmd.stdout_lines) }}"
+
+  - name: Ensure that there is no KubeRay Pod running in the namespace
+    shell:
+      set -o pipefail;
+
+      oc get pod --no-headers
+         -lray.io/is-ray-node=yes
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+         | awk '{print $3}' | uniq
+    register: namespace_pods_state_cmd
+    until:
+    - '"Running" not in namespace_pods_state_cmd.stdout_lines'
+    - '"Terminating" not in namespace_pods_state_cmd.stdout_lines'
+    - '"Init:0/1" not in namespace_pods_state_cmd.stdout_lines'
+    retries: 18
+    delay: 10
+
+  - name: Save the host/IP mapping in a file
+    shell: |
+      set -o pipefail;
+      route=$(oc debug {{ node_name }} -- bash -c "ip route" 2>/dev/null)
+      echo "Route of {{ node_name }}"
+      echo "$route"
+      nic_idx=1
+
+      cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml"
+      $(echo "{{ node_name }}" | cut -d/ -f2):
+      EOF
+      for nic_name in {{ secondary_nic_names }}; do
+        ip=$(echo "$route" | grep $nic_name | cut -d' ' -f9)
+        if [[ -z "$ip" ]]; then
+          echo "Couldn't find the IP of NIC/$nic_name on {{ node_name }} :/ "
+          exit 1
+        fi
+        cat <<EOF >> "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml"
+      - host_nic_name: $nic_name
+        container_nic_name: net$nic_idx
+        ip: $ip
+      EOF
+        nic_idx=$((nic_idx+1))
+      done
+    loop: "{{ target_node_names_cmd.stdout_lines }}"
+    loop_control:
+      loop_var: node_name
+
+  - name: Create a ConfigMap with the secondary NIC mapping
+    shell:
+      set -o pipefail;
+
+      oc create cm {{ job_name_safe }}-nic-mapping \
+       --from-file="{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml" \
+       --dry-run=client \
+       -oyaml \
+       | tee "{{ artifact_extra_logs_dir }}/src/configmap_mapping.yaml" \
+       | oc apply -f-
+
 - name: Load the content of the requirement file
   shell:
     set -o pipefail;
@@ -120,14 +249,6 @@
        --argjson cluster "$cluster"
        '.spec.rayClusterSpec = $cluster' \
        "{{ artifact_extra_logs_dir }}/src/ray_job.yaml"
-
-- name: Delete the Ray jobs and clusters, if they exist
-  command:
-    oc delete raycluster,rayjobs
-       --all
-       -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
-       --ignore-not-found
-  when: fine_tuning_ray_fine_tuning_job_delete_other | bool
 
 - name: Delete the fine-tuning job, if it exists
   shell:
@@ -158,6 +279,23 @@
     set_fact:
       ray_cluster_name: "{{ ray_cluster_name_cmd.stdout }}"
 
+  - name: Wait for the SA to be created
+    shell:
+      set -o pipefail;
+      oc get sa -oname -lray.openshift.ai/cluster-name={{ ray_cluster_name }}
+         | cut -d/ -f2
+    register: ray_cluster_service_account_name_cmd
+    retries: 30
+    delay: 6
+    until: ray_cluster_service_account_name_cmd.stdout
+
+  - name: Make the Ray ServiceAccount privileged
+    command:
+      oc adm policy add-scc-to-user privileged \
+         -z {{ ray_cluster_service_account_name_cmd.stdout}}
+         -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
+    when: fine_tuning_ray_fine_tuning_job_use_secondary_nic | default('', true) | length > 0
+
   - name: Wait for the cluster's head Pod to start running
     shell:
       set -o pipefail;
@@ -165,7 +303,7 @@
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
          --no-headers | awk '{print $3}'
     register: wait_pod_start
-    retries: 20
+    retries: 60
     delay: 5
     until: wait_pod_start.stdout in ["Running", "Error", "Init:Error", "Completed", "NotReady", "CrashLoopBackOff", "ContainerCreating", "ImagePullBackOff"]
 
@@ -330,11 +468,13 @@
     ignore_errors: true
     when: fine_tuning_ray_fine_tuning_job_capture_artifacts | bool
 
+# mind that ray may swallow the last lines of the script logs
+# https://github.com/ray-project/ray/issues/48701
 - name: Ensure that the script succeeded
   shell:
     set -o pipefail;
 
-    cat "{{ artifact_extra_logs_dir }}/artifacts/"rayjob_pod_*.log | grep -E "SCRIPT SUCCEEDED|--- PASSED:|--- FAILED:"
+    cat "{{ artifact_extra_logs_dir }}/artifacts/"rayjob_pod_*.log | grep -E "SCRIPT SUCCEEDED|--- PASSED:|--- FAILED:|iperf Done"
 
 - name: Save the logs of the successful Pod
   shell:

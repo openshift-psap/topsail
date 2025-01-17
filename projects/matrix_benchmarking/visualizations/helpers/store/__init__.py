@@ -6,6 +6,7 @@ import pickle
 import fnmatch
 import json
 import functools
+import inspect
 
 import jsonpath_ng
 
@@ -146,7 +147,11 @@ class BaseStore():
 
         results = types.SimpleNamespace()
 
-        self.parse_once(results, dirname)
+        parse_once_kwargs = {}
+        if "import_settings" in inspect.getargspec(self.parse_once).args:
+            parse_once_kwargs["import_settings"] = import_settings
+
+        self.parse_once(results, dirname, **parse_once_kwargs)
         self.parse_always(results, dirname, import_settings)
         self.parse_lts(results, import_settings, exit_code)
 

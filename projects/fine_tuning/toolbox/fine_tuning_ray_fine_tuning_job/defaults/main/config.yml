@@ -72,4 +72,16 @@ fine_tuning_ray_fine_tuning_job_sleep_forever: false
 fine_tuning_ray_fine_tuning_job_capture_artifacts: true
 
 # if True, let the RayJob shutdown the RayCluster when the job terminates
-fine_tuning_ray_fine_tuning_job_shutdown_cluster: false
+fine_tuning_ray_fine_tuning_job_shutdown_cluster: true
+
+# name of a label to select the node on which this job can run
+fine_tuning_ray_fine_tuning_job_node_selector_key: null
+
+# value of the label to select the node on which this job can run
+fine_tuning_ray_fine_tuning_job_node_selector_value: null
+
+# if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
+fine_tuning_ray_fine_tuning_job_use_secondary_nic: false
+
+# if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
+fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size: null

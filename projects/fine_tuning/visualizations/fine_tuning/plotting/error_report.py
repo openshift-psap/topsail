@@ -103,8 +103,8 @@ def _get_test_setup(entry):
 
     elif entry.results.locations.has_ray:
         metrics = yaml.safe_load(json.dumps(entry.results.ray_metrics, default=functools.partial(json_dumper, strict=False)))
-        if metrics.get("progress") or metrics.get("summary"):
-            exec_info += [html.Li([f"Fine-tuning metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
+        if metrics and (metrics.get("progress") or metrics.get("summary")):
+            exec_info += [html.Li([f"Ray benchmark metrics:", html.Code(yaml.dump(metrics), style={"white-space": "pre-wrap"})])]
 
     if entry.results.locations.job_logs:
         exec_info += [html.Li(html.A("Job logs", href=artifacts_basedir / entry.results.locations.job_logs, target="_blank"))]

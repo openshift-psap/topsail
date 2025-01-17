@@ -156,7 +156,7 @@ Parameters
 
 ``use_secondary_nic``  
 
-* If enabled, activates the secondary NIC
+* If enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
 
 
 ``use_host_network``  
