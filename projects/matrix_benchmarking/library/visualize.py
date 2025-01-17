@@ -113,15 +113,18 @@ def call_parse(step_idx, common_args, common_env):
 
     cmd = f"{parse_env_str} matbench parse {parse_args_str} |& tee > {log_file}"
 
-    errors = []
+    non_fatal_errors = []
+    fatal_errors = []
     if run.run(cmd, check=False).returncode != 0:
         logging.warning("An error happened while parsing the results  ...")
-        errors.append(log_file.name)
+        fatal_errors.append(log_file.name)
 
     if log_has_errors(log_file):
         logging.warning("Errors detected in the log file. Not aborting the processing.")
+        non_fatal_errors.append(log_file.name)
 
-    return errors
+    return fatal_errors, non_fatal_errors
+
 
 def call_generate_lts(step_idx, common_args, common_env_str):
     lts_args = common_args.copy()
@@ -340,16 +343,17 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     common_env_str = "env " + " ".join(f"'{k}={v}'" for k, v in common_env.items())
 
     step_idx = 0
-    errors = []
+    non_fatal_errors = []
 
     #
     # Parse the results, to validate that they are well formed
     #
 
-    errors += call_parse(step_idx, common_args, common_env)
+    fatal_errors, _non_fatal_errors = call_parse(step_idx, common_args, common_env)
+    non_fatal_errors += _non_fatal_errors
 
-    if errors:
-        msg = f"An error happened during the results parsing, aborting the visualization ({', '.join(errors)})."
+    if fatal_errors:
+        msg = f"A fatal error happened during the results parsing, aborting the visualization ({', '.join(errors)})."
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(msg, file=f)
         logging.error(msg)
@@ -365,10 +369,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
     if do_generate_lts:
         step_idx += 1
-        errors += call_generate_lts(step_idx, common_args, common_env_str)
+        non_fatal_errors += call_generate_lts(step_idx, common_args, common_env_str)
 
         step_idx += 1
-        errors += call_generate_lts_schema(step_idx, common_args)
+        non_fatal_errors += call_generate_lts_schema(step_idx, common_args)
 
     if config.project.get_config("matbench.download.save_to_artifacts"):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
@@ -404,20 +408,20 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
             fail_on_regression = config.project.get_config("matbench.lts.regression_analyses.fail_test_on_regression")
             fail_on_upload = config.project.get_config("matbench.lts.opensearch.export.fail_test_on_fail")
             if fail_on_upload or fail_on_regression:
-                errors += ["opensearch secret cannot be generated"]
+                non_fatal_errors += ["opensearch secret cannot be generated"]
 
     if do_analyze_lts:
         step_idx += 1
         download_lts_errors = call_download_lts(step_idx, common_args, common_env_str)
-        errors += download_lts_errors
+        non_fatal_errors += download_lts_errors
 
         step_idx += 1
         analyze_lts_errors, regression_detected = call_analyze_lts(step_idx, common_args, common_env_str)
-        errors += analyze_lts_errors
+        non_fatal_errors += analyze_lts_errors
 
         if regression_detected:
             if config.project.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
-                errors += ["regression detected"]
+                non_fatal_errors += ["regression detected"]
             else:
                 logging.warning("A regression has been detected, but ignored as per matbench.lts.regression_analyses.fail_test_on_regression")
 
@@ -426,12 +430,16 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     if do_upload_lts:
-        step_idx += 1
-        upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
-        if config.project.get_config("matbench.lts.opensearch.export.fail_test_on_fail"):
-            errors += upload_lts_errors
-        elif upload_lts_errors:
-            logging.warning("An error happened during the LTS load. Ignoring as per matbench.lts.opensearch.export.fail_test_on_fail.")
+        if non_fatal_errors:
+            logging.error("Errors have been detected in the post-processing. NOT uploading LTS payload to OpenSearch.")
+        else:
+            step_idx += 1
+            upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
+
+            if config.project.get_config("matbench.lts.opensearch.export.fail_test_on_fail"):
+                non_fatal_errors += upload_lts_errors
+            elif upload_lts_errors:
+                logging.warning("An error happened during the LTS upload. Ignoring as per matbench.lts.opensearch.export.fail_test_on_fail.")
 
     #
     # Generate the visualization reports
@@ -443,13 +451,13 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
             filters_to_apply = ""
 
         step_idx += 1
-        errors += call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url)
+        non_fatal_errors += call_visualize(step_idx, common_env_str, common_args, filters_to_apply, generate_url)
 
     #
     # Done :)
     #
 
-    if errors:
+    if non_fatal_errors:
         msg = f"An error happened during the visualization post-processing ... ({', '.join(errors)})"
         logging.error(msg)
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
