@@ -127,14 +127,35 @@
   register: has_image
   failed_when: false
 
+- name: List all the old images to delete
+  shell:
+    set -o pipefail;
+    podman image ls
+       --filter until=4h
+       --filter label=name=topsail
+       --filter 'label=preserve!=true'
+       --format json
+       | jq -r '.[] | select(.Containers == 0) | .Id'
+  register: podman_images_to_delete_cmd
+
+# To add the 'preserve=true' label:
+#
+# CONTAINER_NAME=localhost/topsail:main
+# LABEL="preserve=true"
+# echo "FROM $CONTAINER_NAME" | podman build --label "$LABEL" -t "$CONTAINER_NAME" -
+
 - name: Prune old images
   command:
-    podman image prune --force
-           --filter until=4h
-           --filter label=jump-ci=true
+    podman image rm "{{ image_id }}"
   when:
   - jump_ci_prepare_topsail_cleanup_old_pr_images
   - has_image.rc != 0
+  loop: "{{ podman_images_to_delete_cmd.stdout_lines }}"
+  loop_control:
+      loop_var: image_id
+  # I have seen some unpected failure because of (dependency) images used by a container (not sure which one :/)
+  # so ignoring this failure for the time being.
+  failed_when: false
 
 - name: "Build image as an update {{ image_full_name }}"
   shell: |
