@@ -1,0 +1,57 @@
+#! /bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+set -x
+
+interactive=""
+cmd="set -a; source /run/secrets/test_env; set +a; exec run {{ jump_ci_prepare_step_project }} test {{ jump_ci_prepare_step_step }}"
+image="{{ pod_image_cmd.stdout | trim}}"
+
+cleanup() {
+    # Not cleaning up the secrets for now. They are safe anyway
+    echo Nothing to do for cleanup.
+
+    # Not cleaning up the secrets for now. They are safe anyway
+    # echo Cleaning up the secrets ..
+    # rm -rf /tmp/{{ jump_ci_prepare_step_cluster }}/secrets
+}
+
+# ---
+
+if [[ "${1:-}" == enter ]]; then
+    echo "Entering the container instead of running '$cmd'"
+    interactive="-it"
+    cmd="bash"
+fi
+
+trap cleanup INT TERM ERR
+
+# ---
+
+# makes it easier to rerun manually after a failure
+rm -f "{{ step_artifact_dir }}/artifacts/FAILURES"
+
+echo "### Running '$cmd' against image '$image' ###"
+
+podman run \
+  --rm \
+  --name topsail-on-{{ jump_ci_prepare_step_cluster }} \
+  \
+  --volume "{{ step_artifact_dir }}/artifacts:/logs/artifacts" \
+  --env ARTIFACT_DIR="/logs/artifacts" \
+  \
+  --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \
+  --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \
+  \
+  --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig:ro \
+  --env KUBECONFIG="/run/secrets/kubeconfig" \
+  \
+  --volume {{ step_artifact_dir }}/test_env:/run/secrets/test_env:ro \
+  $interactive \
+  "$image" \
+  bash -ce "$cmd" |& tee -a "{{ step_artifact_dir }}/run.log"
+
+cleanup
