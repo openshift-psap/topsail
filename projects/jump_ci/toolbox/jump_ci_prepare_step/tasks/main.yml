@@ -55,9 +55,7 @@
 - name: Populate the variables_overrides files
   shell: |
     cat <<EOF >> {{ step_artifact_dir }}/artifacts/variable_overrides.yaml
-    {% for k, v in (jump_ci_prepare_step_variables_overrides_dict or {}).items() %}
-    {{ k }}: {{ v }}
-    {% endfor %}
+    {{ (jump_ci_prepare_step_variables_overrides_dict or {}) | to_yaml }}
     EOF
 
 - name: Copy all the jump-host env file locally
