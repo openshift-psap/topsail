@@ -112,8 +112,6 @@ Parameters
 
 * Amount of shm (in GB) to give to each of the job pods
 
-* default value: ``20``
-
 
 ``prepare_only``  
 
