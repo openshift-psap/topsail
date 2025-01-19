@@ -21,7 +21,7 @@ export TRITON_OVERRIDE_DIR=$TRITON_HOME
 
 mkdir -p "$CACHE_DIR"
 
-if [[ "$WITH_RDMA" == "true" ]]; then
+if [[ "${$WITH_RDMA:-}" ]]; then
   export NCCL_TOPO_FILE=/mnt/storage/topo.xml
 
   IFS=',' read -ra ADDR <<< "$NCCL_SOCKET_IFNAME"   # Split by comma
