@@ -733,6 +733,7 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       shared_memory: null
+      cpu_offload: null
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null

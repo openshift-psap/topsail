@@ -35,7 +35,7 @@ class Fine_Tuning:
             cpu=1,
             request_equals_limits=False,
             shared_memory=None,
-
+            cpu_offload=None,
             prepare_only=False,
             delete_other=False,
 
@@ -74,7 +74,7 @@ class Fine_Tuning:
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
           request_equals_limits: if True, sets the 'limits' of the job with the same value as the request.
           shared_memory:  amount of shm (in GB) to give to each of the job pods
-
+          cpu_offload: if True, delegating computations from the CPU to the GPU to accelerate processing
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 

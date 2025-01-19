@@ -113,6 +113,11 @@ Parameters
 * Amount of shm (in GB) to give to each of the job pods
 
 
+``cpu_offload``  
+
+* If True, delegating computations from the CPU to the GPU to accelerate processing
+
+
 ``prepare_only``  
 
 * If True, only prepare the environment but do not run the fine-tuning job.
