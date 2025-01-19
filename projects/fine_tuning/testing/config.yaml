@@ -732,6 +732,7 @@ tests:
       model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
       gpu: 1
+      shared_memory: null
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null
