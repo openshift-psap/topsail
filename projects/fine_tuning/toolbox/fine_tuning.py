@@ -34,7 +34,7 @@ class Fine_Tuning:
             memory=10,
             cpu=1,
             request_equals_limits=False,
-            shared_memory=20,
+            shared_memory=None,
 
             prepare_only=False,
             delete_other=False,

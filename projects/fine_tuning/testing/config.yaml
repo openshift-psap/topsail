@@ -370,6 +370,7 @@ ci_presets:
     matbench.prom_workload: projects.fine_tuning.visualizations.ilab_prom
     matbench.config_file: ilab_training.yaml
     matbench.lts.generate: false
+    tests.fine_tuning.test_settings.shared_memory: 20
     tests.fine_tuning.test_settings.hyper_parameters:
       num_epochs: null
       max_batch_len: null
@@ -378,7 +379,7 @@ ci_presets:
   ilab_scale:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
     tests.fine_tuning.test_settings.dataset_name: [ilab_large_10000samples_skills_data.jsonl, ilab_large_knowledge_data.jsonl]
 
     tests.fine_tuning.test_settings.pod_count: [1, 2, 4]

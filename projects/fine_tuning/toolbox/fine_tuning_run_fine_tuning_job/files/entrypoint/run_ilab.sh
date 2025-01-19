@@ -23,6 +23,7 @@ export NCCL_IB_HCA="mlx5_7,mlx5_6,mlx5_5,mlx5_4,mlx5_3,mlx5_2,mlx5_1,mlx5_0"
 export NCCL_IB_DISABLE=0
 export NCCL_IB_GID_INDEX=3
 export NCCL_DEBUG=info
+#export NCCL_IB_DISABLE=1
 
 mkdir -p "$CACHE_DIR"
 
