@@ -110,7 +110,7 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     if config.project.get_config("tests.fine_tuning.node_count_equal_pod_count"):
         pod_count = test_settings.get("pod_count")
-        prepare_finetuning.cluster_scale_up(wait_gpu=False, node_count=pod_count)
+        prepare_finetuning.cluster_scale_up(wait_gpu=True, node_count=pod_count)
 
     prepare_finetuning.prepare_namespace(test_settings)
 
