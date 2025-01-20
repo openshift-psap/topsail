@@ -23,12 +23,12 @@ mkdir -p "$CACHE_DIR"
 
 if [[ "${WITH_RDMA:-}" ]]; then
   export NCCL_TOPO_FILE=/mnt/storage/topo.xml
-
+  num_rdma=$(ls /sys/class/infiniband/ | wc -l)
   IFS=',' read -ra ADDR <<< "$NCCL_SOCKET_IFNAME"   # Split by comma
   length=${#ADDR[@]}  # Get the length (number of elements in the array)
   echo "Length of NCCL_SOCKET_IFNAME: $length"
   NCCL_IB_HCA=''
-  for idx in $(seq 0 $((length-1))); do
+  for idx in $(seq $((num_rdma-1)) -1 $((num_rdma-length))); do
     # Append the value to the NCCL_IB_HCA string
     if [ -z "$NCCL_IB_HCA" ]; then
       NCCL_IB_HCA="mlx5_$idx"  # Initialize the string with the first value
