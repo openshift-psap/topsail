@@ -555,13 +555,31 @@ ci_presets:
 #    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
+  ilab_l40s_scale:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 2
+
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+    tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_optimizer: true
+    tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_params: true
+    tests.fine_tuning.test_extra_settings:
+    - pod_count: 1
+      hyper_parameters.max_batch_len: [35000, 40000]
+
   # ---
 
   cluster_instructlab:
     fine_tuning.pvc.storage_class_name: nfs-csi
     fine_tuning.pvc.access_mode: ReadWriteMany
     fine_tuning.pvc.size: 500Gi
-    clusters.sutest.is_metal: false
+    clusters.sutest.is_metal: true
     clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
     clusters.sutest.compute.machineset.name: instructlab-standalon-6rjg8-worker-1
     clusters.sutest.compute.machineset.taint: null
@@ -801,6 +819,7 @@ tests:
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null
+      use_primary_nic: null
       secondary_nic_prefix: null
       secondary_nic_count: null
       ephemeral_output_pvc_size: null
