@@ -353,7 +353,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     non_fatal_errors += _non_fatal_errors
 
     if fatal_errors:
-        msg = f"A fatal error happened during the results parsing, aborting the visualization ({', '.join(errors)})."
+        msg = f"A fatal error happened during the results parsing, aborting the visualization ({', '.join(fatal_errors)})."
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(msg, file=f)
         logging.error(msg)

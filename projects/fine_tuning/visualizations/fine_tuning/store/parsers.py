@@ -42,6 +42,7 @@ IMPORTANT_FILES = [
 
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.createdAt",
     f"{artifact_dirnames.RHODS_CAPTURE_STATE}/rhods.version",
+    f"{artifact_dirnames.CLUSTER_CAPTURE_ENV_DIR}/_ansible.env",
 ]
 
 if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
