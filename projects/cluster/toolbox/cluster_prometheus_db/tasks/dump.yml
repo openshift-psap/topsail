@@ -14,7 +14,9 @@
     oc exec -c prometheus -n "{{ cluster_prometheus_db_namespace }}" "{{ prometheus_pod_name_cmd.stdout }}" -- tar cvzf - -C "{{ cluster_prometheus_db_directory }}" . > "{{ artifact_extra_logs_dir }}/{{ cluster_prometheus_db_dump_name_prefix }}.tar.gz"
   register: extract_prometheus_db
   # for tar, 0 means OK, 1 means file changed as we read it (we ignore it, 'Prometheus updates files atomically')
-  failed_when: extract_prometheus_db.rc > 1
+  failed_when:
+  - extract_prometheus_db.rc != 0
+  - '"file changed as we read it" not in extract_prometheus_db.stderr'
 
 - name: Save the cluster nodes along with the Prom database
   shell:
