@@ -99,12 +99,7 @@
 
 - name: Get the relevant git commit
   shell: |
-    {% if jump_ci_prepare_topsail_pr_number %}
-      set -o pipefail;
-      {{ git }} log --pretty=%P -n 1 | cut -d\  -f2 # second parent
-    {% else %}
-      {{ git }} rev-parse HEAD
-    {% endif %}
+    {{ git }} rev-parse HEAD
   register: git_commit_cmd
 
 - name: Show the commit
