@@ -76,7 +76,6 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
     do_many_model = config.project.get_config("tests.fine_tuning.many_model.enabled")
     do_fms = config.project.get_config("tests.fine_tuning.fms.enabled")
     do_ilab = config.project.get_config("tests.fine_tuning.ilab.enabled")
-    do_quality_evaluation = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
     do_ray = config.project.get_config("tests.fine_tuning.ray.enabled")
 
     test_settings["hyper_parameters"] = {k: v for k, v in test_settings["hyper_parameters"].items()
@@ -124,8 +123,6 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
     if do_fms:
         test_dir_name = "fms_fine_tuning"
-    elif do_quality_evaluation:
-        test_dir_name = "evaluate_quality"
     elif do_ray:
         workload = config.project.get_config("tests.fine_tuning.ray.workload")
         test_dir_name = f"ray__{workload}"
@@ -141,11 +138,9 @@ def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
 
         try:
             if dry_mode:
-                logging.info(f"tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=} | {do_quality_evaluation=}")
+                logging.info(f"tests.dry_mode is enabled, NOT running with {test_settings} | {do_multi_model=} | {do_many_model=}")
             elif do_many_model:
                 _run_test_many_model(test_settings)
-            elif do_quality_evaluation:
-                _run_test_quality_evaluation(test_settings)
             else:
                 start_ts = _start_ts
                 with open(env.ARTIFACT_DIR / "settings.mode.yaml", "w") as f:
@@ -248,15 +243,6 @@ def _run_test_multi_model(test_artifact_dir_p):
 
     return failed
 
-def _run_test_quality_evaluation(test_settings):
-    test_settings["model_name"] = prepare_finetuning.get_safe_model_name(test_settings["model_name"])
-    test_settings.pop("dataset_name")
-    test_settings.pop("dataset_replication")
-
-    test_settings["container_image"] = config.project.get_config("tests.fine_tuning.quality_evaluation.image")
-    run.run_toolbox_from_config("fine_tuning", "run_quality_evaluation",
-                                extra=test_settings)
-
 
 def _run_test_and_visualize(test_override_values=None):
     failed = True
@@ -268,11 +254,9 @@ def _run_test_and_visualize(test_override_values=None):
     fms_enabled = config.project.get_config("tests.fine_tuning.fms.enabled")
     ilab_enabled = config.project.get_config("tests.fine_tuning.ilab.enabled")
 
-    quality_enabled = config.project.get_config("tests.fine_tuning.quality_evaluation.enabled")
-
-    enabled = sum(1 for opt in (fms_enabled, quality_enabled, ray_enabled, ilab_enabled) if opt)
+    enabled = sum(1 for opt in (fms_enabled, ray_enabled, ilab_enabled) if opt)
     if enabled != 1:
-        msg = f"FMS or Quality or Ray or Ilab testing must be enabled. Found {enabled} enabled. Cannot proceed."
+        msg = f"FMS or Ray or Ilab testing must be enabled. Found {enabled} enabled. Cannot proceed."
         logging.error(msg)
         raise RuntimeError(msg)
 

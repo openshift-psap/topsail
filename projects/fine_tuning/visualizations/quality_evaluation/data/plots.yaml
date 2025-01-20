@@ -1,4 +1,0 @@
-visualize:
-- id: scale_test
-  generate:
-  - "report: Quality report"

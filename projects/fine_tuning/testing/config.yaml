@@ -283,17 +283,6 @@ ci_presets:
 
   # ---
 
-  quality_evaluation:
-    tests.fine_tuning.quality_evaluation.enabled: true
-    tests.fine_tuning.fms.enabled: false
-    tests.capture_prom: false
-    matbench.workload: projects.fine_tuning.visualizations.quality_evaluation
-    matbench.lts.generate: false
-    tests.capture_state: false
-    tests.fine_tuning.test_settings.name: quality-evaluation
-
-  #
-
   fms:
     tests.fine_tuning.fms.enabled: true
 
@@ -729,9 +718,6 @@ tests:
     fms:
       enabled: false
       image: quay.io/modh/fms-hf-tuning:v2.0.1
-    quality_evaluation:
-      enabled: false
-      image: registry.redhat.io/ubi9
     ray:
       enabled: false
       workload: ray-benchmark
