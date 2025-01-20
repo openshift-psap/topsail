@@ -11,8 +11,8 @@ cmd="set -a; source /run/secrets/test_env; set +a; exec run {{ jump_ci_prepare_s
 image="{{ pod_image_cmd.stdout | trim}}"
 
 cleanup() {
-    # Not cleaning up the secrets for now. They are safe anyway
-    echo Nothing to do for cleanup.
+    echo "Stopping the container..."
+    podman rm --force --ignore topsail-on-{{ jump_ci_prepare_step_cluster }}
 
     # Not cleaning up the secrets for now. They are safe anyway
     # echo Cleaning up the secrets ..
@@ -25,6 +25,12 @@ if [[ "${1:-}" == enter ]]; then
     echo "Entering the container instead of running '$cmd'"
     interactive="-it"
     cmd="bash"
+fi
+
+if [[ "${1:-}" == cleanup ]]; then
+    echo "Running the container cleanup ..."
+    cleanup
+    exit 0
 fi
 
 trap cleanup INT TERM ERR
