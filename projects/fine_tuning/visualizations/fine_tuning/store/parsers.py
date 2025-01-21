@@ -302,13 +302,16 @@ def _parse_ilab_logs(dirname):
             current_json = ""
             in_green = False
 
-        first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
-        last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
-        period = (last_step_timestamp - first_step_timestamp).total_seconds()
-        num_samples = ilab_metrics.summary.num_samples - ilab_metrics.progress[0].batch_size
-        num_epochs = ilab_metrics.progress[-1].epoch
-        average_throughput = (num_samples+(ilab_metrics.summary.num_samples*num_epochs))/period
-        ilab_metrics.summary.average_throughput = average_throughput
+        if ilab_metrics.progress:
+            first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
+            last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
+            period = (last_step_timestamp - first_step_timestamp).total_seconds()
+            num_samples = ilab_metrics.summary.num_samples - ilab_metrics.progress[0].batch_size
+            num_epochs = ilab_metrics.progress[-1].epoch
+            average_throughput = (num_samples+(ilab_metrics.summary.num_samples*num_epochs))/period
+
+            ilab_metrics.summary.average_throughput = average_throughput
+
     return ilab_metrics
 
 
