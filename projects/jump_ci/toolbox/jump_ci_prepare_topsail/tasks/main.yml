@@ -123,14 +123,14 @@
   failed_when: false
 
 - name: List all the old images to delete
+  # setting --filter label=preserve!=true in Podman args doesn't work
   shell:
     set -o pipefail;
     podman image ls
        --filter until=4h
        --filter label=name=topsail
-       --filter 'label=preserve!=true'
        --format json
-       | jq -r '.[] | select(.Containers == 0) | .Id'
+       | jq -r '.[] | select(.Containers == 0) | select(.Labels.preserve != "true") | .Id'
   register: podman_images_to_delete_cmd
 
 # To add the 'preserve=true' label:
