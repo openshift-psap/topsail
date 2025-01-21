@@ -8,7 +8,7 @@
 
 - name: Generate the artifact dirname
   set_fact:
-    artifact_dir: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/jump_ci_artifacts"
+    artifact_dir: "{{ cluster_lock_dir }}/jump_ci_artifacts"
 
 - name: Ensure that the logs directory exists
   ansible.builtin.file:
@@ -49,7 +49,7 @@
 
 - name: Set TOPSAIL's directory
   set_fact:
-    topsail_home: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/topsail"
+    topsail_home: "{{ cluster_lock_dir }}/topsail"
 
 - name: Set git command
   set_fact:
@@ -154,7 +154,7 @@
 
 - name: "Build image as an update {{ image_full_name }}"
   shell: |
-    cat > /tmp/overlay.containerfile <<EOF
+    cat > {{ cluster_lock_dir }}/overlay.containerfile <<EOF
     FROM hell
     ENTRYPOINT []
     CMD []
@@ -167,7 +167,7 @@
 
     time podman build \
       --tag "{{ image_full_name }}" \
-      --file /tmp/overlay.containerfile \
+      --file {{ cluster_lock_dir }}/overlay.containerfile \
       --from "{{ jump_ci_prepare_topsail_image_name }}:{{ jump_ci_prepare_topsail_update_from_imagetag }}"
   when:
   - has_image.rc != 0
@@ -186,4 +186,4 @@
 
 - name: Save the name of the image to use
   shell:
-    echo "{{ image_full_name }}" > "/tmp/{{ jump_ci_prepare_topsail_cluster }}/pod.image"
+    echo "{{ image_full_name }}" > "{{ cluster_lock_dir }}/pod.image"

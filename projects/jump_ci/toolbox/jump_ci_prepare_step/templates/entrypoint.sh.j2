@@ -16,7 +16,7 @@ cleanup() {
 
     # Not cleaning up the secrets for now. They are safe anyway
     # echo Cleaning up the secrets ..
-    # rm -rf /tmp/{{ jump_ci_prepare_step_cluster }}/secrets
+    # rm -rf {{ cluster_lock_dir }}/secrets
 }
 
 # ---
@@ -49,7 +49,7 @@ podman run \
   --volume "{{ step_artifact_dir }}/artifacts:/logs/artifacts" \
   --env ARTIFACT_DIR="/logs/artifacts" \
   \
-  --volume /tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \
+  --volume {{ cluster_lock_dir }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}:ro \
   --env {{ jump_ci_prepare_step_secrets_path_env_key }}="/run/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}" \
   \
   --volume {{ cluster_kubeconfig }}:/run/secrets/kubeconfig:ro \

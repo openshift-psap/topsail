@@ -9,4 +9,4 @@
 
 - name: Release the lock directory
   command:
-    rm -rf "/tmp/{{ jump_ci_release_lock_cluster }}"
+    rm -rf "{{ cluster_lock_dir }}"
