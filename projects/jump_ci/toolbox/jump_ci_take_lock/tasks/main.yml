@@ -20,3 +20,10 @@
 - name: Log info about the lock owner
   shell:
     echo "{{ jump_ci_take_lock_owner }}" > "/tmp/{{ jump_ci_take_lock_cluster }}/lock_owner"
+
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_take_lock_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_take_lock_owner }}"

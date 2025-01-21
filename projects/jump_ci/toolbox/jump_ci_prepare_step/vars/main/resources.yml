@@ -1,0 +1,1 @@
+entrypoint_template: templates/entrypoint.sh.j2

@@ -140,6 +140,12 @@ def jump_ci(command):
         except subprocess.CalledProcessError as e:
             logging.fatal(f"Test step '{command}' on cluster '{cluster}' FAILED.")
             failed = True
+        except run.SignalError as e:
+            logging.error(f"Caught signal {e.sig}. Aborting.")
+            raise
+        finally:
+            # always run the cleanup to be sure that the container doesn't stay running
+            tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test/{command}/entrypoint.sh cleanup")
 
         run.run_toolbox(
             "jump_ci", "retrieve_artifacts",
