@@ -1,4 +1,8 @@
 ---
+- name: Store the flag for rdma use
+  set_fact:
+    rdma_nics: "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list}}"
+
 - name: Create the src directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"

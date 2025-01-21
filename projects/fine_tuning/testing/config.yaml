@@ -375,6 +375,8 @@ ci_presets:
       num_epochs: null
       max_batch_len: null
       NCCL_SOCKET_NTHREADS: null
+      cpu_offload_optimizer: null
+      cpu_offload_params: null
 
   ilab_scale:
     extends: [ilab]
@@ -752,7 +754,6 @@ tests:
       dataset_name: twitter_complaints_small.json
       gpu: 1
       shared_memory: null
-      cpu_offload: null
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null

@@ -60,9 +60,6 @@ fine_tuning_run_fine_tuning_job_request_equals_limits: false
 # amount of shm (in GB) to give to each of the job pods
 fine_tuning_run_fine_tuning_job_shared_memory: null
 
-# if True, delegating computations from the CPU to the GPU to accelerate processing
-fine_tuning_run_fine_tuning_job_cpu_offload: null
-
 # if True, only prepare the environment but do not run the fine-tuning job.
 fine_tuning_run_fine_tuning_job_prepare_only: false
 

@@ -81,7 +81,7 @@ spec:
             - name: SLEEP_FOREVER
               value: "true"
 {% endif %}
-{% if fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list %}
+{% if rdma_nics %}
             - name: WITH_RDMA
               value: "true"
 {% endif %}
@@ -124,7 +124,7 @@ spec:
 {% endif %}
                 memory: "{{ fine_tuning_run_fine_tuning_job_memory }}Gi"
                 cpu: "{{ fine_tuning_run_fine_tuning_job_cpu }}"
-{% if fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list %}
+{% if rdma_nics %}
                 nvidia.com/roce: "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic | length }}"
 {% endif %}
 {% if fine_tuning_run_fine_tuning_job_request_equals_limits %}
@@ -132,7 +132,7 @@ spec:
 {% elif fine_tuning_run_fine_tuning_job_gpu %}
               limits:
                 nvidia.com/gpu: "{{ fine_tuning_run_fine_tuning_job_gpu }}"
-{% if fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list %}
+{% if rdma_nics %}
                 nvidia.com/roce: "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic | length }}"
 {% endif %}
 {% endif %}
