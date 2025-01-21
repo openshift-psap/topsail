@@ -100,6 +100,8 @@ def jump_ci(command):
 
         run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
+        cluster_lock_dir = f" /tmp/topsail_{cluster}"
+
         if test_args is not None:
             variables_overrides_dict = dict(
                 PR_POSITIONAL_ARGS=test_args,
@@ -134,7 +136,7 @@ def jump_ci(command):
         )
 
         try:
-            tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test/{command}/entrypoint.sh")
+            tunnelling.run_with_ansible_ssh_conf(f"bash {cluster_lock_dir}/test/{command}/entrypoint.sh")
             logging.info(f"Test step '{command}' on cluster '{cluster}' succeeded.")
             failed = False
         except subprocess.CalledProcessError as e:
@@ -145,7 +147,7 @@ def jump_ci(command):
             raise
         finally:
             # always run the cleanup to be sure that the container doesn't stay running
-            tunnelling.run_with_ansible_ssh_conf(f"bash /tmp/{cluster}/test/{command}/entrypoint.sh cleanup")
+            tunnelling.run_with_ansible_ssh_conf(f"bash {cluster_lock_dir}/test/{command}/entrypoint.sh cleanup")
 
         run.run_toolbox(
             "jump_ci", "retrieve_artifacts",
