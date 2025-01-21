@@ -26,6 +26,7 @@
     state: absent
     path: "{{ step_artifact_dir }}"
     mode: '0755'
+  no_log: true # can be too chatty when cleaning an existing artifacts directly
 
 - name: Ensure that the step test dirname directory exists
   ansible.builtin.file:
