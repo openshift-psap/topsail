@@ -5,6 +5,7 @@
   vars:
     jump_ci_ensure_lock_cluster: "{{ jump_ci_release_lock_cluster }}"
     jump_ci_ensure_lock_owner: "{{ jump_ci_release_lock_owner }}"
+    jump_ci_ensure_lock_check_kubeconfig: false
 
 - name: Release the lock directory
   command:
