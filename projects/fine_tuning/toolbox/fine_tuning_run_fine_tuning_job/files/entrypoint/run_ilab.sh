@@ -18,9 +18,33 @@ export TRITON_DUMP_DIR=$TRITON_HOME
 export TRITON_CACHE_DIR=$TRITON_HOME
 export TRITON_OVERRIDE_DIR=$TRITON_HOME
 
+
 mkdir -p "$CACHE_DIR"
 
+if [[ "${WITH_RDMA:-}" ]]; then
+  export NCCL_TOPO_FILE=/mnt/storage/topo.xml
+  num_rdma=$(ls /sys/class/infiniband/ | wc -l)
+  IFS=',' read -ra ADDR <<< "$NCCL_SOCKET_IFNAME"   # Split by comma
+  length=${#ADDR[@]}  # Get the length (number of elements in the array)
+  echo "Length of NCCL_SOCKET_IFNAME: $length"
+  NCCL_IB_HCA=''
+  for idx in $(seq $((num_rdma-1)) -1 $((num_rdma-length))); do
+    # Append the value to the NCCL_IB_HCA string
+    if [ -z "$NCCL_IB_HCA" ]; then
+      NCCL_IB_HCA="mlx5_$idx"  # Initialize the string with the first value
+    else
+      NCCL_IB_HCA="$NCCL_IB_HCA,mlx5_$idx"  # Append the next value with a comma
+    fi
+  done
+  export NCCL_IB_HCA="$NCCL_IB_HCA"
+  export NCCL_IB_DISABLE=0
+  export NCCL_IB_GID_INDEX=3
+  export NCCL_DEBUG=info
+  echo "Using $length SR-IOV NIC’s with rdma"
+fi
+
 if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
+
 
     MAPPING="$(cat /mnt/nic-mapping/nodename_ip_mapping.yaml)"
     for ifname in $(echo $NCCL_SOCKET_IFNAME | tr , " "); do
