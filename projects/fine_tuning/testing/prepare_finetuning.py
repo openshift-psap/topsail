@@ -232,7 +232,7 @@ def prepare_namespace(test_settings):
     namespace = config.project.get_config("tests.fine_tuning.namespace")
     dry_mode = config.project.get_config("tests.dry_mode")
 
-    if run.run(f'oc get project "{namespace}" 2>/dev/null', check=False).returncode != 0:
+    if run.run(f'oc get ns "{namespace}" 2>/dev/null', check=False).returncode != 0:
         run.run(f'oc new-project "{namespace}" --skip-config-write >/dev/null')
     else:
         logging.warning(f"Project {namespace} already exists.")
