@@ -501,7 +501,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_test_epochs:
-    extends: [ ilab ]
+    extends: [ilab]
 
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: false
