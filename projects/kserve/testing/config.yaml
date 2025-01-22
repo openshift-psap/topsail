@@ -336,13 +336,19 @@ ci_presets:
   profiling_vllm_improvements_using_llama:
     extends: [serverless, vllm, e2e_perf, metal, profiling_settings, use_intlab_minio]
     tests.e2e.models:
-    - name: llama-3-8b-instruct
+    - name: llama-3-1-70b-instruct-fp8-tp-4-rep-1
+      model: llama-3.1-70b-instruct-fp8-tp-4-rep-1
       testing:
-       size: small
-       max_concurrency: 1024 
-    export_artifacts.path_prefix: four-H100-2.16-cuda-vllm-optimizations-chunked-prefill
-    kserve.model.serving_runtime.update_image: false
-    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:167aa05982214c3941afbdde7c5aff6f81040193a0db1dc06a5ad16af0a8780e"
+       size: custom
+       max_concurrency: 256
+    - name: llama-3-1-70b-instruct-fp8-tp-2-rep-2
+      model: llama-3.1-70b-instruct-fp8-tp-2-rep-2
+      testing:
+        size: custom
+        max_concurrency: 256
+    export_artifacts.path_prefix: four-H100-llama-3-1-70B-fp8
+    kserve.model.serving_runtime.update_image: true
+    kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:b51fde66f162f1a78e8c027320dddf214732d5345953b1599a84fe0f0168c619"
 
   profiling_settings:
     tests.e2e.matbenchmark.enabled: true
@@ -633,19 +639,11 @@ clusters:
 
 rhods:
   catalog:
-<<<<<<< HEAD
     image: quay.io/rhoai/rhoai-fbc-fragment
     tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
     channel: fast
     version: 2.16.0
     version_name: rc1
-=======
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 852859
-    channel: fast
-    version: 2.15.0
-    version_name: rc2
->>>>>>> ccd67c53... kserve/testing/config.yaml: Updated `tag`, `version_name` fields for "RHOAI 2.15.0 RC2" model-serving performance validation
     opendatahub: false
     managed_rhoai: false
   operator:
@@ -789,6 +787,12 @@ tests:
           max_input_tokens: 3500
           max_output_tokens: 800
           max_sequence_tokens: 3500
+        custom:
+          min_input_tokens: 256
+          max_input_tokens: 1024
+          min_output_tokens: 1024
+          max_output_tokens: 2048
+          max_sequence_tokens: 4096
     longevity:
       sleep_interval: 60 sec
       # https://pandas.pydata.org/docs/reference/api/pandas.Timedelta.html
