@@ -458,7 +458,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     if non_fatal_errors:
-        msg = f"An error happened during the visualization post-processing ... ({', '.join(errors)})"
+        msg = f"An error happened during the visualization post-processing ... ({', '.join(non_fatal_errors)})"
         logging.error(msg)
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(msg, file=f)
