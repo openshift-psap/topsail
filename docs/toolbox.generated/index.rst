@@ -232,22 +232,6 @@ Toolbox Documentation
 * :doc:`deploy_from_operatorhub <Nfd_Operator.deploy_from_operatorhub>`	 Deploys the NFD Operator from OperatorHub
 * :doc:`undeploy_from_operatorhub <Nfd_Operator.undeploy_from_operatorhub>`	 Undeploys an NFD-operator that was deployed from OperatorHub
 
-``notebooks``
-*************
-
-::
-
-    Commands relating to RHOAI Notebooks
-    
-
-                
-* :doc:`benchmark_performance <Notebooks.benchmark_performance>`	 Benchmark the performance of a notebook image.
-* :doc:`capture_state <Notebooks.capture_state>`	 Capture information about the cluster and the RHODS notebooks deployment
-* :doc:`cleanup <Notebooks.cleanup>`	 Clean up the resources created along with the notebooks, during the scale tests.
-* :doc:`dashboard_scale_test <Notebooks.dashboard_scale_test>`	 End-to-end scale testing of ROAI dashboard scale test, at user level.
-* :doc:`locust_scale_test <Notebooks.locust_scale_test>`	 End-to-end testing of RHOAI notebooks at scale, at API level
-* :doc:`ods_ci_scale_test <Notebooks.ods_ci_scale_test>`	 End-to-end scale testing of ROAI notebooks, at user level.
-
 ``pipelines``
 *************
 
