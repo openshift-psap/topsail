@@ -281,7 +281,7 @@ def _parse_ilab_logs(dirname):
         current_json = ""
         for line in f.readlines():
             extract_torchrun_execution_time(line)
-            extract_num_of_samples(line)
+            # extract_num_of_samples(line)
 
             if not in_green:
                 before, green_found, after = line.partition("[92m")
@@ -309,7 +309,7 @@ def _parse_ilab_logs(dirname):
             last_step_samples_seen = ilab_metrics.progress[-1].samples_seen
             period = (last_step_timestamp - first_step_timestamp).total_seconds()
             all_samples_seen = last_step_samples_seen - first_step_samples_seen
-            average_throughput = (all_samples_seen)/period
+            average_throughput = all_samples_seen/period
             ilab_metrics.summary.average_throughput = average_throughput
 
     return ilab_metrics
