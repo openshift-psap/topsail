@@ -261,19 +261,19 @@ def _parse_ilab_logs(dirname):
 
         ilab_metrics.summary.torchrun_exec_time = int(time_str) / 60 # convert from seconds to minutes
 
-    def extract_num_of_samples(line):
-        if not line.startswith("Map (num_proc=8): 100%"):
-            return
-
-        _not_used, has_it, after = line.partition("Map (num_proc=8): 100%|██████████| ")
-        if not has_it: return
-
-        num_samples, has_it, after = after.partition("/")
-        if not has_it:
-            log.error(f"Invalid Map line :/ '{line}'")
-            return
-
-        ilab_metrics.summary.num_samples = int(num_samples)
+    # def extract_num_of_samples(line):
+    #     if not line.startswith("Map (num_proc=8): 100%"):
+    #         return
+    #
+    #     _not_used, has_it, after = line.partition("Map (num_proc=8): 100%|██████████| ")
+    #     if not has_it: return
+    #
+    #     num_samples, has_it, after = after.partition("/")
+    #     if not has_it:
+    #         log.error(f"Invalid Map line :/ '{line}'")
+    #         return
+    #
+    #     ilab_metrics.summary.num_samples = int(num_samples)
 
     with (open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f):
         # metrics lines are printed in green. Look them up.
@@ -305,11 +305,11 @@ def _parse_ilab_logs(dirname):
         if ilab_metrics.progress:
             first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
             last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
+            first_step_samples_seen = ilab_metrics.progress[0].samples_seen
+            last_step_samples_seen = ilab_metrics.progress[-1].samples_seen
             period = (last_step_timestamp - first_step_timestamp).total_seconds()
-            num_samples = ilab_metrics.summary.num_samples - ilab_metrics.progress[0].batch_size
-            num_epochs = ilab_metrics.progress[-1].epoch
-            average_throughput = (num_samples+(ilab_metrics.summary.num_samples*num_epochs))/period
-
+            all_samples_seen = last_step_samples_seen - first_step_samples_seen
+            average_throughput = (all_samples_seen)/period
             ilab_metrics.summary.average_throughput = average_throughput
 
     return ilab_metrics
