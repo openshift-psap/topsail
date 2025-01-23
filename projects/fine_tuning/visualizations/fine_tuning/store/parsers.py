@@ -261,27 +261,12 @@ def _parse_ilab_logs(dirname):
 
         ilab_metrics.summary.torchrun_exec_time = int(time_str) / 60 # convert from seconds to minutes
 
-    # def extract_num_of_samples(line):
-    #     if not line.startswith("Map (num_proc=8): 100%"):
-    #         return
-    #
-    #     _not_used, has_it, after = line.partition("Map (num_proc=8): 100%|██████████| ")
-    #     if not has_it: return
-    #
-    #     num_samples, has_it, after = after.partition("/")
-    #     if not has_it:
-    #         log.error(f"Invalid Map line :/ '{line}'")
-    #         return
-    #
-    #     ilab_metrics.summary.num_samples = int(num_samples)
-
     with (open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f):
         # metrics lines are printed in green. Look them up.
         in_green = False
         current_json = ""
         for line in f.readlines():
             extract_torchrun_execution_time(line)
-            # extract_num_of_samples(line)
 
             if not in_green:
                 before, green_found, after = line.partition("[92m")
