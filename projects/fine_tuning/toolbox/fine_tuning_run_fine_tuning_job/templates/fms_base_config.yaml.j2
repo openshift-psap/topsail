@@ -23,6 +23,7 @@ accelerate_launch_args:
   rdzv_backend: static
   same_network: true
   tpu_use_sudo: false
+  config_file: "/app/accelerate_fsdp_defaults.yaml"
 {% if (fine_tuning_run_fine_tuning_job_gpu or 1) > 1 %}
   use_fsdp: true
 {% endif %}
