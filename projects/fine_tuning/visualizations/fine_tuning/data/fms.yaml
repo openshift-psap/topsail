@@ -5,4 +5,5 @@ visualize:
   - "report: SFTTrainer report"
   - "report: SFTTrainer HyperParameters report"
   - "report: LTS Documentation"
-  - "report: KPI Table Report"
+  - "report: KPI Table Report by settings"
+  - "report: KPI Table Report by labels"
