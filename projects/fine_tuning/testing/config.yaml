@@ -515,6 +515,11 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
+  ilab_2x8xh100_sriov_rdma_25000:
+    extends: [ilab_2x8xh100_sriov_rdma]
+
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_25000samples_skills_data.jsonl
+
   ilab_2x8xh100_test_epochs:
     extends: [ilab]
 
