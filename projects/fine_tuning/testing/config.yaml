@@ -752,6 +752,11 @@ fine_tuning:
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 
+    ilab_large_25000samples_skills_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
     ilab_large_knowledge_data.jsonl:
       type: dataset
       source_dir: 's3://instructlab-standalone/data'
