@@ -9,7 +9,7 @@
 
 - name: Fetch the name of the image to use
   shell:
-    cat "/tmp/{{ jump_ci_prepare_step_cluster }}/pod.image"
+    cat "{{ cluster_lock_dir }}/pod.image"
   register: pod_image_cmd
   failed_when: false
 
@@ -19,13 +19,14 @@
 
 - name: Generate the step artifacts dirname
   set_fact:
-    step_artifact_dir: "/tmp/{{ jump_ci_prepare_step_cluster }}/test/{{ jump_ci_prepare_step_step }}"
+    step_artifact_dir: "{{ cluster_lock_dir }}/test/{{ jump_ci_prepare_step_step }}"
 
 - name: Ensure that the step artifacts dirname directory is empty
   ansible.builtin.file:
     state: absent
     path: "{{ step_artifact_dir }}"
     mode: '0755'
+  no_log: true # can be too chatty when cleaning an existing artifacts directly
 
 - name: Ensure that the step test dirname directory exists
   ansible.builtin.file:
@@ -68,22 +69,22 @@
 - name: Ensure that the secrets directory exists
   ansible.builtin.file:
     state: directory
-    path: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}"
+    path: "{{ cluster_lock_dir }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}"
     mode: '0755'
 
 - name: Copy the secrets to the jump host
   ansible.posix.synchronize:
     src: "{{ lookup('env', jump_ci_prepare_step_secrets_path_env_key) }}/"
-    dest: "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}/"
+    dest: "{{ cluster_lock_dir }}/secrets/{{ jump_ci_prepare_step_secrets_path_env_key }}/"
     mode: "push"
   no_log: true # not necessary, and leaks the hostnames and secret filenames (they aren't secret)
   when: jump_ci_prepare_step_secrets_path_env_key
 
 - name: Ensure that the secret dirs have the right permission
-  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets" -type d -exec chmod 0755 {} \;
+  command: find "{{ cluster_lock_dir }}/secrets" -type d -exec chmod 0755 {} \;
 
 - name: Ensure that the secret files have the right permission
-  command: find "/tmp/{{ jump_ci_prepare_step_cluster }}/secrets/" -type f -exec chmod 0644 {} \;
+  command: find "{{ cluster_lock_dir }}/secrets/" -type f -exec chmod 0644 {} \;
 
 - name: Prepare the entrypoint script
   template:
