@@ -372,17 +372,22 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
           state: directory
           mode: '0755'
 
+      - name: Prepare the retrieval Pod template
+        template:
+          src: "{{ fine_tuning_job_retrieval_pod_template}}"
+          dest: "{{ artifact_extra_logs_dir }}/src/revrieval_pod.yaml"
+          mode: '0400'
+
       - name: Launch fine-tuning-file-retrieval Pod from template
         command:
-          oc create -f <(echo "{{ fine_tuning_job_retrieval_pod_template | to_json }}")
+          oc create -f "{{ artifact_extra_logs_dir }}/src/revrieval_pod.yaml"
 
       - name: Wait for fine-tuning-file-retrieval Pod to be Running
         command:
           set -o pipefail;
 
           oc get pod --no-headers
-             fine-tuning-file-retrieval
-             -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+             -f "{{ artifact_extra_logs_dir }}/src/revrieval_pod.yaml"
              | awk '{print $3}'
         register: retrieve_pod_state_cmd
         until: '"Running" not in retrieve_pod_state_cmd.stdout_lines'
@@ -391,8 +396,11 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
 
       - name: Copy files to the Pod artifacts directory
         command:
-          oc cp fine-tuning-file-retrieval:/mnt/storage/output/ "{{ artifact_extra_logs_dir }}/pod-artifacts/"
+          oc cp fine-tuning-file-retrieval:{{ fine_tuning_job_retrieval_output_dir }}
+             "{{ artifact_extra_logs_dir }}/pod-artifacts/"
+             -n {{ fine_tuning_run_fine_tuning_job_namespace }}
 
+    always:
       - name: Delete fine-tuning-file-retrieval Pod
         command:
-          oc delete pod fine-tuning-file-retrieval
+          oc delete -f "{{ artifact_extra_logs_dir }}/src/revrieval_pod.yaml"
