@@ -322,7 +322,7 @@ def _pipelines_run_many(test_artifact_dir_p):
                 with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
                     print("1" if failed else "0", file=f)
 
-                run.run_toolbox("notebooks", "capture_state", mute_stdout=True, check=False)
+                run.run_toolbox("pipelines", "capture_notebooks_state", mute_stdout=True, check=False)
 
     finally:
         run.run_toolbox("cluster", "capture_environment", mute_stdout=True, check=False)
