@@ -82,6 +82,11 @@ else
     echo "No GPU seem to be available."
 fi
 
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    rm -rf "/mnt/storage/output/*"
+    echo "Emptied output directory: /mnt/storage/output"
+fi
+
 if [[ "${WORKLOAD:-}" == fms ]]; then
     CMD="bash $THIS_DIR/run_fms.sh"
 elif [[ "${WORKLOAD:-}" == ilab ]]; then

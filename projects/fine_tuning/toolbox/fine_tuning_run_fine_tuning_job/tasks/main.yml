@@ -362,3 +362,49 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
          > {{ artifact_extra_logs_dir }}/artifacts/pod_{{ item | replace('pod/', '') }}.log
     failed_when: false
     loop: "{{ job_pod_name_cmd.stdout_lines }}"
+
+  - name: Retrieve Pod files to artifacts directory
+    when: fine_tuning_run_fine_tuning_job_retrieve_files | bool
+    block:
+      - name: Launch fine-tuning-file-retrieval Pod
+        shell:
+          set -o pipefail;
+
+          cat << EOF | oc create -f -
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "fine-tuning-file-retrieval"
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "cnt",
+        "image": "{{ fine_tuning_run_fine_tuning_job_container_image }}",
+        "volumeMounts": [
+          {
+            "name": "storage",
+            "mountPath": "/mnt"
+          }
+        ]
+      }
+    ],
+    "volumes": [
+      {
+        "name": "storage",
+        "persistentVolumeClaim": {
+          "claimName": "{{ fine_tuning_run_fine_tuning_job_pvc_name }}"
+        }
+      }
+    ]
+  }
+}
+EOF
+      - name: Copy files to artifacts directory
+        command:
+          oc cp fine-tuning-file-retrieval:/mnt/storage/output/ "{{ artifact_extra_logs_dir }}/artifacts/"
+
+      - name: Delete fine-tuning-file-retrieval Pod
+        command:
+          oc delete pod fine-tuning-file-retrieval
