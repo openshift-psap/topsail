@@ -8,8 +8,6 @@ set -x
 
 export SFT_TRAINER_CONFIG_JSON_PATH=$CONFIG_JSON_PATH
 
-RETRIEVE_FILES=()
-
 if [[ $WORLD_SIZE != 1 ]]; then
     echo "Running with a multi-node configuration. This is not supported at the moment, aborting."
     exit 1
@@ -25,16 +23,6 @@ fi
 
 time python /app/accelerate_launch.py
 
-if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]] && [[ -n "${RETRIEVE_FILES:-}" ]]; then
-    for file in "${RETRIEVE_FILES[@]}"; do
-        if [[ -f "$file" ]]; then
-            if cp "$file" "/mnt/storage/output/"; then
-                echo "File $file copied to output directory"
-            else
-                echo "Failed to copy $file" >&2
-            fi
-        else
-            echo "File $file not found" >&2
-        fi
-    done
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    cp /etc/os-release "$RETRIEVE"
 fi

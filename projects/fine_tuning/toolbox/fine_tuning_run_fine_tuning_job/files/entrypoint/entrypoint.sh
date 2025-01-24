@@ -83,8 +83,11 @@ else
 fi
 
 if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
-    rm -rf "/mnt/storage/output/*"
-    echo "Emptied output directory: /mnt/storage/output"
+    if [[ -d "$RETRIEVE" ]]; then
+        rm -rf "$RETRIEVE"
+    fi
+    mkdir -p "$RETRIEVE"
+    echo "Emptied output directory: ${RETRIEVE}"
 fi
 
 if [[ "${WORKLOAD:-}" == fms ]]; then

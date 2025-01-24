@@ -5,5 +5,6 @@ fine_tuning_job_entrypoint_dir: "{{ role_path }}/files/entrypoint"
 fine_tuning_job_entrypoint_name: entrypoint.sh
 fine_tuning_job_fms_config_template: templates/fms_base_config.yaml.j2
 fine_tuning_job_ilab_config_template: templates/ilab_base_config.yaml.j2
+fine_tuning_job_retrieval_output_dir: "/mnt/storage/output"
 
 __safe: [fine_tuning_job_entrypoint_name]
