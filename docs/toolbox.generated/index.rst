@@ -241,6 +241,7 @@ Toolbox Documentation
     
 
                 
+* :doc:`capture_notebooks_state <Pipelines.capture_notebooks_state>`	 Capture information about the cluster and the RHODS notebooks deployment
 * :doc:`capture_state <Pipelines.capture_state>`	 Captures the state of a Data Science Pipeline Application in a given namespace.
 * :doc:`deploy_application <Pipelines.deploy_application>`	 Deploy a Data Science Pipeline Application in a given namespace.
 * :doc:`run_kfp_notebook <Pipelines.run_kfp_notebook>`	 Run a notebook in a given notebook image.

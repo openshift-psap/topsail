@@ -79,3 +79,12 @@ class Pipelines:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("pipelines_capture_notebooks_state")
+    @AnsibleMappedParams
+    def capture_notebooks_state(self):
+        """
+        Capture information about the cluster and the RHODS notebooks deployment
+        """
+
+        return RunAnsibleRole()
