@@ -480,6 +480,7 @@ def get_common_matbench_args_env(results_dirname):
     common_args["workload_base_dir"] = str(TOPSAIL_DIR)
 
     common_env = dict()
+    common_env["MPLCONFIGDIR"] = "/tmp"
 
     return common_args, common_env
 
