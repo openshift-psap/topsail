@@ -366,44 +366,32 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
   - name: Retrieve Pod files to artifacts directory
     when: fine_tuning_run_fine_tuning_job_retrieve_files | bool
     block:
-      - name: Launch fine-tuning-file-retrieval Pod
-        shell:
+      - name: Create the Pod artifacts directory
+        file:
+          path: "{{ artifact_extra_logs_dir }}/pod-artifacts/"
+          state: directory
+          mode: '0755'
+
+      - name: Launch fine-tuning-file-retrieval Pod from template
+        command:
+          oc create -f <(echo "{{ fine_tuning_job_retrieval_pod_template | to_json }}")
+
+      - name: Wait for fine-tuning-file-retrieval Pod to be Running
+        command:
           set -o pipefail;
 
-          cat << EOF | oc create -f -
-{
-  "apiVersion": "v1",
-  "kind": "Pod",
-  "metadata": {
-    "name": "fine-tuning-file-retrieval"
-  },
-  "spec": {
-    "containers": [
-      {
-        "name": "cnt",
-        "image": "{{ fine_tuning_run_fine_tuning_job_container_image }}",
-        "volumeMounts": [
-          {
-            "name": "storage",
-            "mountPath": "/mnt"
-          }
-        ]
-      }
-    ],
-    "volumes": [
-      {
-        "name": "storage",
-        "persistentVolumeClaim": {
-          "claimName": "{{ fine_tuning_run_fine_tuning_job_pvc_name }}"
-        }
-      }
-    ]
-  }
-}
-EOF
-      - name: Copy files to artifacts directory
+          oc get pod --no-headers
+             fine-tuning-file-retrieval
+             -n {{ fine_tuning_run_fine_tuning_job_namespace }}
+             | awk '{print $3}'
+        register: retrieve_pod_state_cmd
+        until: '"Running" not in retrieve_pod_state_cmd.stdout_lines'
+        retries: 18
+        delay 10
+
+      - name: Copy files to the Pod artifacts directory
         command:
-          oc cp fine-tuning-file-retrieval:/mnt/storage/output/ "{{ artifact_extra_logs_dir }}/artifacts/"
+          oc cp fine-tuning-file-retrieval:/mnt/storage/output/ "{{ artifact_extra_logs_dir }}/pod-artifacts/"
 
       - name: Delete fine-tuning-file-retrieval Pod
         command:
