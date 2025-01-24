@@ -91,4 +91,4 @@ fine_tuning_run_fine_tuning_job_use_secondary_nic: false
 fine_tuning_run_fine_tuning_job_use_host_network: false
 
 # if enabled, allows files retrieval from the pod to the artifacts directory.
-fine_tuning_run_fine_tuning_job_retrieve_files: false
+fine_tuning_run_fine_tuning_job_retrieve_files: true

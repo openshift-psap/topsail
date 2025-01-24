@@ -173,3 +173,5 @@ Parameters
 
 * If enabled, allows files retrieval from the pod to the artifacts directory.
 
+* default value: ``True``
+

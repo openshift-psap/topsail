@@ -50,7 +50,7 @@ class Fine_Tuning:
             use_secondary_nic=False,
             use_host_network=False,
 
-            retrieve_files=False,
+            retrieve_files=True,
     ):
         """
         Run a simple fine-tuning Job.
