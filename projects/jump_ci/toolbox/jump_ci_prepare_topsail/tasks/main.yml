@@ -91,7 +91,7 @@
 
   - name: Fetch the submodules
     command: |
-      {{ git }} submodule --quiet update --init --recursive
+      {{ git }} submodule --quiet update --init --recursive --force
 
   - name: Show the submodules version
     command: |
@@ -161,7 +161,7 @@
 
     RUN git fetch --quiet origin {{ git_ref }}
     RUN git reset --hard FETCH_HEAD
-    RUN git submodule --quiet update --init --recursive
+    RUN git submodule --quiet update --init --recursive --force
     RUN git submodule
     EOF
 
