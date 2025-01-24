@@ -49,6 +49,8 @@ class Fine_Tuning:
             use_primary_nic=True,
             use_secondary_nic=False,
             use_host_network=False,
+
+            retrieve_files=False,
     ):
         """
         Run a simple fine-tuning Job.
@@ -87,6 +89,8 @@ class Fine_Tuning:
           use_primary_nic: if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
           use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
           use_host_network: if enabled, activates the host network
+
+          retrieve_files: if enabled, allows files retrieval from the pod to the artifacts directory.
         """
 
         if use_host_network and use_secondary_nic:

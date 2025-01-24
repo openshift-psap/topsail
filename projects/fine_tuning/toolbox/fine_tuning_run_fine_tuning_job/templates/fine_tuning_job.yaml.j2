@@ -97,6 +97,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+{% if fine_tuning_run_fine_tuning_retrieve_files %}
+            - name: RETRIEVE
+              value: "true"
+{% endif %}
 {% endif %}
             volumeMounts:
             - name: storage-volume
