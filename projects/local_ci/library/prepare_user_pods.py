@@ -28,11 +28,11 @@ def apply_prefer_pr(pr_number=None):
             logging.warning(f"apply_prefer_pr: PERFLAB_CI: base_image.repo.ref_prefer_pr is set but 'PERFLAB_GIT_REF={git_ref}' cannot be parsed: {e.__class__.__name__}: {e}")
             return
 
-    elif os.environ.get("HOMELAB_CI"):
+    elif os.environ.get("TOPSAIL_LOCAL_CI"):
         pr_number = os.environ.get("PULL_NUMBER")
 
         if not pr_number:
-            raise RuntimeError("apply_prefer_pr: HOMELAB_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
+            raise RuntimeError("apply_prefer_pr: TOPSAIL_LOCAL_CI: base_image.repo.ref_prefer_pr is set but PULL_NUMBER is empty")
     else:
         logging.warning("apply_prefer_pr: Could not figure out the PR number. Keeping the default value.")
         return

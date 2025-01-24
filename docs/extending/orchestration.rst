@@ -493,7 +493,7 @@ S3 server, and stored locally for post-processing.
 
 * ``apply_prefer_pr(pr_number=None)`` inspects the environment to
   detect the PR number. When running locally, export
-  ``HOMELAB_CI=true`` and ``PULL_NUMBER=...`` for this function to
+  ``TOPSAIL_LOCAL_CI=true`` and ``PULL_NUMBER=...`` for this function to
   automatically detect the PR number. Mind that this function updates
   the configuration file, so it cannot run inside a parallel context.
 
