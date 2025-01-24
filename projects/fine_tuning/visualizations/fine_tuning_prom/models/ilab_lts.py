@@ -57,6 +57,7 @@ class Metadata(matbench_models.Metadata):
 class Metrics(matbench_models.ExclusiveModel):
     network_total_usage: matbench_models.PrometheusValues = Field(..., alias="sutest__container_network_transmit_bytes_total__namespace=fine-tuning-testing")
 
+    gpu_memory_total_usage: matbench_models.PrometheusValues = Field(..., alias="Sutest GPU memory used (all GPUs)")
     # py_field_name: matbench_models.PrometheusValues = Field(..., alias="<metric description name>")
 
 
