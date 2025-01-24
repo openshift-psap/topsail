@@ -387,7 +387,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
         register: retrieve_pod_state_cmd
         until: '"Running" not in retrieve_pod_state_cmd.stdout_lines'
         retries: 18
-        delay 10
+        delay: 10
 
       - name: Copy files to the Pod artifacts directory
         command:
