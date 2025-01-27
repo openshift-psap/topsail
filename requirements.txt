@@ -4,7 +4,7 @@ ansible
 jinja2==3.0.*
 flake8
 pylint
-awscli
+awscli==1.36.0
 joblib
 jsonpath_ng
 state-signals==0.5.2
