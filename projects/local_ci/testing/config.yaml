@@ -60,14 +60,13 @@ workloads:
     test_args:
     steps:
       pre_clean_up:
-        command: kserve test cleanup_sutest_ns
-      # pre_scale_up:
-      #   command: kserve test cluster_scale_up
+        command: kserve test cleanup_cluster
+      prepare:
+        command: kserve test prepare_ci
+      rebuild:
+        command: kserve test rebuild_driver_image 459
       test:
         command: kserve test test_ci
-      # post_scale_down:
-      #   command: kserve test cluster_scale_down
-      #   always_run: true
 
   prepare_fine_tuning:
     command_group: rhods
