@@ -96,8 +96,12 @@ def parse_once(results, dirname, import_settings):
         results.finish_reason = _parse_pytorch_finish_reason(dirname)
 
     if results.locations.has_ray:
-        flavor = import_settings["hyper_parameters.flavor"]
-        results.ray_metrics = _parse_ray_logs(dirname, flavor)
+        flavor = results.job_config["hyper_parameters"].get("flavor")
+        if flavor:
+            results.ray_metrics = _parse_ray_logs(dirname, flavor)
+        else:
+            logging.error("Couldn't find the Ray test flavor in hyper_parameters.flavor, cannot parse the Ray logs")
+
         results.allocated_resources = _parse_ray_allocated_resources(dirname)
         results.finish_reason = _parse_ray_finish_reason(dirname)
 
