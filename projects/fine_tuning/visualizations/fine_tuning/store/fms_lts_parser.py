@@ -1,8 +1,9 @@
 import types
 import yaml
+import logging
 
 from .. import models
-from ..models import lts as models_lts
+from ..models.fms import lts as models_lts
 
 
 def generate_lts_payload(results, import_settings):
@@ -35,9 +36,6 @@ def generate_lts_metadata(results, import_settings):
 
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
-
-    if not results.locations.has_fms:
-        return results_lts
 
     if not results.sfttrainer_metrics.summary or not results.sfttrainer_metrics.summary.__dict__:
         return results_lts
@@ -98,18 +96,18 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.replicas = replicas
     lts_settings.accelerators_per_replica = accelerators_per_replica
     lts_settings.accelerator_count = replicas * accelerators_per_replica
-    if results.locations.has_fms:
-        lts_settings.per_device_train_batch_size = results.workload_config["per_device_train_batch_size"]
-        lts_settings.batch_size = results.workload_config["per_device_train_batch_size"] * lts_settings.accelerator_count
-        lts_settings.max_seq_length = results.workload_config["max_seq_length"]
 
-        lts_settings.lora_rank = results.workload_config.get("r")
-        lts_settings.lora_alpha = results.workload_config.get("lora_alpha")
-        lts_settings.lora_dropout = results.workload_config.get("lora_dropout")
-        lts_settings.lora_modules = ", ".join(sorted(results.workload_config.get("target_modules", []))) or None
+    lts_settings.per_device_train_batch_size = results.workload_config["per_device_train_batch_size"]
+    lts_settings.batch_size = results.workload_config["per_device_train_batch_size"] * lts_settings.accelerator_count
+    lts_settings.max_seq_length = results.workload_config["max_seq_length"]
 
-        lts_settings.dataset_name = results.job_config["dataset_name"]
-        lts_settings.dataset_replication = results.job_config["dataset_replication"]
+    lts_settings.lora_rank = results.workload_config.get("r")
+    lts_settings.lora_alpha = results.workload_config.get("lora_alpha")
+    lts_settings.lora_dropout = results.workload_config.get("lora_dropout")
+    lts_settings.lora_modules = ", ".join(sorted(results.workload_config.get("target_modules", []))) or None
+
+    lts_settings.dataset_name = results.job_config["dataset_name"]
+    lts_settings.dataset_replication = results.job_config["dataset_replication"]
 
     lts_settings.ci_engine = results.from_env.test.ci_engine
     lts_settings.run_id = results.from_env.test.run_id

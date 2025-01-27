@@ -20,6 +20,7 @@ def network_total_usage_per_nic(lts_payload):
 
     return last_substract_first_values(metrics)
 
+
 @matbench_models.FormatDivisor(1024*1024*1024, unit="GB", format="{:.2f}")
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Total network transmit usage, for all NICs", unit="bytes")
@@ -30,6 +31,19 @@ def network_total_usage(lts_payload):
         return -1
 
     return sum(last_substract_first_values(metrics))
+
+
+@matbench_models.FormatDivisor(1024, unit="GB", format="{:.2f}")
+@matbench_models.LowerBetter
+@matbench_models.KPIMetadata(help="Total GPU memory usage", unit="MB")
+def gpu_memory_total_usage(lts_payload):
+    metrics = lts_payload.results.metrics.gpu_memory_total_usage
+
+    if not metrics:
+        return -1
+
+    return prom_parsing.single_max(metrics)[0]
+
 
 
 def last_substract_first_values(_metrics):

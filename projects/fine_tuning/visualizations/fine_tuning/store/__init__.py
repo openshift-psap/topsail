@@ -27,17 +27,31 @@ logging.info(f"Running with the {FLAVOR} of the fine_tuning visualization packag
 ### (keep this below the FLAVOR lookup, so that it can be used)
 
 from . import parsers
-from . import lts_parser
-from ..models import kpi as models_kpi
-from ..models import lts as models_lts
+
 
 CACHE_FILENAME = "cache.pickle"
 IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 ###
 
-store_conf = dict()
+lts_parser = None
+
 if FLAVOR == FMS_FLAVOR:
+    from . import fms_lts_parser as lts_parser
+
+    from ..models.fms import kpi as models_kpi
+    from ..models.fms import lts as models_lts
+elif FLAVOR == ILAB_FLAVOR:
+    from . import ilab_lts_parser as lts_parser
+
+    from ..models.ilab import kpi as models_kpi
+    from ..models.ilab import lts as models_lts
+elif FLAVOR == RAY_FLAVOR:
+    # no LTS/KPI configuration for the RAY flavor, for the time being.
+    pass
+
+store_conf = dict()
+if lts_parser:
     store_conf |= dict(
         lts_payload_model=models_lts.Payload,
         generate_lts_payload=lts_parser.generate_lts_payload,
@@ -45,9 +59,7 @@ if FLAVOR == FMS_FLAVOR:
         models_kpis=models_kpi.KPIs,
         get_kpi_labels=lts_parser.get_kpi_labels,
     )
-else:
-    # not LTS/KPI configuration for the other flavors, for the time being.
-    pass
+
 
 local_store = helpers_store.BaseStore(
     cache_filename=CACHE_FILENAME,

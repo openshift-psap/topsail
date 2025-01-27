@@ -80,7 +80,6 @@ def _get_test_setup(entry):
     setup_info += [html.Li([f"Job execution"])]
     exec_info = []
 
-
     if not entry.results.finish_reason:
         exec_info += [html.Li([f"Container didn't finish"])]
     else:

@@ -36,8 +36,10 @@ IMPORTANT_FILES = [
 ]
 
 if FLAVOR in (FMS_FLAVOR, ILAB_FLAVOR):
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
-    f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
+    IMPORTANT_FILES += [
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/src/config_final.json",
+        f"{artifact_dirnames.FINE_TUNING_RUN_FINE_TUNING_DIR}/_ansible.play.yaml",
+    ]
 
 def parse_always(results, dirname, import_settings):
     # parsed even when reloading from the cache file
