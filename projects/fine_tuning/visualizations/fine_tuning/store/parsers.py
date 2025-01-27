@@ -294,6 +294,7 @@ def _parse_ilab_logs(dirname):
             last_step_samples_seen = ilab_metrics.progress[-1].samples_seen
             period = (last_step_timestamp - first_step_timestamp).total_seconds()
             all_samples_seen = last_step_samples_seen - first_step_samples_seen
+            if period == 0: period = 1 # avoid /0 if there's only one step (in the smoke test)
             average_throughput = all_samples_seen/period
             ilab_metrics.summary.average_throughput = average_throughput
 

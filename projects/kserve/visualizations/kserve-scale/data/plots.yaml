@@ -8,4 +8,6 @@ visualize:
   - "report: GPU Usage"
   - "report: Control Plane Nodes Load"
   - "report: LTS Documentation"
-  - "report: KPI Table Report"
+  - "report: KPI Table Report by settings"
+  - "report: KPI Table Report by labels"
+  - "report: KPI Plot Report"
