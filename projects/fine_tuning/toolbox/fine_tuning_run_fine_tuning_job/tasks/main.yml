@@ -383,7 +383,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
           oc create -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml"
 
       - name: Wait for fine-tuning-file-retrieval Pod to be Running
-        command:
+        shell:
           set -o pipefail;
 
           oc get pod --no-headers
