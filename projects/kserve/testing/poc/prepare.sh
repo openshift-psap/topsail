@@ -54,7 +54,6 @@ generate_certs() {
     go run $TOPSAIL_DIR/projects/kserve/testing/poc/cert/gen-cert.go ${COMMON_NAME} ${BASE_CERT_DIR}
 }
 
-
 # generate_certs
 
 cd "${TOPSAIL_DIR}/projects/kserve/testing/poc/"
