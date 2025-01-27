@@ -386,7 +386,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
         shell:
           set -o pipefail;
 
-          oc get pod --no-headers
+          oc get --no-headers
              -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml"
              | awk '{print $3}'
         register: retrieve_pod_state_cmd
