@@ -7,29 +7,29 @@
 
 - name: Define the test environment
   set_fact:
-    namespace: "{% if kserve_capture_state_namespace | length > 0 %}{{ kserve_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+    kserve_namespace: "{% if kserve_capture_state_namespace | length > 0 %}{{ kserve_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
 
 - name: Save the state of the pods
   shell: |
-    oc get pods -n "{{ namespace }}" -owide \
+    oc get pods -n "{{ kserve_namespace }}" -owide \
        > "{{ artifact_extra_logs_dir }}/pods.status"
-    oc get pods -n "{{ namespace }}" -oyaml \
+    oc get pods -n "{{ kserve_namespace }}" -oyaml \
        > "{{ artifact_extra_logs_dir }}/pods.yaml"
-    oc get pods -n "{{ namespace }}" -ojson \
+    oc get pods -n "{{ kserve_namespace }}" -ojson \
        > "{{ artifact_extra_logs_dir }}/pods.json"
-    oc describe pods -n "{{ namespace }}" \
+    oc describe pods -n "{{ kserve_namespace }}" \
        > "{{ artifact_extra_logs_dir }}/pods.desc"
   ignore_errors: true
 
 - name: Save the state of the serving resources
   shell: |
-    oc get inferenceservice,servingruntime -n "{{ namespace }}" \
+    oc get inferenceservice,servingruntime -n "{{ kserve_namespace }}" \
        > "{{ artifact_extra_logs_dir }}/serving.status"
-    oc get inferenceservice,servingruntime -n "{{ namespace }}" -oyaml \
+    oc get inferenceservice,servingruntime -n "{{ kserve_namespace }}" -oyaml \
        > "{{ artifact_extra_logs_dir }}/serving.yaml"
-    oc get inferenceservice,servingruntime -n "{{ namespace }}" -ojson \
+    oc get inferenceservice,servingruntime -n "{{ kserve_namespace }}" -ojson \
        > "{{ artifact_extra_logs_dir }}/serving.json"
-    oc describe inferenceservice,servingruntime -n "{{ namespace }}" \
+    oc describe inferenceservice,servingruntime -n "{{ kserve_namespace }}" \
        > "{{ artifact_extra_logs_dir }}/serving.desc"
   ignore_errors: true
 
@@ -42,7 +42,7 @@
 - name: Get the names of the deployments
   command:
     oc get deployments
-       -n "{{ namespace }}"
+       -n "{{ kserve_namespace }}"
        -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
   register: deploy_names_cmd
 
@@ -50,7 +50,7 @@
   loop: "{{ deploy_names_cmd.stdout_lines }}"
   shell:
     oc logs deploy/{{ item }}
-       -n {{ namespace }}
+       -n {{ kserve_namespace }}
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/logs/{{ item }}.log"
   ignore_errors: true
