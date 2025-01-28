@@ -468,6 +468,14 @@
     ignore_errors: true
     when: fine_tuning_ray_fine_tuning_job_capture_artifacts | bool
 
+  - name: Capture the logs of KubeRay
+    shell:
+      oc logs deploy/kuberay-operator -n redhat-ods-applications
+         > {{ artifact_extra_logs_dir }}/artifacts/kuberay.log;
+
+      oc logs deploy/kuberay-operator -n redhat-ods-applications --previous
+         > {{ artifact_extra_logs_dir }}/artifacts/kuberay_previous.log;
+
 # mind that ray may swallow the last lines of the script logs
 # https://github.com/ray-project/ray/issues/48701
 - name: Ensure that the script succeeded
