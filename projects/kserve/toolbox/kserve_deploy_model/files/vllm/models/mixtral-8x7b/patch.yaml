@@ -10,6 +10,8 @@ spec:
       storageUri: s3://psap-1474-blog-models/mistralai/Mixtral-8x7B-Instruct-v0.1/ 
       args:
       - --tensor-parallel-size=4
+      - --num-scheduler-steps=8
+      - --gpu-memory-utilization=0.95
       resources:
         requests:
           cpu: "8"

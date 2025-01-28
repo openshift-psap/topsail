@@ -10,6 +10,8 @@ spec:
       storageUri: s3://psap-1474-blog-models/neuralmagic/Mixtral-8x7B-Instruct-v0.1-FP8/ 
       args:
       - --tensor-parallel-size=2
+      - --num-scheduler-steps=8
+      - --gpu-memory-utilization=0.95
       resources:
         requests:
           cpu: "16"

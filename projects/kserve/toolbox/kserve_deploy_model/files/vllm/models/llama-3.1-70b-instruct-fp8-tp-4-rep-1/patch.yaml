@@ -10,6 +10,8 @@ spec:
       storageUri: s3://psap-1474-blog-models/neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8/ 
       args:
       - --tensor-parallel-size=4
+      - --num-scheduler-steps=8
+      - --gpu-memory-utilization=0.95
       resources:
         requests:
           cpu: "16"
