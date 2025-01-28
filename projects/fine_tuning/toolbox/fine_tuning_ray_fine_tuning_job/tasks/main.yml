@@ -292,7 +292,7 @@
   - name: Make the Ray ServiceAccount privileged
     command:
       oc adm policy add-scc-to-user privileged \
-         -z {{ ray_cluster_service_account_name_cmd.stdout}}
+         -z {{ ray_cluster_service_account_name_cmd.stdout }}
          -n {{ fine_tuning_ray_fine_tuning_job_namespace }}
     when: fine_tuning_ray_fine_tuning_job_use_secondary_nic | default('', true) | length > 0
 
