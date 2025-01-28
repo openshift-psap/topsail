@@ -404,13 +404,13 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
     - name: Delete fine-tuning-file-retrieval Pod
       shell:
         oc get -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml"
-           > "{{ artifact_extra_logs_dir }}/retrieval_pod.status";
+           > "{{ artifact_extra_logs_dir }}/artifacts/retrieval_pod.status";
 
         oc get -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml"
            -oyaml
-           > "{{ artifact_extra_logs_dir }}/retrieval_pod.yaml";
+           > "{{ artifact_extra_logs_dir }}/artifacts/retrieval_pod.yaml";
 
         oc describe -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml"
-           > "{{ artifact_extra_logs_dir }}/retrieval_pod.descr";
+           > "{{ artifact_extra_logs_dir }}/artifacts/retrieval_pod.descr";
 
         oc delete -f "{{ artifact_extra_logs_dir }}/src/retrieval_pod.yaml";
