@@ -61,11 +61,11 @@ def prepare_matbench_test_files(job_index=None):
 
         yaml.dump(settings, f, indent=4)
 
-        with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
-            yaml.dump(config.project.config, f, indent=4)
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.project.config, f, indent=4)
 
-        with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
-            print(str(uuid.uuid4()), file=f)
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
 
 
 def _run_test(test_artifact_dir_p, test_override_values, job_index=None):
