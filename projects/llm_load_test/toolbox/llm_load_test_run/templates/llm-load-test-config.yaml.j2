@@ -7,7 +7,8 @@ storage:
 dataset:
   file: "datasets/openorca_large_subset_011.jsonl"
   max_queries: 3000
-  min_input_tokens: 0
+  min_input_tokens: {{ llm_load_test_run_min_input_tokens }}
+  min_output_tokens: {{ llm_load_test_run_min_output_tokens }}
   max_input_tokens: {{ llm_load_test_run_max_input_tokens }}
   max_output_tokens: {{ llm_load_test_run_max_output_tokens }}
   max_sequence_tokens: {{ llm_load_test_run_max_sequence_tokens }}

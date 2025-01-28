@@ -24,6 +24,8 @@ class Llm_Load_Test:
             streaming=True,
             use_tls=False,
             concurrency=16,
+            min_input_tokens=0,
+            min_output_tokens=0,
             max_input_tokens=1024,
             max_output_tokens=512,
             max_sequence_tokens=1536,
@@ -44,6 +46,8 @@ class Llm_Load_Test:
           streaming: Whether to stream the llm-load-test requests
           use_tls: Whether to set use_tls: True (grpc in Serverless mode)
           concurrency: Number of concurrent simulated users sending requests
+          min_input_tokens: min input tokens in llm load test to filter the dataset
+          min_output_tokens: min output tokens in llm load test to filter the dataset
           max_input_tokens: max input tokens in llm load test to filter the dataset
           max_sequence_tokens: max sequence tokens in llm load test to filter the dataset
           max_output_tokens: max output tokens in llm load test to filter the dataset

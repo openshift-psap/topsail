@@ -652,10 +652,14 @@ tests:
         endpoint: null # only used with openai plugin
       dataset_size:
         small:
+          min_input_tokens: 0
+          min_output_tokens: 0
           max_input_tokens: 2047
           max_output_tokens: 1024
           max_sequence_tokens: 2048
         large:
+          min_input_tokens: 0
+          min_output_tokens: 0
           max_input_tokens: 3500
           max_output_tokens: 800
           max_sequence_tokens: 3500
