@@ -98,6 +98,10 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
 {% endif %}
+{% if fine_tuning_run_fine_tuning_job_retrieve_files %}
+            - name: RETRIEVE
+              value: "{{ fine_tuning_job_retrieval_output_dir }}"
+{% endif %}
             volumeMounts:
             - name: storage-volume
               mountPath: /mnt/storage

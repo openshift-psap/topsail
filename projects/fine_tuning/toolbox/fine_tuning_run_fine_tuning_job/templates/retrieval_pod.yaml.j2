@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: fine-tuning-file-retrieval
+ namespace: {{ fine_tuning_run_fine_tuning_job_namespace }}
+spec:
+ containers:
+ - name: cnt
+   image: {{ fine_tuning_run_fine_tuning_job_container_image }}
+   command: ["sleep", "inf"]
+   volumeMounts:
+   - name: storage
+     mountPath: {{ fine_tuning_job_retrieval_output_dir | dirname }}
+ volumes:
+ - name: storage
+   persistentVolumeClaim:
+     claimName: {{ fine_tuning_run_fine_tuning_job_pvc_name }}

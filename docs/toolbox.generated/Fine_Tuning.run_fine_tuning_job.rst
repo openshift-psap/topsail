@@ -168,3 +168,10 @@ Parameters
 
 * If enabled, activates the host network
 
+
+``retrieve_files``  
+
+* If enabled, allows files retrieval from the pod to the artifacts directory.
+
+* default value: ``True``
+

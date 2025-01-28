@@ -22,3 +22,8 @@ else
 fi
 
 time python /app/accelerate_launch.py
+
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    # NOTE: Write here the code to copy any file you want to export to the test artifacts
+    cp /etc/os-release "$RETRIEVE"
+fi
