@@ -9,18 +9,14 @@ spec:
     model:
       storageUri: s3://psap-1474-blog-models/meta-llama/Meta-Llama-3.1-70B-Instruct/ 
       args:
-      - --dtype=bfloat16
-      - --tensor-parallel-size=8
-      - --max-model-len=4096
-      - --gpu-memory-utilization=0.95
-      - --num-scheduler-steps=5
+      - --tensor-parallel-size=4
       resources:
         requests:
           cpu: "16"
           memory: "40Gi"
-          nvidia.com/gpu: "8"
+          nvidia.com/gpu: "4"
         limits:
-          nvidia.com/gpu: "8"
+          nvidia.com/gpu: "4"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm

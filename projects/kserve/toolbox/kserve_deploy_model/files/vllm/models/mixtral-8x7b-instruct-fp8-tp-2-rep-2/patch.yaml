@@ -4,19 +4,19 @@ metadata:
   name: isvc
 spec:
   predictor:
-    minReplicas: 1
-    maxReplicas: 1
+    minReplicas: 2 
+    maxReplicas: 2
     model:
-      storageUri: s3://psap-1474-blog-models/mistralai/Mixtral-8x7B-Instruct-v0.1/ 
+      storageUri: s3://psap-1474-blog-models/neuralmagic/Mixtral-8x7B-Instruct-v0.1-FP8/ 
       args:
-      - --tensor-parallel-size=4
+      - --tensor-parallel-size=2
       resources:
         requests:
-          cpu: "8"
+          cpu: "16"
           memory: "40Gi"
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "2"
         limits:
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "2"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
@@ -28,7 +28,7 @@ spec:
     - name: shared-memory
       emptyDir:
         medium: Memory
-        sizeLimit: 16Gi
+        sizeLimit: 32Gi
     - name: tmp
       emptyDir: {}
     - name: home
