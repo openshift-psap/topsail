@@ -818,9 +818,7 @@ tests:
           max_output_tokens: 800
           max_sequence_tokens: 3500
         custom:
-          min_input_tokens: 256
           max_input_tokens: 1024
-          min_output_tokens: 1024
           max_output_tokens: 2048
           max_sequence_tokens: 4096
     longevity:
