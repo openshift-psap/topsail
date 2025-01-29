@@ -7,18 +7,20 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
-      storageUri: s3://psap-1474-blog-models/mistralai/Mixtral-8x7B-Instruct-v0.1/ 
+      storageUri: s3://psap-1474-blog-models/ibm-granite/granite-34b-code-instruct-8k/ 
       args:
-      - --tensor-parallel-size=4
-      - --enable-chunked-prefill
+      - --dtype=bfloat16
+      - --tensor-parallel-size=8
+      - --max-model-len=4096
       - --gpu-memory-utilization=0.95
+      - --num-scheduler-steps=5
       resources:
         requests:
           cpu: "8"
-          memory: "40Gi"
-          nvidia.com/gpu: "4"
+          memory: "32Gi"
+          nvidia.com/gpu: "8"
         limits:
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "8"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
