@@ -7,7 +7,7 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
-      storageUri: s3://psap-1474-blog-models/meta-llama/Meta-Llama-3.1-8B-Instruct/ 
+      storageUri: s3://psap-1474-blog-models/ibm-granite/granite-3.1-8b-instruct/ 
       args:
       - --tensor-parallel-size=1
       - --enable-chunked-prefill

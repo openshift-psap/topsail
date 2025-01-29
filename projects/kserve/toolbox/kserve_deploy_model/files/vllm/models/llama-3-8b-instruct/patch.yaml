@@ -10,7 +10,7 @@ spec:
       storageUri: s3://psap-hf-models/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct/
       args:
       - --tensor-parallel-size=1
-      - --num-scheduler-steps=8
+      - --enable-chunked-prefill
       - --gpu-memory-utilization=0.95
       resources:
         requests:

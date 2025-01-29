@@ -336,6 +336,16 @@ ci_presets:
   profiling_vllm_improvements_using_llama:
     extends: [serverless, vllm, e2e_perf, metal, profiling_settings]
     tests.e2e.models:
+    - name: granite-3-0-8b-instruct
+      model: granite-3.0-8b-instruct
+      testing:
+        size: custom
+        max_concurrency: 256
+    - name: granite-3-1-8b-instruct
+      model: granite-3.1-8b-instruct
+      testing:
+        size: custom
+        max_concurrency: 256 
     - name: llama-3-8b-instruct
       model: llama-3-8b-instruct
       testing:
@@ -376,7 +386,7 @@ ci_presets:
       testing:
         size: custom 
         max_concurrency: 256 
-    export_artifacts.path_prefix: four-H100-llm-profiling-mutli-step-scheduling-optimizations-performance-vllm-v0.6.3.dev453-RHOAI-2.16-cuda
+    export_artifacts.path_prefix: four-H100-llm-profiling-chunked-prefill-optimizations-performance-vllm-v0.6.3.dev453-RHOAI-2.16-cuda
     kserve.model.serving_runtime.update_image: false
     kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:167aa05982214c3941afbdde7c5aff6f81040193a0db1dc06a5ad16af0a8780e"
     #kserve.model.serving_runtime.kserve.image: "quay.io/modh/vllm@sha256:b51fde66f162f1a78e8c027320dddf214732d5345953b1599a84fe0f0168c619"
