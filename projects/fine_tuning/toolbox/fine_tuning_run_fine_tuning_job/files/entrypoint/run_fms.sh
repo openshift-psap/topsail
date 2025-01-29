@@ -21,23 +21,27 @@ else
     echo "Running with a $NUM_GPUS GPUs"
 fi
 
-python -m torch.distributed.run \
-     --nproc_per_node=$NUM_GPUS \
-     --nnodes=$WORLD_SIZE \
-     --node_rank=$RANK \
-     --master_addr=$MASTER_ADDR \
-     --master_port=$MASTER_PORT \
-     --module \
-     tuning.sft_trainer \
-     --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
-     --fsdp_backward_prefetch="BACKWARD_PRE" \
-     --fsdp_forward_prefetch=False \
-     --fsdp_sharding_strategy="FULL_SHARD" \
-     --fsdp_offload_params=False \
-     --fsdp_state_dict_type="FULL_STATE_DICT" \
-     --fsdp_cpu_ram_efficient_loading=True \
-     --fsdp_sync_module_states=True \
-     --fsdp_use_orig_params=False
+export LOG_LEVEL=DEBUG
+
+accelerate launch \
+  --num_processes=8 \
+  --dynamo_backend="no" \
+  --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
+  --fsdp_cpu_ram_efficient_loading="true" \
+  --fsdp_forward_prefetch="false" \
+  --fsdp_offload_params="false" \
+  --fsdp_sharding_strategy="HYBRID_SHARD" \
+  --fsdp_state_dict_type="FULL_STATE_DICT" \
+  --fsdp_sync_module_states="true" \
+  --machine_rank="0" \
+  --main_process_ip="127.0.0.1" \
+  --main_process_port="29500" \
+  --mixed_precision="no" \
+  --num_machines="1" \
+  --rdzv_backend="static" \
+  --same_network \
+  --use_fsdp \
+  -m tuning.sft_trainer
 
 if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
     # NOTE: Write here the code to copy any file you want to export to the test artifacts
