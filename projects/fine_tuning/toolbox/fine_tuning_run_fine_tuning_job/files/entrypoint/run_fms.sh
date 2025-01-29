@@ -23,7 +23,7 @@ fi
 
 export LOG_LEVEL=DEBUG
 
-accelerate launch \
+python -m accelerate.commands.launch \
   --num_processes=8 \
   --dynamo_backend="no" \
   --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
