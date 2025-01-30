@@ -80,6 +80,16 @@ Parameters
 * default value: ``16``
 
 
+``min_input_tokens``  
+
+* Min input tokens in llm load test to filter the dataset
+
+
+``min_output_tokens``  
+
+* Min output tokens in llm load test to filter the dataset
+
+
 ``max_input_tokens``  
 
 * Max input tokens in llm load test to filter the dataset
