@@ -47,6 +47,7 @@ def install_authorino():
                     catalog="redhat-operators",
                     manifest_name=AUTHORINO_MANIFEST_NAME,
                     namespace="all",
+                    channel="stable",
                     artifact_dir_suffix="_authorino_operator") 
 
 
