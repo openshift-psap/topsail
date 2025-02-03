@@ -7,14 +7,14 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
-      storageUri: s3://psap-1474-blog-models/mistralai/Mixtral-8x7B-Instruct-v0.1/ 
+      storageUri: s3://psap-1474-blog-models/neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8/ 
       args:
       - --tensor-parallel-size=4
-      - --enable-chunked-prefill
+      - --enable-chunked-prefill 
       - --gpu-memory-utilization=0.95
       resources:
         requests:
-          cpu: "8"
+          cpu: "16"
           memory: "40Gi"
           nvidia.com/gpu: "4"
         limits:
@@ -30,7 +30,7 @@ spec:
     - name: shared-memory
       emptyDir:
         medium: Memory
-        sizeLimit: 16Gi
+        sizeLimit: 32Gi
     - name: tmp
       emptyDir: {}
     - name: home
