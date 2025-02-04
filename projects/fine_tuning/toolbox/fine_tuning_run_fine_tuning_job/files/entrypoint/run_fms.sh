@@ -21,7 +21,13 @@ else
     echo "Running with a $NUM_GPUS GPUs"
 fi
 
-time python /app/accelerate_launch.py
+export LOG_LEVEL=DEBUG
+
+python -m accelerate.commands.launch \
+  --num_processes=8 \
+  --config-file /app/accelerate_fsdp_defaults.yaml \
+  --dynamo_backend="no" \
+  -m tuning.sft_trainer
 
 if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
     # NOTE: Write here the code to copy any file you want to export to the test artifacts
