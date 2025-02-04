@@ -1,0 +1,37 @@
+output:
+  format: "json"
+  dir: "{{ artifact_extra_logs_dir }}/output"
+  file: "output.json"
+storage:
+  type: local
+dataset:
+  file: "datasets/openorca_large_subset_011.jsonl"
+  max_queries: 3000
+  min_input_tokens: 0
+  max_input_tokens: {{ llm_load_test_run_max_input_tokens }}
+  max_output_tokens: {{ llm_load_test_run_max_output_tokens }}
+  max_sequence_tokens: {{ llm_load_test_run_max_sequence_tokens }}
+load_options:
+  type: constant #Future options: loadgen, stair-step
+  concurrency: {{ llm_load_test_run_concurrency }}
+  duration: {{ llm_load_test_run_duration }}
+plugin: "{{ llm_load_test_run_plugin }}"
+plugin_options:
+  streaming: {{ llm_load_test_run_streaming }}
+  interface: "{{ llm_load_test_run_interface }}"
+{% if llm_load_test_run_plugin == 'openai_plugin' %}
+  host: "{{ llm_load_test_run_interface }}://{{ llm_load_test_run_host}}:{{ llm_load_test_run_port}}"
+  endpoint: "{{ llm_load_test_run_endpoint }}"
+  model_name: "/mnt/models/"
+{% else %}
+  model_name: "{{ llm_load_test_run_model_id }}"
+  host: "{{ llm_load_test_run_host}}"
+  port: "{{ llm_load_test_run_port}}"
+{% endif %}
+{% if llm_load_test_run_use_tls %}
+  use_tls: True
+{% else %}
+  use_tls: False
+{% endif %}
+extra_metadata:
+  replicas: 1

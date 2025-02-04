@@ -1,0 +1,5 @@
+---
+- name: Include test-specific deploy logic
+  ansible.builtin.include_role:
+    name: "{{ test_role }}"
+    tasks_from: deploy

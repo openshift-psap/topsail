@@ -1,9 +1,0 @@
----
-- name: Delete the entitlement MachineConfig objects
-  command:
-    oc delete MachineConfig
-       --ignore-not-found=true
-       50-entitlement-key-pem
-       50-entitlement-pem
-       50-rhsm-conf
-       50-rhsm-repo-ca

@@ -1,0 +1,16 @@
+---
+# General workload settings
+workload_type: ssh  # Options: ssh, container, kubernetes
+workload_command: echo "Hello world"
+
+# Kubernetes-specific settings
+kubernetes_namespace: default
+kubernetes_pod_name: workload-runner
+kubernetes_image: busybox:latest
+
+# Container-specific settings
+container_name: workload-runner
+container_image: busybox:latest
+
+# SSH-specific settings
+ssh_host: localhost

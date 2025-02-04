@@ -1,8 +1,0 @@
-# name of the PVC containing the coco dataset
-benchmarking_run_mlperf_ssd_dataset_pvc_name: "benchmarking-coco-dataset"
-
-# name of the config map where the benchmark entrypoint will be stored
-benchmarking_run_mlperf_ssd_entrypoint_cm_name: "benchmarking-mlperf-ssd-entrypoint"
-
-# name of the pod running the SSD benchmark
-benchmarking_run_mlperf_ssd_name: "benchmarking-mlperf-ssd"

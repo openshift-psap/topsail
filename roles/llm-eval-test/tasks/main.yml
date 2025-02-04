@@ -1,0 +1,15 @@
+---
+- name: Prepare specific configurations for llm-eval-test
+  ansible.builtin.include_tasks: setup.yml
+
+- name: Deploy llm-eval-test
+  ansible.builtin.include_role:
+    name: topsail.workload_deploy
+
+- name: Run llm-eval-test
+  ansible.builtin.include_role:
+    name: topsail.workload_run
+
+- name: Gather results of llm-eval-test
+  ansible.builtin.include_role:
+    name: topsail.workload_gather_results

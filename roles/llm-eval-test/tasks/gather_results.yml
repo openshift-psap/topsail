@@ -1,0 +1,25 @@
+---
+- name: Collect evaluation results
+  ansible.builtin.fetch:
+    src: "{{ result_file }}"
+    dest: "./results/{{ inventory_hostname }}/llm-eval-test.log"
+    flat: yes
+  when: workload_type == "ssh"
+
+- name: Fetch results from container
+  ansible.builtin.command:
+    cmd: podman logs {{ app_name }}
+  register: container_logs
+  when: workload_type == "container"
+
+- name: Fetch logs from Kubernetes pod
+  ansible.builtin.command:
+    cmd: kubectl logs pod/{{ app_name }} -n {{ kubernetes_namespace }}
+  register: pod_logs
+  when: workload_type == "kubernetes"
+
+- name: Save results for container or Kubernetes
+  ansible.builtin.copy:
+    content: "{{ container_logs.stdout | default(pod_logs.stdout) }}"
+    dest: "./results/{{ app_name }}_results.log"
+  when: workload_type in ["container", "kubernetes"]

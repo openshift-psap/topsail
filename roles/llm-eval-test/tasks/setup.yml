@@ -1,0 +1,20 @@
+---
+- name: Ensure dependencies for llm-eval-test
+  ansible.builtin.package:
+    name: "{{ app_dependencies }}"
+    state: present
+  when: workload_type == "ssh"
+
+- name: Install Python dependencies for llm-eval-test
+  ansible.builtin.pip:
+    name: 
+      - numpy
+      - pandas
+    virtualenv: "{{ app_install_path }}/venv"
+  when: workload_type == "ssh"
+
+- name: Prepare input data for llm-eval-test
+  ansible.builtin.copy:
+    src: "{{ eval_input }}"
+    dest: "{{ app_install_path }}/eval_input.json"
+  when: workload_type == "ssh"

@@ -1,0 +1,17 @@
+- name: Create namespace if it doesn't exist
+  ansible.builtin.command:
+    cmd: kubectl create namespace {{ kubernetes_namespace }}
+  ignore_errors: yes
+
+- name: Run workload in Kubernetes pod
+  ansible.builtin.shell:
+    cmd: kubectl run {{ kubernetes_pod_name }} --image={{ kubernetes_image }} --restart=Never -- sh -c "{{ workload_command }}"
+    executable: /bin/bash
+
+- name: Wait for pod to complete
+  ansible.builtin.command:
+    cmd: kubectl wait --for=condition=complete --timeout=60s pod/{{ kubernetes_pod_name }} -n {{ kubernetes_namespace }}
+
+- name: Get pod logs
+  ansible.builtin.command:
+    cmd: kubectl logs pod/{{ kubernetes_pod_name }} -n {{ kubernetes_namespace }}

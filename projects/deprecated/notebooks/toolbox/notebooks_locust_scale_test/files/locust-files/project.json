@@ -1,9 +1,0 @@
-{
-    "apiVersion": "project.openshift.io/v1",
-    "kind": "ProjectRequest",
-    "metadata": {
-        "name": "{{ project_name }}"
-    },
-    "description": "",
-    "displayName": "{{ project_name }}"
-}

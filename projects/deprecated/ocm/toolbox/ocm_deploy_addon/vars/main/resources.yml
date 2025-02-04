@@ -1,1 +1,0 @@
-ocm_deploy_addon_template: "roles/ocm/ocm_deploy_addon/templates/ocm_addon_template.json.j2"

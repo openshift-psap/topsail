@@ -1,8 +1,0 @@
-# Auto-generated file, do not edit manually ...
-# Toolbox generate command: repo generate_ansible_default_settings
-# Source component: Notebooks.cleanup
-
-# Parameters
-# Prefix of the usernames who created the resources.
-# Mandatory value
-notebooks_cleanup_username_prefix:

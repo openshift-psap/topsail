@@ -1,0 +1,49 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llm_Load_Test.run
+
+# Parameters
+# the host endpoint of the gRPC call
+# Mandatory value
+llm_load_test_run_host:
+
+# the gRPC port on the specified host
+# Mandatory value
+llm_load_test_run_port:
+
+# the duration of the load testing
+# Mandatory value
+llm_load_test_run_duration:
+
+# the llm-load-test plugin to use (tgis_grpc_plugin or caikit_client_plugin for now)
+llm_load_test_run_plugin: tgis_grpc_plugin
+
+# (http or grpc) the interface to use for llm-load-test-plugins that support both
+llm_load_test_run_interface: grpc
+
+# The ID of the model to pass along with the GRPC call
+llm_load_test_run_model_id: not-used
+
+# Path where llm-load-test has been cloned
+llm_load_test_run_src_path: projects/llm_load_test/subprojects/llm-load-test/
+
+# Whether to stream the llm-load-test requests
+llm_load_test_run_streaming: true
+
+# Whether to set use_tls: True (grpc in Serverless mode)
+llm_load_test_run_use_tls: false
+
+# Number of concurrent simulated users sending requests
+llm_load_test_run_concurrency: 16
+
+# max input tokens in llm load test to filter the dataset
+llm_load_test_run_max_input_tokens: 1024
+
+# max output tokens in llm load test to filter the dataset
+llm_load_test_run_max_output_tokens: 512
+
+# max sequence tokens in llm load test to filter the dataset
+llm_load_test_run_max_sequence_tokens: 1536
+
+# name of the endpoint to query (for openai plugin only)
+llm_load_test_run_endpoint: /v1/completions
