@@ -1,4 +1,0 @@
----
-coco_dataset_entrypoint: 'roles/benchmarking/benchmarking_deploy_coco_dataset/files/entrypoint.sh'
-coco_dataset_pod: 'roles/benchmarking/benchmarking_deploy_coco_dataset/templates/pod.yml.j2'
-coco_dataset_pvc: 'roles/benchmarking/benchmarking_deploy_coco_dataset/templates/pvc.yml.j2'

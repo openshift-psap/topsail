@@ -1,9 +1,0 @@
----
-# path to the RHSM file of the entitlement
-entitlement_rhsm: 'roles/entitlement/entitlement_deploy/files/rhsm.conf'
-
-# template files for the MachineConfig resources
-entitlement_mc_rhsm: 'roles/entitlement/entitlement_deploy/files/mc_rhsm.yml'
-entitlement_mc_pem: 'roles/entitlement/entitlement_deploy/files/mc_pem.yml'
-entitlement_mc_rhsm_ca: 'roles/entitlement/entitlement_deploy/files/mc_rhsm_ca.yml'
-entitlement_py_apply: 'roles/entitlement/entitlement_deploy/files/apply_template.py'

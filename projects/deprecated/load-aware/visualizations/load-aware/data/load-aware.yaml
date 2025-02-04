@@ -1,9 +1,0 @@
-visualize:
-- id: scale_test
-  generate:
-  - "report: Error report"
-  - "report: scheduler performance"
-  - "report: Node Utilisation"
-  - "report: Sutest Cluster CPU/Memory Usage"
-  - "report: Control Plane Nodes Load"
-  - "report: Power Usage Statistics"

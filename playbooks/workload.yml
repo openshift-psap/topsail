@@ -1,0 +1,34 @@
+---
+- name: Execute Topsail workloads dynamically
+  hosts: all
+  become: true
+  vars:
+    workload_type: ssh
+    test_role: topsail.llm_load_test
+    api_endpoint: http://api.example.com
+    eval_input: "./data/eval_input.json"
+
+  tasks:
+    - name: Prepare workload
+      ansible.builtin.include_role:
+        name: topsail.workload-deploy
+
+    - name: Deploy workload
+      ansible.builtin.include_role:
+        name: topsail.workload-deploy
+
+    - name: Run workload
+      ansible.builtin.include_role:
+        name: topsail.workload-run
+
+    - name: Gather workload results
+      ansible.builtin.include_role:
+        name: topsail.workload-results
+
+
+# ansible-playbook \
+  -i inventory.yml \
+  playbooks/workload.yml \
+  --extra-vars "test_role=topsail.llm_load_test workload_type=ssh"
+
+# ansible-playbook -i inventory.yml playbooks/workload.yml --extra-vars "test_role=topsail.llm_eval_test workload_type=kubernetes"

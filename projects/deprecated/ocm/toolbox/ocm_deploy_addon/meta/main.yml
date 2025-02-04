@@ -1,5 +1,0 @@
----
-dependencies:
-- role: check_deps
-  vars:
-    check_deps_needs_cluster: false

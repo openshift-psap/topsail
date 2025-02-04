@@ -1,5 +1,0 @@
-# not used by the buildconfig should not be prefix with the image registry location
-FROM topsail:main
-
-RUN pip install --no-cache-dir  \
-           codeflare_sdk

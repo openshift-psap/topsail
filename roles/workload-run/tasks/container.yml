@@ -1,0 +1,8 @@
+- name: Ensure container runtime is installed
+  ansible.builtin.package:
+    name: podman
+    state: present
+
+- name: Run workload in container
+  ansible.builtin.command:
+    cmd: podman run --rm --name {{ container_name }} {{ container_image }} sh -c "{{ workload_command }}"

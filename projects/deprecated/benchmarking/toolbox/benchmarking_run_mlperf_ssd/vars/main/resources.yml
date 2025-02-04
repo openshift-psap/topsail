@@ -1,3 +1,0 @@
----
-benchmarking_mlperf_ssd_pod: 'roles/benchmarking/benchmarking_run_mlperf_ssd/templates/mlperf-ssd-pod.yml.j2'
-benchmarking_mlperf_ssd_entrypoint: 'roles/benchmarking/benchmarking_run_mlperf_ssd/files/entrypoint.sh'

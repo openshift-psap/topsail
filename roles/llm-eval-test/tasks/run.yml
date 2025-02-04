@@ -1,0 +1,16 @@
+---
+- name: Configure environment for llm-eval-test
+  ansible.builtin.set_fact:
+    workload_command: >-
+      {% if workload_type == 'ssh' %}
+      source {{ app_install_path }}/venv/bin/activate &&
+      python3 eval.py --input {{ app_install_path }}/eval_input.json
+      {% elif workload_type == 'container' %}
+      python3 eval.py --input /data/eval_input.json
+      {% elif workload_type == 'kubernetes' %}
+      python3 eval.py --input /data/eval_input.json
+      {% endif %}
+
+- name: Run llm-eval-test
+  ansible.builtin.include_role:
+    name: topsail.workload_runner

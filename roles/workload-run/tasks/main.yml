@@ -1,0 +1,4 @@
+---
+# tasks file for workload-runner
+- name: Run workload based on type
+  ansible.builtin.include_tasks: "{{ workload_type }}.yml"

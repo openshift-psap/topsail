@@ -1,3 +1,0 @@
----
-wisdom_warmup_entrypoint: '{{ role_path }}/files/entrypoint.sh'
-wisdom_warmup_pod_template: 'templates/wisdom-warmup_pod.yml.j2'

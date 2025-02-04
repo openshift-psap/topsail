@@ -1,8 +1,0 @@
----
-# wait for the successful deployment of the entitlement?
-entitlement_test_and_wait: "no"
-
-# the number of retries to perform when waiting for the entitlement
-entitlement_nb_wait_retries: 20
-
-entitlement_inspect_on_failure: "yes"
