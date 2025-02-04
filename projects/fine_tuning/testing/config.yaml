@@ -838,7 +838,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: quay.io/modh/fms-hf-tuning:v2.0.1
+      image: quay.io/modh/fms-hf-tuning:v2.5.0
     ray:
       enabled: false
       workload: ray-benchmark
