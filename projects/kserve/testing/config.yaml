@@ -553,6 +553,15 @@ prepare:
       namespaces:
       - knative-eventing
       - knative-serving
+    kserve_mode: [ serverless ]
+  - name: authorino-operator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - authconfigs.authorino.kuadrant.io
+      - authorinos.operator.authorino.kuadrant.io
+    kserve_mode: [ raw, serverless ]
   cleanup:
     enabled: true
     crds:

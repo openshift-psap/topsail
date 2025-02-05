@@ -35,21 +35,6 @@ def install_servicemesh():
                     namespace="all",
                     artifact_dir_suffix="_service-mesh")
 
-def install_authorino():
-    AUTHORINO_MANIFEST_NAME = "authorino-operator"
-    installed_csv_cmd = run.run("oc get csv -oname -n openshift-operators", capture_stdout=True)
-
-    if AUTHORINO_MANIFEST_NAME in installed_csv_cmd.stdout:
-        logging.info(f"Operator '{AUTHORINO_MANIFEST_NAME}' is already installed.")
-        return
-
-    run.run_toolbox("cluster", "deploy_operator",
-                    catalog="redhat-operators",
-                    manifest_name=AUTHORINO_MANIFEST_NAME,
-                    namespace="all",
-                    channel="stable",
-                    artifact_dir_suffix="_authorino_operator") 
-
 
 def is_rhoai_installed():
     installed_csv_cmd = run.run(f"oc get csv -loperators.coreos.com/{RHODS_OPERATOR_MANIFEST_NAME}.{RHODS_NAMESPACE}"
@@ -70,7 +55,6 @@ def install(token_file=None, force=False):
 
     with env.NextArtifactDir("install_rhoai"):
         install_servicemesh()
-        install_authorino()
         run.run_toolbox_from_config("rhods", "deploy_ods")
 
 
