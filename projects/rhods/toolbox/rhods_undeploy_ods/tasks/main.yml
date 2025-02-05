@@ -73,6 +73,6 @@
 - name: Delete the delete CM
   shell:
     oc delete
-       confimap/delete-self-managed-odh
+       configmap/delete-self-managed-odh
        -n redhat-ods-operator
        --ignore-not-found
