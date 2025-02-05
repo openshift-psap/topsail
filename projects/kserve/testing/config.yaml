@@ -38,6 +38,9 @@ ci_presets:
   cluster_2xa100:
     clusters.sutest.compute.machineset.type: "Beaker A100-80GB"
 
+  cluster_4xh100:
+    clusters.sutest.compute.machineset.type: "HGX 4xH100-80GB"
+
   metal:
     clusters.sutest.is_metal: true
     clusters.driver.is_metal: true
@@ -466,6 +469,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     nvd-srv-02.nvidia.eng.rdu2.redhat.com: cluster_2xa100
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_4xh100
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -522,9 +526,9 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
+    tag: rhoai-2.17@sha256:d5223103d49934a96a896310c57777b149dba99c472b3574e3d6c4805d58172f
     channel: fast
-    version: 2.16.0
+    version: 2.17.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false
@@ -549,6 +553,15 @@ prepare:
       namespaces:
       - knative-eventing
       - knative-serving
+    kserve_mode: [serverless]
+  - name: authorino-operator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - authconfigs.authorino.kuadrant.io
+      - authorinos.operator.authorino.kuadrant.io
+    kserve_mode: [raw, serverless]
   cleanup:
     enabled: true
     crds:
