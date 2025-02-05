@@ -54,7 +54,6 @@
   delay: 20
   loop:
   - redhat-ods-applications
-  - redhat-ods-monitoring
   - rhods-notebooks
 
 - name: Delete the operator namespace
