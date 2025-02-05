@@ -140,12 +140,12 @@
     retries: 60
     delay: 10
   - name: Wait for the DSC object to be ready
-    shell:
+    shell: |
+      set -o pipefail;
       # Looking at the status of individual components is not sufficient enough
       # for determining the Ready status
 
-      oc get dsc/default-dsc -o json |
-      jq '.status.conditions[]|select(.type == "Ready" and .status == "True")'
+      oc get dsc/default-dsc -o json | jq '.status.conditions[]|select(.type == "Ready" and .status == "True")'
     register: dscluster_ready_status
     retries: 60
     until: dscluster_ready_status.stdout != ""
