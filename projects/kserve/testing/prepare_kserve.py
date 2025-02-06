@@ -104,13 +104,13 @@ def prepare():
 
     with run.Parallel("prepare_kserve") as parallel:
         for operator in config.project.get_config("prepare.operators"):
-            if config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
+            if not config.project.get_config("kserve.raw_deployment.enabled"):
                 parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
                                  catalog=operator['catalog'],
                                  manifest_name=operator['name'],
                                  namespace=operator['namespace'],
                                  artifact_dir_suffix=operator['name'])
-            else:
+            elif config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
                 parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
                                  catalog=operator['catalog'],
                                  manifest_name=operator['name'],
@@ -167,9 +167,9 @@ def cleanup(mute=True):
 
     with run.Parallel("cleanup_kserve") as parallel:
         for operator in config.project.get_config("prepare.operators"):
-           if config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
+           if not config.project.get_config("kserve.raw_deployment.enabled"):
                 undeploy_operator(operator)
-           else:
+           elif config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
                 undeploy_operator(operator)
 
 
