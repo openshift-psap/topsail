@@ -553,8 +553,8 @@ base_image:
   imagestream: topsail
   repo:
     url: https://github.com/openshift-psap/topsail/
-    tag: pr597
-    ref: refs/pull/597/head
+    tag: main
+    ref: main
     ref_prefer_pr: true
     dockerfile_path: build/Dockerfile
   extend:
