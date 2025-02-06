@@ -5,6 +5,8 @@ approvers:
   - ashishkamra
   - albertoperdomo2
   - drewrip
+  - tosokin
+  - sjmonson
 reviewers:
   - dagrayvid
   - kpouget
@@ -16,3 +18,4 @@ cluster_create: # who is allowed to create clusters in the PSAP account
   dagrayvid: dagray
   ccamacho: ccamacho
   drewrip: dripberg
+  sjmonson: smonson

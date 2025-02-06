@@ -22,7 +22,7 @@ register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.LOCAL_CI__RUN_MULTI = "*__local_ci__run_multi"
-artifact_dirnames.NOTEBOOKS_CAPTURE_STATE = "*__notebooks__capture_state"
+artifact_dirnames.NOTEBOOKS_CAPTURE_STATE = "*__pipelines__capture_notebooks_state"
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
 IMPORTANT_FILES = [

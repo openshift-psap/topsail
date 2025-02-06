@@ -82,6 +82,14 @@ else
     echo "No GPU seem to be available."
 fi
 
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    if [[ -d "$RETRIEVE" ]]; then
+        rm -rf "$RETRIEVE"
+    fi
+    mkdir -p "$RETRIEVE"
+    echo "Emptied output directory: ${RETRIEVE}"
+fi
+
 if [[ "${WORKLOAD:-}" == fms ]]; then
     CMD="bash $THIS_DIR/run_fms.sh"
 elif [[ "${WORKLOAD:-}" == ilab ]]; then

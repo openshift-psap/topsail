@@ -4,5 +4,3 @@ visualize:
   - "report: Sutest Cluster CPU/Memory Usage"
   - "report: Control Plane Nodes Load"
   - "report: GPU Usage"
-  - "report: Prometheus Summary Report"
-  - "report: Prometheus Summary By Model Report"

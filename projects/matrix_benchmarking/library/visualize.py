@@ -458,7 +458,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     if non_fatal_errors:
-        msg = f"An error happened during the visualization post-processing ... ({', '.join(errors)})"
+        msg = f"An error happened during the visualization post-processing ... ({', '.join(non_fatal_errors)})"
         logging.error(msg)
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(msg, file=f)
@@ -480,6 +480,7 @@ def get_common_matbench_args_env(results_dirname):
     common_args["workload_base_dir"] = str(TOPSAIL_DIR)
 
     common_env = dict()
+    common_env["MPLCONFIGDIR"] = "/tmp"
 
     return common_args, common_env
 

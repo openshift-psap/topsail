@@ -96,8 +96,12 @@ def parse_once(results, dirname, import_settings):
         results.finish_reason = _parse_pytorch_finish_reason(dirname)
 
     if results.locations.has_ray:
-        flavor = import_settings["hyper_parameters.flavor"]
-        results.ray_metrics = _parse_ray_logs(dirname, flavor)
+        flavor = results.job_config["hyper_parameters"].get("flavor")
+        if flavor:
+            results.ray_metrics = _parse_ray_logs(dirname, flavor)
+        else:
+            logging.error("Couldn't find the Ray test flavor in hyper_parameters.flavor, cannot parse the Ray logs")
+
         results.allocated_resources = _parse_ray_allocated_resources(dirname)
         results.finish_reason = _parse_ray_finish_reason(dirname)
 
@@ -220,6 +224,7 @@ ILAB_PROGRESS_KEYS = {
 
 ILAB_SUMMARY_KEYS = {
     "torchrun_exec_time": types.SimpleNamespace(lower_better=True, units="minutes", title="Execution wall-time"),
+    "average_throughput": types.SimpleNamespace(lower_better=False, units="samples/second", title="Average throughput"),
 }
 
 """
@@ -260,7 +265,7 @@ def _parse_ilab_logs(dirname):
 
         ilab_metrics.summary.torchrun_exec_time = int(time_str) / 60 # convert from seconds to minutes
 
-    with open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f:
+    with (open(register_important_file(dirname, artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR / "artifacts/pod.log")) as f):
         # metrics lines are printed in green. Look them up.
         in_green = False
         current_json = ""
@@ -285,6 +290,17 @@ def _parse_ilab_logs(dirname):
             ilab_metrics.progress.append(progress)
             current_json = ""
             in_green = False
+
+        if ilab_metrics.progress:
+            first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
+            last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
+            first_step_samples_seen = ilab_metrics.progress[0].samples_seen
+            last_step_samples_seen = ilab_metrics.progress[-1].samples_seen
+            period = (last_step_timestamp - first_step_timestamp).total_seconds()
+            all_samples_seen = last_step_samples_seen - first_step_samples_seen
+            if period == 0: period = 1 # avoid /0 if there's only one step (in the smoke test)
+            average_throughput = all_samples_seen/period
+            ilab_metrics.summary.average_throughput = average_throughput
 
     return ilab_metrics
 

@@ -171,5 +171,5 @@ def run_with_ansible_ssh_conf(cmd):
     private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
 
     logging.info(f"Running on the jump host: {cmd}")
-    run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- {cmd}",
+    run.run(f"ssh {ssh_flags} -t -i {private_key_path} {user}@{host} -p {port} -- {cmd}",
             log_command=False)

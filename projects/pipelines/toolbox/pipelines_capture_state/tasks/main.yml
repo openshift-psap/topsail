@@ -14,13 +14,13 @@
 
 - name: Define the test environment
   set_fact:
-    namespace: "{% if pipelines_capture_state_namespace | length > 0 %}{{ pipelines_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
+    pipelines_namespace: "{% if pipelines_capture_state_namespace | length > 0 %}{{ pipelines_capture_state_namespace }}{% else %}{{ project_name_cmd.stdout }}{% endif %}"
     user_id: "{{ pipelines_capture_state_user_id }}"
 
 - name: Compute the DSP application name
   shell:
     set -o pipefail;
-    oc get dspa -oname -n "{{ namespace }}" | head -1 | cut -d/ -f2
+    oc get dspa -oname -n "{{ pipelines_namespace }}" | head -1 | cut -d/ -f2
   register: dspa_name_cmd
   when: not pipelines_capture_state_dsp_application_name
   failed_when: not dspa_name_cmd.stdout
@@ -31,14 +31,14 @@
 
 - name: Save the state of all the resources
   shell:
-    oc get all -lapp=ds-pipeline-{{ dspa_application_name }} -n "{{ namespace }}"
+    oc get all -lapp=ds-pipeline-{{ dspa_application_name }} -n "{{ pipelines_namespace }}"
        > "{{ artifact_extra_logs_dir }}/all.status"
   ignore_errors: true
 
 - name: Get the status of the events
   shell:
     oc get events
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/events.status"
   ignore_errors: true
   when: pipelines_capture_state_capture_extra_artifacts
@@ -46,39 +46,39 @@
 - name: Get the json definition of the events
   shell:
     oc get events -ojson
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/events.json"
   when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the workflow status
   shell:
-    oc get workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.status"
+    oc get workflow.argoproj.io -n "{{ pipelines_namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.status"
   ignore_errors: true
   when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline description
   shell:
-    oc describe workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.desc"
+    oc describe workflow.argoproj.io -n "{{ pipelines_namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.desc"
   ignore_errors: true
   when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline definition
   shell:
-    oc get -oyaml workflow.argoproj.io -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.yaml"
+    oc get -oyaml workflow.argoproj.io -n "{{ pipelines_namespace }}" > "{{ artifact_extra_logs_dir }}/workflow.yaml"
   ignore_errors: true
   when: pipelines_capture_state_capture_extra_artifacts
 
 - name: Save the pipeline JSON definition
   shell:
     set -o pipefail;
-    oc get -ojson workflow.argoproj.io -n "{{ namespace }}"
+    oc get -ojson workflow.argoproj.io -n "{{ pipelines_namespace }}"
       | jq '[[.items[] | select(.metadata.annotations."pipelines.kubeflow.org/run_name"|contains("user{{ user_id }}-"))]] | {"apiVersion"{{ ":" }} "v1", "items"{{ ":" }} add}'
       > "{{ artifact_extra_logs_dir }}/workflow.json"
   ignore_errors: true
 
 - name: Save the deployments definition
   shell:
-    oc get -ojson deployments -n "{{ namespace }}" > "{{ artifact_extra_logs_dir }}/deployments.json"
+    oc get -ojson deployments -n "{{ pipelines_namespace }}" > "{{ artifact_extra_logs_dir }}/deployments.json"
 
 - name: Assemble workflow pod prefixes
   shell:
@@ -95,7 +95,7 @@
 - name: Save the status of the pods
   shell:
     oc get pods -owide
-       -n "{{ namespace }}"
+       -n "{{ pipelines_namespace }}"
        > "{{ artifact_extra_logs_dir }}/pods.status"
   register: dspa_pod_names_cmd
   when: pipelines_capture_state_capture_extra_artifacts
@@ -103,7 +103,7 @@
 - name: Get the names of the pods
   shell: |
     set -o pipefail;
-    all_pods=$(oc get pods -n "{{ namespace }}" -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+    all_pods=$(oc get pods -n "{{ pipelines_namespace }}" -ojsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
     prefixes={{ all_allowed_prefixes | join(' ') | quote }}
     for pod_name in $all_pods; do
       for prefix in $prefixes; do
@@ -122,7 +122,7 @@
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc logs pod/{{ item }}
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        --all-containers --prefix
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.log"
   ignore_errors: true
@@ -132,7 +132,7 @@
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc describe pod/{{ item }}
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.desc"
   ignore_errors: true
   when: pipelines_capture_state_capture_extra_artifacts
@@ -141,7 +141,7 @@
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc get pod/{{ item }}
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        -oyaml
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.yaml"
   ignore_errors: true
@@ -151,7 +151,7 @@
   loop: "{{ dspa_pod_names_cmd.stdout_lines }}"
   shell:
     oc get pod/{{ item }}
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        -ojson
        > "{{ artifact_extra_logs_dir }}/pods/{{ item }}.json"
   ignore_errors: true
@@ -159,54 +159,54 @@
 - name: Capture the DSP Application
   shell:
     oc get -oyaml dspa/{{ dspa_application_name }}
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/application.yaml"
   ignore_errors: true
 
 - name: Capture the DSP Applications
   shell:
     oc get -ojson dspa
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/applications.json"
   ignore_errors: true
 
 - name: Capture the Notebooks description
   shell:
     oc describe notebooks
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.descr"
   ignore_errors: true
 
 - name: Get the status of the notebook resources
   shell:
     oc get notebooks
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.status"
   ignore_errors: true
 
 - name: Get the definition of the notebook resources
   shell:
     oc get notebooks -oyaml
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.yaml"
   ignore_errors: true
 
 - name: Get the json definition of the notebook resources
   shell:
     oc get notebooks -ojson
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.json"
   ignore_errors: true
 
 - name: Get the json definition of the notebook resources
   shell:
     oc get notebooks -ojson
-       -n {{ namespace }}
+       -n {{ pipelines_namespace }}
        > "{{ artifact_extra_logs_dir }}/notebooks.json"
 
 - name: Dump the content of the DSPApplication database
   shell:
-    oc rsh -n {{ namespace }}
+    oc rsh -n {{ pipelines_namespace }}
        deploy/mariadb-{{ dspa_application_name }}
        mysqldump -u root mlpipeline > "{{ artifact_extra_logs_dir }}/database.sql"
   when: pipelines_capture_state_capture_extra_artifacts

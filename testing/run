@@ -272,6 +272,46 @@ second_target="${1:-}"
 # Note: do not 'exec' into the entrypoint, so that 'postchecks' can be
 # executed on exit.
 
+term_kill_needed="hell"
+term_child_pid=""
+wait_term() {
+    # not sure why this is needed, but without it the ERR trap isn't executed as it should ...
+    trap "postchecks ERR" ERR
+
+    term_child_pid=$!
+    if [ "${term_kill_needed:-}" ]; then
+        echo "run: child PID known wait_term handler. Forwarning the signal to ${target} ..."
+        kill -${term_kill_needed} "${term_child_pid}" 2>/dev/null
+    fi
+    echo "run: waiting for the child process $$..."
+    wait ${term_child_pid} 2>/dev/null
+    trap - TERM INT
+
+    wait ${term_child_pid} 2>/dev/null
+}
+
+handle_term() {
+    sig=$1
+    echo "run: handle_term: signal $sig received."
+    if [ "${term_child_pid}" ]; then
+        echo "run: handle_term: forwarding it to ${target} ..."
+        kill -$sig "${term_child_pid}" 2>/dev/null
+    else
+        echo "run: handle_term: child PID not known by the signer handler ..."
+        term_kill_needed="$sig"
+    fi
+}
+
+execute() {
+    trap 'handle_term TERM' TERM
+    trap 'handle_term INT' INT
+    unset term_child_pid
+    unset term_kill_needed
+
+    "$@" &
+    wait_term
+}
+
 if [[ -f "${THIS_DIR}/${target}.sh" || -f "${THIS_DIR}/${target}" || -f "${THIS_DIR}/${target}.py" ]]; then
     if [[ -f "${THIS_DIR}/${target}.sh" ]]; then
         "${target_entrypoint_file}" "$@"
@@ -282,7 +322,7 @@ if [[ -f "${THIS_DIR}/${target}.sh" || -f "${THIS_DIR}/${target}" || -f "${THIS_
         exit 0
     fi
 
-    "${THIS_DIR}/${target}" "$@"
+    execute "${THIS_DIR}/${target}" "$@"
     exit 0
 fi
 
@@ -293,7 +333,7 @@ target_entrypoint_file="${target_entrypoint_dir}/${second_target}"
 if [[ -e "${target_entrypoint_file}" ]]; then
     shift # eat second_target
 
-    "${target_entrypoint_file}" "$@"
+    execute "${target_entrypoint_file}" "$@"
     exit 0
 fi
 
@@ -302,7 +342,7 @@ target_entrypoint_file_py="${target_entrypoint_dir}/${second_target}.py"
 if [[ -e "${target_entrypoint_file_py}" ]]; then
     shift # eat second_target
 
-    "${target_entrypoint_file_py}" "$@"
+    execute "${target_entrypoint_file_py}" "$@"
     exit 0
 fi
 
@@ -311,7 +351,7 @@ target_entrypoint_file_sh="${target_entrypoint_dir}/${second_target}.sh"
 if [[ -e "${target_entrypoint_file_sh}" ]]; then
     shift # eat second_target
 
-    "${target_entrypoint_file_sh}" "$@"
+    execute "${target_entrypoint_file_sh}" "$@"
     exit 0
 fi
 
@@ -326,8 +366,7 @@ if [[ -e "projects/${target}/testing/${second_target}" || -e "projects/${target}
         target_entrypoint_file="projects/${target}/testing/${second_target}.sh"
     fi
 
-    "${target_entrypoint_file}" "$@"
-
+    execute "${target_entrypoint_file}" "$@"
     exit 0
 fi
 

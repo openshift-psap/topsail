@@ -3,6 +3,7 @@ import traceback
 import logging
 logging.getLogger().setLevel(logging.INFO)
 import json
+import signal
 
 import subprocess
 
@@ -16,6 +17,21 @@ try:
         os.setpgrp()
 except Exception as e:
     logging.warning(f"Cannot call os.setpgrp: {e}")
+
+
+class SignalError(SystemExit):
+    def __init__(self, sig, frame):
+        self.sig = sig
+        self.frame = frame
+
+    def __str__(self):
+        return f"SignalError(sig={self.sig})"
+
+def raise_signal(sig, frame):
+    raise SignalError(sig, frame)
+signal.signal(signal.SIGINT, raise_signal)
+signal.signal(signal.SIGTERM, raise_signal)
+
 
 def run_toolbox_from_config(group, command, prefix=None, suffix=None, show_args=None, extra=None, artifact_dir_suffix=None, mute_stdout=False, check=True, run_kwargs=None):
     if extra is None:

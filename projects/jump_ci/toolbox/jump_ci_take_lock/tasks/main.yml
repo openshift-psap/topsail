@@ -3,11 +3,15 @@
   shell:
     whoami
 
+- name: Save the name of the cluster lock directory
+  set_fact:
+    cluster_lock_dir: "/tmp/topsail_{{ jump_ci_take_lock_cluster }}"
+
 - name: Create the lock directory
   shell: |
-    if ! mkdir "/tmp/{{ jump_ci_take_lock_cluster }}" 2>/dev/null; then
+    if ! mkdir "{{ cluster_lock_dir }}" 2>/dev/null; then
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' already taken ..."
-      cat "/tmp/{{ jump_ci_take_lock_cluster }}/lock_owner 2>/dev/null" || true
+      cat "{{ cluster_lock_dir }}/lock_owner 2>/dev/null" || true
       exit 1
     else
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' acquired.";
@@ -19,4 +23,11 @@
 
 - name: Log info about the lock owner
   shell:
-    echo "{{ jump_ci_take_lock_owner }}" > "/tmp/{{ jump_ci_take_lock_cluster }}/lock_owner"
+    echo "{{ jump_ci_take_lock_owner }}" > "{{ cluster_lock_dir }}/lock_owner"
+
+- name: Ensure that the lock is owned
+  include_role:
+    name: jump_ci_ensure_lock
+  vars:
+    jump_ci_ensure_lock_cluster: "{{ jump_ci_take_lock_cluster }}"
+    jump_ci_ensure_lock_owner: "{{ jump_ci_take_lock_owner }}"

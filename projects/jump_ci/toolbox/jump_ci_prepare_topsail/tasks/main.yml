@@ -8,7 +8,7 @@
 
 - name: Generate the artifact dirname
   set_fact:
-    artifact_dir: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/jump_ci_artifacts"
+    artifact_dir: "{{ cluster_lock_dir }}/jump_ci_artifacts"
 
 - name: Ensure that the logs directory exists
   ansible.builtin.file:
@@ -49,7 +49,7 @@
 
 - name: Set TOPSAIL's directory
   set_fact:
-    topsail_home: "/tmp/{{ jump_ci_prepare_topsail_cluster }}/topsail"
+    topsail_home: "{{ cluster_lock_dir }}/topsail"
 
 - name: Set git command
   set_fact:
@@ -91,7 +91,7 @@
 
   - name: Fetch the submodules
     command: |
-      {{ git }} submodule --quiet update --init --recursive
+      {{ git }} submodule --quiet update --init --recursive --force
 
   - name: Show the submodules version
     command: |
@@ -99,12 +99,7 @@
 
 - name: Get the relevant git commit
   shell: |
-    {% if jump_ci_prepare_topsail_pr_number %}
-      set -o pipefail;
-      {{ git }} log --pretty=%P -n 1 | cut -d\  -f2 # second parent
-    {% else %}
-      {{ git }} rev-parse HEAD
-    {% endif %}
+    {{ git }} rev-parse HEAD
   register: git_commit_cmd
 
 - name: Show the commit
@@ -127,31 +122,52 @@
   register: has_image
   failed_when: false
 
+- name: List all the old images to delete
+  # setting --filter label=preserve!=true in Podman args doesn't work
+  shell:
+    set -o pipefail;
+    podman image ls
+       --filter until=4h
+       --filter label=name=topsail
+       --format json
+       | jq -r '.[] | select(.Containers == 0) | select(.Labels.preserve != "true") | .Id'
+  register: podman_images_to_delete_cmd
+
+# To add the 'preserve=true' label:
+#
+# CONTAINER_NAME=localhost/topsail:main
+# LABEL="preserve=true"
+# echo "FROM $CONTAINER_NAME" | podman build --label "$LABEL" -t "$CONTAINER_NAME" -
+
 - name: Prune old images
   command:
-    podman image prune --force
-           --filter until=4h
-           --filter label=jump-ci=true
+    podman image rm "{{ image_id }}"
   when:
   - jump_ci_prepare_topsail_cleanup_old_pr_images
   - has_image.rc != 0
+  loop: "{{ podman_images_to_delete_cmd.stdout_lines }}"
+  loop_control:
+      loop_var: image_id
+  # I have seen some unpected failure because of (dependency) images used by a container (not sure which one :/)
+  # so ignoring this failure for the time being.
+  failed_when: false
 
 - name: "Build image as an update {{ image_full_name }}"
   shell: |
-    cat > /tmp/overlay.containerfile <<EOF
+    cat > {{ cluster_lock_dir }}/overlay.containerfile <<EOF
     FROM hell
     ENTRYPOINT []
     CMD []
 
     RUN git fetch --quiet origin {{ git_ref }}
     RUN git reset --hard FETCH_HEAD
-    RUN git submodule --quiet update --init --recursive
+    RUN git submodule --quiet update --init --recursive --force
     RUN git submodule
     EOF
 
     time podman build \
       --tag "{{ image_full_name }}" \
-      --file /tmp/overlay.containerfile \
+      --file {{ cluster_lock_dir }}/overlay.containerfile \
       --from "{{ jump_ci_prepare_topsail_image_name }}:{{ jump_ci_prepare_topsail_update_from_imagetag }}"
   when:
   - has_image.rc != 0
@@ -170,4 +186,4 @@
 
 - name: Save the name of the image to use
   shell:
-    echo "{{ image_full_name }}" > "/tmp/{{ jump_ci_prepare_topsail_cluster }}/pod.image"
+    echo "{{ image_full_name }}" > "{{ cluster_lock_dir }}/pod.image"

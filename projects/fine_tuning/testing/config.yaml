@@ -283,17 +283,6 @@ ci_presets:
 
   # ---
 
-  quality_evaluation:
-    tests.fine_tuning.quality_evaluation.enabled: true
-    tests.fine_tuning.fms.enabled: false
-    tests.capture_prom: false
-    matbench.workload: projects.fine_tuning.visualizations.quality_evaluation
-    matbench.lts.generate: false
-    tests.capture_state: false
-    tests.fine_tuning.test_settings.name: quality-evaluation
-
-  #
-
   fms:
     tests.fine_tuning.fms.enabled: true
 
@@ -375,21 +364,24 @@ ci_presets:
     tests.fine_tuning.ilab.enabled: true
     tests.fine_tuning.test_settings.name: ilab
     tests.fine_tuning.test_settings.dataset_name: ilab_skills_data.jsonl
-    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3b-code-instruct@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
     tests.fine_tuning.test_settings.dataset_replication: null
     matbench.workload: projects.fine_tuning.visualizations.ilab_training
     matbench.prom_workload: projects.fine_tuning.visualizations.ilab_prom
     matbench.config_file: ilab_training.yaml
     matbench.lts.generate: false
+    tests.fine_tuning.test_settings.shared_memory: 20
     tests.fine_tuning.test_settings.hyper_parameters:
       num_epochs: null
       max_batch_len: null
       NCCL_SOCKET_NTHREADS: null
+      cpu_offload_optimizer: null
+      cpu_offload_params: null
 
   ilab_scale:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
     tests.fine_tuning.test_settings.dataset_name: [ilab_large_10000samples_skills_data.jsonl, ilab_large_knowledge_data.jsonl]
 
     tests.fine_tuning.test_settings.pod_count: [1, 2, 4]
@@ -451,24 +443,135 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
     tests.fine_tuning.node_count_equal_pod_count: true
 
-  ilab_2x8xh100_scale:
+  ilab_2x8xh100_secondary_nic:
     extends: [ilab]
 
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: false
 
-    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-7b-base@hf
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
+
+    # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
+  ilab_2x8xh100_pod_network:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
+  ilab_2x8xh100_sriov:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
     tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
 
     tests.fine_tuning.test_settings.gpu: 8
     tests.fine_tuning.test_settings.pod_count: 2
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4]
+    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
+  ilab_2x8xh100_sriov_rdma:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
+
+    # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
+  ilab_2x8xh100_sriov_rdma_25000:
+    extends: [ilab_2x8xh100_sriov_rdma]
+
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_25000samples_skills_data.jsonl
+
+  ilab_2x8xh100_test_epochs:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [1]
+
+    # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 4
+
+  ilab_1x8xh100_single_node:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 1
+
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [20000, 60000, 70000]
+#    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
+  ilab_l40s_scale:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.gpu: 2
+
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+    tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_optimizer: true
+    tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_params: true
+    tests.fine_tuning.test_extra_settings:
+    - pod_count: 1
+      hyper_parameters.max_batch_len: [35000, 40000]
 
   # ---
 
@@ -476,7 +579,7 @@ ci_presets:
     fine_tuning.pvc.storage_class_name: nfs-csi
     fine_tuning.pvc.access_mode: ReadWriteMany
     fine_tuning.pvc.size: 500Gi
-    clusters.sutest.is_metal: false
+    clusters.sutest.is_metal: true
     clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
     clusters.sutest.compute.machineset.name: instructlab-standalon-6rjg8-worker-1
     clusters.sutest.compute.machineset.taint: null
@@ -667,6 +770,11 @@ fine_tuning:
       source_dir: 's3://instructlab-standalone/data'
       secret_key: secrets.aws_credentials
 
+    ilab_large_25000samples_skills_data.jsonl:
+      type: dataset
+      source_dir: 's3://instructlab-standalone/data'
+      secret_key: secrets.aws_credentials
+
     ilab_large_knowledge_data.jsonl:
       type: dataset
       source_dir: 's3://instructlab-standalone/data'
@@ -707,9 +815,11 @@ tests:
       model_name: bigscience/bloom-560m@hf
       dataset_name: twitter_complaints_small.json
       gpu: 1
+      shared_memory: null
       dataset_replication: 1
       container_image: null
       use_secondary_nic: null
+      use_primary_nic: null
       secondary_nic_prefix: null
       secondary_nic_count: null
       ephemeral_output_pvc_size: null
@@ -729,16 +839,14 @@ tests:
     fms:
       enabled: false
       image: quay.io/modh/fms-hf-tuning:v2.0.1
-    quality_evaluation:
-      enabled: false
-      image: registry.redhat.io/ubi9
     ray:
       enabled: false
       workload: ray-benchmark
       image: quay.io/rhoai/ray:2.35.0-py311-cu121-torch24-fa26
     ilab:
       enabled: false
-      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:b3dc9af0244aa6b84e6c3ef53e714a316daaefaae67e28de397cd71ee4b2ac7e
+      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:525ab53de3829cac1a9aabb73194f49e22da8fdcf12a01c56ece961300cdab0d
+      # instructlab 1.3
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning # actual workload must be a symlink to this dir

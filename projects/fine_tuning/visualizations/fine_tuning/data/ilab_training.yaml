@@ -4,3 +4,6 @@ visualize:
   - "report: Error report"
   - "report: ILab report"
   - "report: ILab HyperParameters report"
+  - "report: LTS Documentation"
+  - "report: KPI Table Report by settings"
+  - "report: KPI Table Report by labels"

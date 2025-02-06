@@ -23,18 +23,22 @@
     fail: msg="The cluster KUBECONFIG ({{ cluster_kubeconfig }}) does not exists"
     when: not cluster_kubeconfig_stat.stat.exists
 
+- name: Save the name of the cluster lock directory
+  set_fact:
+    cluster_lock_dir: "/tmp/topsail_{{ jump_ci_ensure_lock_cluster }}"
+
 - name: "Get the stats of the lock directory: {{ jump_ci_ensure_lock_cluster }}"
   stat:
-    path: "/tmp/{{ jump_ci_ensure_lock_cluster }}"
+    path: "{{ cluster_lock_dir }}"
   register: lock_directory_stat
 
 - name: Fail if the lock directory doesn't exist
-  fail: msg="The lock directory '/tmp/{{ jump_ci_ensure_lock_cluster }}' does not exists"
+  fail: msg="The lock directory '{{ cluster_lock_dir }}' does not exists"
   when: not lock_directory_stat.stat.exists
 
 - name: Get the owner of the lock
   command:
-    cat "/tmp/{{ jump_ci_ensure_lock_cluster }}/lock_owner"
+    cat "{{ cluster_lock_dir }}/lock_owner"
   register: lock_owner_content_cmd
 
 - name: Fail if the owner is different

@@ -34,7 +34,7 @@ class Fine_Tuning:
             memory=10,
             cpu=1,
             request_equals_limits=False,
-
+            shared_memory=None,
             prepare_only=False,
             delete_other=False,
 
@@ -49,6 +49,8 @@ class Fine_Tuning:
             use_primary_nic=True,
             use_secondary_nic=False,
             use_host_network=False,
+
+            retrieve_files=True,
     ):
         """
         Run a simple fine-tuning Job.
@@ -72,7 +74,7 @@ class Fine_Tuning:
           memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
           cpu: the number of CPU cores to request for the fine-tuning job (in cores)
           request_equals_limits: if True, sets the 'limits' of the job with the same value as the request.
-
+          shared_memory:  amount of shm (in GB) to give to each of the job pods
           prepare_only: if True, only prepare the environment but do not run the fine-tuning job.
           delete_other: if True, delete the other PyTorchJobs before running
 
@@ -87,58 +89,12 @@ class Fine_Tuning:
           use_primary_nic: if enabled, tell NCCL to use the primary NIC. Only taken into account if --use_secondary_nic is passed.
           use_secondary_nic: if enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.
           use_host_network: if enabled, activates the host network
+
+          retrieve_files: if enabled, allows files retrieval from the pod to the artifacts directory.
         """
 
         if use_host_network and use_secondary_nic:
             raise ValueError("Cannot use  --use_host_network and --use_secondary_nic simultaneously.")
-
-        return RunAnsibleRole(locals())
-
-
-    @AnsibleRole("fine_tuning_run_quality_evaluation")
-    @AnsibleMappedParams
-    def run_quality_evaluation(
-            self,
-            name,
-            namespace,
-            pvc_name,
-
-            model_name,
-
-            container_image="registry.redhat.io/ubi9",
-
-            gpu=0,
-            memory=10,
-            cpu=1,
-
-            pod_count=1,
-
-            hyper_parameters={},
-
-            sleep_forever=False,
-    ):
-        """
-        Run a simple fine-tuning Job.
-
-        Args:
-          name: the name of the fine-tuning job to create
-          namespace: the name of the namespace where the scheduler load will be generated
-          pvc_name: the name of the PVC where the model and dataset are stored
-
-          model_name: the name of the model to use inside the /dataset directory of the PVC
-
-          container_image: the image to use for the fine-tuning container
-          gpu: the number of GPUs to request for the fine-tuning job
-          memory: the number of RAM gigs to request for to the fine-tuning job (in Gigs)
-          cpu: the number of CPU cores to request for the fine-tuning job (in cores)
-
-          pod_count: number of pods to deploy in the job
-
-          hyper_parameters: dictionnary of hyper-parameters to pass to sft-trainer
-
-          sleep_forever: if true, sleeps forever instead of running the fine-tuning command.
-          capture_artifacts: if enabled, captures the artifacts that will help post-mortem analyses
-        """
 
         return RunAnsibleRole(locals())
 

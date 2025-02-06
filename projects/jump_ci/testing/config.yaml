@@ -33,3 +33,6 @@ exec_list:
   prepare_ci: null
   test_ci: null
   post_cleanup_ci: null
+multi_run:
+  args: []
+  stop_on_error: false
