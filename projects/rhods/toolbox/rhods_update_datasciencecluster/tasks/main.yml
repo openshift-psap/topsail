@@ -145,7 +145,8 @@
       # Looking at the status of individual components is not sufficient enough
       # for determining the Ready status
 
-      oc get dsc/default-dsc -o json | jq '.status.conditions[]|select(.type == "Ready" and .status == "True")'
+      oc get datasciencecluster/{{ datasciencecluster_name }} -o json | \
+      jq '.status.conditions[]|select(.type == "Ready" and .status == "True")'
     register: dscluster_ready_status
     retries: 60
     until: dscluster_ready_status.stdout != ""
