@@ -12,4 +12,3 @@ patches:
     kind: InferenceService
   options:
     allowNameChange: true
-
