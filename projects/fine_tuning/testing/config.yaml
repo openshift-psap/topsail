@@ -98,18 +98,16 @@ ci_presets:
 
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
-    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 512
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
     tests.fine_tuning.test_extra_settings:
     - model_name:
       - meta-llama/Llama-2-13b-hf
-      hyper_parameters.per_device_train_batch_size: 1
 
     - model_name:
       - meta-llama/Meta-Llama-3.1-70B
-      hyper_parameters.max_seq_length: 512
-      hyper_parameters.per_device_train_batch_size: 1
       hyper_parameters.skip_if: {peft_method: "none"}
 
     - model_name:
@@ -120,11 +118,9 @@ ci_presets:
       - meta-llama/Meta-Llama-3.1-8B
 
       - mistralai/Mistral-7B-v0.3
-      hyper_parameters.per_device_train_batch_size: 4
 
     - model_name:
       - mistralai/Mixtral-8x7B-v0.1
-      hyper_parameters.per_device_train_batch_size: 1
       hyper_parameters.skip_if: {peft_method: "none"}
 
   ibm_80gb_models:
