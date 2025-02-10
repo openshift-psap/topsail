@@ -637,8 +637,7 @@ clusters:
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
     instructlab-standalon-6rjg8-master-0: cluster_instructlab
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
-    tosokin-ilab-cluster-556dc-master-0: cluster_h100
-    dagray-psap-ext-7kr6c-master-0: cluster_h100
+    psap-gpu-xhnvx-master-0: cluster_h100
     l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_h100
   create:
     type: single # can be: single, ocp, managed
