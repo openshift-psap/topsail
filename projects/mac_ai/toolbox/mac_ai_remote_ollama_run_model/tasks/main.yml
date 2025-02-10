@@ -1,0 +1,18 @@
+---
+- name: Stop serving this model, if requested
+  command: |
+    {{ mac_ai_remote_ollama_run_model_path }} stop {{ mac_ai_remote_ollama_run_model_name }}
+  when: mac_ai_remote_ollama_run_model_unload | bool
+  ignore_errors: true
+  environment:
+    HOME: "{{ mac_ai_remote_ollama_run_model_base_work_dir }}"
+
+- name: Unload stops here
+  meta: end_play
+  when: mac_ai_remote_ollama_run_model_unload | bool
+
+- name: Start serving the ollama model
+  command: |
+    {{ mac_ai_remote_ollama_run_model_path }} run {{ mac_ai_remote_ollama_run_model_name }} "say 0"
+  environment:
+    HOME: "{{ mac_ai_remote_ollama_run_model_base_work_dir }}"

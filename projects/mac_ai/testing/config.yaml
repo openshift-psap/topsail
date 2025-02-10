@@ -1,0 +1,102 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of presets to apply, or a single name, or null if not preset
+  names: null
+
+  laptop_kevin:
+    remote_host.run_locally: true
+    remote_host.system: linux
+    remote_host.arch: amd64
+    remote_host.base_work_dir: /home/kpouget/pod-virt/mac_ai
+    remote_host.python_cmd:
+
+    prepare.podman.stop_on_exit: true
+    prepare.ollama.unload_on_exit: true
+    prepare.ollama.stop_on_exit: true
+    test.llm_load_test.enabled: true
+
+secrets:
+  dir:
+    name: pod-virt-secret
+    env_key: POD_VIRT_SECRET_PATH
+  private_key_path: host__private_key
+  hostname: host__hostname
+  hostport: host__hostport
+  base_work_dir: host__base_work_dir
+
+remote_host:
+  run_locally: false
+  private_key_path: "@secrets.private_key_path"
+  name: "@secrets.hostname"
+  port: "@secrets.hostport"
+  base_work_dir:  "@secrets.base_work_dir"
+  ssh_flags:
+  - -oStrictHostKeyChecking=no
+  - -oUserKnownHostsFile=/dev/null
+  - -o LogLevel=ERROR
+  system: linux #darwin
+  arch: arm64
+  python_cmd: /opt/homebrew/bin/python3
+
+prepare:
+  cleanup_on_exit: false
+  ollama:
+    repo:
+      url: https://github.com/ollama/ollama/
+      version: v0.5.7
+      darwin:
+        file: ollama-darwin
+        executable: true
+      linux:
+        file: ollama-linux-{@remote_host.arch}.tgz
+        tarball: true
+    port: 11434
+    unload_on_exit: true
+    stop_on_exit: true
+
+  systems: [darwin, linux]
+
+  cleanup_on_exit: false
+
+  podman:
+    image: registry.access.redhat.com/ubi9/python-312:9.5-1737522330
+    container:
+      name: topsail_mac_ai
+    stop_on_exit: true
+
+test:
+  platforms:
+    native:
+      enabled: true
+    podman:
+      enabled: true
+
+  model:
+    name: llama3.2 # smollm:135m
+    size: small
+
+  llm_load_test:
+    enabled: true
+    args:
+      host: localhost
+      port: "@prepare.ollama.port"
+      duration: 300
+      concurrency: 2
+      plugin: tgis_grpc_plugin
+      interface: http
+      streaming: true
+      endpoint: "/v1/chat/completions"
+      plugin: openai_plugin
+
+    dataset_sizes:
+      small:
+        max_input_tokens: 2047
+        max_output_tokens: 1024
+        max_sequence_tokens: 2048
+      large:
+        max_input_tokens: 3500
+        max_output_tokens: 800
+        max_sequence_tokens: 3500
+export_artifacts:
+  enabled: false

@@ -206,6 +206,19 @@ Toolbox Documentation
 * :doc:`run <Local_Ci.run>`	 Runs a given CI command
 * :doc:`run_multi <Local_Ci.run_multi>`	 Runs a given CI command in parallel from multiple Pods
 
+``mac_ai``
+**********
+
+::
+
+    Commands relating to the MacOS AI performance evaluation
+    
+
+                
+* :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host
+* :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Pulls a model with ollama, on a remote host
+* :doc:`remote_ollama_start <Mac_Ai.remote_ollama_start>`	 Starts ollama, on a remote host
+
 ``nfd``
 *******
 

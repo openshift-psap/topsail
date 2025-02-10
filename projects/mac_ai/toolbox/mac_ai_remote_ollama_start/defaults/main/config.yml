@@ -1,0 +1,15 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_ollama_start
+
+# Parameters
+# the base directory where to store things
+# Mandatory value
+mac_ai_remote_ollama_start_base_work_dir:
+
+# the path to the ollama binary
+# Mandatory value
+mac_ai_remote_ollama_start_path:
+
+# if true, stop the server instead of starting it
+mac_ai_remote_ollama_start_stop: false
