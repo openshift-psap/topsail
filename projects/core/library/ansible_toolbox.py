@@ -272,6 +272,11 @@ class RunAnsibleRole:
                 logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars}' as yaml ...")
                 raise
 
+            if not extra_vars_dict:
+                msg = f"TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS points to an empty file :/ ({extra_vars_dict})"
+                logging.fatal(msg)
+                raise ValueError(msg)
+
             generated_play[0]["vars"] |= extra_vars_dict
 
         generated_play_path = artifact_extra_logs_dir / "_ansible.play.yaml"
