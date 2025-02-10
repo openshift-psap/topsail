@@ -1,0 +1,12 @@
+---
+- name: Get the size of the directory to retrieve
+  command:
+    du -sh "{{ remote_retrieve_path }}"
+
+- name: Copy all the files locally
+  ansible.posix.synchronize:
+    src: "{{ remote_retrieve_path }}/"
+    dest: "{{ remote_retrieve_dest }}"
+    mode: "pull"
+    recursive: true
+  no_log: true # too verbose

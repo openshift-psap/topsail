@@ -246,6 +246,19 @@ Toolbox Documentation
 * :doc:`deploy_application <Pipelines.deploy_application>`	 Deploy a Data Science Pipeline Application in a given namespace.
 * :doc:`run_kfp_notebook <Pipelines.run_kfp_notebook>`	 Run a notebook in a given notebook image.
 
+``remote``
+**********
+
+::
+
+    Commands relating to the setup of remote hosts
+    
+
+                
+* :doc:`clone <Remote.clone>`	 Clones a Github repository in a remote host
+* :doc:`download <Remote.download>`	 Downloads a file in a remote host
+* :doc:`retrieve <Remote.retrieve>`	 Retrieves remote files locally
+
 ``repo``
 ********
 
