@@ -94,22 +94,20 @@ ci_presets:
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.2
 
-    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.gpu: 4
 
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 1
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
-    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 1024
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 512
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 1
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
     tests.fine_tuning.test_extra_settings:
     - model_name:
       - meta-llama/Llama-2-13b-hf
-      hyper_parameters.per_device_train_batch_size: 1
 
     - model_name:
       - meta-llama/Meta-Llama-3.1-70B
-      hyper_parameters.max_seq_length: 512
-      hyper_parameters.per_device_train_batch_size: 1
       hyper_parameters.skip_if: {peft_method: "none"}
 
     - model_name:
@@ -120,11 +118,9 @@ ci_presets:
       - meta-llama/Meta-Llama-3.1-8B
 
       - mistralai/Mistral-7B-v0.3
-      hyper_parameters.per_device_train_batch_size: 4
 
     - model_name:
       - mistralai/Mixtral-8x7B-v0.1
-      hyper_parameters.per_device_train_batch_size: 1
       hyper_parameters.skip_if: {peft_method: "none"}
 
   ibm_80gb_models:
@@ -197,7 +193,7 @@ ci_presets:
     # - rhoai/llama-3.1-405b-gptq
     tests.fine_tuning.test_settings.dataset_name: alpaca_data.json
     tests.fine_tuning.test_settings.dataset_replication: 0.2
-    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.gpu: 4
     fine_tuning.model_registry: dmf
 
     tests.fine_tuning.test_settings.hyper_parameters:
@@ -634,7 +630,7 @@ secrets:
   # name of the file containing the properties of LDAP secrets
   s3_ldap_password_file: s3_ldap.passwords
   keep_cluster_password_file: get_cluster.password
-  brew_registry_redhat_io_token_file: brew.registry.redhat.io.token
+  rhoai_token_file: quay.io.token
   opensearch_instances: opensearch.yaml
   aws_credentials: .awscred
   git_credentials: git-credentials
@@ -690,11 +686,11 @@ clusters:
 
 rhods:
   catalog:
-    image: brew.registry.redhat.io/rh-osbs/iib
-    tag: 852862
+    image: quay.io/rhoai/rhoai-fbc-fragment@sha256
+    tag: dcbb843c16457871e63298cee7257f87cd1bdf90d4baadf1c0bba102e30751ce
     channel: fast
-    version: 2.15.0
-    version_name: rc2
+    version: 2.17.0
+    version_name: rc1
     opendatahub: false
     managed_rhoi: true
   operator:
@@ -838,7 +834,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: quay.io/modh/fms-hf-tuning:v2.0.1
+      image: quay.io/modh/fms-hf-tuning:v2.5.0
     ray:
       enabled: false
       workload: ray-benchmark
