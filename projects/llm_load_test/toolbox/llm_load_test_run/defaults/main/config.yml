@@ -53,3 +53,6 @@ llm_load_test_run_max_sequence_tokens: 1536
 
 # name of the endpoint to query (for openai plugin only)
 llm_load_test_run_endpoint: /v1/completions
+
+# command to use to launch Python
+llm_load_test_run_python_cmd: python3

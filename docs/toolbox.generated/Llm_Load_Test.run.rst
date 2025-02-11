@@ -117,3 +117,10 @@ Parameters
 
 * default value: ``/v1/completions``
 
+
+``python_cmd``  
+
+* Command to use to launch Python
+
+* default value: ``python3``
+
