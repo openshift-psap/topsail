@@ -39,7 +39,14 @@
       cd "{{ llm_load_test_run_src_path }}"
       export OPENBLAS_NUM_THREADS=1 # https://github.com/OpenMathLib/OpenBLAS/wiki/Faq#how-can-i-use-openblas-in-multi-threaded-applications
 
-      time timeout $(({{ llm_load_test_run_duration }} + 25*60)) python3 load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
+      if ! which timeout &>/dev/null; then
+        echo "no timeout on mac ..."
+        timeout=""
+      else
+        timeout="timeout $(({{ llm_load_test_run_duration }} + 25*60))"
+      fi
+
+      time $timeout {{ llm_load_test_run_python_cmd }} load_test.py --config "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml" &> {{ artifact_extra_logs_dir }}/logs/run.log
     register: llm_load_test_cmd
   always:
   - name: Check if llm-load-test run timed-out
