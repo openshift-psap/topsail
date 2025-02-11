@@ -19,7 +19,7 @@ class Llm_Load_Test:
             duration,
             plugin="tgis_grpc_plugin",
             interface="grpc",
-            model_id="not-used",
+            model_id="/mnt/models/",
             src_path="projects/llm_load_test/subprojects/llm-load-test/",
             streaming=True,
             use_tls=False,
