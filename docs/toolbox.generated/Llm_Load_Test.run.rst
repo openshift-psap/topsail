@@ -51,7 +51,7 @@ Parameters
 
 * The ID of the model to pass along with the GRPC call
 
-* default value: ``not-used``
+* default value: ``/mnt/models/``
 
 
 ``src_path``  
