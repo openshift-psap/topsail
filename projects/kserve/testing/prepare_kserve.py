@@ -102,14 +102,21 @@ def prepare():
 
     token_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.rhoai_token_file")
 
-    if not config.project.get_config("kserve.raw_deployment.enabled"):
-        with run.Parallel("prepare_kserve") as parallel:
-            for operator in config.project.get_config("prepare.operators"):
+    with run.Parallel("prepare_kserve") as parallel:
+        for operator in config.project.get_config("prepare.operators"):
+            if not config.project.get_config("kserve.raw_deployment.enabled"):
                 parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
                                  catalog=operator['catalog'],
                                  manifest_name=operator['name'],
                                  namespace=operator['namespace'],
                                  artifact_dir_suffix=operator['name'])
+            elif config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
+                parallel.delayed(run.run_toolbox, "cluster", "deploy_operator",
+                                 catalog=operator['catalog'],
+                                 manifest_name=operator['name'],
+                                 namespace=operator['namespace'],
+                                 artifact_dir_suffix=operator['name'])
+
 
     prepare_rhoai.install(token_file)
 
@@ -158,9 +165,11 @@ def undeploy_operator(operator, mute=True):
 def cleanup(mute=True):
     prepare_rhoai.uninstall(mute)
 
-    if not config.project.get_config("kserve.raw_deployment.enabled"):
-        with run.Parallel("cleanup_kserve") as parallel:
-            for operator in config.project.get_config("prepare.operators"):
+    with run.Parallel("cleanup_kserve") as parallel:
+        for operator in config.project.get_config("prepare.operators"):
+           if not config.project.get_config("kserve.raw_deployment.enabled"):
+                undeploy_operator(operator)
+           elif config.project.get_config("kserve.raw_deployment.enabled") and 'raw' in operator['kserve_mode']:
                 undeploy_operator(operator)
 
 
