@@ -170,7 +170,7 @@ def _parse_predictor_pod(dirname):
 
 
     predictor_pod.init_time = condition_times["Initialized"] - condition_times["PodScheduled"]
-    predictor_pod.load_time = condition_times["Ready"] - condition_times["Initialized"]
+    predictor_pod.load_time = condition_times["Ready"] - containers_start_time["kserve-container"]
 
     for container in pod["spec"]["containers"]:
         if container["name"] != "kserve-container": continue
