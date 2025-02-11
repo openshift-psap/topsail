@@ -22,7 +22,7 @@ llm_load_test_run_plugin: tgis_grpc_plugin
 llm_load_test_run_interface: grpc
 
 # The ID of the model to pass along with the GRPC call
-llm_load_test_run_model_id: not-used
+llm_load_test_run_model_id: /mnt/models/
 
 # Path where llm-load-test has been cloned
 llm_load_test_run_src_path: projects/llm_load_test/subprojects/llm-load-test/
