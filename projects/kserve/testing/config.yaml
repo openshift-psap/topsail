@@ -71,7 +71,7 @@ ci_presets:
     extends: [e2e_gpu]
     tests.e2e.mode: single
     tests.e2e.limits_equals_requests: false
-    matbench.workload: projects.kserve.visualizations.kserve-llm
+    matbench.workload: projects.llm_load_test.visualizations.llm_load_test
     gpu.time_sharing.replicas: 1
     clusters.sutest.compute.machineset.count: 1
 
@@ -678,7 +678,7 @@ tests:
 matbench:
   preset: null
   prom_workload: projects.kserve.visualizations.kserve-prom
-  workload: projects.kserve.visualizations.kserve-llm
+  workload: projects.llm_load_test.visualizations.llm_load_test
   config_file: plots.yaml
   download:
     mode: prefer_cache
