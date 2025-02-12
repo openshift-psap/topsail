@@ -373,6 +373,7 @@ ci_presets:
       NCCL_SOCKET_NTHREADS: null
       cpu_offload_optimizer: null
       cpu_offload_params: null
+      fsdp_sharding_strategy: null
 
   ilab_scale:
     extends: [ilab]
