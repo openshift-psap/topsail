@@ -188,7 +188,7 @@ def run_and_catch(exc, fct, *args, **kwargs):
     if exc: raise exc
     """
     if not (exc is None or isinstance(exc, Exception)):
-        raise ValueException(f"exc={exc} should be None or an Exception")
+        raise ValueError(f"exc={exc} should be None or an Exception ({exc.__class__})")
 
     try:
         fct(*args, **kwargs)
