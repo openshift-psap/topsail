@@ -4,5 +4,5 @@
 	branch = main
 [submodule "projects/llm_load_test/subprojects/llm-load-test"]
 	path = projects/llm_load_test/subprojects/llm-load-test
-	url = https://github.com/openshift-psap/llm-load-test
+	url = https://github.com/kpouget/llm-load-test
 	branch = main
