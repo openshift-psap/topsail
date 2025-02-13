@@ -1,0 +1,12 @@
+---
+- name: Fetch the model with ollama
+  command: |
+    {{ mac_ai_remote_ollama_pull_model_path }} pull {{ mac_ai_remote_ollama_pull_model_name }}
+  environment:
+    HOME: "{{ mac_ai_remote_ollama_pull_model_base_work_dir }}"
+
+- name: Fetch the model with ollama
+  command: |
+    {{ mac_ai_remote_ollama_pull_model_path }} show {{ mac_ai_remote_ollama_pull_model_name }}
+  environment:
+    HOME: "{{ mac_ai_remote_ollama_pull_model_base_work_dir }}"
