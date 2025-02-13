@@ -80,12 +80,12 @@ class Config:
 
                 self.config[key] = None
 
-            self.set_config(key, value, dump_command_args=False)
+            self.set_config(key, value)
             actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
             logging.info(f"config override: {key} --> {actual_value}")
 
 
-    def apply_preset(self, name, do_dump=True):
+    def apply_preset(self, name):
         try:
             values = self.get_config(f'ci_presets["{name}"]', print=False)
         except IndexError:
@@ -98,7 +98,7 @@ class Config:
 
         presets = self.get_config("ci_presets.names", print=False) or []
         if not name in presets:
-            self.set_config("ci_presets.names", presets + [name], dump_command_args=False)
+            self.set_config("ci_presets.names", presets + [name])
 
         for key, value in values.items():
             if key == "extends":
@@ -111,10 +111,7 @@ class Config:
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
 
-            self.set_config(key, value, dump_command_args=False, print=False)
-
-        if do_dump:
-            self.dump_command_args()
+            self.set_config(key, value, print=False)
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
@@ -134,7 +131,7 @@ class Config:
         return value
 
 
-    def set_config(self, jsonpath, value, dump_command_args=True, print=True):
+    def set_config(self, jsonpath, value, print=True):
         if threading.current_thread().name != "MainThread":
             msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
             if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
@@ -157,26 +154,10 @@ class Config:
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
-        if dump_command_args:
-            self.dump_command_args(mute=True)
-
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
             with open(shared_dir_path / "config.yaml", "w") as f:
                 yaml.dump(self.config, f, indent=4)
-
-    def dump_command_args(self, mute=False):
-        try:
-            command_template = get_command_arg("dump", "config", None)
-        except Exception as e:
-            import traceback
-            with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
-                traceback.print_exc(file=f)
-            logging.warning("Could not dump the command_args template.")
-            return
-
-        with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
-            print(command_template, file=f)
 
     def save_config_overrides(self):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
