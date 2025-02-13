@@ -17,6 +17,8 @@ set +a
 
 if [[ "$#" == 0 ]]; then
     command="cd $TOPSAIL_HOME && $TOPSAIL_TOOLBOX_COMMAND"
+elif [[ "$1" == "here" ]]; then
+    command="$TOPSAIL_TOOLBOX_COMMAND"
 else
     command="$@"
 fi
