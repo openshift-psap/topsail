@@ -1,0 +1,13 @@
+visualize:
+- id: llm_test
+  generate:
+  - "report: Error report"
+  - "report: Latency per token"
+  - "report: Throughput"
+  - "report: Call details"
+  - "report: Tokens"
+  - "report: LTS"
+  - "report: LTS Documentation"
+  - "report: KPI Table Report by settings"
+  - "report: KPI Table Report by labels"
+  - "report: KPI Plot Report"
