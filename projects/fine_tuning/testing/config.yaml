@@ -201,7 +201,7 @@ ci_presets:
       use_flash_attn: true
       max_steps: -1
       per_device_train_batch_size: 1
-      max_seq_length: 1024
+      max_seq_length: 512
       gradient_accumulation_steps: 4
       warmup_ratio: 0.03
       num_train_epochs: 1
@@ -687,10 +687,10 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment@sha256
-    tag: dcbb843c16457871e63298cee7257f87cd1bdf90d4baadf1c0bba102e30751ce
+    tag: 5f2d0a88ef533cb4a95840051c8d4b91d517b2c3dad340daebfc405416d3205d
     channel: fast
     version: 2.17.0
-    version_name: rc1
+    version_name: rc2
     opendatahub: false
     managed_rhoi: true
   operator:
