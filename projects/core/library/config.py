@@ -13,6 +13,7 @@ from . import env
 from . import run
 from . import common
 
+TOPSAIL_DIR = pathlib.Path(common.__file__).parents[3]
 VARIABLE_OVERRIDES_FILENAME = "variable_overrides.yaml"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
@@ -52,8 +53,9 @@ class Config:
             self.config = yaml.safe_load(config_f)
 
 
-    def apply_config_overrides(self, ignore_not_found=False):
-        variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
+    def apply_config_overrides(self, *, ignore_not_found=False, variable_overrides_path=None, log=True):
+        if variable_overrides_path is None:
+            variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
             logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
@@ -80,9 +82,10 @@ class Config:
 
                 self.config[key] = None
 
-            self.set_config(key, value)
+            self.set_config(key, value, print=False)
             actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
-            logging.info(f"config override: {key} --> {actual_value}")
+            if log:
+                logging.info(f"config override: {key} --> {actual_value}")
 
 
     def apply_preset(self, name):
@@ -353,11 +356,32 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         project.save_config_overrides()
         return
 
+    repo_var_overrides = TOPSAIL_DIR / VARIABLE_OVERRIDES_FILENAME
+
+    if repo_var_overrides.exists():
+        logging.info(f"Found '{repo_var_overrides}', apply the variables overrides from it.")
+        project.apply_config_overrides(variable_overrides_path=repo_var_overrides)
+
+    ci_presets_to_apply = project.get_config("ci_presets.to_apply", [], warn=False)
+    if isinstance(ci_presets_to_apply, str):
+        ci_presets_to_apply = [ci_presets_to_apply]
+
+    for preset in ci_presets_to_apply:
+        project.apply_preset(preset)
+
+    variable_overrides_to_apply = project.get_config("ci_presets.variable_overrides", {}, warn=False)
+    for var_name, var_value in variable_overrides_to_apply.items():
+        project.set_config(var_name, var_value)
+
+    if repo_var_overrides.exists():
+        # reapply to force overrides on top of presets
+        project.apply_config_overrides(variable_overrides_path=repo_var_overrides, log=False)
+
     project.apply_config_overrides()
 
     if apply_preset_from_pr_args:
         project.apply_preset_from_pr_args()
         # reapply to force overrides on top of presets
-        project.apply_config_overrides()
+        project.apply_config_overrides(log=False)
 
     test_skip_list()
