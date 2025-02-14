@@ -23,12 +23,6 @@ fi
 
 export LOG_LEVEL=DEBUG
 
-python -m accelerate.commands.launch \
-  --num_processes=8 \
-  --config-file /app/accelerate_fsdp_defaults.yaml \
-  --dynamo_backend="no" \
-  -m tuning.sft_trainer
-
 python -m torch.distributed.run \
   --nproc_per_node=$NUM_GPUS \
   --nnodes=$WORLD_SIZE \
