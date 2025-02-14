@@ -206,6 +206,19 @@ Toolbox Documentation
 * :doc:`run <Local_Ci.run>`	 Runs a given CI command
 * :doc:`run_multi <Local_Ci.run_multi>`	 Runs a given CI command in parallel from multiple Pods
 
+``mac_ai``
+**********
+
+::
+
+    Commands relating to the MacOS AI performance evaluation
+    
+
+                
+* :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host
+* :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Pulls a model with ollama, on a remote host
+* :doc:`remote_ollama_start <Mac_Ai.remote_ollama_start>`	 Starts ollama, on a remote host
+
 ``nfd``
 *******
 
@@ -245,6 +258,19 @@ Toolbox Documentation
 * :doc:`capture_state <Pipelines.capture_state>`	 Captures the state of a Data Science Pipeline Application in a given namespace.
 * :doc:`deploy_application <Pipelines.deploy_application>`	 Deploy a Data Science Pipeline Application in a given namespace.
 * :doc:`run_kfp_notebook <Pipelines.run_kfp_notebook>`	 Run a notebook in a given notebook image.
+
+``remote``
+**********
+
+::
+
+    Commands relating to the setup of remote hosts
+    
+
+                
+* :doc:`clone <Remote.clone>`	 Clones a Github repository in a remote host
+* :doc:`download <Remote.download>`	 Downloads a file in a remote host
+* :doc:`retrieve <Remote.retrieve>`	 Retrieves remote files locally
 
 ``repo``
 ********

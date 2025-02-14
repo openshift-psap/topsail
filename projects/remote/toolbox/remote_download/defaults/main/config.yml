@@ -1,0 +1,21 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Remote.download
+
+# Parameters
+# the URL of the file to download
+# Mandatory value
+remote_download_source:
+
+# the location where to save the file
+# Mandatory value
+remote_download_dest:
+
+# force the download
+remote_download_force: false
+
+# if true, make the file executable
+remote_download_executable: false
+
+# if true, untar the tarball
+remote_download_tarball: true
