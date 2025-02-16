@@ -54,7 +54,6 @@
   delay: 20
   loop:
   - redhat-ods-applications
-  - redhat-ods-monitoring
   - rhods-notebooks
 
 - name: Delete the operator namespace
@@ -70,3 +69,10 @@
        | jq 'del(.items[].metadata.finalizers)'
        | oc replace -f- -oname
        | xargs echo oc delete --force
+
+- name: Delete the delete CM
+  shell:
+    oc delete
+       configmap/delete-self-managed-odh
+       -n redhat-ods-operator
+       --ignore-not-found

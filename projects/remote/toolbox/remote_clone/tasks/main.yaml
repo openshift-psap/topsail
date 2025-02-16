@@ -1,0 +1,11 @@
+---
+- name: Git checkout
+  ansible.builtin.git:
+    repo: '{{ remote_clone_repo_url }}'
+    dest: "{{ remote_clone_dest }}"
+    version: "{{ remote_clone_version }}"
+    force: "{{ remote_clone_force }}"
+
+- name: Show the commit of the version that has been cloned
+  command:
+    git -C "{{ remote_clone_dest }}" show --quiet
