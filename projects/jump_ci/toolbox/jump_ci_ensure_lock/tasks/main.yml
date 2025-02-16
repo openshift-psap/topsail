@@ -43,4 +43,4 @@
 
 - name: Fail if the owner is different
   when: lock_owner_content_cmd.stdout | trim != jump_ci_ensure_lock_owner
-  fail: msg="Unexpected lock owner. Found '{{ lock_owner_content_cmd.stdout}}', expected '{{ jump_ci_ensure_lock_owner }}'"
+  fail: msg="Unexpected lock owner. Found '{{ lock_owner_content_cmd.stdout }}', expected '{{ jump_ci_ensure_lock_owner }}'"
