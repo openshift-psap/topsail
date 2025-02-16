@@ -45,7 +45,7 @@ fi
 
 if [[ "${NCCL_SOCKET_IFNAME:-}" ]]; then
 
-
+    echo "$ARTIFACT_EXTRA_LOGS_DIR"
     MAPPING="$(cat "$ARTIFACT_EXTRA_LOGS_DIR/src/nodename_ip_mapping.yaml")"
     for ifname in $(echo $NCCL_SOCKET_IFNAME | tr , " "); do
         current_ip=$(ip route | grep "$ifname " | cut -d" " -f9)
