@@ -103,5 +103,5 @@ def run_with_ansible_ssh_conf(
     env_values = " ".join(f"'{k}={v}'" for k, v in (base_env|extra_env).items())
     env_cmd = f"env {env_values}"
 
-    return run.run(f"ssh {ssh_flags} -t -i {private_key_path} {user}@{host} -p {port} -- {env_cmd} {cmd}",
+    return run.run(f"ssh {ssh_flags} -tt -i {private_key_path} {user}@{host} -p {port} -- {env_cmd} {cmd}",
                    **run_kwargs)
