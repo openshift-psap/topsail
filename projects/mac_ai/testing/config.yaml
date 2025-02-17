@@ -70,6 +70,7 @@ prepare:
       image: quay.io/slopezpa/fedora-vgpu:latest # arm64 image
       python_bin: python3
       system: linux
+      device: /dev/dri
 
     stop_on_exit: true
 

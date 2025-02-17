@@ -9,14 +9,12 @@ import remote_access, podman
 
 def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True):
     podman_bin = podman.get_podman_binary()
-    podman_machine_env = config.project.get_config("prepare.podman.machine.env", print=False)
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         f"{podman_bin} {'machine' if machine else ''} {cmd}",
         check=check,
         capture_stdout=capture_stdout,
-        extra_env=podman_machine_env,
     )
 
 #
@@ -57,8 +55,13 @@ def info(base_work_dir):
 def inspect(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     inspect_cmd = _run(base_work_dir, f"inspect {name}", capture_stdout=True, check=False)
-    if inspect_cmd.returncode == 125 and "VM does not exist" in inspect_cmd.stdout:
+    if inspect_cmd.returncode != 0:
+        if "VM does not exist" in inspect_cmd.stdout:
+            logging.info("podman_machine: inspect: VM does not exist")
+        else:
+            logging.error(f"podman_machine: inspect: unhandled status: {inspect_cmd.stdout.strip()}")
         return None
+
 
     return json.loads(inspect_cmd.stdout)
 
