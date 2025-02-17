@@ -8,12 +8,12 @@ from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
 
-def prepare(base_work_dir):
+def prepare(base_work_dir, use_podman):
     native_system = config.project.get_config("remote_host.system")
     ollama_binaries = {}
 
     for system in config.project.get_config("prepare.systems"):
-        ollama_binaries[system] = prepare_binary(base_work_dir, system, podman)
+        ollama_binaries[system] = prepare_binary(base_work_dir, system, use_podman=False)
 
     ollama_path = ollama_binaries[native_system]
 
@@ -26,7 +26,7 @@ def prepare(base_work_dir):
         stop(base_work_dir, ollama_path)
 
 
-def _get_binary_path(base_work_dir, system, podman):
+def _get_binary_path(base_work_dir, system, use_podman):
     version = config.project.get_config("prepare.ollama.repo.version")
     arch = config.project.get_config("remote_host.arch")
 
@@ -42,19 +42,19 @@ def _get_binary_path(base_work_dir, system, podman):
     else:
         ollama_path = dest.parent / "bin" / "ollama"
 
-    if podman:
-        ollama_path = f"{podman_mod.get_exec_command_prefix(podman)} {ollama_path}"
+    if use_podman:
+        ollama_path = f"{podman_mod.get_exec_command_prefix(use_podman)} {ollama_path}"
 
     return ollama_path, dest, executable, tarball, version
 
 
-def get_binary_path(base_work_dir, system, podman):
-    ollama_path, _, _, _, _ = _get_binary_path(base_work_dir, system, podman)
+def get_binary_path(base_work_dir, system, use_podman):
+    ollama_path, _, _, _, _ = _get_binary_path(base_work_dir, system, use_podman)
     return ollama_path
 
 
-def prepare_binary(base_work_dir, system, podman):
-    ollama_path, dest, executable, tarball, version = _get_binary_path(base_work_dir, system, podman)
+def prepare_binary(base_work_dir, system, use_podman):
+    ollama_path, dest, executable, tarball, version = _get_binary_path(base_work_dir, system, use_podman)
     system_file = dest.name
 
     source = "/".join([
@@ -87,7 +87,7 @@ def pull_model(base_work_dir, ollama_path, model):
     )
 
 
-def start(base_work_dir, ollama_path, stop=False, podman=True):
+def start(base_work_dir, ollama_path, stop=False):
     artifact_dir_suffix = None
     if stop:
         logging.info("Stopping the ollama server ...")
@@ -107,7 +107,7 @@ def stop(base_work_dir, ollama_path):
     start(base_work_dir, ollama_path, stop=True)
 
 
-def run_model(base_work_dir, ollama_path, model, unload=False, podman=True):
+def run_model(base_work_dir, ollama_path, model, unload=False):
     artifact_dir_suffix=None
     if unload:
         logging.info("Unloading the model from ollama server ...")
