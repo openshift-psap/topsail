@@ -5,7 +5,6 @@
     path: "{{ remote_download_dest | dirname }}"
     mode: '0755'
 
-
 - name: Download the source file
   ansible.builtin.get_url:
     url: "{{ remote_download_source }}"
