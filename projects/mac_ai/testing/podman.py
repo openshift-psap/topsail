@@ -10,7 +10,12 @@ def get_podman_binary():
 
     if config.project.get_config("prepare.podman.machine.enabled", print=False):
         machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
-        podman_bin = f"{podman_bin} --connection '{machine_name}'"
+
+        podman_machine_env = config.project.get_config("prepare.podman.machine.env", print=False)
+        env_values = " ".join(f"'{k}={v}'" for k, v in (podman_machine_env).items())
+        env_cmd = f"env {env_values}"
+
+        podman_bin = f"{env_cmd} {podman_bin} --connection '{machine_name}'"
 
     return podman_bin
 
@@ -32,6 +37,10 @@ def start(base_work_dir, container_name, port):
     image = config.project.get_config("prepare.podman.container.image")
     podman_bin = get_podman_binary()
 
+    podman_device_cmd = ""
+    if podman_device := config.project.get_config("prepare.podman.container.device"):
+        podman_device_cmd = f"--device {podman_device} "
+
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         f"{podman_bin} run "
@@ -42,6 +51,7 @@ def start(base_work_dir, container_name, port):
         f"--env OLLAMA_HOST=0.0.0.0:{port} "
         f"--env 'HOME={base_work_dir}' "
         f"-p {port}:{port} "
+        + podman_device_cmd +
         "--detach --replace --rm "
         f"{image} "
         "sleep inf"
