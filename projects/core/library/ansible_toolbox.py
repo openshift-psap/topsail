@@ -131,8 +131,6 @@ class RunAnsibleRole:
         # do not modify the `os.environ` of this Python process
         env = os.environ.copy()
 
-        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
-
         if env.get("ARTIFACT_DIR") is None:
             topsail_base_dir = pathlib.Path(env.get("TOPSAIL_BASE_DIR", "/tmp"))
             env["ARTIFACT_DIR"] = str(topsail_base_dir / f"topsail_{time.strftime('%Y%m%d')}")
@@ -233,7 +231,9 @@ class RunAnsibleRole:
                  )
         ]
 
+        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
         if remote_host:
+            print(f"Using TOPSAIL_JUMP_CI_REMOTE_HOST")
             # gather only env values
             generated_play[0]["gather_facts"] = True
             generated_play[0]["gather_subset"] = ['env','!all','!min']
