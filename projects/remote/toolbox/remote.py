@@ -71,3 +71,28 @@ class Remote:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("remote_build_image")
+    @AnsibleMappedParams
+    def build_image(
+            self,
+            base_directory,
+            container_file,
+            image,
+            force=False,
+            podman_cmd="podman",
+            prepare_script=None,
+    ):
+        """
+        Builds a podman image
+
+        Args:
+          base_directory: the location of the directory to build
+          container_file: the path the container_file to build
+          image: the name of the image to build
+          force: force build the image even if it already exists
+          podman_cmd: the command to invoke to run podman
+          prepare_script: if specified, a script to execute before building the image
+        """
+
+        return RunAnsibleRole(locals())
