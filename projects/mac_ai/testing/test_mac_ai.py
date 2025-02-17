@@ -14,7 +14,7 @@ POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
-import ollama, prepare_mac_ai, remote_access, podman, podman_machine
+import prepare_mac_ai, remote_access, podman, podman_machine
 
 def prepare_llm_load_test_args(base_work_dir, model_name):
     llm_load_test_kwargs = dict()
@@ -68,7 +68,7 @@ def prepare_matbench_test_files():
 def test():
     if config.project.get_config("prepare.podman.machine.enabled"):
         base_work_dir = remote_access.prepare()
-        podman_machine.configure_and_start(base_work_dir, force_restart=False)
+        #podman_machine.configure_and_start(base_work_dir, force_restart=False)
 
     failed = False
     try:
@@ -95,46 +95,62 @@ def test():
         if not failed and exc:
             raise exc
 
+
 def test_all_platforms():
     all_platforms = config.project.get_config("test.platform")
     if isinstance(all_platforms, str):
-        test_ollama(all_platforms)
+        test_inference(all_platforms)
     else:
         for platform in all_platforms:
             config.project.set_config("test.platform", platform) # for the post-processing
-            with env.NextArtifactDir(f"{platform}_test"):
-                with open("settings.platform.yaml", "w") as f:
+            with env.NextArtifactDir(f"{platform}_test".replace("/", "_")):
+                with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
                     yaml.dump(dict(platform=platform), f)
 
-                test_ollama(platform)
+                test_inference(platform)
 
 
-def test_ollama(platform):
+def test_inference(platform):
+    inference_server_name = config.project.get_config("test.inference_server.name")
+    inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
+
     base_work_dir = remote_access.prepare()
 
     do_matbenchmarking = config.project.get_config("test.llm_load_test.matbenchmarking")
 
-    use_podman = platform == "podman"
+    use_podman = platform.startswith("podman")
+
+    inference_server_mod.prepare_test(base_work_dir, use_podman)
+
     system = config.project.get_config(
         "prepare.podman.container.system" if use_podman else "remote_host.system"
     )
     model_name = config.project.get_config("test.model.name")
 
+    inference_server_mod.prepare_test(base_work_dir, use_podman)
+
     podman_container_name = config.project.get_config("prepare.podman.container.name") \
         if use_podman else False
 
+    inference_server_path = inference_server_mod.get_binary_path(
+        base_work_dir, system,
+        use_podman=podman_container_name
+    )
 
-    ollama_path = ollama.get_binary_path(base_work_dir, system,
-                                         podman=podman_container_name)
+    inference_server_native_path = inference_server_mod.get_binary_path(
+        base_work_dir, config.project.get_config("remote_host.system"),
+        use_podman=False,
+    )
 
     if use_podman:
-        ollama_port = config.project.get_config("prepare.ollama.port")
+        inference_server_port = config.project.get_config("test.inference_server.port")
 
         podman.test(base_work_dir)
-        podman.start(base_work_dir, podman_container_name, ollama_port)
+        podman.start(base_work_dir, podman_container_name, inference_server_port)
 
-    ollama.start(base_work_dir, ollama_path)
-    ollama.run_model(base_work_dir, ollama_path, model_name)
+    inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
+    inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
+    inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
 
     try:
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
@@ -144,11 +160,11 @@ def test_ollama(platform):
             run_llm_load_test(base_work_dir, model_name)
     finally:
         exc = None
-        if config.project.get_config("prepare.ollama.unload_on_exit"):
-            exc = run.run_and_catch(exc, ollama.unload_model, base_work_dir, ollama_path, model_name)
+        if config.project.get_config("test.inference_server.unload_on_exit"):
+            exc = run.run_and_catch(exc, inference_server_mod.unload_model, base_work_dir, inference_server_path, model_name, use_podman=use_podman)
 
-        if config.project.get_config("prepare.ollama.stop_on_exit"):
-            exc = run.run_and_catch(exc, ollama.stop, base_work_dir, ollama_path)
+        if config.project.get_config("test.inference_server.stop_on_exit"):
+            exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir, podman_container_name)
@@ -247,7 +263,7 @@ def matbench_run_one(with_deploy):
         config.project.set_config("test.matbenchmarking.enabled", False)
 
         if with_deploy:
-            test_ollama(config.project.get_config("test.platform"))
+            test_inference(config.project.get_config("test.platform"))
         else:
             base_work_dir = remote_access.prepare()
             model_name = config.project.get_config("test.model.name")

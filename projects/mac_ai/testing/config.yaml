@@ -41,11 +41,30 @@ remote_host:
   - -o LogLevel=ERROR
   system: darwin
   arch: arm64
-  python_bin: /opt/homebrew/bin/python3
+  python_bin: python3
   podman_bin: /opt/podman/bin/podman
 
 prepare:
   cleanup_on_exit: false
+  llama_cpp:
+    repo:
+      url: https://github.com/ggml-org/llama.cpp
+      version: b4735
+      darwin:
+        file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
+        tarball: true
+      podman/linux:
+        build_from_containerfile: true
+        url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
+        # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
+        ref: 188866acbdd7efcdd438f21c09139ae378820a00
+        root_directory: chat
+        prepare_script: setup.sh
+        container_file: vulkan/arm64/Containerfile
+        image: llama_cpp
+        tag: # use the commit first chars
+        command: env PYTHONPATH=/locallm python -m llama_cpp.server
+
   ollama:
     repo:
       url: https://github.com/ollama/ollama/
@@ -53,15 +72,12 @@ prepare:
       darwin:
         file: ollama-darwin
         executable: true
-      linux:
+      podman/linux:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
-    port: 11434
-    unload_on_exit: true
-    stop_on_exit: true
 
   # the list of system binaries to prepare
-  systems: [darwin, linux]
+  systems: [darwin, podman/linux]
 
   podman:
     container:
@@ -86,10 +102,16 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman
+  platform: [darwin]
+
+  inference_server:
+    name: llama_cpp
+    port: 11434
+    unload_on_exit: true
+    stop_on_exit: true
 
   model:
-    name: smollm:135m
+    name: llama3.2 #smollm:135m
     size: small
 
   llm_load_test:
@@ -98,7 +120,7 @@ test:
 
     args:
       host: localhost
-      port: "@prepare.ollama.port"
+      port: "@test.inference_server.port"
       duration: 30
       concurrency: 1
       plugin: openai_plugin
@@ -123,7 +145,7 @@ export_artifacts:
   enabled: false
 
 matbench:
-  enabled: true
+  enabled: false
   preset: null
   workload: projects.mac_ai.visualizations.llm_load_test
   config_file: plots.yaml
