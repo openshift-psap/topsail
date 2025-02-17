@@ -1,11 +1,28 @@
 ---
-- name: Git checkout
-  ansible.builtin.git:
-    repo: '{{ remote_clone_repo_url }}'
-    dest: "{{ remote_clone_dest }}"
-    version: "{{ remote_clone_version }}"
-    force: "{{ remote_clone_force }}"
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
 
-- name: Show the commit of the version that has been cloned
-  command:
-    git -C "{{ remote_clone_dest }}" show --quiet
+- name: Execute the remote clone
+  block:
+  - name: Git checkout
+    ansible.builtin.git:
+      repo: '{{ remote_clone_repo_url }}'
+      dest: "{{ remote_clone_dest }}"
+      version: "{{ remote_clone_version }}"
+      force: "{{ remote_clone_force }}"
+
+  - name: Show the commit of the version that has been cloned
+    shell:
+      git -C "{{ remote_clone_dest }}" show --quiet
+        > "{{ artifact_extra_logs_dir }}/artifacts/commit.log"
+
+  always:
+  - name: Retrieve the artifact files locally
+    include_role:
+      name: remote_retrieve
+    vars:
+      remote_retrieve_path: "{{ artifact_extra_logs_dir }}"
+      remote_retrieve_dest: "{{ artifact_extra_logs_dir }}"
