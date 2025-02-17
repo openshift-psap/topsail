@@ -10,12 +10,6 @@
     pkill {{ mac_ai_remote_ollama_start_path | basename }}
   failed_when: false
 
-- name: Capture the logs of the ollama start
-  command:
-    cat /tmp/topsail_ollama.log
-  when: mac_ai_remote_ollama_start_stop | bool
-  ignore_errors: true
-
 - name: Stop here
   meta: end_play
   when: mac_ai_remote_ollama_start_stop | bool
