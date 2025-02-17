@@ -42,7 +42,7 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
 
         datum = dict(entry.settings.__dict__)
 
-        datum["legend_name"] = entry.settings.__dict__.get(ordered_vars[0])
+        datum["legend_name"] = entry.settings.__dict__.get(ordered_vars[0]) if ordered_vars else "single-entry"
 
         datum["test_name"] = entry.get_name([v for v in variables if v != ordered_vars[0]]).replace(", ", "<br>").replace("model_name=", "")
 
@@ -143,7 +143,8 @@ class Throughput():
 
             fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
             fig.update_layout(title=f"Throughput and {y_name}{subtitle}", title_x=0.5,)
-            fig.update_layout(legend_title_text=ordered_vars[0].title())
+            if ordered_vars:
+                fig.update_layout(legend_title_text=ordered_vars[0].title())
 
             if len(df[color].unique()) <= 1:
                 fig.layout.update(showlegend=False)
