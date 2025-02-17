@@ -8,16 +8,16 @@ import utils
 
 def prepare():
     from prepare_mac_ai import POD_VIRT_SECRET_PATH
-    base_work_dir = config.project.get_config("remote_host.base_work_dir")
+    base_work_dir = config.project.get_config("remote_host.base_work_dir", print=False)
     if base_work_dir.startswith("@"):
-        with open(POD_VIRT_SECRET_PATH / config.project.get_config(base_work_dir[1:])) as f:
+        with open(POD_VIRT_SECRET_PATH / config.project.get_config(base_work_dir[1:], print=False)) as f:
             base_work_dir = pathlib.Path(f.read().strip())
 
     base_work_dir = pathlib.Path(base_work_dir)
 
     #
 
-    if config.project.get_config("remote_host.run_locally"):
+    if config.project.get_config("remote_host.run_locally", print=False):
         logging.info("Running locally, nothing to prepare.")
         return base_work_dir
 
@@ -103,5 +103,19 @@ def run_with_ansible_ssh_conf(
     env_values = " ".join(f"'{k}={v}'" for k, v in (base_env|extra_env).items())
     env_cmd = f"env {env_values}"
 
-    return run.run(f"ssh {ssh_flags} -tt -i {private_key_path} {user}@{host} -p {port} -- {env_cmd} {cmd}",
+    return run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- {env_cmd} {cmd}",
                    **run_kwargs)
+
+def exists(path):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.exists()
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"test -f {path}",
+        capture_stdout=True,
+        check=False,
+    )
+
+    return ret.returncode == 0

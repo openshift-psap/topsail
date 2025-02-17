@@ -8,14 +8,20 @@ import remote_access
 def get_podman_binary():
     podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
 
+    base_work_dir = remote_access.prepare()
+    podman_env = dict(HOME=base_work_dir)
+
+
     if config.project.get_config("prepare.podman.machine.enabled", print=False):
         machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
+        podman_bin = f"{podman_bin} --connection '{machine_name}'"
 
-        podman_machine_env = config.project.get_config("prepare.podman.machine.env", print=False)
-        env_values = " ".join(f"'{k}={v}'" for k, v in (podman_machine_env).items())
-        env_cmd = f"env {env_values}"
+        podman_env |= config.project.get_config("prepare.podman.machine.env", print=False)
 
-        podman_bin = f"{env_cmd} {podman_bin} --connection '{machine_name}'"
+    env_values = " ".join(f"'{k}={v}'" for k, v in (podman_env).items())
+    env_cmd = f"env {env_values}"
+
+    podman_bin = f"{env_cmd} {podman_bin} --connection '{machine_name}'"
 
     return podman_bin
 
@@ -27,7 +33,7 @@ def test(base_work_dir):
     python_bin = config.project.get_config("prepare.podman.container.python_bin")
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"{podman_bin} run --rm {image} {python_bin} --version",
+        f"{podman_bin} run --entrypoint= --rm {image} {python_bin} --version",
     )
 
 
@@ -52,10 +58,11 @@ def start(base_work_dir, container_name, port):
         f"--env 'HOME={base_work_dir}' "
         f"-p {port}:{port} "
         + podman_device_cmd +
-        "--detach --replace --rm "
+        "--detach --replace --rm --entrypoint= "
         f"{image} "
         "sleep inf"
     )
+
 
 def stop(base_work_dir, container_name):
     podman_bin = get_podman_binary()
@@ -65,6 +72,7 @@ def stop(base_work_dir, container_name):
         base_work_dir,
         f"{podman_bin} rm --force --time 0 {container_name}", check=False
     )
+
 
 def get_exec_command_prefix(container_name):
     podman_bin = get_podman_binary()

@@ -32,8 +32,7 @@ def delete(base_work_dir):
 
 def stop(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
-    ret = _run(base_work_dir, f"stop {name}")
-    pass
+    return _run(base_work_dir, f"stop {name}")
 
 
 def start(base_work_dir):
