@@ -47,7 +47,8 @@ is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict, results, is_lts):
     test_platform = settings_dict.pop("test.platform", results.test_config.get("test.platform"))
-    settings_dict["platform"] = test_platform
+    if "platform" not in settings_dict:
+        settings_dict["platform"] = test_platform
 
     for k in list(settings_dict.keys()):
         _, found, param = k.partition("test.llm_load_test.args.")
