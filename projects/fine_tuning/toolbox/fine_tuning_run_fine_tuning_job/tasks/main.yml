@@ -184,7 +184,6 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
         echo "$(echo "{{ node_name }}" | cut -d/ -f2):$nic_name:net$nic_idx:$ip" | tee -a "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml"
         nic_idx=$((nic_idx+1))
       done
-      cp "{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml" /mnt/nic-mapping/nodename_ip_mapping.yaml
     loop: "{{ gpu_node_names_cmd.stdout_lines }}"
     loop_control:
       loop_var: node_name
@@ -194,6 +193,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
       set -o pipefail;
 
       oc create cm {{ job_name_safe }}-nic-mapping \
+      -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
        --from-file="{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml" \
        --dry-run=client \
        -oyaml \
