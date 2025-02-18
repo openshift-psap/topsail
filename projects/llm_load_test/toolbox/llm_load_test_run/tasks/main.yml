@@ -70,7 +70,6 @@
       set -o pipefail;
       cat {{ artifact_extra_logs_dir }}/output/output.json | jq '.summary.total_failures == .summary.total_requests'
     register: llm_load_test_no_success
-    failed_when: false
 
   - name: Fail if no request succeeded
     fail: msg="llm-load-test calls did not succeed. See logs in '{{ artifact_extra_logs_dir }}/logs/run.log'"
