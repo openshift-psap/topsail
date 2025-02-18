@@ -21,21 +21,30 @@ RUN dnf install -y epel-release && \
 # Install dependencies: ocm, oc
 
 ARG CURL_OPTIONS="--silent --location --fail --show-error"
-
-# ARG OCP_CLI_URL=https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz
-
 ARG OCP_CLI_VERSION=latest
-ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
 
-RUN curl ${CURL_OPTIONS}  ${OCP_CLI_URL}  | tar xfz - -C /usr/local/bin oc
+# Detect architecture and set appropriate OCP client URL
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/aarch64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz; \
+    else \
+        OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz; \
+    fi && \
+    curl ${CURL_OPTIONS} ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
-# Install Prometheus
+# Install Prometheus with architecture detection
 ARG PROMETHEUS_VERSION=2.36.0
-RUN wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz \
-  && tar xf "/tmp/prometheus.tar.gz" -C /tmp \
-  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus /usr/local/bin \
-  && mkdir -p /etc/prometheus/ \
-  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        PROMETHEUS_ARCH="arm64"; \
+    else \
+        PROMETHEUS_ARCH="amd64"; \
+    fi && \
+    wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}.tar.gz" -O/tmp/prometheus.tar.gz && \
+    tar xf "/tmp/prometheus.tar.gz" -C /tmp && \
+    mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/prometheus /usr/local/bin && \
+    mkdir -p /etc/prometheus/ && \
+    mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-${PROMETHEUS_ARCH}/prometheus.yml /etc/prometheus/prometheus.yml
 
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
