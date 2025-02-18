@@ -138,7 +138,7 @@ def parse_env(dirname, test_config, capture_state_dir):
         path_prefix = test_config.get("export_artifacts.path_prefix")
 
         if ansible_env.get("OPENSHIFT_CI") == "true":
-            job_spec = json.loads(os.environ["JOB_SPEC"])
+            job_spec = json.loads(ansible_env["JOB_SPEC"])
             pull_number = job_spec["refs"]["pulls"][0]["number"]
             github_org = job_spec["refs"]["org"]
             github_repo = job_spec["refs"]["repo"]
