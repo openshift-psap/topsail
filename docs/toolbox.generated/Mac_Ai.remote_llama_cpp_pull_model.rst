@@ -3,13 +3,13 @@
 ..
     _Auto-generated file, do not edit manually ...
     _Toolbox generate command: repo generate_toolbox_rst_documentation
-    _ Source component: Mac_Ai.remote_ollama_run_model
+    _ Source component: Mac_Ai.remote_llama_cpp_pull_model
 
 
-mac_ai remote_ollama_run_model
-==============================
+mac_ai remote_llama_cpp_pull_model
+==================================
 
-Runs a model with ollama, on a remote host
+Pulls a model with llama-cpp, on a remote host
 
 
 
@@ -25,15 +25,10 @@ Parameters
 
 ``path``  
 
-* The path to the ollama binary
+* The path to the llama-cpp binary
 
 
 ``name``  
 
 * The name of the model to fetch
-
-
-``unload``  
-
-* If True, unloads (stops serving) this model
 

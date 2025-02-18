@@ -215,8 +215,10 @@ Toolbox Documentation
     
 
                 
+* :doc:`remote_llama_cpp_pull_model <Mac_Ai.remote_llama_cpp_pull_model>`	 Pulls a model with llama-cpp, on a remote host
+* :doc:`remote_llama_cpp_run_model <Mac_Ai.remote_llama_cpp_run_model>`	 Runs a model with llama_cpp, on a remote host
 * :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host
-* :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Pulls a model with ollama, on a remote host
+* :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Runs a model with ollama, on a remote host
 * :doc:`remote_ollama_start <Mac_Ai.remote_ollama_start>`	 Starts ollama, on a remote host
 
 ``nfd``
@@ -268,6 +270,7 @@ Toolbox Documentation
     
 
                 
+* :doc:`build_image <Remote.build_image>`	 Builds a podman image
 * :doc:`clone <Remote.clone>`	 Clones a Github repository in a remote host
 * :doc:`download <Remote.download>`	 Downloads a file in a remote host
 * :doc:`retrieve <Remote.retrieve>`	 Retrieves remote files locally
