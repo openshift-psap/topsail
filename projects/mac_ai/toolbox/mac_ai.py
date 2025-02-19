@@ -112,3 +112,23 @@ class Mac_Ai:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("mac_ai_remote_capture_power_usage")
+    @AnsibleMappedParams
+    def remote_capture_power_usage(
+            self,
+            samplers="gpu_power",
+            sample_rate=1000,
+            stop=False,
+    ):
+        """
+        Captures the power usage on MacOS
+
+        Args:
+          samplers: name(s) of the source sample to capture
+          sample_rate: rate at which the metrics should be captured, in ms
+          stop: if true, only stop the capture
+        """
+
+        return RunAnsibleRole(locals())
