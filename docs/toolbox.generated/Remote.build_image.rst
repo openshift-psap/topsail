@@ -20,7 +20,7 @@ Parameters
 
 ``base_directory``  
 
-* The location of the directory to build
+* The location of the directory to build. If None, uses an empty temp dir
 
 
 ``container_file``  
@@ -48,4 +48,9 @@ Parameters
 ``prepare_script``  
 
 * If specified, a script to execute before building the image
+
+
+``container_file_is_local``  
+
+* If true, copy the containerfile from the local system
 
