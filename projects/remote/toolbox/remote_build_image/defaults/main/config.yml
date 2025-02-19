@@ -1,0 +1,28 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Remote.build_image
+
+# Parameters
+# the location of the directory to build. If None, uses an empty temp dir
+# Mandatory value
+remote_build_image_base_directory:
+
+# the path the container_file to build
+# Mandatory value
+remote_build_image_container_file:
+
+# the name of the image to build
+# Mandatory value
+remote_build_image_image:
+
+# force build the image even if it already exists
+remote_build_image_force: false
+
+# the command to invoke to run podman
+remote_build_image_podman_cmd: podman
+
+# if specified, a script to execute before building the image
+remote_build_image_prepare_script: null
+
+# if true, copy the containerfile from the local system
+remote_build_image_container_file_is_local: false

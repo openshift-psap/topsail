@@ -62,7 +62,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    prepare_mac_ai.prepare()
+    return prepare_mac_ai.prepare()
 
 
 @entrypoint()

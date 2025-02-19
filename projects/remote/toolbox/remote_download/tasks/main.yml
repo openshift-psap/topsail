@@ -5,7 +5,6 @@
     path: "{{ remote_download_dest | dirname }}"
     mode: '0755'
 
-
 - name: Download the source file
   ansible.builtin.get_url:
     url: "{{ remote_download_source }}"
@@ -13,9 +12,14 @@
     mode: "0755"
     force: "{{ remote_download_force }}"
 
+- name: Compute the sha of the file
+  ansible.builtin.stat:
+    path: "{{ remote_download_dest }}"
+    checksum_algorithm: sha256
+  register: dest_stat_sha
+
 - name: Show the sha of the file
-  command:
-    sha256sum "{{ remote_download_dest }}"
+  command: echo "{{ dest_stat_sha.checksum }}"
 
 - name: Make the file executable
   command:

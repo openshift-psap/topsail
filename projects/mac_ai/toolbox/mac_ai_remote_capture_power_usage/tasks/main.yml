@@ -1,0 +1,22 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Ensure that there is no other sampler running
+  command:
+    sudo pkill powermetrics
+  failed_when: false
+
+- name: Stop here if only stopping
+  meta: end_play
+  when: mac_ai_remote_capture_power_usage_stop | bool
+
+- name: Start capturing the power usage
+  shell:
+    nohup sudo powermetrics
+         --samplers {{ mac_ai_remote_capture_power_usage_samplers }}
+         --sample-rate {{ mac_ai_remote_capture_power_usage_sample_rate }}
+         &> "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt" &
