@@ -24,18 +24,14 @@ ARG CURL_OPTIONS="--silent --location --fail --show-error"
 ARG OCP_CLI_VERSION=latest
 
 # Detect architecture and set appropriate OCP client URL
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-        OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/aarch64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz; \
-    else \
-        OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz; \
-    fi && \
+RUN ARCH=$(uname -m | sed s/arm64/aarch64/) && \
+    OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/${ARCH}/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz && \
     curl ${CURL_OPTIONS} ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
 # Install Prometheus with architecture detection
 ARG PROMETHEUS_VERSION=2.36.0
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+RUN ARCH=$(uname -m | sed s/arm64/aarch64/) && \
+    if [ "$ARCH" = "aarch64" ]; then \
         PROMETHEUS_ARCH="arm64"; \
     else \
         PROMETHEUS_ARCH="amd64"; \
