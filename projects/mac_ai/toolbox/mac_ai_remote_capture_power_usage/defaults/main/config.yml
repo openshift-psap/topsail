@@ -1,0 +1,13 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_capture_power_usage
+
+# Parameters
+# name(s) of the source sample to capture
+mac_ai_remote_capture_power_usage_samplers: gpu_power
+
+# rate at which the metrics should be captured, in ms
+mac_ai_remote_capture_power_usage_sample_rate: 1000
+
+# if true, only stop the capture
+mac_ai_remote_capture_power_usage_stop: false
