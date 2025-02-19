@@ -8,17 +8,46 @@ from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
 import remote_access, podman_machine
+import hashlib
+
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 def prepare_test(base_work_dir, use_podman):
     if not use_podman: return
 
-    repo_cfg = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'")
-
-    local_image_name, _ = _get_local_image_name(base_work_dir, repo_cfg)
+    local_image_name = get_local_image_name(base_work_dir)
     config.project.set_config("prepare.podman.container.image", local_image_name)
+    build_from = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.build_from")
+    command = config.project.get_config(f"prepare.llama_cpp.repo.'podman/linux'.{build_from}.command")
+    config.project.set_config("prepare.llama_cpp.repo.'podman/linux'.command", command)
 
 
-def _get_local_image_name(base_work_dir, repo_cfg, only_dest=False):
+def get_local_image_name(base_work_dir):
+
+    FROM = dict(
+        desktop_playground=__get_local_image_name_from_desktop_playground,
+        local_container_file=__get_local_image_name_from_local_container_file,
+    )
+    build_from = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.build_from")
+    if build_from not in FROM:
+        raise ValueError(f"{build_from} not in {', '.join(FROM.keys())}")
+
+    return FROM[build_from](base_work_dir)
+
+
+def __get_local_image_name_from_local_container_file(base_work_dir=None):
+    def sha256sum(filename):
+        with open(filename, 'rb', buffering=0) as f:
+            return hashlib.sha256(f.read()).hexdigest()
+
+    container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
+
+    tag = sha256sum(container_file)[:8]
+    return f"localhost/llama_cpp:{tag}"
+
+
+def __get_local_image_name_from_desktop_playground(base_work_dir, repo_cfg, only_dest=False):
+    repo_cfg = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.desktop_playground")
     repo_url = repo_cfg["url"]
     dest = base_work_dir / pathlib.Path(repo_url).name
 
@@ -41,11 +70,38 @@ def _get_local_image_name(base_work_dir, repo_cfg, only_dest=False):
 
 
 def prepare_podman_image(base_work_dir, system="podman/linux"):
-    repo_cfg = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'")
+    FROM = dict(
+        desktop_playground=prepare_podman_image_from_desktop_playground,
+        local_container_file=prepare_podman_image_from_local_container_file,
+    )
+    build_from = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.build_from)")
+    if build_from not in FROM:
+        raise ValueError(f"{build_from} not in {', '.join(FROM.keys())}")
+
+    return FROM[build_from](base_work_dir, system)
+
+
+def prepare_podman_image_from_local_container_file(base_work_dir, system="podman/linux"):
+    local_image_name = __get_local_image_name_from_local_container_file()
+    container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
+
+    run.run_toolbox(
+        "remote", "build_image",
+        podman_cmd=podman_mod.get_podman_binary(),
+        base_directory=None,
+        prepare_script=None,
+        container_file=container_file,
+        container_file_is_local=True,
+        image=local_image_name,
+    )
+
+
+def prepare_podman_image_from_desktop_playground(base_work_dir, system="podman/linux"):
+    repo_cfg = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.desktop_playground")
     repo_url = repo_cfg["url"]
 
     # cannot compute the image tag if the repo isn't cloned ...
-    dest = _get_local_image_name(base_work_dir, repo_cfg, only_dest=True)
+    dest = __get_local_image_name_from_desktop_playground(base_work_dir, repo_cfg, only_dest=True)
 
     ref = repo_cfg["ref"]
     run.run_toolbox(
@@ -179,8 +235,8 @@ def run_model(base_work_dir, llama_cpp_path, model, use_podman=False):
 def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
 
     if use_podman:
-        podman_cmd = podman_mod.get_podman_binary(),
-        command = f"{podman_cmd} pkill python"
+        podman_prefix = podman_mod.get_exec_command_prefix(use_podman)
+        command = f"{podman_prefix} pkill python"
     else:
         command = f"pkill llama-server"
 

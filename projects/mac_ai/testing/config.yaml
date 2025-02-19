@@ -12,7 +12,7 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [native, podman]
+    test.platform: [native, podman/linux]
 
     test.llm_load_test.matbenchmarking: true
     test.llm_load_test.args.concurrency: [1, 2, 4]
@@ -54,16 +54,23 @@ prepare:
         file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
         tarball: true
       podman/linux:
-        build_from_containerfile: true
-        url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
-        # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
-        ref: 188866acbdd7efcdd438f21c09139ae378820a00
-        root_directory: chat
-        prepare_script: setup.sh
-        container_file: vulkan/arm64/Containerfile
-        image: llama_cpp
-        tag: # use the commit first chars
-        command: env PYTHONPATH=/locallm python -m llama_cpp.server
+        build_from: local_container_file # desktop_playground
+        command: # will be set in prepare_test
+
+        local_container_file:
+          path: images/llama_cpp.containerfile
+          command: /app/build/bin/llama-server
+
+        desktop_playground:
+          url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
+          # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
+          ref: 188866acbdd7efcdd438f21c09139ae378820a00
+          root_directory: chat
+          prepare_script: setup.sh
+          container_file: vulkan/arm64/Containerfile
+          image: llama_cpp
+          tag: # use the commit first chars
+          command: env PYTHONPATH=/locallm python -m llama_cpp.server
 
   ollama:
     repo:
@@ -110,13 +117,14 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: [darwin]
+  platform: [darwin, podman/linux]
 
   inference_server:
     name: llama_cpp
     port: 11434
     unload_on_exit: true
     stop_on_exit: true
+    always_pull: true
 
   model:
     name: llama3.2 #smollm:135m
@@ -129,7 +137,7 @@ test:
     args:
       host: localhost
       port: "@test.inference_server.port"
-      duration: 30
+      duration: 300
       concurrency: 1
       plugin: openai_plugin
       interface: http
@@ -150,6 +158,7 @@ test:
     stop_on_error: true
 
   capture_metrics:
+    enabled: true
     gpu:
       sampler: gpu_power
       rate: 1000
@@ -158,7 +167,7 @@ export_artifacts:
   enabled: false
 
 matbench:
-  enabled: false
+  enabled: true
   preset: null
   workload: projects.mac_ai.visualizations.llm_load_test
   config_file: plots.yaml
