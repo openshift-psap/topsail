@@ -141,6 +141,11 @@ test:
     enabled: false
     stop_on_error: true
 
+  capture_metrics:
+    gpu:
+      sampler: gpu_power
+      rate: 1000
+
 export_artifacts:
   enabled: false
 

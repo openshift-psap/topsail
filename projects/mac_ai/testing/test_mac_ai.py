@@ -110,6 +110,22 @@ def test_all_platforms():
                 test_inference(platform)
 
 
+def capture_metrics(stop=False):
+    sampler = config.project.get_config("test.capture_metrics.gpu.sampler")
+    artifact_dir_suffix = f"_{sampler}"
+    if stop:
+        artifact_dir_suffix += "_stop"
+
+    run.run_toolbox(
+        "mac_ai", "remote_capture_power_usage",
+        samplers=sampler,
+        sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
+        stop=stop,
+        mute_stdout=stop,
+        artifact_dir_suffix=artifact_dir_suffix,
+    )
+
+
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
@@ -148,6 +164,7 @@ def test_inference(platform):
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
 
+    capture_metrics()
     inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
     inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
@@ -165,6 +182,8 @@ def test_inference(platform):
 
         if config.project.get_config("test.inference_server.stop_on_exit"):
             exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
+
+        exc = run.run_and_catch(exc, capture_metrics, stop=True)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir, podman_container_name)
