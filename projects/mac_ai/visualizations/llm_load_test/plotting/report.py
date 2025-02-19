@@ -16,7 +16,7 @@ def register():
     TokensReport()
     CallDetailsReport()
     LtsReport()
-
+    GPUUsageReport()
 
 class CallDetailsReport():
     def __init__(self):
@@ -52,6 +52,28 @@ class CallDetailsReport():
                                                legend_title="ITL,<br>in ms", show_timeline=True), args))
             header += report.Plot_and_Text(f"Latency details",
                                            report.set_config(dict(model_name=model_name, only_ttft=True), args))
+
+        return None, header
+
+
+class GPUUsageReport():
+    def __init__(self):
+        self.name = "report: GPU Usage"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for what in ["by power", "by idle", "by frequency"]:
+            plot_name = f"GPU Usage {what}"
+            header += [html.H1(plot_name)]
+            header += report.Plot_and_Text(plot_name, args)
 
         return None, header
 
