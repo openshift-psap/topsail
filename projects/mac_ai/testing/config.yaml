@@ -75,6 +75,14 @@ prepare:
       podman/linux:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
+  brew:
+    dependencies:
+    - krunkit
+    - vulkan-headers
+    - libkrun-efi
+    - virglrenderer
+    - molten-vk
+    - molten-vk-krunkit
 
   # the list of system binaries to prepare
   systems: [darwin, podman/linux]

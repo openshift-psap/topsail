@@ -14,7 +14,7 @@ POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
-import prepare_mac_ai, remote_access, podman, podman_machine
+import prepare_mac_ai, remote_access, podman, podman_machine, brew
 
 def prepare_llm_load_test_args(base_work_dir, model_name):
     llm_load_test_kwargs = dict()
@@ -163,6 +163,8 @@ def test_inference(platform):
 
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
+
+    brew.capture_depencies_version(base_work_dir)
 
     inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)

@@ -5,7 +5,7 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import ollama, llama_cpp, utils, remote_access, podman_machine
+import ollama, llama_cpp, utils, remote_access, podman_machine, brew
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
@@ -21,6 +21,7 @@ def prepare():
     podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     prepare_llm_load_test(base_work_dir)
+    brew.install_depencies(base_work_dir)
 
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = INFERENCE_SERVERS.get(inference_server_name)

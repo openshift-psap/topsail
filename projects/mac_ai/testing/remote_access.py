@@ -75,13 +75,16 @@ def run_with_ansible_ssh_conf(
         base_work_dir, cmd,
         extra_env={},
         check=True,
-        capture_stdout=False
+        capture_stdout=False,
+        capture_stderr=False,
 ):
     run_kwargs = dict(
         log_command=False,
         check=check,
         capture_stdout=capture_stdout,
+        capture_stderr=capture_stderr,
     )
+
     if config.project.get_config("remote_host.run_locally", print=False):
         logging.info(f"Running on the local host: {cmd}")
 
