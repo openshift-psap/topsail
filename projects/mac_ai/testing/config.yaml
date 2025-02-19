@@ -54,16 +54,23 @@ prepare:
         file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
         tarball: true
       podman/linux:
-        build_from_containerfile: true
-        url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
-        # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
-        ref: 188866acbdd7efcdd438f21c09139ae378820a00
-        root_directory: chat
-        prepare_script: setup.sh
-        container_file: vulkan/arm64/Containerfile
-        image: llama_cpp
-        tag: # use the commit first chars
-        command: env PYTHONPATH=/locallm python -m llama_cpp.server
+        build_from: local_container_file # desktop_playground
+        command: # will be set in prepare_test
+
+        local_container_file:
+          path: images/llama_cpp.containerfile
+          command: /app/build/bin/llama-server
+
+        desktop_playground:
+          url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
+          # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
+          ref: 188866acbdd7efcdd438f21c09139ae378820a00
+          root_directory: chat
+          prepare_script: setup.sh
+          container_file: vulkan/arm64/Containerfile
+          image: llama_cpp
+          tag: # use the commit first chars
+          command: env PYTHONPATH=/locallm python -m llama_cpp.server
 
   ollama:
     repo:
@@ -110,13 +117,14 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: [darwin]
+  platform: podman/linux #[darwin, podman/linux]
 
   inference_server:
     name: llama_cpp
     port: 11434
     unload_on_exit: true
     stop_on_exit: true
+    always_pull: true
 
   model:
     name: llama3.2 #smollm:135m
@@ -150,6 +158,7 @@ test:
     stop_on_error: true
 
   capture_metrics:
+    enabled: true
     gpu:
       sampler: gpu_power
       rate: 1000

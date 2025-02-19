@@ -111,6 +111,11 @@ def test_all_platforms():
 
 
 def capture_metrics(stop=False):
+    if not config.project.get_config("test.capture_metrics.enabled"):
+        logging.info("capture_metrics: Metrics capture not enabled.")
+
+        return
+
     sampler = config.project.get_config("test.capture_metrics.gpu.sampler")
     artifact_dir_suffix = f"_{sampler}"
     if stop:
@@ -167,7 +172,8 @@ def test_inference(platform):
     brew.capture_depencies_version(base_work_dir)
     capture_metrics()
     inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
-    inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
+    if config.project.get_config("test.inference_server.always_pull"):
+        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
     inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
 
     try:
