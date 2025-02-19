@@ -110,6 +110,22 @@ def test_all_platforms():
                 test_inference(platform)
 
 
+def capture_metrics(stop=False):
+    sampler = config.project.get_config("test.capture_metrics.gpu.sampler")
+    artifact_dir_suffix = f"_{sampler}"
+    if stop:
+        artifact_dir_suffix += "_stop"
+
+    run.run_toolbox(
+        "mac_ai", "remote_capture_power_usage",
+        samplers=sampler,
+        sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
+        stop=stop,
+        mute_stdout=stop,
+        artifact_dir_suffix=artifact_dir_suffix,
+    )
+
+
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
@@ -183,6 +199,7 @@ def run_llm_load_test(base_work_dir, model_name):
     if not config.project.get_config("test.llm_load_test.enabled"):
         return
 
+    capture_metrics()
     prepare_matbench_test_files()
 
     exit_code = 1
@@ -198,6 +215,7 @@ def run_llm_load_test(base_work_dir, model_name):
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
             print(exit_code, file=f)
 
+        capture_metrics(stop=True)
 
 def matbench_run(matrix_source_keys, entrypoint):
     with env.NextArtifactDir("matbenchmarking"):
