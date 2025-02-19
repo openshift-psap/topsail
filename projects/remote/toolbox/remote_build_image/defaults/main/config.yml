@@ -15,9 +15,6 @@ remote_build_image_container_file:
 # Mandatory value
 remote_build_image_image:
 
-# force build the image even if it already exists
-remote_build_image_force: false
-
 # the command to invoke to run podman
 remote_build_image_podman_cmd: podman
 

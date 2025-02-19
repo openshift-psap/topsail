@@ -79,20 +79,23 @@ class Remote:
             base_directory,
             container_file,
             image,
-            force=False,
             podman_cmd="podman",
             prepare_script=None,
+            container_file_is_local=False,
     ):
         """
         Builds a podman image
 
         Args:
-          base_directory: the location of the directory to build
+          base_directory: the location of the directory to build. If None, uses an empty temp dir
           container_file: the path the container_file to build
           image: the name of the image to build
-          force: force build the image even if it already exists
           podman_cmd: the command to invoke to run podman
           prepare_script: if specified, a script to execute before building the image
+          container_file_is_local: if true, copy the containerfile from the local system
         """
+
+        if container_file_is_local and base_directory:
+            raise ValueError("Cannot have a --base_directory when --container_file_is_local is set")
 
         return RunAnsibleRole(locals())
