@@ -14,6 +14,7 @@ spec:
     - --model=/mnt/models/
     - --download-dir=/models-cache
     - --port=8080
+    - --num-scheduler-steps=8
     image: quay.io/opendatahub/vllm:fast-ibm-nightly-2024-05-01 # Overwritten by templates
     name: kserve-container
     ports:
