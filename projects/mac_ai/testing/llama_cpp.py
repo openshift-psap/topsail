@@ -74,7 +74,7 @@ def prepare_podman_image(base_work_dir, system="podman/linux"):
         desktop_playground=prepare_podman_image_from_desktop_playground,
         local_container_file=prepare_podman_image_from_local_container_file,
     )
-    build_from = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.build_from)")
+    build_from = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.build_from")
     if build_from not in FROM:
         raise ValueError(f"{build_from} not in {', '.join(FROM.keys())}")
 

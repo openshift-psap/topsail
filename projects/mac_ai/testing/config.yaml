@@ -12,17 +12,17 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [native, podman/linux, podman/linux-no-gpu]
+    test.platform: [native, podman/linux] # [podman/linux, podman/linux-no-gpu, native]
 
-    test.llm_load_test.matbenchmarking: true
+    test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-    test.model.name: [mistral-7b-instruct, llama3.2, smollm:135m]
+    test.model.name: llama3.2
 
 secrets:
   dir:
-    name: pod-virt-secret
-    env_key: POD_VIRT_SECRET_PATH
+    name: crc-mac-ai-secret
+    env_key: CRC_MAC_AI_SECRET_PATH
   private_key_path: host__private_key
   hostname: host__hostname
   hostport: host__hostport
@@ -43,6 +43,9 @@ remote_host:
   arch: arm64
   python_bin: python3
   podman_bin: /opt/podman/bin/podman
+  env:
+    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+    HOME: "@secrets.base_work_dir"
 
 prepare:
   cleanup_on_exit: false

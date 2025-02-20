@@ -19,7 +19,7 @@
   register: dest_stat_sha
 
 - name: Show the sha of the file
-  command: echo "{{ dest_stat_sha.checksum }}"
+  command: echo "{{ dest_stat_sha.stat.checksum }}"
 
 - name: Make the file executable
   command:

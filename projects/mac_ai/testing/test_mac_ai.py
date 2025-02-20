@@ -9,7 +9,7 @@ from projects.matrix_benchmarking.library import visualize, matbenchmark
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
-POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
+CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
@@ -171,7 +171,7 @@ def test_inference(platform):
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
 
-    brew.capture_depencies_version(base_work_dir)
+    brew.capture_dependencies_version(base_work_dir)
 
     inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     if config.project.get_config("test.inference_server.always_pull"):
