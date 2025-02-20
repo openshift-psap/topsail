@@ -77,7 +77,7 @@ def test():
         if config.project.get_config("test.matbenchmarking.enabled"):
             matbench_run(
                 ["test.model.name", "test.platform"],
-                entrypoint="matbench_run_with_deploy"
+                with_deploy=True,
             )
         else:
             test_all_platforms()
@@ -180,8 +180,7 @@ def test_inference(platform):
 
     try:
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
-            matbench_run(["test.llm_load_test.args"],
-                         entrypoint="matbench_run_without_deploy")
+            matbench_run(["test.llm_load_test.args"], with_deploy=False)
         else:
             run_llm_load_test(base_work_dir, model_name)
     finally:
@@ -227,7 +226,7 @@ def run_llm_load_test(base_work_dir, model_name):
 
         capture_metrics(stop=True)
 
-def matbench_run(matrix_source_keys, entrypoint):
+def matbench_run(matrix_source_keys, with_deploy):
     with env.NextArtifactDir("matbenchmarking"):
         benchmark_values = {}
 
@@ -244,20 +243,23 @@ def matbench_run(matrix_source_keys, entrypoint):
 
         expe_to_run = dict(mac_ai=benchmark_values)
 
-        # if not benchmark_values:
-        #     msg = "Nothing to matbenchmark :/"
+        if not benchmark_values:
+            logging.info("No benchmark values to pass to MatrixBenchmarking. Skipping it.")
 
-        #     with open(env.ARTIFACT_DIR / "NOTHING_TO_BENCHMARK", "w") as f:
-        #         print(msg, file=f)
-        #     logging.error(msg)
-        #     raise ValueError(msg)
+            if with_deploy:
+                test_inference(config.project.get_config("test.platform"))
+            else:
+                base_work_dir = remote_access.prepare()
+                model_name = config.project.get_config("test.model.name")
+                run_llm_load_test(base_work_dir, model_name)
+            return
 
-        if benchmark_values:
-            first_key = list(benchmark_values)[0]
-            first_key_name = first_key.rpartition(".")[-1]
-            path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
-        else:
-            path_tpl = "single_test"
+        first_key = list(benchmark_values)[0]
+        first_key_name = first_key.rpartition(".")[-1]
+        path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
+
+        entrypoint = "matbench_run_with_deploy" if with_deploy \
+            else "matbench_run_without_deploy"
 
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
