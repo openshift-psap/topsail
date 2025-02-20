@@ -273,7 +273,7 @@ class RunAnsibleRole:
                     extra_vars_dict = yaml.safe_load(f)
 
             except yaml.parser.ParserError:
-                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars}' as yaml ...")
+                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars_fname}' as yaml ...")
                 raise
 
             if not extra_vars_dict:
