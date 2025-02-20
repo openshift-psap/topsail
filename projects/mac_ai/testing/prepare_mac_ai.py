@@ -8,7 +8,7 @@ from projects.matrix_benchmarking.library import visualize
 import ollama, llama_cpp, utils, remote_access, podman_machine, brew
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
+CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
 INFERENCE_SERVERS = dict(
     ollama=ollama,

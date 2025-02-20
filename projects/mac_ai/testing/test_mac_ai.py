@@ -9,7 +9,7 @@ from projects.matrix_benchmarking.library import visualize, matbenchmark
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
-POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
+CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
 RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)

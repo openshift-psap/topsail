@@ -7,10 +7,10 @@ from projects.core.library import env, config, run, configure_logging, export
 import utils
 
 def prepare():
-    from prepare_mac_ai import POD_VIRT_SECRET_PATH
+    from prepare_mac_ai import CRC_MAC_AI_SECRET_PATH
     base_work_dir = config.project.get_config("remote_host.base_work_dir", print=False)
     if base_work_dir.startswith("@"):
-        with open(POD_VIRT_SECRET_PATH / config.project.get_config(base_work_dir[1:], print=False)) as f:
+        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(base_work_dir[1:], print=False)) as f:
             base_work_dir = pathlib.Path(f.read().strip())
 
     base_work_dir = pathlib.Path(base_work_dir)
@@ -31,7 +31,7 @@ def prepare():
 
     remote_host = config.project.get_config("remote_host.name")
     if remote_host.startswith("@"):
-        with open(POD_VIRT_SECRET_PATH / config.project.get_config(remote_host[1:])) as f:
+        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_host[1:])) as f:
             remote_host = f.read().strip()
 
 
@@ -47,11 +47,11 @@ def prepare():
     #
     private_key_path = config.project.get_config("remote_host.private_key_path")
     if private_key_path.startswith("@"):
-        private_key_path = POD_VIRT_SECRET_PATH / config.project.get_config(private_key_path[1:])
+        private_key_path = CRC_MAC_AI_SECRET_PATH / config.project.get_config(private_key_path[1:])
 
     remote_hostport = config.project.get_config("remote_host.port")
     if isinstance(remote_hostport, str) and remote_hostport.startswith("@"):
-        with open(POD_VIRT_SECRET_PATH / config.project.get_config(remote_hostport[1:])) as f:
+        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_hostport[1:])) as f:
             remote_hostport = int(f.read().strip())
 
     ssh_flags = config.project.get_config("remote_host.ssh_flags")

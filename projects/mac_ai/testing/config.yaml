@@ -21,8 +21,8 @@ ci_presets:
 
 secrets:
   dir:
-    name: pod-virt-secret
-    env_key: POD_VIRT_SECRET_PATH
+    name: crc-mac-ai-secret
+    env_key: CRC_MAC_AI_SECRET_PATH
   private_key_path: host__private_key
   hostname: host__hostname
   hostport: host__hostport

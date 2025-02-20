@@ -20,7 +20,7 @@ import prepare_mac_ai, test_mac_ai
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
-POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
+CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -34,10 +34,10 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
 
     if not ignore_secret_path:
-        if not POD_VIRT_SECRET_PATH.exists():
-            raise RuntimeError(f"Path with the secrets (POD_VIRT_SECRET_PATH={POD_VIRT_SECRET_PATH}) does not exists.")
+        if not CRC_MAC_AI_SECRET_PATH.exists():
+            raise RuntimeError(f"Path with the secrets (CRC_MAC_AI_SECRET_PATH={CRC_MAC_AI_SECRET_PATH}) does not exists.")
 
-        run.run(f'sha256sum "$POD_VIRT_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+        run.run(f'sha256sum "$CRC_MAC_AI_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
