@@ -283,6 +283,17 @@ class RunAnsibleRole:
 
             generated_play[0]["vars"] |= extra_vars_dict
 
+        if extra_env_fname := env.get("TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"):
+            logging.info("Using the extra environment variables found in TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV")
+            try:
+                with open(extra_env_fname) as f:
+                    extra_env_dict = yaml.safe_load(f)
+
+                generated_play[0]["environment"] = extra_env_dict
+            except yaml.parser.ParserError:
+                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV='{extra_env_fname}' as yaml ...")
+                raise
+
         generated_play_path = artifact_extra_logs_dir / "_ansible.play.yaml"
         with open(generated_play_path, "w") as f:
             yaml.dump(generated_play, f)
