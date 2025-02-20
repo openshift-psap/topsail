@@ -43,6 +43,9 @@ remote_host:
   arch: arm64
   python_bin: python3
   podman_bin: /opt/podman/bin/podman
+  env:
+    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+    HOME: "@secrets.base_work_dir"
 
 prepare:
   cleanup_on_exit: false

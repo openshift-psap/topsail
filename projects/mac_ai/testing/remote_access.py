@@ -45,6 +45,27 @@ def prepare():
     os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"] = extra_vars_fd_path
 
     #
+
+    extra_env_fd_path, extra_env_file = utils.get_tmp_fd()
+    env = config.project.get_config("remote_host.env") or {}
+    for k, v in env.copy().items():
+        if not v:
+            del env[k]
+            continue
+
+        if not v.startswith("@"): continue
+        cfg_key = v[1:]
+        if cfg_key == "secrets.base_work_dir":
+            env[k] = str(base_work_dir)
+        else:
+            env[k] = config.project.get_config()
+
+    yaml.dump(env, extra_env_file)
+    extra_env_file.flush()
+
+    os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"] = extra_env_fd_path
+
+    #
     private_key_path = config.project.get_config("remote_host.private_key_path")
     if private_key_path.startswith("@"):
         private_key_path = CRC_MAC_AI_SECRET_PATH / config.project.get_config(private_key_path[1:])
