@@ -171,7 +171,7 @@ def test_inference(platform):
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
 
-    brew.capture_depencies_version(base_work_dir)
+    brew.capture_dependencies_version(base_work_dir)
 
     inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     if config.project.get_config("test.inference_server.always_pull"):

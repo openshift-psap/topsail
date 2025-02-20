@@ -21,7 +21,7 @@ def prepare():
     podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     prepare_llm_load_test(base_work_dir)
-    brew.install_depencies(base_work_dir)
+    brew.install_dependencies(base_work_dir)
 
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = INFERENCE_SERVERS.get(inference_server_name)
