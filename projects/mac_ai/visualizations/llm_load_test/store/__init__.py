@@ -46,6 +46,10 @@ is_cache_file = local_store.is_cache_file
 is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict, results, is_lts):
+    model_name = settings_dict.pop("test.model.name", results.test_config.get("test.model.name"))
+    if "model_name" not in settings_dict:
+        settings_dict["model_name"] = model_name
+
     test_platform = settings_dict.pop("test.platform", results.test_config.get("test.platform"))
     if "platform" not in settings_dict:
         settings_dict["platform"] = test_platform
