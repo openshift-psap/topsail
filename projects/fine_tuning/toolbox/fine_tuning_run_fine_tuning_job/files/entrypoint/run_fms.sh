@@ -33,9 +33,8 @@ python -m torch.distributed.run \
   --fsdp_auto_wrap_policy=TRANSFORMER_BASED_WRAP \
   --fsdp_backward_prefetch=BACKWARD_PRE \
   --fsdp_forward_prefetch=False \
-  --fsdp_offload_params=True \
-  --fsdp_state_dict_type=FULL_STATE_DICT \
-  --fsdp_sync_module_states=True \
+  --fsdp_offload_params=False \
+  --fsdp_state_dict_type=SHARDED_STATE_DICT \
   --fsdp_use_orig_params=False \
   --fsdp_backward_prefetch_policy=BACKWARD_PRE \
   --fsdp_sharding_strategy=2 \
