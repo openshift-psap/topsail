@@ -15,7 +15,7 @@ save_model_dir: "/mnt/output/save-model-dir"
 accelerate_launch_args:
   num_processes: {{ fine_tuning_run_fine_tuning_job_gpu or 1 }}
   num_machines: {{ fine_tuning_run_fine_tuning_job_pod_count }}
-  mixed_precision: "no"
+  mixed_precision: "bf16"
   dynamo_backend: "no"
 
   downcast_bf16: 'no'
