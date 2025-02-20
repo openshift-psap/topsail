@@ -12,12 +12,12 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [native, podman]
+    test.platform: [native, podman/linux, podman/linux-no-gpu]
 
     test.llm_load_test.matbenchmarking: true
-    test.llm_load_test.args.concurrency: [1, 2, 4]
+    test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-    test.model.name: llama3.2
+    test.model.name: [mistral-7b-instruct, llama3.2, smollm:135m]
 
 secrets:
   dir:
@@ -41,11 +41,37 @@ remote_host:
   - -o LogLevel=ERROR
   system: darwin
   arch: arm64
-  python_bin: /opt/homebrew/bin/python3
+  python_bin: python3
   podman_bin: /opt/podman/bin/podman
 
 prepare:
   cleanup_on_exit: false
+  llama_cpp:
+    repo:
+      url: https://github.com/ggml-org/llama.cpp
+      version: b4735
+      darwin:
+        file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
+        tarball: true
+      podman/linux:
+        build_from: local_container_file # desktop_playground
+        command: # will be set in prepare_test
+
+        local_container_file:
+          path: images/llama_cpp.containerfile
+          command: /app/build/bin/llama-server
+
+        desktop_playground:
+          url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
+          # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
+          ref: 188866acbdd7efcdd438f21c09139ae378820a00
+          root_directory: chat
+          prepare_script: setup.sh
+          container_file: vulkan/arm64/Containerfile
+          image: llama_cpp
+          tag: # use the commit first chars
+          command: env PYTHONPATH=/locallm python -m llama_cpp.server
+
   ollama:
     repo:
       url: https://github.com/ollama/ollama/
@@ -53,15 +79,20 @@ prepare:
       darwin:
         file: ollama-darwin
         executable: true
-      linux:
+      podman/linux:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
-    port: 11434
-    unload_on_exit: true
-    stop_on_exit: true
+  brew:
+    dependencies:
+    - krunkit
+    - vulkan-headers
+    - libkrun-efi
+    - virglrenderer
+    - molten-vk
+    - molten-vk-krunkit
 
   # the list of system binaries to prepare
-  systems: [darwin, linux]
+  systems: [darwin, podman/linux]
 
   podman:
     container:
@@ -70,6 +101,7 @@ prepare:
       image: quay.io/slopezpa/fedora-vgpu:latest # arm64 image
       python_bin: python3
       system: linux
+      device: /dev/dri
 
     stop_on_exit: true
 
@@ -85,10 +117,17 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman
+  platform: [darwin, podman/linux]
+
+  inference_server:
+    name: llama_cpp
+    port: 11434
+    unload_on_exit: true
+    stop_on_exit: true
+    always_pull: true
 
   model:
-    name: smollm:135m
+    name: llama3.2
     size: small
 
   llm_load_test:
@@ -97,8 +136,8 @@ test:
 
     args:
       host: localhost
-      port: "@prepare.ollama.port"
-      duration: 30
+      port: "@test.inference_server.port"
+      duration: 300
       concurrency: 1
       plugin: openai_plugin
       interface: http
@@ -117,6 +156,12 @@ test:
   matbenchmarking:
     enabled: false
     stop_on_error: true
+
+  capture_metrics:
+    enabled: true
+    gpu:
+      sampler: gpu_power
+      rate: 1000
 
 export_artifacts:
   enabled: false

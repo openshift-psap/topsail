@@ -1,0 +1,64 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Test if the image already exists
+  command: |
+    {{ remote_build_image_podman_cmd }} image ls --noheading "{{ remote_build_image_image }}"
+  register: has_image_cmd
+
+- name: Stop here if the image already exists
+  meta: end_play
+  when: has_image_cmd.stdout | length > 0
+
+- name: Create the empty temp dir
+  shell:
+    rm -rf /tmp/empty; mkdir /tmp/empty
+  when: not remote_build_image_base_directory
+
+- name: Copy the local containerfile to the remotedir
+  ansible.posix.synchronize:
+    src: "{{ remote_build_image_container_file }}"
+    dest: "/tmp/empty/Containerfile"
+    mode: "push"
+  when: remote_build_image_container_file_is_local | bool
+
+- name: Execute the build image script
+  block:
+  - name: Build the image
+    shell: |
+      cd "{{ remote_build_image_base_directory }}";
+      ./{{ remote_build_image_prepare_script }} \
+        &> "{{ artifact_extra_logs_dir }}/artifacts/prepare.log"
+    when: remote_build_image_prepare_script | default('', true) | trim
+
+  - name: Build the image
+    shell: |
+      {% if remote_build_image_base_directory %}
+      cd "{{ remote_build_image_base_directory }}";
+      {% else %}
+      cd /tmp/empty;
+      {% endif %}
+      {{ remote_build_image_podman_cmd }} build \
+         -t "{{ remote_build_image_image }}" \
+      {% if remote_build_image_container_file_is_local %}
+         -f ./Containerfile \
+      {% else %}
+         -f "{{ remote_build_image_container_file }}" \
+      {% endif %}
+         . \
+        > "{{ artifact_extra_logs_dir }}/artifacts/build.log"
+  always:
+  - name: Delete the empty temp dir
+    command: rm -rf /tmp/empty
+    when: not remote_build_image_base_directory
+
+  - name: Retrieve the artifact files locally
+    include_role:
+      name: remote_retrieve
+    vars:
+      remote_retrieve_path: "{{ artifact_extra_logs_dir }}"
+      remote_retrieve_dest: "{{ artifact_extra_logs_dir }}"

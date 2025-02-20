@@ -21,6 +21,7 @@ register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "*__llm_load_test__run"
+artifact_dirnames.MAC_AI_POWER_USAGE_GPU = "*__mac_ai__remote_capture_power_usage_gpu_power"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -31,6 +32,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
 
+    f"{artifact_dirnames.MAC_AI_POWER_USAGE_GPU}/artifacts/power_usage.txt",
 ]
 
 
@@ -47,8 +49,61 @@ def parse_once(results, dirname):
 
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
+    results.gpu_power_usage = _parse_gpu_power_metrics(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_gpu_power_metrics(dirname):
+    gpu_power_usage = types.SimpleNamespace()
+    gpu_power_usage.machine = None
+    gpu_power_usage.os = None
+    gpu_power_usage.usage = []
+
+    current_ts = None
+    current_entry = None
+
+    if not artifact_paths.MAC_AI_POWER_USAGE_GPU:
+        return None
+
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_POWER_USAGE_GPU / "artifacts" / "power_usage.txt")) as f:
+
+        for line in f.readlines():
+            key, is_kv, value = line.partition(":")
+            key = key.strip()
+            value = value.strip()
+
+            if key == "Machine model":
+                gpu_power_usage.machine = line.partition(":")[2].strip()
+            elif key == "OS version":
+                gpu_power_usage.os = line.partition(":")[2].strip()
+            elif key.startswith("*** Sampled system activity"):
+                current_ts_str = line.partition("(")[2].partition(")")[0]
+                current_ts = dateutil.parser.parse(current_ts_str)
+                pass
+            elif key == "**** GPU usage ****":
+                gpu_power_usage.usage.append(types.SimpleNamespace())
+                current_entry = gpu_power_usage.usage[-1]
+                current_entry.ts = current_ts
+
+            if not current_entry:
+                continue # incomplete ...
+
+            if key == "GPU HW active frequency":
+                current_entry.frequency_mhz = float(value.replace(" MHz", ""))
+
+            elif key == "GPU idle residency":
+                current_entry.idle_pct = float(value.replace("%", ""))
+
+            elif key == "GPU Power":
+                current_entry.power_mw = float(value.replace(" mW", ""))
+                current_entry.complete = True
+
+    if gpu_power_usage.usage and "complete" not in gpu_power_usage.usage[-1].__dict__:
+        gpu_power_usage.usage.pop()
+
+    return gpu_power_usage
 
 
 @helpers_store_parsers.ignore_file_not_found
