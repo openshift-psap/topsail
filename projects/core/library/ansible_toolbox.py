@@ -219,16 +219,20 @@ class RunAnsibleRole:
         print(f"Using '{env['ANSIBLE_JSON_TO_LOGFILE']}' as ansible json log file.")
 
         # the play file must be in the directory where the 'roles' are
-        tmp_play_file = tempfile.NamedTemporaryFile("w+",
-                                                    prefix="tmp_play_{}_".format(artifact_extra_logs_dir.name),
-                                                    suffix=".yaml",
-                                                    dir=os.getcwd(), delete=False)
+        tmp_play_file = tempfile.NamedTemporaryFile(
+            "w+",
+            prefix="tmp_play_{}_".format(artifact_extra_logs_dir.name),
+            suffix=".yaml",
+            dir=os.getcwd(),
+            delete=False,
+        )
 
         generated_play = [
-            dict(name=f"Run {self.role_name} role",
-                 roles=[self.role_name],
-                 vars=self.ansible_vars,
-                 )
+            dict(
+                name=f"Run {self.role_name} role",
+                roles=[self.role_name],
+                vars=self.ansible_vars,
+            )
         ]
 
         remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
