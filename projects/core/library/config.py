@@ -13,6 +13,7 @@ from . import env
 from . import run
 from . import common
 
+TOPSAIL_DIR = pathlib.Path(common.__file__).parents[3]
 VARIABLE_OVERRIDES_FILENAME = "variable_overrides.yaml"
 PR_ARG_KEY = "PR_POSITIONAL_ARG_"
 
@@ -52,8 +53,9 @@ class Config:
             self.config = yaml.safe_load(config_f)
 
 
-    def apply_config_overrides(self, ignore_not_found=False):
-        variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
+    def apply_config_overrides(self, *, ignore_not_found=False, variable_overrides_path=None, log=True):
+        if variable_overrides_path is None:
+            variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
 
         if not variable_overrides_path.exists():
             logging.debug(f"apply_config_overrides: {variable_overrides_path} does not exist, nothing to override.")
@@ -80,12 +82,13 @@ class Config:
 
                 self.config[key] = None
 
-            self.set_config(key, value, dump_command_args=False)
+            self.set_config(key, value, print=False)
             actual_value = self.get_config(key, print=False) # ensure that key has been set, raises an exception otherwise
-            logging.info(f"config override: {key} --> {actual_value}")
+            if log:
+                logging.info(f"config override: {key} --> {actual_value}")
 
 
-    def apply_preset(self, name, do_dump=True):
+    def apply_preset(self, name):
         try:
             values = self.get_config(f'ci_presets["{name}"]', print=False)
         except IndexError:
@@ -98,7 +101,7 @@ class Config:
 
         presets = self.get_config("ci_presets.names", print=False) or []
         if not name in presets:
-            self.set_config("ci_presets.names", presets + [name], dump_command_args=False)
+            self.set_config("ci_presets.names", presets + [name])
 
         for key, value in values.items():
             if key == "extends":
@@ -111,10 +114,7 @@ class Config:
             with open(env.ARTIFACT_DIR / "presets_applied", "a") as f:
                 print(msg, file=f)
 
-            self.set_config(key, value, dump_command_args=False, print=False)
-
-        if do_dump:
-            self.dump_command_args()
+            self.set_config(key, value, print=False)
 
     def get_config(self, jsonpath, default_value=..., warn=True, print=True):
         try:
@@ -134,7 +134,7 @@ class Config:
         return value
 
 
-    def set_config(self, jsonpath, value, dump_command_args=True, print=True):
+    def set_config(self, jsonpath, value, print=True):
         if threading.current_thread().name != "MainThread":
             msg = f"set_config({jsonpath}, {value}) cannot be called from a thread, to avoid race conditions."
             if os.environ.get("OPENSHIFT_CI") or os.environ.get("PERFLAB_CI"):
@@ -157,26 +157,10 @@ class Config:
         with open(self.config_path, "w") as f:
             yaml.dump(self.config, f, indent=4, default_flow_style=False, sort_keys=False)
 
-        if dump_command_args:
-            self.dump_command_args(mute=True)
-
         if (shared_dir := os.environ.get("SHARED_DIR")) and (shared_dir_path := pathlib.Path(shared_dir)) and shared_dir_path.exists():
 
             with open(shared_dir_path / "config.yaml", "w") as f:
                 yaml.dump(self.config, f, indent=4)
-
-    def dump_command_args(self, mute=False):
-        try:
-            command_template = get_command_arg("dump", "config", None)
-        except Exception as e:
-            import traceback
-            with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
-                traceback.print_exc(file=f)
-            logging.warning("Could not dump the command_args template.")
-            return
-
-        with open(env.ARTIFACT_DIR / "command_args.yml", "w") as f:
-            print(command_template, file=f)
 
     def save_config_overrides(self):
         variable_overrides_path = env.ARTIFACT_DIR / VARIABLE_OVERRIDES_FILENAME
@@ -372,11 +356,32 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         project.save_config_overrides()
         return
 
+    repo_var_overrides = TOPSAIL_DIR / VARIABLE_OVERRIDES_FILENAME
+
+    if repo_var_overrides.exists():
+        logging.info(f"Found '{repo_var_overrides}', apply the variables overrides from it.")
+        project.apply_config_overrides(variable_overrides_path=repo_var_overrides)
+
+    ci_presets_to_apply = project.get_config("ci_presets.to_apply", [], warn=False)
+    if isinstance(ci_presets_to_apply, str):
+        ci_presets_to_apply = [ci_presets_to_apply]
+
+    for preset in ci_presets_to_apply:
+        project.apply_preset(preset)
+
+    variable_overrides_to_apply = project.get_config("ci_presets.variable_overrides", {}, warn=False)
+    for var_name, var_value in variable_overrides_to_apply.items():
+        project.set_config(var_name, var_value)
+
+    if repo_var_overrides.exists():
+        # reapply to force overrides on top of presets
+        project.apply_config_overrides(variable_overrides_path=repo_var_overrides, log=False)
+
     project.apply_config_overrides()
 
     if apply_preset_from_pr_args:
         project.apply_preset_from_pr_args()
         # reapply to force overrides on top of presets
-        project.apply_config_overrides()
+        project.apply_config_overrides(log=False)
 
     test_skip_list()
