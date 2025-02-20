@@ -4,12 +4,9 @@ metadata:
   name: isvc
 spec:
   predictor:
+    minReplicas: 1
     model:
-      storageUri: s3://psap-hf-models/phi-2/phi-2
-      args:
-      - --uvicorn-log-level=debug
-      - --trust-remote-code
-      - --num-scheduler-steps=1
+      storageUri: s3://psap-hf-models/ibm-granite/granite-3.0-8b-instruct/
       resources:
         requests:
           cpu: "2"

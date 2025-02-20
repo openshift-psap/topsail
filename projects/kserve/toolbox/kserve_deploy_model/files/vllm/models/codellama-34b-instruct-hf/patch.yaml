@@ -8,15 +8,15 @@ spec:
       storageUri: s3://psap-hf-models/CodeLlama-34b-Instruct-hf/CodeLlama-34b-Instruct-hf
       args:
       - --dtype=bfloat16
-      - --tensor-parallel-size=4
+      - --tensor-parallel-size=2
       - --max-model-len=4096
       resources:
         requests:
           cpu: "8"
           memory: "40Gi"
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "2"
         limits:
-          nvidia.com/gpu: "4"
+          nvidia.com/gpu: "2"
       volumeMounts:
       - name: shared-memory
         mountPath: /dev/shm
