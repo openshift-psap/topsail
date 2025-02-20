@@ -66,6 +66,12 @@ def start(base_work_dir, container_name, port):
         "sleep inf"
     )
 
+    with env.NextArtifactDir("start_podman"):
+        with open(env.ARTIFACT_DIR / "command.txt", "w") as f:
+            print(command, file=f)
+
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, command)
+
 
 def stop(base_work_dir, container_name):
     podman_bin = get_podman_binary()
