@@ -14,12 +14,13 @@ RUN dnf install -y python3-dnf-plugin-versionlock && \
 
 ENV CMAKE_ARGS="-DGGML_KOMPUTE=1 -DKOMPUTE_OPT_USE_BUILT_IN_FMT=OFF"
 ENV FORCE_CMAKE=1
+
 RUN git clone https://github.com/ggml-org/llama.cpp src
 RUN mkdir build
 RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
 # edit ./ggml/src/ggml-kompute/kompute/CMakeLists.txt to remove Werror
 RUN cd src && \
-    cmake -S . -B ../build -DGGML_KOMPUTE=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native && \
+    cmake -S . -B ../build -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native && \
     cmake --build ../build/
 
 # Stage 2: Create final image with minimal content
