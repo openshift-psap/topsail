@@ -12,12 +12,12 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [native, podman/linux, podman/linux-no-gpu]
+    test.platform: [native, podman/linux] # [podman/linux, podman/linux-no-gpu, native]
 
-    test.llm_load_test.matbenchmarking: true
+    test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-    test.model.name: [mistral-7b-instruct, llama3.2, smollm:135m]
+    test.model.name: llama3.2
 
 secrets:
   dir:
