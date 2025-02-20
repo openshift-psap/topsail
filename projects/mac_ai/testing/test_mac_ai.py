@@ -244,17 +244,20 @@ def matbench_run(matrix_source_keys, entrypoint):
 
         expe_to_run = dict(mac_ai=benchmark_values)
 
-        if not benchmark_values:
-            msg = "Nothing to matbenchmark :/"
+        # if not benchmark_values:
+        #     msg = "Nothing to matbenchmark :/"
 
-            with open(env.ARTIFACT_DIR / "NOTHING_TO_BENCHMARK", "w") as f:
-                print(msg, file=f)
-            logging.error(msg)
-            raise ValueError(msg)
+        #     with open(env.ARTIFACT_DIR / "NOTHING_TO_BENCHMARK", "w") as f:
+        #         print(msg, file=f)
+        #     logging.error(msg)
+        #     raise ValueError(msg)
 
-        first_key = list(benchmark_values)[0]
-        first_key_name = first_key.rpartition(".")[-1]
-        path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
+        if benchmark_values:
+            first_key = list(benchmark_values)[0]
+            first_key_name = first_key.rpartition(".")[-1]
+            path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
+        else:
+            path_tpl = "single_test"
 
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
