@@ -43,12 +43,15 @@ def start(base_work_dir, container_name, port):
     image = config.project.get_config("prepare.podman.container.image")
     podman_bin = get_podman_binary()
 
+    platform = config.project.get_config("test.platform")
+
     podman_device_cmd = ""
-    if podman_device := config.project.get_config("prepare.podman.container.device"):
+    if "no-gpu" in platform:
+        pass
+    elif podman_device := config.project.get_config("prepare.podman.container.device"):
         podman_device_cmd = f"--device {podman_device} "
 
-    remote_access.run_with_ansible_ssh_conf(
-        base_work_dir,
+    command = (
         f"{podman_bin} run "
         f"--user root:root --cgroupns host --security-opt label=disable "
         f"-v{base_work_dir}:{base_work_dir}:Z "
