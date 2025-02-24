@@ -530,6 +530,27 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
+  ilab_2x8xh100_sriov_rdma_shard:
+    extends: [ilab]
+
+    tests.fine_tuning.matbenchmarking.enabled: true
+    tests.fine_tuning.matbenchmarking.stop_on_error: false
+
+    tests.fine_tuning.test_settings.model_name: ibm-granite/granite-3.0-8b-instruct@hf
+    tests.fine_tuning.test_settings.dataset_name: ilab_large_10000samples_skills_data.jsonl
+
+    tests.fine_tuning.test_settings.hyper_parameters.fsdp_sharding_strategy: FULL_SHARD # ,HYBRID_SHARD, FULL_SHARD, NO_SHARD, SHARD_GRAD_OP
+
+    tests.fine_tuning.test_settings.gpu: 8
+    tests.fine_tuning.test_settings.pod_count: 2
+
+    tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
+    tests.fine_tuning.test_settings.secondary_nic_count: [8]
+
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [85000, 90000, 100000, 105000, 110000, 115000, 120000]
+#    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
+
   ilab_2x8xh100_sriov_rdma_25000:
     extends: [ilab_2x8xh100_sriov_rdma]
 
