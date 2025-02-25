@@ -294,10 +294,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: mpt-7b-instruct2
-      testing:
-        size: small
-        max_concurrency: 64
     - name: llama-3-70b-instruct
       testing:
         size: large
