@@ -21,21 +21,22 @@ RUN dnf install -y epel-release && \
 # Install dependencies: ocm, oc
 
 ARG CURL_OPTIONS="--silent --location --fail --show-error"
-
-# ARG OCP_CLI_URL=https://people.redhat.com/~kpouget/22-08-26/openshift-client-linux.tar.gz
-
 ARG OCP_CLI_VERSION=latest
-ARG OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz
 
-RUN curl ${CURL_OPTIONS}  ${OCP_CLI_URL}  | tar xfz - -C /usr/local/bin oc
+# Detect architecture and set appropriate OCP client URL
+RUN ARCH=$(uname -m) && \
+    OCP_CLI_URL=https://mirror.openshift.com/pub/openshift-v4/${ARCH}/clients/ocp/${OCP_CLI_VERSION}/openshift-client-linux.tar.gz && \
+    curl ${CURL_OPTIONS} ${OCP_CLI_URL} | tar xfz - -C /usr/local/bin oc
 
-# Install Prometheus
+# Install Prometheus with architecture detection
 ARG PROMETHEUS_VERSION=2.36.0
-RUN wget --quiet "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz" -O/tmp/prometheus.tar.gz \
-  && tar xf "/tmp/prometheus.tar.gz" -C /tmp \
-  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus /usr/local/bin \
-  && mkdir -p /etc/prometheus/ \
-  && mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml
+RUN ARCH=$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/') && \
+    PROMETHEUS_URL=https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-${ARCH}.tar.gz && \
+    wget --quiet "${PROMETHEUS_URL}" -O/tmp/prometheus.tar.gz && \
+    tar xf "/tmp/prometheus.tar.gz" -C /tmp && \
+    mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-${ARCH}/prometheus /usr/local/bin && \
+    mkdir -p /etc/prometheus/ && \
+    mv /tmp/prometheus-${PROMETHEUS_VERSION}.linux-${ARCH}/prometheus.yml /etc/prometheus/prometheus.yml
 
 # Set up the runner user
 ENV USER_NAME=psap-ci-runner \
