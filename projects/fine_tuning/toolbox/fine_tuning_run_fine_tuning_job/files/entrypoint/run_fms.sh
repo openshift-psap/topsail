@@ -23,43 +23,46 @@ fi
 
 export LOG_LEVEL=DEBUG
 
-python -m accelerate.commands.launch \
-  --num_processes=$NUM_GPUS \
-  --dynamo_backend="no" \
-  --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
-  --fsdp_cpu_ram_efficient_loading="true" \
-  --fsdp_forward_prefetch="false" \
-  --fsdp_offload_params="false" \
-  --fsdp_sharding_strategy="HYBRID_SHARD" \
-  --fsdp_state_dict_type="FULL_STATE_DICT" \
-  --fsdp_sync_module_states="true" \
-  --machine_rank=$RANK \
-  --main_process_ip=$MASTER_ADDR \
-  --main_process_port=$MASTER_PORT \
-  --mixed_precision="no" \
-  --num_machines=$WORLD_SIZE \
-  --rdzv_backend="static" \
-  --same_network \
-  --use_fsdp \
-  -m tuning.sft_trainer
+# python -m accelerate.commands.launch \
+#   --num_processes=$NUM_GPUS \
+#   --dynamo_backend="no" \
+#   --fsdp_auto_wrap_policy="TRANSFORMER_BASED_WRAP" \
+#   --fsdp_cpu_ram_efficient_loading="true" \
+#   --fsdp_forward_prefetch="false" \
+#   --fsdp_offload_params="false" \
+#   --fsdp_sharding_strategy="HYBRID_SHARD" \
+#   --fsdp_state_dict_type="FULL_STATE_DICT" \
+#   --fsdp_sync_module_states="true" \
+#   --machine_rank=$RANK \
+#   --main_process_ip=$MASTER_ADDR \
+#   --main_process_port=$MASTER_PORT \
+#   --mixed_precision="no" \
+#   --num_machines=$WORLD_SIZE \
+#   --rdzv_backend="static" \
+#   --same_network \
+#   --use_fsdp \
+#   -m tuning.sft_trainer
 
-# python -m torch.distributed.run \
-#   --nproc_per_node=$NUM_GPUS \
-#   --nnodes=$WORLD_SIZE \
-#   --node_rank=$RANK \
-#   --master_addr=$MASTER_ADDR \
-#   --master_port=$MASTER_PORT \
-#   --module tuning.sft_trainer \
-#   --fsdp_auto_wrap_policy=TRANSFORMER_BASED_WRAP \
-#   --fsdp_backward_prefetch=BACKWARD_PRE \
-#   --fsdp_forward_prefetch=False \
-#   --fsdp_offload_params=False \
-#   --fsdp_state_dict_type=SHARDED_STATE_DICT \
-#   --fsdp_use_orig_params=False \
-#   --fsdp_backward_prefetch_policy=BACKWARD_PRE \
-#   --fsdp_sharding_strategy=2 \
-#   --fsdp_cpu_ram_efficient_loading=True \
-#   --fsdp_sync_module_states=True
+python -m torch.distributed.run \
+  --nproc_per_node=$NUM_GPUS \
+  --nnodes=$WORLD_SIZE \
+  --node_rank=$RANK \
+  --master_addr=$MASTER_ADDR \
+  --master_port=$MASTER_PORT \
+  --module tuning.sft_trainer \
+  --torch_dtype=bfloat16 \
+  --use_flash_attn=True \
+  --gradient_checkpointing=True \
+  --fsdp_auto_wrap_policy=TRANSFORMER_BASED_WRAP \
+  --fsdp_backward_prefetch=BACKWARD_PRE \
+  --fsdp_forward_prefetch=False \
+  --fsdp_offload_params=True \
+  --fsdp_state_dict_type=SHARDED_STATE_DICT \
+  --fsdp_use_orig_params=False \
+  --fsdp_backward_prefetch_policy=BACKWARD_PRE \
+  --fsdp_sharding_strategy=2 \
+  --fsdp_cpu_ram_efficient_loading=True \
+  --fsdp_sync_module_states=True
 
 if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
     # NOTE: Write here the code to copy any file you want to export to the test artifacts
