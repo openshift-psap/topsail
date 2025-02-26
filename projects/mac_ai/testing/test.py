@@ -98,13 +98,13 @@ def generate_plots_from_pr_args():
 
 
 @entrypoint()
-def cleanup_cluster(mute=False):
+def cleanup_ci(mute=False):
     """
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    prepare_mac_ai.cleanup_cluster()
+    prepare_mac_ai.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)
@@ -142,7 +142,7 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.pre_cleanup_ci = cleanup_cluster
+        self.pre_cleanup_ci = cleanup_ci
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 
