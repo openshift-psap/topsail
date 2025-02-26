@@ -19,6 +19,11 @@ ci_presets:
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
+  keep_running:
+    test.inference_server.unload_on_exit: false
+    test.inference_server.stop_on_exit: false
+    prepare.podman.stop_on_exit: false
+
 secrets:
   dir:
     name: crc-mac-ai-secret
