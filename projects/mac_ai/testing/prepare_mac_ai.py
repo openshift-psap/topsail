@@ -15,6 +15,11 @@ INFERENCE_SERVERS = dict(
     llama_cpp=llama_cpp,
 )
 
+
+def cleanup():
+    logging.info("Nothing to cleanup at the moment")
+
+
 def prepare():
     base_work_dir = remote_access.prepare()
 
