@@ -84,7 +84,7 @@
   command: find "{{ cluster_lock_dir }}/secrets" -type d -exec chmod 0755 {} \;
 
 - name: Ensure that the secret files have the right permission
-  command: find "{{ cluster_lock_dir }}/secrets/" -type f -exec chmod 0644 {} \;
+  command: find "{{ cluster_lock_dir }}/secrets/" -type f -exec chmod 0400 {} \;
 
 - name: Prepare the entrypoint script
   template:
