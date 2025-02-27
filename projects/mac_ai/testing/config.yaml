@@ -120,7 +120,7 @@ prepare:
       name: podman-machine-default
       configuration:
         cpus: 4 # in cores
-        memory: 5000 # in MiB
+        memory: 5120 # in MiB
       env:
         CONTAINERS_MACHINE_PROVIDER: libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
