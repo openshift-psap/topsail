@@ -23,3 +23,6 @@ remote_build_image_prepare_script: null
 
 # if true, copy the containerfile from the local system
 remote_build_image_container_file_is_local: false
+
+# dict of build args kv to pass to podman build.
+remote_build_image_build_args: {}

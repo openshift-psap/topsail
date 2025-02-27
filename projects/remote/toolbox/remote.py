@@ -82,6 +82,7 @@ class Remote:
             podman_cmd="podman",
             prepare_script=None,
             container_file_is_local=False,
+            build_args={},
     ):
         """
         Builds a podman image
@@ -93,6 +94,7 @@ class Remote:
           podman_cmd: the command to invoke to run podman
           prepare_script: if specified, a script to execute before building the image
           container_file_is_local: if true, copy the containerfile from the local system
+          build_args: dict of build args kv to pass to podman build.
         """
 
         if container_file_is_local and base_directory:
