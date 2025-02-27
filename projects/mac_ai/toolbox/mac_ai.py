@@ -132,3 +132,19 @@ class Mac_Ai:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("mac_ai_remote_capture_cpu_ram_usage")
+    @AnsibleMappedParams
+    def remote_capture_cpu_ram_usage(
+            self,
+            stop=False,
+    ):
+        """
+        Captures the CPU and RAM usage on MacOS
+
+        Args:
+          stop: if true, only stop the capture
+        """
+
+        return RunAnsibleRole(locals())

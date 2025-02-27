@@ -1,0 +1,22 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Ensure that top is not currently running
+  command:
+    pkill top
+  failed_when: false
+
+- name: Stop here if only stopping
+  meta: end_play
+  when: mac_ai_remote_capture_cpu_ram_usage_stop | bool
+
+- name: Start capturing the CPU and RAM usage
+  shell:
+    set -o pipefail;
+
+    nohup bash -c 'set -o pipefail; top | grep -E "^CPU|^Phys"'
+         &> "{{ artifact_extra_logs_dir }}/artifacts/cpu_ram_usage.txt" &
