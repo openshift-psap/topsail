@@ -132,6 +132,13 @@ def capture_metrics(stop=False):
         artifact_dir_suffix=artifact_dir_suffix,
     )
 
+    run.run_toolbox(
+        "mac_ai", "remote_capture_cpu_ram_usage",
+        stop=stop,
+        mute_stdout=stop,
+        artifact_dir_suffix="_stop" if stop else None,
+    )
+
 
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
