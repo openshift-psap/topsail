@@ -17,6 +17,8 @@ def register():
     CallDetailsReport()
     LtsReport()
     GPUUsageReport()
+    CpuRamUsageReport()
+
 
 class CallDetailsReport():
     def __init__(self):
@@ -74,6 +76,27 @@ class GPUUsageReport():
             plot_name = f"GPU Usage {what}"
             header += [html.H1(plot_name)]
             header += report.Plot_and_Text(plot_name, args)
+
+        return None, header
+
+
+class CpuRamUsageReport():
+    def __init__(self):
+        self.name = "report: CPU RAM Usage"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for what in ["CPU Usage by idle time", "RAM Usage by unused"]:
+            header += [html.H1(what)]
+            header += report.Plot_and_Text(what, args)
 
         return None, header
 
