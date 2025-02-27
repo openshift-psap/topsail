@@ -67,8 +67,9 @@ prepare:
 
         local_container_file:
           path: images/llama_cpp.containerfile
-          command: /app/build/bin/llama-server
-
+          command: /app/llama.cpp/build/bin/llama-server
+          build_args:
+            LLAMA_CPP_VERSION: b4735
         desktop_playground:
           url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
           # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images

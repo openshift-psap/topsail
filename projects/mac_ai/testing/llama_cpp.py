@@ -36,13 +36,9 @@ def get_local_image_name(base_work_dir):
 
 
 def __get_local_image_name_from_local_container_file(base_work_dir=None):
-    def sha256sum(filename):
-        with open(filename, 'rb', buffering=0) as f:
-            return hashlib.sha256(f.read()).hexdigest()
-
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
 
-    tag = sha256sum(container_file)[:8]
+    tag = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.build_args.LLAMA_CPP_VERSION")
     return f"localhost/llama_cpp:{tag}"
 
 
@@ -84,7 +80,7 @@ def prepare_podman_image(base_work_dir, system="podman/linux"):
 def prepare_podman_image_from_local_container_file(base_work_dir, system="podman/linux"):
     local_image_name = __get_local_image_name_from_local_container_file()
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
-
+    build_args = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.build_args")
     run.run_toolbox(
         "remote", "build_image",
         podman_cmd=podman_mod.get_podman_binary(),
@@ -93,6 +89,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, system="podman
         container_file=container_file,
         container_file_is_local=True,
         image=local_image_name,
+        build_args=build_args,
     )
 
 
