@@ -145,14 +145,15 @@ def capture_metrics(stop=False):
     if stop:
         artifact_dir_suffix += "_stop"
 
-    run.run_toolbox(
-        "mac_ai", "remote_capture_power_usage",
-        samplers=sampler,
-        sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
-        stop=stop,
-        mute_stdout=stop,
-        artifact_dir_suffix=artifact_dir_suffix,
-    )
+    if config.project.get_config("test.capture_metrics.gpu.enabled"):
+        run.run_toolbox(
+            "mac_ai", "remote_capture_power_usage",
+            samplers=sampler,
+            sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
+            stop=stop,
+            mute_stdout=stop,
+            artifact_dir_suffix=artifact_dir_suffix,
+        )
 
     run.run_toolbox(
         "mac_ai", "remote_capture_cpu_ram_usage",
