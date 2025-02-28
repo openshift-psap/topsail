@@ -4,6 +4,7 @@ secrets:
     env_key: PSAP_ODS_SECRET_PATH
   private_key_filename: jumpci_privatekey
   bastion_host_filename: jumpci_bastion_host
+  bastion_host_user_filename: jumpci_bastion_host_user
   jump_host_filename: jumpci_jump_host
 ssh_tunnel:
   # creates a tunnel to the bastion via the jump host, if enabled
