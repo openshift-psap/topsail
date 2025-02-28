@@ -17,10 +17,10 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
         return
     initialized = True
 
+    openshift_ci_update_artifact_dir()
+
     env.init()
     config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
-
-    openshift_ci_update_artifact_dir()
 
     if not ignore_secret_path:
         if not CRC_MAC_AI_SECRET_PATH.exists():
@@ -66,5 +66,5 @@ def openshift_ci_update_artifact_dir():
 
     logging.info(f"openshift_ci_update_artifact_dir: Creating a symlink {new_artifact_dir} --> {artifact_dir}")
     new_artifact_dir.symlink_to(artifact_dir)
-    env.ARTIFACT_DIR = new_artifact_dir
+
     os.environ["ARTIFACT_DIR"] = str(new_artifact_dir)
