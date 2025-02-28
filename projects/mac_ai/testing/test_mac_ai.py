@@ -195,15 +195,19 @@ def test_inference(platform):
         use_podman=False,
     )
 
+    inference_server_mod.unload(base_work_dir, inference_server_path, use_podman=(not use_podman))
+    inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
+
+    brew.capture_dependencies_version(base_work_dir)
+
     if use_podman:
         inference_server_port = config.project.get_config("test.inference_server.port")
 
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
+    else:
+        podman.stop(base_work_dir, podman_container_name)
 
-    brew.capture_dependencies_version(base_work_dir)
-
-    inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     if config.project.get_config("test.inference_server.always_pull"):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
     inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
