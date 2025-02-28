@@ -65,7 +65,29 @@ def prepare_matbench_test_files():
         print(str(uuid.uuid4()), file=f)
 
 
+def safety_checks():
+    do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
+    all_platforms = config.project.get_config("test.platform")
+
+    multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
+    if not multi_test:
+        return # safe
+
+    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")\
+        or not config.project.get_config("test.inference_server.stop_on_exit")
+    if not keep_running:
+        return # safe
+
+    # unsafe
+    msg = ("test.inference_server.unload_on_exit and test.inference_server.stop_on_exit "
+           "cannot be enabled when running multiple tests")
+    logging.fatal(msg)
+    raise ValueError(msg)
+
+
 def test():
+    safety_checks()
+
     if config.project.get_config("prepare.podman.machine.enabled"):
         base_work_dir = remote_access.prepare()
         #podman_machine.configure_and_start(base_work_dir, force_restart=False)
