@@ -21,7 +21,7 @@
 
   - name: Wait for llama_cpp to start responding correctly
     command:
-      curl -sSf localhost:11434/v1/models
+      curl -sSf localhost:{{ mac_ai_remote_llama_cpp_run_model_port }}/v1/models
     register: ollama_running_cmd
     until: ollama_running_cmd.rc == 0
     retries: 2
