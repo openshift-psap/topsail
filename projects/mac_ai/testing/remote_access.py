@@ -22,22 +22,26 @@ def prepare():
         return base_work_dir
 
 
-    if os.environ.get("TOPSAIL_JUMP_CI_REMOTE_HOST"):
+    if os.environ.get("TOPSAIL_REMOTE_HOSTNAME"):
         # already prepared
         logging.debug("Already prepared, no need to prepare again")
         return base_work_dir
 
     #
 
-    remote_host = config.project.get_config("remote_host.name")
-    if remote_host.startswith("@"):
-        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_host[1:])) as f:
-            remote_host = f.read().strip()
+    remote_hostname = config.project.get_config("remote_host.hostname")
+    if remote_hostname.startswith("@"):
+        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_hostname[1:])) as f:
+            remote_hostname = f.read().strip()
+
+    remote_username = config.project.get_config("remote_host.username")
+    if remote_username.startswith("@"):
+        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_username[1:])) as f:
+            remote_username = f.read().strip()
 
 
-    remote_user, _, remote_host = remote_host.rpartition("@")
-    os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"] = remote_host
-
+    os.environ["TOPSAIL_REMOTE_HOSTNAME"] = remote_hostname
+    os.environ["TOPSAIL_REMOTE_USERNAME"] = remote_username
     #
 
     extra_vars_fd_path, extra_vars_file = utils.get_tmp_fd()
@@ -80,7 +84,7 @@ def prepare():
     extra_vars_yaml_content = f"""
 ansible_port: {remote_hostport}
 ansible_ssh_private_key_file: {private_key_path}
-ansible_ssh_user: {remote_user}
+ansible_ssh_user: {remote_username}
 ansible_ssh_common_args: "{' '.join(ssh_flags)}"
 """
     print(extra_vars_yaml_content)
@@ -115,7 +119,7 @@ def run_with_ansible_ssh_conf(
         ansible_ssh_config = yaml.safe_load(f)
 
     ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
-    host = os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"]
+    host = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
     port = ansible_ssh_config["ansible_port"]
     user = ansible_ssh_config["ansible_ssh_user"]
     private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
