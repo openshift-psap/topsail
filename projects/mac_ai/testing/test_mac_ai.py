@@ -182,12 +182,9 @@ def test_inference(platform):
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
-    podman_container_name = config.project.get_config("prepare.podman.container.name") \
-        if use_podman else False
-
     inference_server_path = inference_server_mod.get_binary_path(
         base_work_dir, system,
-        use_podman=podman_container_name
+        use_podman=use_podman,
     )
 
     inference_server_native_path = inference_server_mod.get_binary_path(
@@ -204,9 +201,9 @@ def test_inference(platform):
         inference_server_port = config.project.get_config("test.inference_server.port")
 
         podman.test(base_work_dir)
-        podman.start(base_work_dir, podman_container_name, inference_server_port)
+        podman.start(base_work_dir, inference_server_port)
     else:
-        podman.stop(base_work_dir, podman_container_name)
+        podman.stop(base_work_dir)
 
     if config.project.get_config("test.inference_server.always_pull"):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
@@ -226,7 +223,7 @@ def test_inference(platform):
             exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
-            exc = run.run_and_catch(exc, podman.stop, base_work_dir, podman_container_name)
+            exc = run.run_and_catch(exc, podman.stop, base_work_dir)
 
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
