@@ -28,18 +28,18 @@ secrets:
   dir:
     name: crc-mac-ai-secret
     env_key: CRC_MAC_AI_SECRET_PATH
-  private_key_path: host__private_key
-  hostname: host__hostname
-  hostport: host__hostport
+  private_key_path: mac_ai__private_key
+  hostname: mac_ai__hostname
+  username: mac_ai__username
   base_work_dir: host__base_work_dir
-
 
 remote_host:
   run_locally: false
   private_key_path: "@secrets.private_key_path"
-  name: "@secrets.hostname"
-  port: "@secrets.hostport"
-  base_work_dir: "@secrets.base_work_dir"
+  hostname: "@secrets.hostname"
+  username: "@secrets.username"
+  port: 22
+  base_work_dir: "/Users/podmanqe/kpouget"
   ssh_flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
