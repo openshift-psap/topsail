@@ -6,6 +6,7 @@ visualize:
   - "report: Throughput"
   - "report: Call details"
   - "report: Tokens"
+  - "report: CPU RAM Usage"
   - "report: GPU Usage"
   - "report: LTS"
   - "report: LTS Documentation"
