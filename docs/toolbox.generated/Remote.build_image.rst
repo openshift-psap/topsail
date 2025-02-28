@@ -49,3 +49,8 @@ Parameters
 
 * If true, copy the containerfile from the local system
 
+
+``build_args``  
+
+* Dict of build args kv to pass to podman build.
+

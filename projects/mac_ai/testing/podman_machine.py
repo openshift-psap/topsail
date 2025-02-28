@@ -82,6 +82,7 @@ def configure_and_start(base_work_dir, force_restart=True):
 
     if force_restart and not was_stopped:
         stop(base_work_dir)
+        was_stopped = True
 
     if was_stopped:
         configure(base_work_dir)

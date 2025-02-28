@@ -1,6 +1,5 @@
 FROM registry.access.redhat.com/ubi9/python-311:9.5-1733172699 AS builder
 USER 0
-WORKDIR /app
 
 RUN dnf install -y python3-dnf-plugin-versionlock && \
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
@@ -12,15 +11,21 @@ RUN dnf install -y python3-dnf-plugin-versionlock && \
     dnf install -y glslc && \
     dnf clean all
 
-ENV CMAKE_ARGS="-DGGML_KOMPUTE=1 -DKOMPUTE_OPT_USE_BUILT_IN_FMT=OFF"
-ENV FORCE_CMAKE=1
-RUN git clone https://github.com/ggml-org/llama.cpp src
+# --- LLAMA.CPP --- #
+
+WORKDIR /app/llama.cpp
+
+ARG LLAMA_CPP_VERSION="b4735"
+
+RUN git clone https://github.com/ggml-org/llama.cpp src -b ${LLAMA_CPP_VERSION}
 RUN mkdir build
 RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
-# edit ./ggml/src/ggml-kompute/kompute/CMakeLists.txt to remove Werror
+
 RUN cd src && \
-    cmake -S . -B ../build -DGGML_KOMPUTE=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native && \
+    cmake -S . -B ../build -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native -DCMAKE_BUILD_TYPE=Debug && \
     cmake --build ../build/
+
+# ---
 
 # Stage 2: Create final image with minimal content
 FROM registry.access.redhat.com/ubi9/python-311:9.5-1733172699
@@ -36,4 +41,4 @@ COPY --from=builder /etc/ /etc/
 
 USER 1001
 
-WORKDIR /app/build/bin
+WORKDIR /app/llama.cpp/build/bin

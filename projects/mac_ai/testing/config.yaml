@@ -12,29 +12,34 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [native, podman/linux] # [podman/linux, podman/linux-no-gpu, native]
+    test.platform: [podman/linux, podman/linux-no-gpu, native]
+    test.model.name: llama3.2
 
     test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-    test.model.name: llama3.2
+
+  keep_running:
+    test.inference_server.unload_on_exit: false
+    test.inference_server.stop_on_exit: false
+    prepare.podman.stop_on_exit: false
 
 secrets:
   dir:
     name: crc-mac-ai-secret
     env_key: CRC_MAC_AI_SECRET_PATH
-  private_key_path: host__private_key
-  hostname: host__hostname
-  hostport: host__hostport
+  private_key_path: mac_ai__private_key
+  hostname: mac_ai__hostname
+  username: mac_ai__username
   base_work_dir: host__base_work_dir
-
 
 remote_host:
   run_locally: false
   private_key_path: "@secrets.private_key_path"
-  name: "@secrets.hostname"
-  port: "@secrets.hostport"
-  base_work_dir: "@secrets.base_work_dir"
+  hostname: "@secrets.hostname"
+  username: "@secrets.username"
+  port: 22
+  base_work_dir: "/Users/podmanqe/kpouget"
   ssh_flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
@@ -62,8 +67,9 @@ prepare:
 
         local_container_file:
           path: images/llama_cpp.containerfile
-          command: /app/build/bin/llama-server
-
+          command: /app/llama.cpp/build/bin/llama-server
+          build_args:
+            LLAMA_CPP_VERSION: b4735
         desktop_playground:
           url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
           # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
@@ -114,7 +120,7 @@ prepare:
       name: podman-machine-default
       configuration:
         cpus: 4 # in cores
-        memory: 5000 # in MiB
+        memory: 5120 # in MiB
       env:
         CONTAINERS_MACHINE_PROVIDER: libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
@@ -163,6 +169,7 @@ test:
   capture_metrics:
     enabled: true
     gpu:
+      enabled: false
       sampler: gpu_power
       rate: 1000
 

@@ -18,41 +18,7 @@ from projects.matrix_benchmarking.library import visualize
 
 import prepare_mac_ai, test_mac_ai
 
-TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-
-CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
-
-initialized = False
-def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
-    global initialized
-    if initialized:
-        logging.debug("Already initialized.")
-        return
-    initialized = True
-
-    env.init()
-    config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
-
-    if not ignore_secret_path:
-        if not CRC_MAC_AI_SECRET_PATH.exists():
-            raise RuntimeError(f"Path with the secrets (CRC_MAC_AI_SECRET_PATH={CRC_MAC_AI_SECRET_PATH}) does not exists.")
-
-        run.run(f'sha256sum "$CRC_MAC_AI_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
-
-
-def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
-    def decorator(fct):
-        @functools.wraps(fct)
-        def wrapper(*args, **kwargs):
-            init(ignore_secret_path, apply_preset_from_pr_args)
-            exit_code = fct(*args, **kwargs)
-            logging.info(f"exit code of {fct.__qualname__}: {exit_code}")
-            if exit_code is None:
-                exit_code = 0
-            raise SystemExit(exit_code)
-
-        return wrapper
-    return decorator
+from entrypoint import entrypoint
 
 # ---
 
@@ -98,13 +64,13 @@ def generate_plots_from_pr_args():
 
 
 @entrypoint()
-def cleanup_cluster(mute=False):
+def cleanup_ci(mute=False):
     """
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    prepare_mac_ai.cleanup_cluster()
+    prepare_mac_ai.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)
@@ -142,7 +108,7 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.pre_cleanup_ci = cleanup_cluster
+        self.pre_cleanup_ci = cleanup_ci
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 

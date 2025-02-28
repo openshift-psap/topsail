@@ -70,16 +70,16 @@ def start(base_work_dir, container_name, port):
         with open(env.ARTIFACT_DIR / "command.txt", "w") as f:
             print(command, file=f)
 
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, command)
+        return remote_access.run_with_ansible_ssh_conf(base_work_dir, command)
 
 
-def stop(base_work_dir, container_name):
+def stop(base_work_dir, container_name, check=False):
     podman_bin = get_podman_binary()
 
     name = config.project.get_config("prepare.podman.container.name")
-    remote_access.run_with_ansible_ssh_conf(
+    return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"{podman_bin} rm --force --time 0 {container_name}", check=False
+        f"{podman_bin} rm --force --time 0 {container_name}", check=check,
     )
 
 

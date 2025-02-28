@@ -65,7 +65,29 @@ def prepare_matbench_test_files():
         print(str(uuid.uuid4()), file=f)
 
 
+def safety_checks():
+    do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
+    all_platforms = config.project.get_config("test.platform")
+
+    multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
+    if not multi_test:
+        return # safe
+
+    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")\
+        or not config.project.get_config("test.inference_server.stop_on_exit")
+    if not keep_running:
+        return # safe
+
+    # unsafe
+    msg = ("test.inference_server.unload_on_exit and test.inference_server.stop_on_exit "
+           "cannot be enabled when running multiple tests")
+    logging.fatal(msg)
+    raise ValueError(msg)
+
+
 def test():
+    safety_checks()
+
     if config.project.get_config("prepare.podman.machine.enabled"):
         base_work_dir = remote_access.prepare()
         #podman_machine.configure_and_start(base_work_dir, force_restart=False)
@@ -123,13 +145,21 @@ def capture_metrics(stop=False):
     if stop:
         artifact_dir_suffix += "_stop"
 
+    if config.project.get_config("test.capture_metrics.gpu.enabled"):
+        run.run_toolbox(
+            "mac_ai", "remote_capture_power_usage",
+            samplers=sampler,
+            sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
+            stop=stop,
+            mute_stdout=stop,
+            artifact_dir_suffix=artifact_dir_suffix,
+        )
+
     run.run_toolbox(
-        "mac_ai", "remote_capture_power_usage",
-        samplers=sampler,
-        sample_rate=config.project.get_config("test.capture_metrics.gpu.rate"),
+        "mac_ai", "remote_capture_cpu_ram_usage",
         stop=stop,
         mute_stdout=stop,
-        artifact_dir_suffix=artifact_dir_suffix,
+        artifact_dir_suffix="_stop" if stop else None,
     )
 
 
@@ -165,15 +195,19 @@ def test_inference(platform):
         use_podman=False,
     )
 
+    inference_server_mod.unload_model(base_work_dir, inference_server_path, use_podman=(not use_podman))
+    inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
+
+    brew.capture_dependencies_version(base_work_dir)
+
     if use_podman:
         inference_server_port = config.project.get_config("test.inference_server.port")
 
         podman.test(base_work_dir)
         podman.start(base_work_dir, podman_container_name, inference_server_port)
+    else:
+        podman.stop(base_work_dir, podman_container_name)
 
-    brew.capture_dependencies_version(base_work_dir)
-
-    inference_server_mod.start(base_work_dir, inference_server_path, use_podman=use_podman)
     if config.project.get_config("test.inference_server.always_pull"):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
     inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
@@ -197,7 +231,8 @@ def test_inference(platform):
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
-                                    path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR, mute_stdout=True)
+                                    path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
+                                    mute_stdout=True, mute_stderr=True)
 
         if exc:
             logging.warning(f"Test crashed ({exc})")

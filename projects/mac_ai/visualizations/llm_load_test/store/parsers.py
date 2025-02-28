@@ -22,6 +22,7 @@ register_important_file = None # will be when importing store/__init__.py
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "*__llm_load_test__run"
 artifact_dirnames.MAC_AI_POWER_USAGE_GPU = "*__mac_ai__remote_capture_power_usage_gpu_power"
+artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usage"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -33,6 +34,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
 
     f"{artifact_dirnames.MAC_AI_POWER_USAGE_GPU}/artifacts/power_usage.txt",
+
+    f"{artifact_dirnames.MAC_AI_CPU_RAM_USAGE}/artifacts/cpu_ram_usage.txt",
 ]
 
 
@@ -50,6 +53,7 @@ def parse_once(results, dirname):
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
     results.gpu_power_usage = _parse_gpu_power_metrics(dirname)
+    results.cpu_ram_usage = _parse_cpu_ram_metrics(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
 
@@ -104,6 +108,38 @@ def _parse_gpu_power_metrics(dirname):
         gpu_power_usage.usage.pop()
 
     return gpu_power_usage
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_cpu_ram_metrics(dirname):
+    cpu_ram_usage = types.SimpleNamespace()
+    cpu_ram_usage.memory = []
+    cpu_ram_usage.cpu = []
+
+    if not artifact_paths.MAC_AI_CPU_RAM_USAGE:
+        return None
+
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_CPU_RAM_USAGE / "artifacts" / "cpu_ram_usage.txt")) as f:
+
+        for line in f.readlines():
+            if line.startswith("CPU usage"):
+                cpu = types.SimpleNamespace()
+                idle = line.split()[-2]
+                cpu.idle_pct = float(idle[:-1])
+                cpu_ram_usage.cpu.append(cpu)
+
+                pass
+            elif line.startswith("PhysMem"):
+                memory = types.SimpleNamespace()
+                mem_line = line.split()
+                unused = mem_line[-2]
+                memory.unused_mb = int(unused[:-1])
+                if unused.endswith("G"):
+                    memory.unused_mb *= 1024
+                cpu_ram_usage.memory.append(memory)
+                pass
+
+    return cpu_ram_usage
 
 
 @helpers_store_parsers.ignore_file_not_found

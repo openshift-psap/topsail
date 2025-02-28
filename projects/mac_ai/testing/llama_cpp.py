@@ -1,14 +1,19 @@
-import os
+#!/usr/bin/env python3
+
+import os, sys
 import pathlib
 import logging
 import tempfile
+import subprocess
+
+import fire
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
 import remote_access, podman_machine
-import hashlib
+from entrypoint import entrypoint
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -36,13 +41,9 @@ def get_local_image_name(base_work_dir):
 
 
 def __get_local_image_name_from_local_container_file(base_work_dir=None):
-    def sha256sum(filename):
-        with open(filename, 'rb', buffering=0) as f:
-            return hashlib.sha256(f.read()).hexdigest()
-
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
 
-    tag = sha256sum(container_file)[:8]
+    tag = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.build_args.LLAMA_CPP_VERSION")
     return f"localhost/llama_cpp:{tag}"
 
 
@@ -81,10 +82,26 @@ def prepare_podman_image(base_work_dir, system="podman/linux"):
     return FROM[build_from](base_work_dir, system)
 
 
+def delete_podman_image_from_local_container_file(base_work_dir):
+    podman_cmd = podman_mod.get_podman_binary()
+
+    local_image_name = __get_local_image_name_from_local_container_file()
+
+    container_name = config.project.get_config("prepare.podman.container.name")
+
+    podman_mod.stop(base_work_dir, container_name)
+
+    return remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} image rm {local_image_name}",
+        capture_stdout=True,
+    )
+
+
 def prepare_podman_image_from_local_container_file(base_work_dir, system="podman/linux"):
     local_image_name = __get_local_image_name_from_local_container_file()
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
-
+    build_args = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.build_args")
     run.run_toolbox(
         "remote", "build_image",
         podman_cmd=podman_mod.get_podman_binary(),
@@ -93,6 +110,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, system="podman
         container_file=container_file,
         container_file_is_local=True,
         image=local_image_name,
+        build_args=build_args,
     )
 
 
@@ -245,3 +263,69 @@ def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
         command,
         check=False,
     )
+
+
+
+# ---
+
+@entrypoint()
+def rebuild_image(start=True):
+    base_work_dir = remote_access.prepare()
+    prepare_test(base_work_dir, use_podman=True)
+
+    try:
+        delete_podman_image_from_local_container_file(base_work_dir)
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 1:
+            logging.info("Couldn't delete the image: image not known. Ignoring.")
+            return
+
+        raise e
+
+    prepare_podman_image_from_local_container_file(base_work_dir)
+
+    if start:
+        return start_podman()
+
+    return 0
+
+
+@entrypoint()
+def start_podman():
+    base_work_dir = remote_access.prepare()
+
+    prepare_test(base_work_dir, use_podman=True)
+
+    inference_server_port = config.project.get_config("test.inference_server.port")
+    podman_container_name = config.project.get_config("prepare.podman.container.name")
+    return podman_mod.start(base_work_dir, podman_container_name, inference_server_port).returncode
+
+
+class Entrypoint:
+    """
+    Commands for launching the llama-cpp helper commands
+    """
+
+    def __init__(self):
+        self.rebuild_image = rebuild_image
+        self.start_podman = start_podman
+
+# ---
+
+def main():
+    # Print help rather than opening a pager
+    fire.core.Display = lambda lines, out: print(*lines, file=out)
+
+    fire.Fire(Entrypoint())
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Command '{e.cmd}' failed --> {e.returncode}")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print() # empty line after ^C
+        logging.error(f"Interrupted.")
+        sys.exit(1)
