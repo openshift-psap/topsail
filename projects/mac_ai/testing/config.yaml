@@ -169,6 +169,7 @@ test:
   capture_metrics:
     enabled: true
     gpu:
+      enabled: false
       sampler: gpu_power
       rate: 1000
 
