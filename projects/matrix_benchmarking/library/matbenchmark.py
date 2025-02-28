@@ -95,7 +95,7 @@ def set_benchmark_args(benchmark_file, expe_name=None, results_dirname=None):
 def run_benchmark(args, dry_run=False):
     logging.info(f"Running MatrixBenchmarking rehearsal with '{args['--benchmark_file']}'...")
 
-    BENCHMARK_CMD_BASE = "matbench benchmark"
+    BENCHMARK_CMD_BASE = f"ARTIFACT_DIR={env.ARTIFACT_DIR} matbench benchmark"
     cmd_args = " ".join([f"{k}={v}" for k, v in args.items()])
     cmd = f"TOPSAIL_FROM_CONFIG_FILE={config.project.config_path} {BENCHMARK_CMD_BASE} {cmd_args}"
 
