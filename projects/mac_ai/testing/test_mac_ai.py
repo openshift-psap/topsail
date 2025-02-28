@@ -195,7 +195,7 @@ def test_inference(platform):
         use_podman=False,
     )
 
-    inference_server_mod.unload_model(base_work_dir, inference_server_path, use_podman=(not use_podman))
+    inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
     inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
 
     brew.capture_dependencies_version(base_work_dir)
