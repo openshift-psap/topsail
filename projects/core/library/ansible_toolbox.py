@@ -235,9 +235,9 @@ class RunAnsibleRole:
             )
         ]
 
-        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
-        if remote_host:
-            print(f"Using TOPSAIL_JUMP_CI_REMOTE_HOST")
+        remote_hostname = env.get("TOPSAIL_REMOTE_HOSTNAME")
+        if remote_hostname:
+            print(f"Using TOPSAIL_REMOTE_HOSTNAME={remote_hostname}") # value will be censored by OpenShift
             # gather only env values
             generated_play[0]["gather_facts"] = True
             generated_play[0]["gather_subset"] = ['env','!all','!min']
@@ -249,14 +249,16 @@ class RunAnsibleRole:
             inventory_f = os.fdopen(inventory_fd, 'w')
 
             host_properties = []
-            if "@" in remote_host:
-                host_properties.append("ansible_user="+remote_host.split("@")[0])
+            if remote_username := env.get("TOPSAIL_REMOTE_USERNAME"):
+                print(f"Using TOPSAIL_REMOTE_USERNAME={remote_username}") # value will be censored by OpenShift
+
+                host_properties.append("ansible_user="+remote_username)
 
             inventory_content = f"""
 [all:vars]
 
 [remote]
-{remote_host.rpartition("@")[-1]} {" ".join(host_properties)}
+{remote_hostname} {" ".join(host_properties)}
 """
 
             print(inventory_content, file=inventory_f)
@@ -309,7 +311,7 @@ class RunAnsibleRole:
             print(" ".join(map(shlex.quote, sys.argv)), file=f)
 
 
-        if remote_host:
+        if remote_hostname:
             cmd += ["--inventory-file", f"/proc/{os.getpid()}/fd/{inventory_fd}"]
 
         sys.stdout.flush()
