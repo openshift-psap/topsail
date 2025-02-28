@@ -226,7 +226,8 @@ def test_inference(platform):
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
-                                    path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR, mute_stdout=True)
+                                    path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
+                                    mute_stdout=True, mute_stderr=True)
 
         if exc:
             logging.warning(f"Test crashed ({exc})")
