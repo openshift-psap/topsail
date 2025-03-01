@@ -11,7 +11,9 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
-RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+# not using `os.getcwd()` anymore because of
+# https://stackoverflow.com/questions/1542803/is-there-a-version-of-os-getcwd-that-doesnt-dereference-symlinks
+RUN_DIR = pathlib.Path(os.getenv('PWD')) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
 import prepare_mac_ai, remote_access, podman, podman_machine, brew
