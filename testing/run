@@ -290,7 +290,6 @@ wait_term() {
         echo "run: child PID known wait_term handler. Forwarning the signal to ${target} ..."
         kill -${term_kill_needed} "${term_child_pid}" 2>/dev/null
     fi
-    echo "run: waiting for the child process $$..."
     wait ${term_child_pid} 2>/dev/null
     trap - TERM INT
 
