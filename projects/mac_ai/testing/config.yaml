@@ -12,7 +12,7 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [podman/linux, podman/linux-no-gpu, native]
+    test.platform: [podman/linux, native]
     test.model.name: llama3.2
 
     test.llm_load_test.matbenchmarking: false
