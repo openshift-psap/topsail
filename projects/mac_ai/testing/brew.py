@@ -13,6 +13,7 @@ def install_dependencies(base_work_dir, capture_stderr=False):
         base_work_dir,
         f"/opt/homebrew/bin/brew install {dependencies}",
         capture_stderr=capture_stderr,
+        check=False,
     )
 
 
