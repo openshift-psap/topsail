@@ -31,7 +31,7 @@ secrets:
   private_key_path: mac_ai__private_key
   hostname: mac_ai__hostname
   username: mac_ai__username
-  base_work_dir: host__base_work_dir
+  base_work_dir: mac_ai__base_work_dir
 
 remote_host:
   run_locally: false
@@ -39,7 +39,7 @@ remote_host:
   hostname: "@secrets.hostname"
   username: "@secrets.username"
   port: 22
-  base_work_dir: "/Users/podmanqe/kpouget"
+  base_work_dir: "@secrets.base_work_dir"
   ssh_flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
