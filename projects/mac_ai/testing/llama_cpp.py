@@ -195,7 +195,7 @@ def prepare_binary(base_work_dir, system):
 
 def _get_binary_path(base_work_dir, system, use_podman):
     if use_podman:
-        podman_prefix = podman_mod.get_exec_command_prefix(use_podman)
+        podman_prefix = podman_mod.get_exec_command_prefix()
         container_command = config.project.get_config(f"prepare.llama_cpp.repo.'podman/linux'.command")
         command = f"{podman_prefix} {container_command}"
 
@@ -251,9 +251,8 @@ def run_model(base_work_dir, llama_cpp_path, model, use_podman=False):
 
 
 def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
-
     if use_podman:
-        podman_prefix = podman_mod.get_exec_command_prefix(use_podman)
+        podman_prefix = podman_mod.get_exec_command_prefix()
         command = f"{podman_prefix} pkill python"
     else:
         command = f"pkill llama-server"

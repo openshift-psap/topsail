@@ -30,7 +30,7 @@ def _get_binary_path(base_work_dir, system, use_podman):
         ollama_path = dest.parent / "bin" / "ollama"
 
     if use_podman:
-        ollama_path = f"{podman_mod.get_exec_command_prefix(use_podman)} {ollama_path}"
+        ollama_path = f"{podman_mod.get_exec_command_prefix()} {ollama_path}"
 
     return ollama_path, dest, executable, tarball, version
 

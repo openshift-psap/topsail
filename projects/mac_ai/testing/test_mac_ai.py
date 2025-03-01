@@ -11,7 +11,9 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
-RUN_DIR = pathlib.Path(os.getcwd()) # for run_one_matbench
+# not using `os.getcwd()` anymore because of
+# https://stackoverflow.com/questions/1542803/is-there-a-version-of-os-getcwd-that-doesnt-dereference-symlinks
+RUN_DIR = pathlib.Path(os.getenv('PWD')) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
 import prepare_mac_ai, remote_access, podman, podman_machine, brew
@@ -182,12 +184,9 @@ def test_inference(platform):
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
-    podman_container_name = config.project.get_config("prepare.podman.container.name") \
-        if use_podman else False
-
     inference_server_path = inference_server_mod.get_binary_path(
         base_work_dir, system,
-        use_podman=podman_container_name
+        use_podman=use_podman,
     )
 
     inference_server_native_path = inference_server_mod.get_binary_path(
@@ -195,7 +194,7 @@ def test_inference(platform):
         use_podman=False,
     )
 
-    inference_server_mod.unload_model(base_work_dir, inference_server_path, use_podman=(not use_podman))
+    inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
     inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
 
     brew.capture_dependencies_version(base_work_dir)
@@ -204,9 +203,9 @@ def test_inference(platform):
         inference_server_port = config.project.get_config("test.inference_server.port")
 
         podman.test(base_work_dir)
-        podman.start(base_work_dir, podman_container_name, inference_server_port)
+        podman.start(base_work_dir, inference_server_port)
     else:
-        podman.stop(base_work_dir, podman_container_name)
+        podman.stop(base_work_dir)
 
     if config.project.get_config("test.inference_server.always_pull"):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
@@ -226,7 +225,7 @@ def test_inference(platform):
             exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
-            exc = run.run_and_catch(exc, podman.stop, base_work_dir, podman_container_name)
+            exc = run.run_and_catch(exc, podman.stop, base_work_dir)
 
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
