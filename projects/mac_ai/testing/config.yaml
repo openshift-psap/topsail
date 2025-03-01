@@ -146,7 +146,7 @@ test:
     args:
       host: localhost
       port: "@test.inference_server.port"
-      duration: 300
+      duration: 60
       concurrency: 1
       plugin: openai_plugin
       interface: http
