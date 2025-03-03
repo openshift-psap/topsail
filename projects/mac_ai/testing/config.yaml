@@ -47,9 +47,9 @@ remote_host:
   system: darwin
   arch: arm64
   python_bin: python3
-  podman_bin: /opt/podman/bin/podman
+  podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
-    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
     HOME: "@secrets.base_work_dir"
 
 prepare:
