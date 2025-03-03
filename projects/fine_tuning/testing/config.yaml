@@ -827,7 +827,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: quay.io/modh/fms-hf-tuning:v2.6.0
+      image: image-registry.openshift-image-registry.svc:5000/fine-tuning-testing/fms-hf-tuning@sha256:e6723ffc7cc7bf88cd822ae8d7e784d26629e716765b19d6d1154d290ec026cb
     ray:
       enabled: false
       workload: ray-benchmark
