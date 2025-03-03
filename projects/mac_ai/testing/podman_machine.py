@@ -7,12 +7,16 @@ from projects.core.library import env, config, run, configure_logging, export
 import remote_access, podman
 
 
-def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True):
+def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True, get_command=False):
     podman_bin = podman.get_podman_binary()
+
+    cmd = f"{podman_bin} {'machine' if machine else ''} {cmd}"
+    if get_command:
+        return cmd
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"{podman_bin} {'machine' if machine else ''} {cmd}",
+        cmd,
         check=check,
         capture_stdout=capture_stdout,
     )
@@ -44,6 +48,13 @@ def start(base_work_dir):
 def set_default_connection(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     return _run(base_work_dir, f"system connection default {name}", machine=False)
+
+#
+
+
+def get_ssh_command_prefix():
+    name = config.project.get_config("prepare.podman.machine.name", print=False)
+    return _run(None, f"ssh {name}", get_command=True)
 
 #
 
