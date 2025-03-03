@@ -172,6 +172,8 @@ test:
       enabled: true
       sampler: gpu_power
       rate: 1000
+    virtgpu:
+      enabled: true
 
 export_artifacts:
   enabled: false

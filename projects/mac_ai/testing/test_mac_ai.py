@@ -136,18 +136,18 @@ def test_all_platforms():
                 test_inference(platform)
 
 
-def capture_metrics(stop=False):
+def capture_metrics(platform, stop=False):
     if not config.project.get_config("test.capture_metrics.enabled"):
         logging.info("capture_metrics: Metrics capture not enabled.")
 
         return
 
-    sampler = config.project.get_config("test.capture_metrics.gpu.sampler")
-    artifact_dir_suffix = f"_{sampler}"
-    if stop:
-        artifact_dir_suffix += "_stop"
-
     if config.project.get_config("test.capture_metrics.gpu.enabled"):
+        sampler = config.project.get_config("test.capture_metrics.gpu.sampler")
+
+        artifact_dir_suffix = f"_{sampler}"
+        if stop:
+            artifact_dir_suffix += "_stop"
         run.run_toolbox(
             "mac_ai", "remote_capture_power_usage",
             samplers=sampler,
@@ -155,6 +155,18 @@ def capture_metrics(stop=False):
             stop=stop,
             mute_stdout=stop,
             artifact_dir_suffix=artifact_dir_suffix,
+        )
+
+
+    if (config.project.get_config("test.capture_metrics.virtgpu.enabled")
+        and "podman" in platform):
+
+        run.run_toolbox(
+            "mac_ai", "remote_capture_virtgpu_memory",
+            podman_machine_ssh_cmd=podman_machine.get_ssh_command_prefix(),
+            stop=stop,
+            mute_stdout=stop,
+            artifact_dir_suffix="_stop" if stop else None,
         )
 
     run.run_toolbox(
@@ -215,7 +227,7 @@ def test_inference(platform):
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
             matbench_run(["test.llm_load_test.args"], with_deploy=False)
         else:
-            run_llm_load_test(base_work_dir, model_name)
+            run_llm_load_test(base_work_dir, model_name, platform)
     finally:
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
@@ -238,11 +250,11 @@ def test_inference(platform):
             raise exc
 
 
-def run_llm_load_test(base_work_dir, model_name):
+def run_llm_load_test(base_work_dir, model_name, platform):
     if not config.project.get_config("test.llm_load_test.enabled"):
         return
 
-    capture_metrics()
+    capture_metrics(platform)
     prepare_matbench_test_files()
 
     exit_code = 1
@@ -258,7 +270,7 @@ def run_llm_load_test(base_work_dir, model_name):
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
             print(exit_code, file=f)
 
-        capture_metrics(stop=True)
+        capture_metrics(platform, stop=True)
 
 def matbench_run(matrix_source_keys, with_deploy):
     with env.NextArtifactDir("matbenchmarking"):
@@ -329,12 +341,14 @@ def matbench_run_one(with_deploy):
 
         config.project.set_config("test.matbenchmarking.enabled", False)
 
+        platform = config.project.get_config("test.platform")
+
         if with_deploy:
-            test_inference(config.project.get_config("test.platform"))
+            test_inference(platform)
         else:
             base_work_dir = remote_access.prepare()
             model_name = config.project.get_config("test.model.name")
-            run_llm_load_test(base_work_dir, model_name)
+            run_llm_load_test(base_work_dir, model_name, platform)
 
 
 def generate_visualization(test_artifact_dir):
