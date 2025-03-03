@@ -827,7 +827,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: image-registry.openshift-image-registry.svc:5000/fine-tuning-testing/fms-hf-tuning@sha256:65c5a6a68d7f75da76864e3d762ca70d0adca0fab3e6edc01aa7f127d8fd3c35 
+      image: image-registry.openshift-image-registry.svc:5000/fine-tuning-testing/fms-hf-tuning@sha256:f674e8016bc2efe626660201ff5d6472355c7f5b314420600a4cba19f45f37e1
     ray:
       enabled: false
       workload: ray-benchmark
