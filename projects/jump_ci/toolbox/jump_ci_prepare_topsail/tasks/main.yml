@@ -166,6 +166,7 @@
     EOF
 
     time podman build \
+      --label preserve=false \
       --tag "{{ image_full_name }}" \
       --file {{ cluster_lock_dir }}/overlay.containerfile \
       --from "{{ jump_ci_prepare_topsail_image_name }}:{{ jump_ci_prepare_topsail_update_from_imagetag }}"
