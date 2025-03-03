@@ -74,6 +74,7 @@ def prepare_llm_load_test(base_work_dir):
     run.run_toolbox(
         "remote", "clone",
         repo_url=repo_url, dest=dest, version=submodule_commit,
+        artifact_dir_suffix="__llm_load_test",
     )
 
     python_bin = config.project.get_config("remote_host.python_bin", "python3")
