@@ -148,3 +148,21 @@ class Mac_Ai:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("mac_ai_remote_capture_virtgpu_memory")
+    @AnsibleMappedParams
+    def remote_capture_virtgpu_memory(
+            self,
+            podman_machine_ssh_cmd,
+            stop=False,
+    ):
+        """
+        Captures the virt-gpu memory usage
+
+        Args:
+          podman_machine_ssh_cmd: the command to execute to enter the VM host
+          stop: if true, only stop the capture
+        """
+
+        return RunAnsibleRole(locals())
