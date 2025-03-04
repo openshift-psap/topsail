@@ -22,7 +22,7 @@ RUN mkdir build
 RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
 
 RUN cd src && \
-    cmake -S . -B ../build -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native -DCMAKE_BUILD_TYPE=Debug && \
+    cmake -S . -B ../build -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native && \
     cmake --build ../build/
 
 # ---

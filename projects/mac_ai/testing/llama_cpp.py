@@ -111,6 +111,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, system="podman
         container_file_is_local=True,
         image=local_image_name,
         build_args=build_args,
+        artifact_dir_suffix=pathlib.Path(container_file).name,
     )
 
 

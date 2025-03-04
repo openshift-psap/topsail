@@ -42,5 +42,8 @@ Parameters
 
 * If true, untar the tarball
 
-* default value: ``True``
+
+``zip``  
+
+* If true, unzip the zipball (currently only on MacOS)
 

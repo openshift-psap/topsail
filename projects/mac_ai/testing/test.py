@@ -83,7 +83,7 @@ def export_artifacts(artifacts_dirname):
     export.export_artifacts(artifacts_dirname)
 
 
-@entrypoint()
+@entrypoint(apply_preset_from_pr_args=False)
 def matbench_run_with_deploy():
     """
     Runs one test as part of a MatrixBenchmark benchmark, includuing the deployment phase
@@ -92,7 +92,7 @@ def matbench_run_with_deploy():
     test_mac_ai.matbench_run_one(with_deploy=True)
 
 
-@entrypoint()
+@entrypoint(apply_preset_from_pr_args=False)
 def matbench_run_without_deploy():
     """
     Runs one test as part of a MatrixBenchmark benchmark, excluding the deployment phase (llm-load-test only)

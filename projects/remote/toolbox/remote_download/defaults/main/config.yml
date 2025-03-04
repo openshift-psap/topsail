@@ -18,4 +18,7 @@ remote_download_force: false
 remote_download_executable: false
 
 # if true, untar the tarball
-remote_download_tarball: true
+remote_download_tarball: false
+
+# if true, unzip the zipball (currently only on MacOS)
+remote_download_zip: false

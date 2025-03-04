@@ -5,12 +5,87 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 import remote_access
 
+def prepare_gv_from_gh_binary(base_work_dir):
+
+    podman_path, version = _get_repo_podman_path(base_work_dir)
+    gvisor_path = podman_path.parent.parent / "libexec" / "podman" / "gvproxy"
+
+    if remote_access.exists(gvisor_path):
+        logging.info(f"gvproxy exists, not downloading it.")
+        return
+
+    system = config.project.get_config("remote_host.system")
+    src_file = config.project.get_config(f"prepare.podman.gvisor.repo.file") \
+        .replace("{@remote_host.system}", system)
+
+    source = "/".join([
+        config.project.get_config("prepare.podman.gvisor.repo.url"),
+        "releases/download",
+        config.project.get_config(f"prepare.podman.gvisor.repo.version"),
+        src_file,
+    ])
+
+    run.run_toolbox(
+        "remote", "download",
+        source=source,
+        dest=gvisor_path,
+        executable=True,
+    )
+
+def prepare_from_gh_binary(base_work_dir):
+    arch = config.project.get_config("remote_host.arch")
+    system = config.project.get_config("remote_host.system")
+
+    podman_path, version = _get_repo_podman_path(base_work_dir)
+
+    if remote_access.exists(podman_path):
+        logging.info(f"podman {version} already exists, not downloading it.")
+        return podman_path
+
+    zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file") \
+        .replace("{@remote_host.arch}", arch) \
+        .replace("{@remote_host.system}", system)
+
+    source = "/".join([
+        config.project.get_config("prepare.podman.repo.url"),
+        "releases/download",
+        config.project.get_config(f"prepare.podman.repo.version"),
+        zip_file,
+    ])
+
+    dest = base_work_dir / f"podman-{version}" / zip_file
+
+    run.run_toolbox(
+        "remote", "download",
+        source=source,
+        dest=dest,
+        zip=True,
+    )
+
+
+
+    return podman_path
+
+
+def _get_repo_podman_path(base_work_dir):
+    system = config.project.get_config(f"remote_host.system", print=False)
+    version = config.project.get_config(f"prepare.podman.repo.version", print=False)
+
+    podman_path = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
+
+    return podman_path, version
+
+
 def get_podman_binary():
-    podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
-
     base_work_dir = remote_access.prepare()
-    podman_env = dict(HOME=base_work_dir)
 
+    system = config.project.get_config("remote_host.system", print=False)
+    if config.project.get_config(f"prepare.podman.repo.enabled", print=False):
+        podman_bin, _ = _get_repo_podman_path(base_work_dir)
+    else:
+        podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
+
+    podman_env = dict(HOME=base_work_dir)
 
     if config.project.get_config("prepare.podman.machine.enabled", print=False):
         machine_name = config.project.get_config("prepare.podman.machine.name", print=False)

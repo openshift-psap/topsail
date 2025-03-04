@@ -217,6 +217,7 @@ Toolbox Documentation
                 
 * :doc:`remote_capture_cpu_ram_usage <Mac_Ai.remote_capture_cpu_ram_usage>`	 Captures the CPU and RAM usage on MacOS
 * :doc:`remote_capture_power_usage <Mac_Ai.remote_capture_power_usage>`	 Captures the power usage on MacOS
+* :doc:`remote_capture_virtgpu_memory <Mac_Ai.remote_capture_virtgpu_memory>`	 Captures the virt-gpu memory usage
 * :doc:`remote_llama_cpp_pull_model <Mac_Ai.remote_llama_cpp_pull_model>`	 Pulls a model with llama-cpp, on a remote host
 * :doc:`remote_llama_cpp_run_model <Mac_Ai.remote_llama_cpp_run_model>`	 Runs a model with llama_cpp, on a remote host
 * :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host

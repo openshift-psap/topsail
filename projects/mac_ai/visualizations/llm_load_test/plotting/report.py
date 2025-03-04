@@ -77,6 +77,10 @@ class GPUUsageReport():
             header += [html.H1(plot_name)]
             header += report.Plot_and_Text(plot_name, args)
 
+        for what in ["VirtGPU Memory Usage by used", "VirtGPU Memory Usage by free"]:
+            header += [html.H1(what)]
+            header += report.Plot_and_Text(what, args)
+
         return None, header
 
 

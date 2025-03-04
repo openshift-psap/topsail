@@ -12,7 +12,7 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [podman/linux, podman/linux-no-gpu, native]
+    test.platform: [podman/linux, native]
     test.model.name: llama3.2
 
     test.llm_load_test.matbenchmarking: false
@@ -47,9 +47,9 @@ remote_host:
   system: darwin
   arch: arm64
   python_bin: python3
-  podman_bin: /opt/podman/bin/podman
+  podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
-    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+    PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
     HOME: "@secrets.base_work_dir"
 
 prepare:
@@ -104,6 +104,20 @@ prepare:
   systems: [darwin, podman/linux]
 
   podman:
+    repo:
+      enabled: true
+      url: https://github.com/containers/podman
+      version: v5.4.0
+      darwin:
+        file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
+        zip: true
+    gvisor:
+      repo:
+        enabled: true
+        url: https://github.com/containers/gvisor-tap-vsock/
+        version: v0.8.3
+        file: "gvproxy-{@remote_host.system}"
+
     container:
       name: topsail_mac_ai
 
@@ -169,9 +183,11 @@ test:
   capture_metrics:
     enabled: true
     gpu:
-      enabled: false
+      enabled: true
       sampler: gpu_power
       rate: 1000
+    virtgpu:
+      enabled: true
 
 export_artifacts:
   enabled: false
