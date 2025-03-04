@@ -40,7 +40,8 @@ class Remote:
             dest,
             force=False,
             executable=False,
-            tarball=True,
+            tarball=False,
+            zip=False,
     ):
         """
         Downloads a file in a remote host
@@ -51,6 +52,7 @@ class Remote:
           force: force the download
           executable: if true, make the file executable
           tarball: if true, untar the tarball
+          zip: if true, unzip the zipball (currently only on MacOS)
         """
 
         return RunAnsibleRole(locals())

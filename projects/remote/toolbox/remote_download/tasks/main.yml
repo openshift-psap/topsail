@@ -30,3 +30,8 @@
   command:
     tar xf "{{ remote_download_dest }}" -C "{{ remote_download_dest | dirname }}"
   when: remote_download_tarball | bool
+
+- name: Extract the zipball
+  command:
+    bsdtar --strip-components=1 -xf "{{ remote_download_dest }}" -C "{{ remote_download_dest | dirname }}"
+  when: remote_download_zip | bool
