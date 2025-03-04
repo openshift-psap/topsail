@@ -104,6 +104,20 @@ prepare:
   systems: [darwin, podman/linux]
 
   podman:
+    repo:
+      enabled: true
+      url: https://github.com/containers/podman
+      version: v5.4.0
+      darwin:
+        file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
+        zip: true
+    gvisor:
+      repo:
+        enabled: true
+        url: https://github.com/containers/gvisor-tap-vsock/
+        version: v0.8.3
+        file: "gvproxy-{@remote_host.system}"
+
     container:
       name: topsail_mac_ai
 

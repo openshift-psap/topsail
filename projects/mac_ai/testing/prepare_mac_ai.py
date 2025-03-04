@@ -5,7 +5,7 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import ollama, llama_cpp, utils, remote_access, podman_machine, brew
+import ollama, llama_cpp, utils, remote_access, podman_machine, brew, podman
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
@@ -22,6 +22,9 @@ def cleanup():
 
 def prepare():
     base_work_dir = remote_access.prepare()
+    if config.project.get_config(f"prepare.podman.repo.enabled", print=False):
+        podman.prepare_from_gh_binary(base_work_dir)
+        podman.prepare_gv_from_gh_binary(base_work_dir)
 
     podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
