@@ -88,6 +88,33 @@ class Throughput():
         cfg__bar_plot = cfg.get("bar_plot", False)
         cfg__model_name = cfg.get("model_name", False)
         cfg__itl = cfg.get("itl", False)
+        cfg__ttft = cfg.get("ttft", False)
+        cfg__tpot = cfg.get("tpot", False)
+
+        if cfg__itl:
+            y_name = "Inter-Token Latency"
+            y_unit = "ms"
+            y_key = "itl_mean"
+            lower_better = True
+        elif cfg__tpot:
+            y_name = "Time Per Output Token"
+            y_unit = "ms/token"
+            y_key = "tpot_mean"
+            lower_better = True
+        elif cfg__ttft:
+            y_name = "Time To FIrst Token"
+            y_unit = "ms"
+            y_key = "ttft_mean"
+            lower_better = True
+        else:
+            if cfg__bar_plot:
+                y_name = "Throughput"
+                y_unit = "token/s"
+                y_key = "throughput"
+                lower_better = False
+            else:
+                msg = "Throughput/line: must select between between TTFT and ITL"
+                return None, msg
 
         entries = [cfg__entry] if cfg__entry else \
             common.Matrix.all_records(settings, setting_lists)
@@ -98,25 +125,34 @@ class Throughput():
             return None, "Not data available ..."
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
-        subtitle = f"<br>for {vus} users"
+        subtitle = ""
+        if len(vus) > 1:
+            subtitle += f"<br>for {vus} users"
         if cfg__model_name:
             subtitle += f"<br><b>{cfg__model_name}</b>"
 
         if cfg__bar_plot:
             df = df.sort_values(by=["sort_index", "test_name"], ascending=True)
 
-            fig = px.bar(df, x='legend_name', y='throughput', color="test_name", hover_data=df.columns,
-                         text='throughput', text_auto='.0f')
+            fig = px.bar(df, x='legend_name', y=y_key, color="test_name",
+                         hover_data=df.columns, text=y_key, text_auto='.0f')
+            title = f"{y_name} (in {y_unit})"
+            y_title = f"{y_name} (in {y_unit})"
+            if lower_better:
+                y_title = f"❮ {y_title}<br>Lower is better"
+            else:
+                y_title += " ❯<br>Higher is better"
+
             fig.update_layout(barmode='group')
             fig.update_layout(
                 yaxis=dict(
-                    title="Throughput (in tokens/s) ❯<br>Higher is better",
+                    title=y_title,
                     rangemode="tozero",
                 ),
             )
             fig.update_xaxes(title=f"")
             fig.layout.update(showlegend=True)
-            fig.update_layout(title=f"Throughput{subtitle}", title_x=0.5,)
+            fig.update_layout(title=f"{title}{subtitle}", title_x=0.5,)
             fig.update_layout(legend_title_text="Test")
 
             if cfg__entry or cfg__model_name:
@@ -124,29 +160,27 @@ class Throughput():
         else:
             df = df.sort_values(by=["sort_index", "legend_name"], ascending=False)
 
-            if cfg__itl:
-                y_name = "Inter-Token Latency"
-                y_unit = "ms"
-                y_key = "itl_mean"
+            if len(variables) > 2:
+                color = "legend_name"
+                text = "test_name"
             else:
-                y_name = "Time Per Output Token"
-                y_unit = "ms/token"
-                y_key = "tpot_mean"
-            color = "legend_name"
+                color = None
+                text = "legend_name"
 
             fig = px.line(df, hover_data=df.columns,
-                          x="throughput", y=y_key, color=color, text="test_name",)
+                          x="throughput", y=y_key, color=color, text=text)
+
             for i in range(len(fig.data)):
                 fig.data[i].update(mode='lines+markers+text')
 
             fig.update_xaxes(title=f"Throughput (in tokens/s) ❯<br>Higher is better")
 
             fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
-            fig.update_layout(title=f"Throughput and {y_name}{subtitle}", title_x=0.5,)
+            fig.update_layout(title=f"Throughput vs {y_name}{subtitle}", title_x=0.5,)
             if ordered_vars:
                 fig.update_layout(legend_title_text=ordered_vars[0].title())
 
-            if len(df[color].unique()) <= 1:
+            if not color or len(df[color].unique()) <= 1:
                 fig.layout.update(showlegend=False)
 
         if cfg__model_name:
