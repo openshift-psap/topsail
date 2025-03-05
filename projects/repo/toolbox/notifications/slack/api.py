@@ -68,18 +68,7 @@ def send_message(client, message: str, main_ts: str = None):
     return result["ts"], True
 
 
-def init_client():
+def init_client(token):
     """Initialize Slack's client."""
-    if not os.environ.get("PSAP_ODS_SECRET_PATH"):
-        logging.warning(
-            "PSAP_ODS_SECRET_PATH not defined, cannot access the Slack secrets"
-        )
-        return None
 
-    secret_dir = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH"))
-    token_file = secret_dir / "topsail-bot.slack-token"
-
-    with open(token_file, "r") as sf:
-        client = WebClient(token=sf.read())
-
-    return client
+    return WebClient(token)

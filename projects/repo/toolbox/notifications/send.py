@@ -5,6 +5,9 @@ import pathlib
 import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
 
+GITHUB_APP_PEM_FILE = "topsail-bot.2024-09-18.private-key.pem"
+GITHUB_APP_CLIENT_ID_FILE = "topsail-bot.clientid"
+SLACK_TOKEN_FILE = "topsail-bot.slack-token"
 
 def send_job_completion_notification(reason, status, github=True, slack=False, dry_run=False):
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
@@ -20,38 +23,61 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
     if os.environ.get("PERFLAB_CI") == "true" and not pr_number:
         github = False
 
+    # currently hardcoded, because there's no configuration file at this level
+    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH")
+
+    secret_env_key = None
+    warn = []
+    for secret_env_key in SECRET_ENV_KEYS:
+        if os.environ.get(secret_env_key): break
+        warn.append("{} not defined, cannot access the Github secrets")
+    else:
+        for warning in warn:
+            logging.warning(warn)
+        return True
+
+    secret_dir = pathlib.Path(os.environ[secret_env_key])
+    if not secret_dir.exists():
+        logging.fatal(f"{secret_env_key} points to a non-existing directory ...")
+        return True
+
     failed = False
-    if github and not send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
+    if github and not send_job_completion_notification_to_github(
+            *get_github_secrets(secret_dir, secret_env_key),
+            reason, status, pr_number, dry_run):
+
         failed = True
 
-    if slack and not send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
+    if slack and not send_job_completion_notification_to_slack(
+            get_slack_secrets(secret_dir, secret_env_key),
+            reason, status, pr_number, dry_run):
         failed = True
 
     return failed
 
 ###
 
-def send_job_completion_notification_to_github(reason, status, pr_number, dry_run):
+def send_job_completion_notification_to_github(pem_file, client_id, reason, status, pr_number, dry_run):
     message = get_github_notification_message(reason, status, pr_number)
 
     org, repo = get_org_repo()
-    pem_file, client_id = get_github_secrets()
+
     abort = False
 
     if None in (pr_number,):
-        logging.error("Cannot figure out the PR number")
+        logging.error("github: Cannot figure out the PR number")
         abort = True
 
     if None in (org, repo):
-        logging.error("Cannot access the org/repo")
+        logging.error("github: Cannot access the org/repo")
         abort = True
 
     if None in (pem_file, client_id):
-        logging.error("Cannot access the secret files")
+        logging.error("github: Cannot access the secret files")
         abort = True
 
     if abort:
-        logging.error("Aborting due to previous error(s).")
+        logging.error("github: Aborting due to previous error(s).")
         return
 
     user_token = github_api.get_user_token(pem_file, client_id, org, repo)
@@ -196,10 +222,15 @@ Link to the <{pr_data['html_url']}|PR>.
     return message
 
 
-def send_job_completion_notification_to_slack(reason, status, pr_number, dry_run):
-    client = slack_api.init_client()
-    if not client:
+def send_job_completion_notification_to_slack(
+        token, reason, status, pr_number, dry_run,
+):
+    if not token:
         return
+
+    client = slack_api.init_client(token)
+    if not client:
+        return False
 
     org, repo = get_org_repo()
 
@@ -285,7 +316,7 @@ def get_ci_base_link(is_raw_file=False, is_dir=False):
     else:
         logging.warning("Test not running from a well-known CI engine, cannot extract the artifacts link.")
 
-        return None, None
+        return "https://no_known_ci_engine/", "?no_ext=true"
 
 
 def get_org_repo():
@@ -295,26 +326,32 @@ def get_org_repo():
         return "openshift-psap", "topsail"
 
 
-def get_github_secrets():
-    if not os.environ.get("PSAP_ODS_SECRET_PATH"):
-        logging.warning("PSAP_ODS_SECRET_PATH not defined, cannot access the Github secrets")
+def get_github_secrets(secret_dir, secret_env_key):
+    pem_file = secret_dir / GITHUB_APP_PEM_FILE
+    client_id_file = secret_dir / GITHUB_APP_CLIENT_ID_FILE
+
+    if not pem_file.exists():
+        logging.warning(f"Github App private key does not exists ({pem_file}) in {secret_env_key}")
         return None, None
 
-    secret_dir = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH"))
-    pem_file = secret_dir / "topsail-bot.2024-09-18.private-key.pem"
-    client_id_file = secret_dir / "topsail-bot.clientid"
-
-    if not (pem_file.exists() and client_id_file.exists()):
-        if not pem_file.exists():
-            logging.warning(f"Github App private key does not exists ({pem_file})")
-        else:
-            logging.warning(f"Github App clientid file does not exists ({client_id_file})")
+    if not client_id_file.exists():
+        logging.warning(f"Github App clientid file does not exists ({client_id_file}) in {secret_env_key}")
         return None, None
 
-    with open(client_id_file) as f:
-        client_id = f.read().strip()
+    client_id_content = client_id_file.read_text().strip()
 
-    return pem_file, client_id
+    return pem_file, client_id_content
+
+
+def get_slack_secrets(secret_dir, secret_env_key):
+    token_file = secret_dir / SLACK_TOKEN_FILE
+
+    if not token_file.exists():
+        logging.warning(f"{token_file.name} not found in {secret_env_key}. "
+                        "Cannot send the Slack notification")
+        return None
+
+    return token_file.read_text()
 
 
 def get_ci_link(path, is_raw_file=False, base=None, is_dir=False):
