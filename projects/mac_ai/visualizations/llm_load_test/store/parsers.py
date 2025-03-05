@@ -21,6 +21,9 @@ register_important_file = None # will be when importing store/__init__.py
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "*__llm_load_test__run"
+artifact_dirnames.MAC_AI_POWER_USAGE_GPU = "*__mac_ai__remote_capture_power_usage_gpu_power"
+artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usage"
+artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_memory"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -30,6 +33,10 @@ IMPORTANT_FILES = [
 
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
+
+    f"{artifact_dirnames.MAC_AI_POWER_USAGE_GPU}/artifacts/power_usage.txt",
+    f"{artifact_dirnames.MAC_AI_CPU_RAM_USAGE}/artifacts/cpu_ram_usage.txt",
+    f"{artifact_dirnames.MAC_AI_VIRTGPU_MEMORY}/artifacts/memory.txt",
 
 ]
 
@@ -47,8 +54,127 @@ def parse_once(results, dirname):
 
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)
+    results.gpu_power_usage = _parse_gpu_power_metrics(dirname)
+    results.cpu_ram_usage = _parse_cpu_ram_metrics(dirname)
+    results.virtgpu_metrics = _parse_virtgpu_memory_metrics(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_gpu_power_metrics(dirname):
+    gpu_power_usage = types.SimpleNamespace()
+    gpu_power_usage.machine = None
+    gpu_power_usage.os = None
+    gpu_power_usage.usage = []
+
+    current_ts = None
+    current_entry = None
+
+    if not artifact_paths.MAC_AI_POWER_USAGE_GPU:
+        return None
+
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_POWER_USAGE_GPU / "artifacts" / "power_usage.txt")) as f:
+
+        for line in f.readlines():
+            key, is_kv, value = line.partition(":")
+            key = key.strip()
+            value = value.strip()
+
+            if key == "Machine model":
+                gpu_power_usage.machine = line.partition(":")[2].strip()
+            elif key == "OS version":
+                gpu_power_usage.os = line.partition(":")[2].strip()
+            elif key.startswith("*** Sampled system activity"):
+                current_ts_str = line.partition("(")[2].partition(")")[0]
+                current_ts = dateutil.parser.parse(current_ts_str)
+                pass
+            elif key == "**** GPU usage ****":
+                gpu_power_usage.usage.append(types.SimpleNamespace())
+                current_entry = gpu_power_usage.usage[-1]
+                current_entry.ts = current_ts
+
+            if not current_entry:
+                continue # incomplete ...
+
+            if key == "GPU HW active frequency":
+                current_entry.frequency_mhz = float(value.replace(" MHz", ""))
+
+            elif key == "GPU idle residency":
+                current_entry.idle_pct = float(value.replace("%", ""))
+
+            elif key == "GPU Power":
+                current_entry.power_mw = float(value.replace(" mW", ""))
+                current_entry.complete = True
+
+    if gpu_power_usage.usage and "complete" not in gpu_power_usage.usage[-1].__dict__:
+        gpu_power_usage.usage.pop()
+
+    return gpu_power_usage
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_virtgpu_memory_metrics(dirname):
+    virtgpu_metrics = types.SimpleNamespace()
+    virtgpu_metrics.memory = []
+
+    if not artifact_paths.MAC_AI_VIRTGPU_MEMORY:
+        logging.info(f"{artifact_dirnames.MAC_AI_VIRTGPU_MEMORY} not found, can't parse the virgpu memory metrics.")
+        return None
+
+    current_dt = None
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_VIRTGPU_MEMORY / "artifacts" / "memory.txt")) as f:
+
+        for line in f.readlines():
+            if line.startswith("total"):
+                if not current_dt: continue
+
+                memory = types.SimpleNamespace()
+                _, total, _, used, _, free = line.replace(",", "").split()
+                memory.used_mb = float(used) / 1024 / 1024
+                memory.free_mb = float(free) / 1024 / 1024
+                memory.ts = current_dt
+
+                virtgpu_metrics.memory.append(memory)
+
+                pass
+            elif line.startswith("ts="):
+                current_ts = int(line.partition("=")[-1])
+                current_dt = datetime.datetime.fromtimestamp(current_ts)
+
+    return virtgpu_metrics
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_cpu_ram_metrics(dirname):
+    cpu_ram_usage = types.SimpleNamespace()
+    cpu_ram_usage.memory = []
+    cpu_ram_usage.cpu = []
+
+    if not artifact_paths.MAC_AI_CPU_RAM_USAGE:
+        return None
+
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_CPU_RAM_USAGE / "artifacts" / "cpu_ram_usage.txt")) as f:
+
+        for line in f.readlines():
+            if line.startswith("CPU usage"):
+                cpu = types.SimpleNamespace()
+                idle = line.split()[-2]
+                cpu.idle_pct = float(idle[:-1])
+                cpu_ram_usage.cpu.append(cpu)
+
+                pass
+            elif line.startswith("PhysMem"):
+                memory = types.SimpleNamespace()
+                mem_line = line.split()
+                unused = mem_line[-2]
+                memory.unused_mb = int(unused[:-1])
+                if unused.endswith("G"):
+                    memory.unused_mb *= 1024
+                cpu_ram_usage.memory.append(memory)
+                pass
+
+    return cpu_ram_usage
 
 
 @helpers_store_parsers.ignore_file_not_found

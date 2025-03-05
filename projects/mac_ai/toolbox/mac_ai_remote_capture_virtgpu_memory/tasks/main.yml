@@ -1,0 +1,40 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Set facts
+  set_fact:
+    debugfs_path: "/sys/kernel/debug/dri/a007000.virtio_mmio/virtio-gpu-host-visible-mm"
+    exit_file_path: "/tmp/mac_ai_remote_capture_virtio_memory_exit"
+
+- name: Tell the capture code to exit
+  shell: |
+    {{ mac_ai_remote_capture_virtgpu_memory_podman_machine_ssh_cmd }} \
+      touch {{ exit_file_path }}
+  failed_when: false
+
+- name: Stop here if only stopping
+  meta: end_play
+  when: mac_ai_remote_capture_virtgpu_memory_stop | bool
+
+- name: Ensure that the debugfs file exists
+  shell: |
+    {{ mac_ai_remote_capture_virtgpu_memory_podman_machine_ssh_cmd }} \
+          sudo cat "{{ debugfs_path }}"
+
+- name: Start capturing the power usage
+  shell: |
+    nohup {{ mac_ai_remote_capture_virtgpu_memory_podman_machine_ssh_cmd }} \
+      bash -c "
+        rm -f '{{ exit_file_path }}'
+        while true; do
+          echo '---'
+          echo ts=$(date +%s)
+          sudo cat '{{ debugfs_path }}'
+          [[ -f '{{ exit_file_path }}' ]] && break
+          sleep 1
+        done" \
+      > "{{ artifact_extra_logs_dir }}/artifacts/memory.txt" &

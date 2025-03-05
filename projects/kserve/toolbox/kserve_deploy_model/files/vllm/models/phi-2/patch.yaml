@@ -9,6 +9,7 @@ spec:
       args:
       - --uvicorn-log-level=debug
       - --trust-remote-code
+      - --num-scheduler-steps=1
       resources:
         requests:
           cpu: "2"

@@ -168,9 +168,12 @@ def _parse_predictor_pod(dirname):
                     container_status["state"]["running"]["startedAt"], helpers_store_parsers.K8S_TIME_FMT)
         except KeyError: pass # container not running
 
-
     predictor_pod.init_time = condition_times["Initialized"] - condition_times["PodScheduled"]
-    predictor_pod.load_time = condition_times["Ready"] - condition_times["Initialized"]
+
+    if 'kserve-container' not in containers_start_time:
+        predictor_pod.load_time = 0
+    else:
+        predictor_pod.load_time = condition_times["Ready"] - containers_start_time["kserve-container"]
 
     for container in pod["spec"]["containers"]:
         if container["name"] != "kserve-container": continue

@@ -29,6 +29,7 @@ def prepare(
     SECRET_ENV_KEY = config.project.get_config("secrets.dir.env_key")
     PRIVATE_KEY_FILENAME = config.project.get_config("secrets.private_key_filename")
     BASTION_HOST_FILENAME = config.project.get_config("secrets.bastion_host_filename")
+    BASTION_HOST_USER_FILENAME = config.project.get_config("secrets.bastion_host_user_filename")
     JUMP_HOST_FILENAME = config.project.get_config("secrets.jump_host_filename")
     SSH_FLAGS = config.project.get_config("ssh.flags")
 
@@ -38,7 +39,10 @@ def prepare(
         verbose = config.project.get_config("ssh_tunnel.verbose")
 
     with open(pathlib.Path(os.environ[SECRET_ENV_KEY]) / BASTION_HOST_FILENAME) as f:
-        bastion_user, _, bastion_host = f.readline().strip().rpartition("@") # strip any username in the hostname
+        bastion_host = f.readline().strip()
+
+    with open(pathlib.Path(os.environ[SECRET_ENV_KEY]) / BASTION_HOST_USER_FILENAME) as f:
+        bastion_user = f.readline().strip()
 
     if config.project.get_config("ssh_tunnel.enabled"):
         logging.info("ssh_tunnel.enabled is set, creating a tunnel to the bastion via the jump host")
@@ -48,6 +52,7 @@ def prepare(
             secret_env_key=SECRET_ENV_KEY,
             private_key_filename=PRIVATE_KEY_FILENAME,
             bastion_host_filename=BASTION_HOST_FILENAME,
+            bastion_host_user_filename=BASTION_HOST_USER_FILENAME,
             local_host_port=LOCAL_HOST_PORT,
 
             jump_host_filename=JUMP_HOST_FILENAME,
@@ -56,7 +61,7 @@ def prepare(
             ssh_flags=SSH_FLAGS,
         )
 
-        remote_host = "localhost"
+        remote_hostname = "localhost"
         remote_host_port = LOCAL_HOST_PORT
     else:
         logging.info("ssh_tunnel.enabled is disabled, connecting directly to the bastion")
@@ -71,7 +76,7 @@ def prepare(
         #     verbose,
         # )
 
-    os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"] = remote_host
+    os.environ["TOPSAIL_REMOTE_HOSTNAME"] = remote_hostname
 
     extra_vars_fd_path, extra_vars_file = utils.get_tmp_fd()
 
@@ -94,6 +99,7 @@ def open_tunnel(
         jump_host_filename="jumpci_jump_host",
         local_host_port=2500,
         bastion_host_filename="jumpci_bastion_host",
+        bastion_host_user_filename="jumpci_bastion_host_user",
         bastion_host_port=22,
         verbose=False,
         keep_open=True,
@@ -108,6 +114,7 @@ def open_tunnel(
       jump_host_filename: ssh name of the jump host
       local_host_port: port to open locally
       bastion_host_filename: name of the secret file with the hostname of the bastion host
+      bastion_host_user_filename: name of the secret file with the username of the bastion host
       bastion_host_port: port to redirect in the target host
       verbose: if enabled, shows the tunnel command
       keep_open: if disabled, closes the tunnel when the Python process exits
@@ -122,7 +129,10 @@ def open_tunnel(
         jump_host = f.readline().strip()
 
     with open(secret_dir / bastion_host_filename) as f:
-        bastion_user, _, bastion_host = f.readline().strip().rpartition("@") # strip any username in the hostname
+        bastion_host = f.readline().strip()
+
+    with open(secret_dir / bastion_host_user_filename) as f:
+        bastion_user = f.readline().strip()
 
     # warning: this command doesn't fail ...
     cmd = f"ssh {' '.join(ssh_flags)} \
@@ -165,11 +175,11 @@ def run_with_ansible_ssh_conf(cmd):
         ansible_ssh_config = yaml.safe_load(f)
 
     ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
-    host = os.environ["TOPSAIL_JUMP_CI_REMOTE_HOST"]
+    hostname = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
     port = ansible_ssh_config["ansible_port"]
     user = ansible_ssh_config["ansible_ssh_user"]
     private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
 
     logging.info(f"Running on the jump host: {cmd}")
-    run.run(f"ssh {ssh_flags} -t -i {private_key_path} {user}@{host} -p {port} -- {cmd}",
+    run.run(f"ssh {ssh_flags} -t -i {private_key_path} {user}@{hostname} -p {port} -- {cmd}",
             log_command=False)

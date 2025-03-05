@@ -1,0 +1,20 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_llama_cpp_run_model
+
+# Parameters
+# the base directory where to store things
+# Mandatory value
+mac_ai_remote_llama_cpp_run_model_base_work_dir:
+
+# the path to the llama-server binary
+# Mandatory value
+mac_ai_remote_llama_cpp_run_model_path:
+
+# the port number on which llama-cpp should listen
+# Mandatory value
+mac_ai_remote_llama_cpp_run_model_port:
+
+# the name of the model to fetch
+# Mandatory value
+mac_ai_remote_llama_cpp_run_model_name:

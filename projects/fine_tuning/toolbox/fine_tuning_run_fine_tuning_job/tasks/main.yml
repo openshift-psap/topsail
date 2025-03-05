@@ -1,7 +1,7 @@
 ---
 - name: Store the flag for rdma use
   set_fact:
-    rdma_nics: "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list}}"
+    rdma_nics: "{{ fine_tuning_run_fine_tuning_job_use_secondary_nic and fine_tuning_run_fine_tuning_job_use_secondary_nic | select('search', 'rdma') | list }}"
 
 - name: Create the src directory
   file:
@@ -34,7 +34,7 @@
     {{ fine_tuning_job_fms_config_template }}{%-
 elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
     {{ fine_tuning_job_ilab_config_template }}
-{%- endif %}"
+{%- endif %}" # noqa: jinja[spacing]
     dest: "{{ artifact_extra_logs_dir }}/src/config_base.yaml"
     mode: '0400'
 

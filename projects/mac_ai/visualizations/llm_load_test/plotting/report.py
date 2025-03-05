@@ -16,6 +16,8 @@ def register():
     TokensReport()
     CallDetailsReport()
     LtsReport()
+    GPUUsageReport()
+    CpuRamUsageReport()
 
 
 class CallDetailsReport():
@@ -52,6 +54,53 @@ class CallDetailsReport():
                                                legend_title="ITL,<br>in ms", show_timeline=True), args))
             header += report.Plot_and_Text(f"Latency details",
                                            report.set_config(dict(model_name=model_name, only_ttft=True), args))
+
+        return None, header
+
+
+class GPUUsageReport():
+    def __init__(self):
+        self.name = "report: GPU Usage"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for what in ["by power", "by idle", "by frequency"]:
+            plot_name = f"GPU Usage {what}"
+            header += [html.H1(plot_name)]
+            header += report.Plot_and_Text(plot_name, args)
+
+        for what in ["VirtGPU Memory Usage by used", "VirtGPU Memory Usage by free"]:
+            header += [html.H1(what)]
+            header += report.Plot_and_Text(what, args)
+
+        return None, header
+
+
+class CpuRamUsageReport():
+    def __init__(self):
+        self.name = "report: CPU RAM Usage"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+
+        for what in ["CPU Usage by idle time", "RAM Usage by unused"]:
+            header += [html.H1(what)]
+            header += report.Plot_and_Text(what, args)
 
         return None, header
 
@@ -118,7 +167,19 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
-        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(), args))
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, ttft=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, itl=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, tpot=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(ttft=True), args))
         header += html.Br()
         header += html.Br()
 
@@ -126,25 +187,9 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
-        header += report.Plot_and_Text(f"By Users", report.set_config(dict(what="throughput"), args))
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(tpot=True), args))
         header += html.Br()
         header += html.Br()
-
-        header += report.Plot_and_Text(f"By Users", report.set_config(dict(what="ttft"), args))
-        header += html.Br()
-        header += html.Br()
-
-        ordered_vars, settings, setting_lists, variables, cfg = args
-        for model_name in common.Matrix.settings.get("model_name", []):
-            header += [html.H1(f"Thoughput of model {model_name}")]
-
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, model_name=model_name), args))
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(model_name=model_name), args))
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(model_name=model_name, itl=True), args))
-            header += report.Plot_and_Text(f"By Users", report.set_config(dict(model_name=model_name, what="throughput"), args))
-            header += report.Plot_and_Text(f"By Users", report.set_config(dict(model_name=model_name, what="ttft"), args))
-            header += html.Br()
-            header += html.Br()
 
         return None, header
 

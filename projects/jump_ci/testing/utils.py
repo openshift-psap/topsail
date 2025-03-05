@@ -8,6 +8,23 @@ from projects.core.library import env, config
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
+def apply_preset_by_jobname():
+    if os.environ.get("OPENSHIFT_CI") != "true":
+        logging.info("apply_preset_by_jobname: not running in Openshift CI, skipping")
+        return
+
+    job_name = os.environ["JOB_NAME"]
+
+    presets = config.project.get_config("prepare.job_name_to_preset")
+    preset_name = presets.get(job_name)
+    if not preset_name:
+        logging.info("apply_preset_by_jobname: not preset to apply")
+        return
+
+    logging.info(f"apply_preset_by_jobname: applying the '{preset_name}' preset ...")
+    config.project.apply_preset(preset_name)
+
+
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     global initialized
@@ -19,7 +36,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     env.init()
     config.init(TESTING_THIS_DIR, apply_config_overrides=False)
     config.project.apply_config_overrides(ignore_not_found=True)
-
+    apply_preset_by_jobname()
     config.test_skip_list()
 
 

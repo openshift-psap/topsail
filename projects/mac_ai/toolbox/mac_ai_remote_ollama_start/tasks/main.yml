@@ -10,30 +10,30 @@
     pkill {{ mac_ai_remote_ollama_start_path | basename }}
   failed_when: false
 
-- name: Capture the logs of the ollama start
-  command:
-    cat /tmp/topsail_ollama.log
-  when: mac_ai_remote_ollama_start_stop | bool
-  ignore_errors: true
-
 - name: Stop here
   meta: end_play
   when: mac_ai_remote_ollama_start_stop | bool
 
-- name: Start the ollama server
-  shell:
-    nohup {{ mac_ai_remote_ollama_start_path }} start &> {{ artifact_extra_logs_dir }}/artifacts/topsail_ollama.log &
-  environment:
-    HOME: "{{ mac_ai_remote_ollama_start_base_work_dir }}"
+- name: Execute and retrieve the artifacts
+  block:
+  - name: Start the ollama server
+    shell:
+      nohup {{ mac_ai_remote_ollama_start_path }} start &> {{ artifact_extra_logs_dir }}/artifacts/ollama.log &
+    environment:
+      HOME: "{{ mac_ai_remote_ollama_start_base_work_dir }}"
 
-- name: Wait for ollama to start responding correctly
-  command:
-    curl -sSf localhost:11434
-  register: ollama_running_cmd
-  until: ollama_running_cmd.rc == 0
-  retries: 2
-  delay: 5
+  - name: Wait for ollama to start responding correctly
+    command:
+      curl -sSf localhost:11434
+    register: ollama_running_cmd
+    until: ollama_running_cmd.rc == 0
+    retries: 2
+    delay: 5
 
-- name: Capture the logs of the ollama start
-  command:
-    cat /tmp/topsail_ollama.log
+  always:
+  - name: Retrieve the artifact files locally
+    include_role:
+      name: remote_retrieve
+    vars:
+      remote_retrieve_path: "{{ artifact_extra_logs_dir }}"
+      remote_retrieve_dest: "{{ artifact_extra_logs_dir }}"

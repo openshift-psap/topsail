@@ -131,8 +131,6 @@ class RunAnsibleRole:
         # do not modify the `os.environ` of this Python process
         env = os.environ.copy()
 
-        remote_host = env.get("TOPSAIL_JUMP_CI_REMOTE_HOST")
-
         if env.get("ARTIFACT_DIR") is None:
             topsail_base_dir = pathlib.Path(env.get("TOPSAIL_BASE_DIR", "/tmp"))
             env["ARTIFACT_DIR"] = str(topsail_base_dir / f"topsail_{time.strftime('%Y%m%d')}")
@@ -221,19 +219,25 @@ class RunAnsibleRole:
         print(f"Using '{env['ANSIBLE_JSON_TO_LOGFILE']}' as ansible json log file.")
 
         # the play file must be in the directory where the 'roles' are
-        tmp_play_file = tempfile.NamedTemporaryFile("w+",
-                                                    prefix="tmp_play_{}_".format(artifact_extra_logs_dir.name),
-                                                    suffix=".yaml",
-                                                    dir=os.getcwd(), delete=False)
+        tmp_play_file = tempfile.NamedTemporaryFile(
+            "w+",
+            prefix="tmp_play_{}_".format(artifact_extra_logs_dir.name),
+            suffix=".yaml",
+            dir=os.getcwd(),
+            delete=False,
+        )
 
         generated_play = [
-            dict(name=f"Run {self.role_name} role",
-                 roles=[self.role_name],
-                 vars=self.ansible_vars,
-                 )
+            dict(
+                name=f"Run {self.role_name} role",
+                roles=[self.role_name],
+                vars=self.ansible_vars,
+            )
         ]
 
-        if remote_host:
+        remote_hostname = env.get("TOPSAIL_REMOTE_HOSTNAME")
+        if remote_hostname:
+            print(f"Using TOPSAIL_REMOTE_HOSTNAME={remote_hostname}") # value will be censored by OpenShift
             # gather only env values
             generated_play[0]["gather_facts"] = True
             generated_play[0]["gather_subset"] = ['env','!all','!min']
@@ -245,14 +249,16 @@ class RunAnsibleRole:
             inventory_f = os.fdopen(inventory_fd, 'w')
 
             host_properties = []
-            if "@" in remote_host:
-                host_properties.append("ansible_user="+remote_host.split("@")[0])
+            if remote_username := env.get("TOPSAIL_REMOTE_USERNAME"):
+                print(f"Using TOPSAIL_REMOTE_USERNAME={remote_username}") # value will be censored by OpenShift
+
+                host_properties.append("ansible_user="+remote_username)
 
             inventory_content = f"""
 [all:vars]
 
 [remote]
-{remote_host.rpartition("@")[-1]} {" ".join(host_properties)}
+{remote_hostname} {" ".join(host_properties)}
 """
 
             print(inventory_content, file=inventory_f)
@@ -269,10 +275,26 @@ class RunAnsibleRole:
                     extra_vars_dict = yaml.safe_load(f)
 
             except yaml.parser.ParserError:
-                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars}' as yaml ...")
+                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS='{extra_vars_fname}' as yaml ...")
                 raise
 
+            if not extra_vars_dict:
+                msg = f"TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS points to an empty file :/ ({extra_vars_dict})"
+                logging.fatal(msg)
+                raise ValueError(msg)
+
             generated_play[0]["vars"] |= extra_vars_dict
+
+        if extra_env_fname := env.get("TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"):
+            logging.info("Using the extra environment variables found in TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV")
+            try:
+                with open(extra_env_fname) as f:
+                    extra_env_dict = yaml.safe_load(f)
+
+                generated_play[0]["environment"] = extra_env_dict
+            except yaml.parser.ParserError:
+                logging.fatal(f"Could not parse file TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV='{extra_env_fname}' as yaml ...")
+                raise
 
         generated_play_path = artifact_extra_logs_dir / "_ansible.play.yaml"
         with open(generated_play_path, "w") as f:
@@ -289,7 +311,7 @@ class RunAnsibleRole:
             print(" ".join(map(shlex.quote, sys.argv)), file=f)
 
 
-        if remote_host:
+        if remote_hostname:
             cmd += ["--inventory-file", f"/proc/{os.getpid()}/fd/{inventory_fd}"]
 
         sys.stdout.flush()

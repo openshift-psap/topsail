@@ -7,16 +7,18 @@ from projects.core.library import env, config, run, configure_logging, export
 import remote_access, podman
 
 
-def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True):
+def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True, get_command=False):
     podman_bin = podman.get_podman_binary()
-    podman_machine_env = config.project.get_config("prepare.podman.machine.env", print=False)
+
+    cmd = f"{podman_bin} {'machine' if machine else ''} {cmd}"
+    if get_command:
+        return cmd
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"{podman_bin} {'machine' if machine else ''} {cmd}",
+        cmd,
         check=check,
         capture_stdout=capture_stdout,
-        extra_env=podman_machine_env,
     )
 
 #
@@ -34,8 +36,7 @@ def delete(base_work_dir):
 
 def stop(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
-    ret = _run(base_work_dir, f"stop {name}")
-    pass
+    return _run(base_work_dir, f"stop {name}")
 
 
 def start(base_work_dir):
@@ -50,6 +51,13 @@ def set_default_connection(base_work_dir):
 
 #
 
+
+def get_ssh_command_prefix():
+    name = config.project.get_config("prepare.podman.machine.name", print=False)
+    return _run(None, f"ssh {name}", get_command=True)
+
+#
+
 def info(base_work_dir):
     return _run(base_work_dir, "info")
 
@@ -57,8 +65,13 @@ def info(base_work_dir):
 def inspect(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     inspect_cmd = _run(base_work_dir, f"inspect {name}", capture_stdout=True, check=False)
-    if inspect_cmd.returncode == 125 and "VM does not exist" in inspect_cmd.stdout:
+    if inspect_cmd.returncode != 0:
+        if "VM does not exist" in inspect_cmd.stdout:
+            logging.info("podman_machine: inspect: VM does not exist")
+        else:
+            logging.error(f"podman_machine: inspect: unhandled status: {inspect_cmd.stdout.strip()}")
         return None
+
 
     return json.loads(inspect_cmd.stdout)
 
@@ -80,6 +93,7 @@ def configure_and_start(base_work_dir, force_restart=True):
 
     if force_restart and not was_stopped:
         stop(base_work_dir)
+        was_stopped = True
 
     if was_stopped:
         configure(base_work_dir)

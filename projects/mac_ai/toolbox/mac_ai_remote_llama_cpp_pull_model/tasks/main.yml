@@ -1,0 +1,39 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Execute and retrieve the artifacts
+  block:
+  - name: Start pulling the llama_cpp model
+    shell: |
+      cd "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}";
+
+      {{ mac_ai_remote_llama_cpp_pull_model_path }} \
+        {{ mac_ai_remote_llama_cpp_pull_model_name }} \
+        "say nothing" \
+        &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
+
+    environment:
+      HOME: "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}"
+
+  - name: Show the size of the model
+    shell:
+      du -sh "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ mac_ai_remote_llama_cpp_pull_model_name }}"
+  rescue:
+  - name: Show the logs of the server
+    command:
+      cat {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log
+
+  - name: Fail
+    fail: msg="Failed to load the model"
+
+  always:
+  - name: Retrieve the artifact files locally
+    include_role:
+      name: remote_retrieve
+    vars:
+      remote_retrieve_path: "{{ artifact_extra_logs_dir }}"
+      remote_retrieve_dest: "{{ artifact_extra_logs_dir }}"

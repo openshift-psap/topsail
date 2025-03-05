@@ -12,6 +12,16 @@ if [[ "${JOB_NAME:-}" == *"jump-ci" && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" !
     TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST=true
 fi
 
+needs_cluster_access=true
+if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]] \
+       || [[ "${TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST:-}" == true ]] \
+       || [[ -z "${KUBECONFIG:-}" ]] \
+       || grep -q "NOT A KUBECONFIG" "$KUBECONFIG";
+then
+    echo "Cluster access not needed. Disabling the access verifications."
+    needs_cluster_access=false
+fi
+
 save_run_logs() {
     LOG_FILE=$ARTIFACT_DIR/run.log
     if [[ -f "$LOG_FILE" ]]; then
@@ -97,9 +107,13 @@ prechecks() {
         fi
     fi
 
-    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" == true ]]; then
-        echo "Running in TOPSAIL light image. Skipping some cluster access checks."
-    else
+    if [[ "$needs_cluster_access" == true ]]; then
+        if ! which oc &>/dev/null;
+        then
+            echo "oc not found, this is unexpected in the CI image. Can't continue."
+            false
+        fi
+
         if ! oc version 2>/dev/null; then
             if [[ -z "${KUBECONFIG:-}" ]]
             then
@@ -112,12 +126,6 @@ prechecks() {
                 false
             fi
             echo "Using KUBECONFIG=${KUBECONFIG}"
-        fi
-
-        if ! which oc &>/dev/null;
-        then
-            echo "oc not found, this is unexpected in the CI image. Can't continue."
-            false
         fi
     fi
 
@@ -144,7 +152,7 @@ prechecks() {
         curl -sSf "$PR_COMMENTS_URL" -o "${ARTIFACT_DIR}/pull_request-comments.json" || echo "WARNING: Failed to download the PR comments from $PR_COMMENTS_URL"
     fi
 
-    if [[ "${TOPSAIL_LIGHT_IMAGE:-}" != true ]]; then
+    if [[ "${needs_cluster_access}" == true ]]; then
         # check that the OCP cluster can be reached
         ocp_version=$(oc version -o json | jq --raw-output '.openshiftVersion' || true)
         if [[ -z "$ocp_version" ]]; then
@@ -165,8 +173,7 @@ postchecks() {
         find "$ARTIFACT_DIR" -name FAILURE | sort | xargs -I% bash -c "(echo -n '% | '  ; cat %)" \; > "$ARTIFACT_DIR/FAILURES"
         touch "$ARTIFACT_DIR/FAILURES"
 
-        # in the jump-ci jobs, don't test the FLAKE if outside of the jump host
-        if [[ "${TOPSAIL_JUMP_CI_OUTSIDE_JUMP_HOST:-}" != true ]]; then
+        if [[ "${needs_cluster_access}" == true ]]; then
             if ! oc version >/dev/null 2>&1; then
                 mkdir -p "$ARTIFACT_DIR/_FLAKE"
                 echo "Cluster unreachable" >> "$ARTIFACT_DIR/_FLAKE/cluster_unreachable"
@@ -283,7 +290,6 @@ wait_term() {
         echo "run: child PID known wait_term handler. Forwarning the signal to ${target} ..."
         kill -${term_kill_needed} "${term_child_pid}" 2>/dev/null
     fi
-    echo "run: waiting for the child process $$..."
     wait ${term_child_pid} 2>/dev/null
     trap - TERM INT
 

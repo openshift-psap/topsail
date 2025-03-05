@@ -40,7 +40,8 @@ class Remote:
             dest,
             force=False,
             executable=False,
-            tarball=True,
+            tarball=False,
+            zip=False,
     ):
         """
         Downloads a file in a remote host
@@ -51,6 +52,7 @@ class Remote:
           force: force the download
           executable: if true, make the file executable
           tarball: if true, untar the tarball
+          zip: if true, unzip the zipball (currently only on MacOS)
         """
 
         return RunAnsibleRole(locals())
@@ -69,5 +71,35 @@ class Remote:
           path: the location of the files in the remote system
           dest: the location where to save the files
         """
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("remote_build_image")
+    @AnsibleMappedParams
+    def build_image(
+            self,
+            base_directory,
+            container_file,
+            image,
+            podman_cmd="podman",
+            prepare_script=None,
+            container_file_is_local=False,
+            build_args={},
+    ):
+        """
+        Builds a podman image
+
+        Args:
+          base_directory: the location of the directory to build. If None, uses an empty temp dir
+          container_file: the path the container_file to build
+          image: the name of the image to build
+          podman_cmd: the command to invoke to run podman
+          prepare_script: if specified, a script to execute before building the image
+          container_file_is_local: if true, copy the containerfile from the local system
+          build_args: dict of build args kv to pass to podman build.
+        """
+
+        if container_file_is_local and base_directory:
+            raise ValueError("Cannot have a --base_directory when --container_file_is_local is set")
 
         return RunAnsibleRole(locals())

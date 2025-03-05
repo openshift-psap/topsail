@@ -246,7 +246,7 @@ class _yaml_file_get():
             if missing != ...:
                 return missing
 
-            raise KeyError(f"Key '{key}' not found in {self.filename} ...")
+            raise KeyError(f"Key '{key}' not found in {self.yaml_file} ...")
 
         return match[0].value
 

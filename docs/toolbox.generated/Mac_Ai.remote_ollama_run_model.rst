@@ -9,7 +9,7 @@
 mac_ai remote_ollama_run_model
 ==============================
 
-Pulls a model with ollama, on a remote host
+Runs a model with ollama, on a remote host
 
 
 

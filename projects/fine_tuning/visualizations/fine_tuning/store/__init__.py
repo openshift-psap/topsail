@@ -83,6 +83,7 @@ is_important_file = local_store.is_important_file
 def _rewrite_settings(settings_dict):
     settings_dict.pop("hyper_parameters.raw_lists", None)
     settings_dict.pop("hyper_parameters", None)
+    settings_dict.pop("hyper_parameters.skip_if", None)
 
     return settings_dict
 

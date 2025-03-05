@@ -9,7 +9,7 @@
 
 - name: Compute the path of the directory to retrieve
   set_fact:
-    remote_dir_path: "{% if cluster_lock_dir is defined %}{{ cluster_lock_dir }}{% else %}{{ '/tmp/topsail_'+jump_ci_retrieve_artifacts_cluster}}{% endif %}/{{ jump_ci_retrieve_artifacts_remote_dir }}"
+    remote_dir_path: "{% if cluster_lock_dir is defined %}{{ cluster_lock_dir }}{% else %}{{ '/tmp/topsail_' + jump_ci_retrieve_artifacts_cluster }}{% endif %}/{{ jump_ci_retrieve_artifacts_remote_dir }}"
 
 - name: Get the size of the directory to retrieve
   command:

@@ -1,0 +1,11 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_capture_virtgpu_memory
+
+# Parameters
+# the command to execute to enter the VM host
+# Mandatory value
+mac_ai_remote_capture_virtgpu_memory_podman_machine_ssh_cmd:
+
+# if true, only stop the capture
+mac_ai_remote_capture_virtgpu_memory_stop: false

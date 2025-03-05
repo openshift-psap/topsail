@@ -18,41 +18,7 @@ from projects.matrix_benchmarking.library import visualize
 
 import prepare_mac_ai, test_mac_ai
 
-TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
-
-POD_VIRT_SECRET_PATH = pathlib.Path(os.environ.get("POD_VIRT_SECRET_PATH", "/env/POD_VIRT_SECRET_PATH/not_set"))
-
-initialized = False
-def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
-    global initialized
-    if initialized:
-        logging.debug("Already initialized.")
-        return
-    initialized = True
-
-    env.init()
-    config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
-
-    if not ignore_secret_path:
-        if not POD_VIRT_SECRET_PATH.exists():
-            raise RuntimeError(f"Path with the secrets (POD_VIRT_SECRET_PATH={POD_VIRT_SECRET_PATH}) does not exists.")
-
-        run.run(f'sha256sum "$POD_VIRT_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
-
-
-def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):
-    def decorator(fct):
-        @functools.wraps(fct)
-        def wrapper(*args, **kwargs):
-            init(ignore_secret_path, apply_preset_from_pr_args)
-            exit_code = fct(*args, **kwargs)
-            logging.info(f"exit code of {fct.__qualname__}: {exit_code}")
-            if exit_code is None:
-                exit_code = 0
-            raise SystemExit(exit_code)
-
-        return wrapper
-    return decorator
+from entrypoint import entrypoint
 
 # ---
 
@@ -62,7 +28,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
 
-    prepare_mac_ai.prepare()
+    return prepare_mac_ai.prepare()
 
 
 @entrypoint()
@@ -98,13 +64,13 @@ def generate_plots_from_pr_args():
 
 
 @entrypoint()
-def cleanup_cluster(mute=False):
+def cleanup_ci(mute=False):
     """
     Restores the cluster to its original state
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    prepare_mac_ai.cleanup_cluster()
+    prepare_mac_ai.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)
@@ -117,7 +83,7 @@ def export_artifacts(artifacts_dirname):
     export.export_artifacts(artifacts_dirname)
 
 
-@entrypoint()
+@entrypoint(apply_preset_from_pr_args=False)
 def matbench_run_with_deploy():
     """
     Runs one test as part of a MatrixBenchmark benchmark, includuing the deployment phase
@@ -126,7 +92,7 @@ def matbench_run_with_deploy():
     test_mac_ai.matbench_run_one(with_deploy=True)
 
 
-@entrypoint()
+@entrypoint(apply_preset_from_pr_args=False)
 def matbench_run_without_deploy():
     """
     Runs one test as part of a MatrixBenchmark benchmark, excluding the deployment phase (llm-load-test only)
@@ -142,7 +108,7 @@ class Entrypoint:
     """
 
     def __init__(self):
-        self.pre_cleanup_ci = cleanup_cluster
+        self.pre_cleanup_ci = cleanup_ci
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 

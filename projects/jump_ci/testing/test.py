@@ -189,6 +189,7 @@ def jump_ci(command):
                     remote_dir=f"test/{command}/artifacts",
                     local_dir=f"../{pathlib.Path(test_artifacts_dirname).name}", # copy to the main artifact directory
                     mute_stdout=True,
+                    mute_stderr=True,
                 )
 
             if failed and config.project.get_config("multi_run.stop_on_error"):

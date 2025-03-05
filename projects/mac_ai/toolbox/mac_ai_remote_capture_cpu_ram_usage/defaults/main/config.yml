@@ -1,0 +1,7 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_capture_cpu_ram_usage
+
+# Parameters
+# if true, only stop the capture
+mac_ai_remote_capture_cpu_ram_usage_stop: false

@@ -79,12 +79,15 @@ def _dict_to_run_toolbox_args(args_dict):
     return " ".join(args)
 
 
-def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=None, mute_stdout=None, check=None, **kwargs):
+def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=None, mute_stdout=None, mute_stderr=None, check=None, **kwargs):
     if run_kwargs is None:
         run_kwargs = {}
 
     if mute_stdout:
         run_kwargs["capture_stdout"] = True
+
+    if mute_stderr:
+        run_kwargs["capture_stderr"] = True
 
     if check is not None:
         run_kwargs["check"] = check
@@ -188,7 +191,7 @@ def run_and_catch(exc, fct, *args, **kwargs):
     if exc: raise exc
     """
     if not (exc is None or isinstance(exc, Exception)):
-        raise ValueException(f"exc={exc} should be None or an Exception")
+        raise ValueError(f"exc={exc} should be None or an Exception ({exc.__class__})")
 
     try:
         fct(*args, **kwargs)

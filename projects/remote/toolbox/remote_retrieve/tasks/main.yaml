@@ -9,4 +9,6 @@
     dest: "{{ remote_retrieve_dest }}"
     mode: "pull"
     recursive: true
+    owner: false
+    perms: false
   no_log: true # too verbose

@@ -139,6 +139,15 @@
       loop_var: component
     retries: 60
     delay: 10
+  - name: Wait for the DSC object to be ready
+    shell: |
+      # To determine the overall readiness of the DataScienceCluster
+
+      oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath="{.status.phase}"
+    register: dscluster_phase
+    retries: 60
+    until: dscluster_phase.stdout == "Ready"
+    delay: 10
   always:
   - name: Capture the DataScienceCluster state
     shell:

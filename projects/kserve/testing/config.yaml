@@ -29,6 +29,9 @@ ci_presets:
   cluster_dgx:
     clusters.sutest.compute.machineset.type: "DGX A100-40GB"
 
+  cluster_4xh100:
+    clusters.sutest.compute.machineset.type: "PSAP 4xH100"
+
   cluster_icelake:
     clusters.sutest.compute.machineset.type: "Icelake"
 
@@ -235,31 +238,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: llama-2-13b-chat-hf
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: mpt-7b-instruct2
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: mistral-7b-instruct-v02
-      testing:
-        size: small
-        max_concurrency: 32
-    - name: llama-3-70b-instruct
-      testing:
-        size: large
-    - name: codellama-34b-instruct-hf
-      testing:
-        size: large
-    - name: granite-3b-code-instruct
-      testing:
-        size: small
-    - name: granite-8b-code-instruct
-      testing:
-        size: small
-        max_concurrency: 64
     - name: granite-20b-code-instruct
       testing:
         size: large
@@ -303,6 +281,11 @@ ci_presets:
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
+    - name: granite-3-0-8b-instruct
+      model: granite-3.0-8b-instruct
+      testing:
+        size: small
+        max_concurrency: 64
     - name: llama-3-8b-instruct
       testing:
        size: small
@@ -328,9 +311,6 @@ ci_presets:
     - name: mixtral-8x7b
       testing:
         size: large
-    - name: granite-3b-code-instruct
-      testing:
-        size: small
     - name: granite-8b-code-instruct
       testing:
         size: small
@@ -462,6 +442,7 @@ secrets:
 
 clusters:
   metal_profiles:
+    l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_4xh100
     p42-h03-dgx.rdu3.labs.perfscale.redhat.com: cluster_dgx
     e26-h23-000-r650: cluster_icelake
     bb37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
@@ -522,9 +503,9 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.16@sha256:b56bdb89d8804c71e02068d08569ea2f27397a812e533d81428f89f18324f292
+    tag: rhoai-2.17@sha256:d5223103d49934a96a896310c57777b149dba99c472b3574e3d6c4805d58172f
     channel: fast
-    version: 2.16.0
+    version: 2.17.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false
@@ -549,6 +530,15 @@ prepare:
       namespaces:
       - knative-eventing
       - knative-serving
+    kserve_mode: [serverless]
+  - name: authorino-operator
+    catalog: redhat-operators
+    namespace: all
+    cleanup:
+      crds:
+      - authconfigs.authorino.kuadrant.io
+      - authorinos.operator.authorino.kuadrant.io
+    kserve_mode: [raw, serverless]
   cleanup:
     enabled: true
     crds:
@@ -662,10 +652,14 @@ tests:
         endpoint: null # only used with openai plugin
       dataset_size:
         small:
+          min_input_tokens: 0
+          min_output_tokens: 0
           max_input_tokens: 2047
           max_output_tokens: 1024
           max_sequence_tokens: 2048
         large:
+          min_input_tokens: 0
+          min_output_tokens: 0
           max_input_tokens: 3500
           max_output_tokens: 800
           max_sequence_tokens: 3500
