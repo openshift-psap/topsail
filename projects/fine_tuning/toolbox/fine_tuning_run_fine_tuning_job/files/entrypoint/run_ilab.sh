@@ -102,4 +102,9 @@ then
 fi
 echo "TORCHRUN FINISHED after $SECONDS seconds | $(date)"
 
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    # NOTE: Write here the code to copy any file you want to export to the test artifacts
+    cp /mnt/output/model/training_params_and_metrics_global0.json "$RETRIEVE"
+fi
+
 exit $ret
