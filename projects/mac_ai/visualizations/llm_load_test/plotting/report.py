@@ -167,7 +167,19 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
-        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(), args))
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, ttft=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, itl=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, tpot=True), args))
+        header += html.Br()
+        header += html.Br()
+
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(ttft=True), args))
         header += html.Br()
         header += html.Br()
 
@@ -175,25 +187,9 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
-        header += report.Plot_and_Text(f"By Users", report.set_config(dict(what="throughput"), args))
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(tpot=True), args))
         header += html.Br()
         header += html.Br()
-
-        header += report.Plot_and_Text(f"By Users", report.set_config(dict(what="ttft"), args))
-        header += html.Br()
-        header += html.Br()
-
-        ordered_vars, settings, setting_lists, variables, cfg = args
-        for model_name in common.Matrix.settings.get("model_name", []):
-            header += [html.H1(f"Thoughput of model {model_name}")]
-
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, model_name=model_name), args))
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(model_name=model_name), args))
-            header += report.Plot_and_Text(f"Throughput", report.set_config(dict(model_name=model_name, itl=True), args))
-            header += report.Plot_and_Text(f"By Users", report.set_config(dict(model_name=model_name, what="throughput"), args))
-            header += report.Plot_and_Text(f"By Users", report.set_config(dict(model_name=model_name, what="ttft"), args))
-            header += html.Br()
-            header += html.Br()
 
         return None, header
 
