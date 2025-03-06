@@ -117,7 +117,7 @@ class Config:
 
             self.set_config(key, value, print=False)
 
-    def get_config(self, jsonpath, default_value=..., warn=True, print=True):
+    def get_config(self, jsonpath, default_value=..., warn=True, print=True, handled_secretly=False):
         try:
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
         except IndexError as ex:
@@ -128,6 +128,22 @@ class Config:
 
             logging.error(f"get_config: {jsonpath} --> {ex}")
             raise KeyError(f"Key '{jsonpath}' not found in {self.config_path}")
+
+        if isinstance(value, str) and value.startswith("*$@"):
+            print = False
+
+            if not handled_secretly:
+                msg = f"{jsonpath} -> {value} is a secret dereference, but get_config(..., handled_secretly=False). Aborting"
+                logging.fatal(msg)
+                raise ValueError(msg)
+
+            ref_key = value.removeprefix("*$@")
+            ref_value = self.get_config(ref_key, print=False)
+
+            secret_dir = pathlib.Path(os.environ[self.get_config("secrets.dir.env_key", print=False)])
+            secret_value = (secret_dir / ref_value).read_text().strip()
+
+            value = secret_value
 
         if print:
             logging.info(f"get_config: {jsonpath} --> {value}")
