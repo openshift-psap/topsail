@@ -8,12 +8,7 @@ import utils
 
 def prepare():
     from prepare_mac_ai import CRC_MAC_AI_SECRET_PATH
-    base_work_dir = config.project.get_config("remote_host.base_work_dir", print=False)
-    if base_work_dir.startswith("@"):
-        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(base_work_dir[1:], print=False)) as f:
-            base_work_dir = pathlib.Path(f.read().strip())
-
-    base_work_dir = pathlib.Path(base_work_dir)
+    base_work_dir = pathlib.Path(config.project.get_config("remote_host.base_work_dir", handled_secretly=True))
 
     #
 
@@ -29,19 +24,12 @@ def prepare():
 
     #
 
-    remote_hostname = config.project.get_config("remote_host.hostname")
-    if remote_hostname.startswith("@"):
-        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_hostname[1:])) as f:
-            remote_hostname = f.read().strip()
-
-    remote_username = config.project.get_config("remote_host.username")
-    if remote_username.startswith("@"):
-        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_username[1:])) as f:
-            remote_username = f.read().strip()
-
+    remote_hostname = config.project.get_config("remote_host.hostname", handled_secretly=True)
+    remote_username = config.project.get_config("remote_host.username", handled_secretly=True)
 
     os.environ["TOPSAIL_REMOTE_HOSTNAME"] = remote_hostname
     os.environ["TOPSAIL_REMOTE_USERNAME"] = remote_username
+
     #
 
     extra_vars_fd_path, extra_vars_file = utils.get_tmp_fd()
@@ -52,17 +40,14 @@ def prepare():
 
     extra_env_fd_path, extra_env_file = utils.get_tmp_fd()
     env = config.project.get_config("remote_host.env") or {}
+
     for k, v in env.copy().items():
         if not v:
             del env[k]
             continue
 
-        if not v.startswith("@"): continue
-        cfg_key = v[1:]
-        if cfg_key == "secrets.base_work_dir":
-            env[k] = str(base_work_dir)
-        else:
-            env[k] = config.project.get_config()
+        if not v.startswith("*$@"): continue
+        env[k] = config.project.get_config(f"remote_host.env.{k}", handled_secretly=True).strip()
 
     yaml.dump(env, extra_env_file)
     extra_env_file.flush()
@@ -70,14 +55,10 @@ def prepare():
     os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"] = extra_env_fd_path
 
     #
-    private_key_path = config.project.get_config("remote_host.private_key_path")
-    if private_key_path.startswith("@"):
-        private_key_path = CRC_MAC_AI_SECRET_PATH / config.project.get_config(private_key_path[1:])
+
+    private_key_path = CRC_MAC_AI_SECRET_PATH / config.project.get_config("remote_host.private_key_filename")
 
     remote_hostport = config.project.get_config("remote_host.port")
-    if isinstance(remote_hostport, str) and remote_hostport.startswith("@"):
-        with open(CRC_MAC_AI_SECRET_PATH / config.project.get_config(remote_hostport[1:])) as f:
-            remote_hostport = int(f.read().strip())
 
     ssh_flags = config.project.get_config("remote_host.ssh_flags")
 

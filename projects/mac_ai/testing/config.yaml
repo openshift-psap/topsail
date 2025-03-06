@@ -35,11 +35,11 @@ secrets:
 
 remote_host:
   run_locally: false
-  private_key_path: "@secrets.private_key_path"
-  hostname: "@secrets.hostname"
-  username: "@secrets.username"
+  private_key_filename: "@secrets.private_key_path" # in the secret dir
+  hostname: "*$@secrets.hostname"
+  username: "*$@secrets.username"
   port: 22
-  base_work_dir: "@secrets.base_work_dir"
+  base_work_dir: "*$@secrets.base_work_dir"
   ssh_flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
@@ -50,7 +50,7 @@ remote_host:
   podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
     PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
-    HOME: "@secrets.base_work_dir"
+    HOME: "*$@secrets.base_work_dir"
 
 prepare:
   cleanup_on_exit: false
@@ -69,7 +69,7 @@ prepare:
           path: images/llama_cpp.containerfile
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
-            LLAMA_CPP_VERSION: b4735
+            LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
         desktop_playground:
           url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
           # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images

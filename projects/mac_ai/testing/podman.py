@@ -15,8 +15,7 @@ def prepare_gv_from_gh_binary(base_work_dir):
         return
 
     system = config.project.get_config("remote_host.system")
-    src_file = config.project.get_config(f"prepare.podman.gvisor.repo.file") \
-        .replace("{@remote_host.system}", system)
+    src_file = config.project.get_config(f"prepare.podman.gvisor.repo.file")
 
     source = "/".join([
         config.project.get_config("prepare.podman.gvisor.repo.url"),
@@ -42,9 +41,7 @@ def prepare_from_gh_binary(base_work_dir):
         logging.info(f"podman {version} already exists, not downloading it.")
         return podman_path
 
-    zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file") \
-        .replace("{@remote_host.arch}", arch) \
-        .replace("{@remote_host.system}", system)
+    zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file")
 
     source = "/".join([
         config.project.get_config("prepare.podman.repo.url"),
