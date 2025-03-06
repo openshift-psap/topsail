@@ -119,7 +119,7 @@ def prepare_llm_load_test(base_work_dir):
 
     dest = base_work_dir / "llm-load-test"
 
-    if dest.exists():
+    if remote_access.exists(dest):
         logging.info(f"{dest} already exists, not cloning it.")
         return
 
