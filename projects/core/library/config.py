@@ -284,6 +284,10 @@ class Config:
             if v.startswith("*$@"):
                 logging.info(f"resolve_references: secret reference, ignoring it here | {k} --> '{v}'")
                 continue
+            if v.startswith("*@"):
+                msg = f"resolve_references: '*@' references not supported (not sure how to handle it wrt to secrets) --> {k}: {v}"
+                logging.fatal(msg)
+                raise ValueError(msg)
 
             if v.startswith("@"):
                 ref_key = v[1:]
