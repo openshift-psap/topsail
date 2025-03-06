@@ -186,21 +186,16 @@ def test_inference(platform):
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
-    system = config.project.get_config(
-        "prepare.podman.container.system" if use_podman else "remote_host.system"
-    )
     model_name = config.project.get_config("test.model.name")
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
     inference_server_path = inference_server_mod.get_binary_path(
-        base_work_dir, system,
-        use_podman=use_podman,
+        base_work_dir, platform,
     )
 
     inference_server_native_path = inference_server_mod.get_binary_path(
-        base_work_dir, config.project.get_config("remote_host.system"),
-        use_podman=False,
+        base_work_dir, config.project.get_config("prepare.native_platform"),
     )
 
     inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))

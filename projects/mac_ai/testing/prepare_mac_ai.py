@@ -38,10 +38,10 @@ def prepare():
         logging.fatal(msg)
         raise ValueError(msg)
 
-    native_system = config.project.get_config("remote_host.system")
+    native_system = config.project.get_config("prepare.native_platform")
     inference_server_binaries = {}
 
-    for system in config.project.get_config("prepare.systems"):
+    for system in config.project.get_config("prepare.platforms"):
         inference_server_binaries[system] = inference_server_mod.prepare_binary(base_work_dir, system)
 
     inference_server_native_binary = inference_server_binaries[native_system]
