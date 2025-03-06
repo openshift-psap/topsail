@@ -319,7 +319,9 @@ def matbench_run(matrix_source_keys, with_deploy):
 
         failed = matbenchmark.run_benchmark(args)
         if failed:
-            logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
+            msg = f"_run_test_matbenchmarking: matbench benchmark failed :/"
+            logging.error(msg)
+            raise RuntimeError(msg)
 
 
 def matbench_run_one(with_deploy):
