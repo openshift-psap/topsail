@@ -29,9 +29,6 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
     if python_bin := config.project.get_config("remote_host.python_bin"):
         llm_load_test_kwargs["python_cmd"] = python_bin
 
-    if (port := llm_load_test_kwargs["port"]) and isinstance(port, str) and port.startswith("@"):
-        llm_load_test_kwargs["port"] = config.project.get_config(port[1:])
-
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
         model_id = model_name,

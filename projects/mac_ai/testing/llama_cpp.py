@@ -206,13 +206,12 @@ def _get_binary_path(base_work_dir, system, use_podman):
     arch = config.project.get_config("remote_host.arch")
 
     file_name = config.project.get_config(f"prepare.llama_cpp.repo.{system}.file")
-    system_file = file_name.replace("{@prepare.llama_cpp.repo.version}", version).replace("{@remote_host.arch}", arch)
 
-    dest = base_work_dir / f"llama_cpp-{system}-{version}" / system_file
+    dest = base_work_dir / f"llama_cpp-{system}-{version}" / file_name
 
     llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
-    return llama_cpp_path, dest, system_file
+    return llama_cpp_path, dest, file_name
 
 
 def get_binary_path(base_work_dir, system, use_podman):
