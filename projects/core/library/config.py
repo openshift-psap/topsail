@@ -6,7 +6,8 @@ import yaml
 import shutil
 import subprocess
 import threading
-
+import re
+from collections import defaultdict
 import jsonpath_ng
 
 from . import env
@@ -175,7 +176,6 @@ class Config:
 
         self.config["overrides"] = variable_overrides
 
-
     def apply_preset_from_pr_args(self):
         for config_key in self.get_config("$", print=False).keys():
             if not config_key.startswith(PR_ARG_KEY): continue
@@ -242,6 +242,45 @@ class Config:
                 return profile
 
         return False
+
+    def resolve_references(self):
+        # https://stackoverflow.com/a/71159744
+        def flatten_nested_json(d: dict)-> dict:
+            auto_id_field = 'json_path'
+            jsonpath_ng.jsonpath.auto_id_field = auto_id_field
+            expr = jsonpath_ng.parse(f'$..*.{auto_id_field}')
+            pat = re.compile(r'(?:\.\[\d+]\.|\.)')
+            dd = defaultdict(list)
+            for m in expr.find(d):
+                if not isinstance(m.datum.value, (dict, list)):
+                    dd[pat.sub('.', m.value)].append(m.datum.value)
+            for k, v in dd.items():
+                if len(v) == 1:
+                    dd[k] = v[0]
+            return dict(dd)
+
+        flat_dict = flatten_nested_json(project.config)
+        for k, v in flat_dict.items():
+            safe_key  = ".".join([f'"{key}"' for key in k.split(".")])
+
+            if not isinstance(v, str): continue
+            if "@" not in v: continue
+            if v.startswith("*$@"):
+                logging.info(f"resolve_references: secret reference, ignoring it here | {k} --> '{v}'")
+                continue
+
+            if v.startswith("@"):
+                ref_key = v[1:]
+                new_value = self.get_config(ref_key)
+            else:
+                new_value = v
+                for ref in re.findall(r"\{@.*?\}", v):
+                    ref_key = ref.strip("{@}")
+                    ref_value = self.get_config(ref_key, print=False)
+                    new_value = new_value.replace(ref, ref_value)
+
+            self.set_config(safe_key, new_value, print=False)
+            logging.info(f"resolve_references: {k} ==> '{new_value}'")
 
 
 def _set_config_environ(testing_dir):
@@ -385,3 +424,7 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         project.apply_config_overrides(log=False)
 
     test_skip_list()
+
+    project.resolve_references()
+
+    pass
