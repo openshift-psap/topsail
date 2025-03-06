@@ -97,9 +97,9 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: 8
 
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 2
-    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: 32
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [2, 4, 8, 16, 32, 36, 40, 42, 44, 46]
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
-    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 512
+    tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 256
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
 
     tests.fine_tuning.test_extra_settings:
