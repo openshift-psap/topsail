@@ -212,6 +212,17 @@ test:
     virtgpu:
       enabled: true
 
+cleanup:
+  llm-load-test: true
+  llama_cpp:
+    image: true
+    files: true
+  models: true
+  podman_machine:
+    delete: true
+    reset: true
+  podman: true
+
 export_artifacts:
   enabled: false
 
