@@ -125,6 +125,9 @@ def test_all_platforms():
         test_inference(all_platforms)
     else:
         for platform in all_platforms:
+            if platform in config.project.get_config("test.platforms_to_skip", print=False):
+                continue
+
             config.project.set_config("test.platform", platform) # for the post-processing
             with env.NextArtifactDir(f"{platform}_test".replace("/", "_")):
                 with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
@@ -334,6 +337,10 @@ def matbench_run_one(with_deploy):
         config.project.set_config("test.matbenchmarking.enabled", False)
 
         platform = config.project.get_config("test.platform")
+
+        if platform in config.project.get_config("test.platforms_to_skip", print=False):
+            logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
+            return
 
         if with_deploy:
             test_inference(platform)
