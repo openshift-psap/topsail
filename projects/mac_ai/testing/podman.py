@@ -5,6 +5,20 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 import remote_access
 
+
+def cleanup(base_work_dir):
+    version = config.project.get_config(f"prepare.podman.repo.version", print=False)
+
+    dest = base_work_dir / f"podman-{version}"
+
+    if not remote_access.exists(dest, is_dir=True):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
+
+
 def prepare_gv_from_gh_binary(base_work_dir):
 
     podman_path, version = _get_repo_podman_path(base_work_dir)
@@ -115,6 +129,20 @@ def has_image(base_work_dir, image):
     ret = remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         f"{podman_bin} image inspect {image}",
+        check=False,
+        capture_stdout=True,
+        capture_stderr=True,
+    )
+
+    return ret.returncode == 0
+
+
+def rm_image(base_work_dir, image):
+    podman_bin = get_podman_binary()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_bin} image rm {image}",
         check=False,
         capture_stdout=True,
         capture_stderr=True,

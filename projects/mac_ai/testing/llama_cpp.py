@@ -82,22 +82,6 @@ def prepare_for_podman(base_work_dir, platform="podman/linux"):
     return FROM[build_from](base_work_dir, platform)
 
 
-def delete_podman_image_from_local_container_file(base_work_dir):
-    podman_cmd = podman_mod.get_podman_binary()
-
-    local_image_name = __get_local_image_name_from_local_container_file()
-
-    container_name = config.project.get_config("prepare.podman.container.name")
-
-    podman_mod.stop(base_work_dir, container_name)
-
-    return remote_access.run_with_ansible_ssh_conf(
-        base_work_dir,
-        f"{podman_cmd} image rm {local_image_name}",
-        capture_stdout=True,
-    )
-
-
 def prepare_podman_image_from_local_container_file(base_work_dir, platform="podman/linux"):
     local_image_name = __get_local_image_name_from_local_container_file()
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
@@ -267,6 +251,7 @@ def prepare_from_source(base_work_dir, platform):
 
     return llama_cpp_server_path
 
+
 def prepare_for_darwin(base_work_dir, platform):
     build_from = platform.rpartition("/")[-1]
 
@@ -361,7 +346,26 @@ def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
         check=False,
     )
 
+def cleanup_files(base_work_dir):
+    dest = base_work_dir / "llama_cpp"
 
+    if not remote_access.exists(dest, is_dir=True):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
+
+
+def cleanup_image(base_work_dir):
+    prepare_test(base_work_dir, use_podman=True)
+    local_image_name = __get_local_image_name_from_local_container_file()
+
+    if not podman_mod.has_image(base_work_dir, local_image_name):
+        logging.info(f"Image {local_image_name} does not exist, nothing to remove.")
+        return
+
+    return podman_mod.rm_image(base_work_dir, local_image_name)
 
 # ---
 
@@ -371,7 +375,7 @@ def rebuild_image(start=True):
     prepare_test(base_work_dir, use_podman=True)
 
     try:
-        delete_podman_image_from_local_container_file(base_work_dir)
+        cleanup_image(base_work_dir)
     except subprocess.CalledProcessError as e:
         if e.returncode == 1:
             logging.info("Couldn't delete the image: image not known. Ignoring.")
