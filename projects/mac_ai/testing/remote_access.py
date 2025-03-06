@@ -83,6 +83,8 @@ def run_with_ansible_ssh_conf(
         check=True,
         capture_stdout=False,
         capture_stderr=False,
+        chdir=None,
+        print_cmd=False,
 ):
     run_kwargs = dict(
         log_command=False,
@@ -107,13 +109,36 @@ def run_with_ansible_ssh_conf(
 
     logging.info(f"Running on the jump host: {cmd}")
 
-    base_env = dict(HOME=base_work_dir)
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
+        ansible_extra_env = yaml.safe_load(f)
 
-    env_values = " ".join(f"'{k}={v}'" for k, v in (base_env|extra_env).items())
-    env_cmd = f"env {env_values}"
+    export_cmd = "\n".join(f"export {k}='{v}'" for k, v in (ansible_extra_env|extra_env).items())
 
-    return run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- {env_cmd} {cmd}",
-                   **run_kwargs)
+    chdir_cmd = f"cd '{chdir}'" if chdir else "# no chdir"
+
+    tmp_file_path, tmp_file = utils.get_tmp_fd()
+
+    entrypoint_script = f"""
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+
+{export_cmd}
+
+{chdir_cmd}
+
+exec {cmd}
+    """
+
+    with open(tmp_file_path, "w") as f:
+        print(entrypoint_script, file=f)
+    if print_cmd:
+        print(entrypoint_script)
+
+    return run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
+                   "bash",
+                   **run_kwargs, stdin_file=tmp_file)
 
 def exists(path):
     if config.project.get_config("remote_host.run_locally", print=False):

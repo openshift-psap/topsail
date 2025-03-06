@@ -1,3 +1,9 @@
+__platforms: &all_platforms
+  - darwin/metal
+  - darwin/vulkan
+  - darwin/upstream
+  - podman/linux
+
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
   to_apply: []
@@ -12,7 +18,7 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: [podman/linux, native]
+    test.platform: *all_platforms
     test.model.name: llama3.2
 
     test.llm_load_test.matbenchmarking: false
@@ -58,9 +64,17 @@ prepare:
     repo:
       url: https://github.com/ggml-org/llama.cpp
       version: b4735
+      source:
+        cmake:
+          parallel: 5
+          common: -DGGML_CPU_ARM_ARCH=native
+          flavors:
+            metal: -DGGML_VULKAN=OFF  -DGGML_NATIVE=ON
+            vulkan: -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
       darwin:
-        file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
-        tarball: true
+        upstream:
+          file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
+          tarball: true
       podman/linux:
         build_from: local_container_file # desktop_playground
         command: # will be set in prepare_test
@@ -99,9 +113,13 @@ prepare:
     - virglrenderer
     - molten-vk
     - molten-vk-krunkit
+    - cmake
+    - shaderc
 
-  # the list of system binaries to prepare
-  systems: [darwin, podman/linux]
+  # the list of platform environments to prepare
+  platforms: *all_platforms
+
+  native_platform: darwin/upstream
 
   podman:
     repo:
@@ -140,7 +158,8 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: [darwin, podman/linux]
+  platform: podman/linux
+  platforms_to_skip: [darwin/upstream] # need to build it to download the models, but no need to test it every time
 
   inference_server:
     name: llama_cpp

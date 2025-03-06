@@ -109,6 +109,20 @@ def test(base_work_dir):
     )
 
 
+def has_image(base_work_dir, image):
+    podman_bin = get_podman_binary()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_bin} image inspect {image}",
+        check=False,
+        capture_stdout=True,
+        capture_stderr=True,
+    )
+
+    return ret.returncode == 0
+
+
 def start(base_work_dir, port):
     container_name = config.project.get_config("prepare.podman.container.name", print=False)
 
@@ -131,7 +145,6 @@ def start(base_work_dir, port):
         f"-v{base_work_dir}:{base_work_dir}:Z "
         f"-w {base_work_dir} "
         f"--name {container_name} "
-        f"--env OLLAMA_HOST=0.0.0.0:{port} "
         f"--env 'HOME={base_work_dir}' "
         f"-p {port}:{port} "
         + podman_device_cmd +
