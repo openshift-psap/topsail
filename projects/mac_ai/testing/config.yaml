@@ -25,6 +25,8 @@ ci_presets:
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
+    prepare.brew.capture_dependencies: true
+
   keep_running:
     test.inference_server.unload_on_exit: false
     test.inference_server.stop_on_exit: false
@@ -106,6 +108,8 @@ prepare:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
   brew:
+    install_dependencies: true
+    capture_dependencies: false
     dependencies:
     - krunkit
     - vulkan-headers
