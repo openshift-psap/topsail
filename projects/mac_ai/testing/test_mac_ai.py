@@ -338,7 +338,7 @@ def matbench_run_one(with_deploy):
 
         platform = config.project.get_config("test.platform")
 
-        if platform in config.project.get_config("test.platforms_to_skip", print=False):
+        if platform in (config.project.get_config("test.platforms_to_skip", print=False) or []):
             logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
             return
 
