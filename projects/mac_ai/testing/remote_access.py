@@ -140,11 +140,11 @@ exec {cmd}
                    "bash",
                    **run_kwargs, stdin_file=tmp_file)
 
-def exists(path, is_dir=False):
+def exists(path):
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.exists()
     base_work_dir = prepare()
-    test_flag = '-d' if is_dir else '-f'
+    test_flag = '-e'
 
     ret = run_with_ansible_ssh_conf(
         base_work_dir,

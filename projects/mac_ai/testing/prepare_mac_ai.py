@@ -107,7 +107,7 @@ def prepare():
 def cleanup_llm_load_test(base_work_dir):
     dest = base_work_dir / "llm-load-test"
 
-    if not remote_access.exists(dest, is_dir=True):
+    if not remote_access.exists(dest):
         logging.info(f"{dest} does not exists, nothing to remove.")
         return
 
