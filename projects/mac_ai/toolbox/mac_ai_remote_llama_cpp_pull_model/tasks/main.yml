@@ -14,7 +14,7 @@
       {{ mac_ai_remote_llama_cpp_pull_model_path }} \
         {{ mac_ai_remote_llama_cpp_pull_model_name }} \
         "say nothing" \
-        &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
+        2>/dev/null
 
     environment:
       HOME: "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}"
