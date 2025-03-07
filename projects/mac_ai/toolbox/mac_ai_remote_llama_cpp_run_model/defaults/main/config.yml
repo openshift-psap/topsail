@@ -19,5 +19,8 @@ mac_ai_remote_llama_cpp_run_model_port:
 # Mandatory value
 mac_ai_remote_llama_cpp_run_model_name:
 
+# the prefix to get the llama-server running
+mac_ai_remote_llama_cpp_run_model_prefix:
+
 # number of layers to store in VRAM
 mac_ai_remote_llama_cpp_run_model_ngl: 99

@@ -80,6 +80,7 @@ class Mac_Ai:
             path,
             port,
             name,
+            prefix="",
             ngl=99,
     ):
         """
@@ -87,6 +88,7 @@ class Mac_Ai:
 
         Args:
           base_work_dir: the base directory where to store things
+          prefix: the prefix to get the llama-server running
           path: the path to the llama-server binary
           port: the port number on which llama-cpp should listen
           name: the name of the model to fetch

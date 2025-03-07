@@ -38,6 +38,11 @@ Parameters
 * The name of the model to fetch
 
 
+``prefix``  
+
+* The prefix to get the llama-server running
+
+
 ``ngl``  
 
 * Number of layers to store in VRAM
