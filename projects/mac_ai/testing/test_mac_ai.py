@@ -210,7 +210,7 @@ def test_inference(platform):
     else:
         podman.stop(base_work_dir)
 
-    model_fname = prepare_mac_ai.model_to_fname(base_work_dir, model_name)
+    model_fname = prepare_mac_ai.model_to_fname(model_name)
     if not remote_access.exists(model_fname):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
 

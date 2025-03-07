@@ -19,9 +19,25 @@
     environment:
       HOME: "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}"
 
+  - name: Compute the name of the model file
+    command:
+      basename {{ mac_ai_remote_llama_cpp_pull_model_name }}
+    register: model_name_cmd
+
   - name: Show the size of the model
+    command:
+      du -sh "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}"
+
+  - name: Ensure that the parent directory exists
     shell:
-      du -sh "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ mac_ai_remote_llama_cpp_pull_model_name }}"
+      mkdir -p $(dirname "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ mac_ai_remote_llama_cpp_pull_model_dest }}")
+    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
+
+  - name: Move the model file to its dest location
+    command:
+      mv "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}" "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
+    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
+
   rescue:
   - name: Show the logs of the server
     command:

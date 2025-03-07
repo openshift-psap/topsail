@@ -91,7 +91,7 @@ def prepare():
 
     model = config.project.get_config("test.model.name")
 
-    model_fname = model_to_fname(base_work_dir, model)
+    model_fname = model_to_fname(model)
     if not remote_access.exists(model_fname):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
 
@@ -149,6 +149,6 @@ def cleanup_models(base_work_dir):
         remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {dest}")
 
 
-def model_to_fname(base_work_dir, model):
+def model_to_fname(model):
     model_cache_dir = config.project.get_config("test.model.cache_dir")
     return pathlib.Path(model_cache_dir) / pathlib.Path(model).name
