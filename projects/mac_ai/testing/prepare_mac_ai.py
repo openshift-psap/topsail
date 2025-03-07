@@ -81,13 +81,13 @@ def prepare():
         logging.fatal(msg)
         raise ValueError(msg)
 
-    native_system = config.project.get_config("prepare.native_platform")
+    native_platform = config.project.get_config("prepare.native_platform")
     inference_server_binaries = {}
 
-    for system in config.project.get_config("prepare.platforms"):
-        inference_server_binaries[system] = prepare_inference_server_mod.prepare_binary(base_work_dir, system)
+    for platform in config.project.get_config("prepare.platforms"):
+        inference_server_binaries[platform] = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
 
-    inference_server_native_binary = inference_server_binaries[native_system]
+    inference_server_native_binary = inference_server_binaries[native_platform]
 
     model = config.project.get_config("test.model.name")
 
