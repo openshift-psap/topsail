@@ -116,17 +116,17 @@ def cleanup_llm_load_test(base_work_dir):
 
 
 def prepare_llm_load_test(base_work_dir):
-    # running this locally to know llm-load-test is configured in TOPSAIL's repo
-    submodule_status = run.run("git submodule status | grep llm-load-test", capture_stdout=True).stdout
-    submodule_commit = submodule_status.split()[0].replace("+", "")
-    submodule_path = submodule_status.split()[1]
-    repo_url= run.run(f"git config --file=.gitmodules submodule.'{submodule_path}'.url", capture_stdout=True).stdout.strip()
-
     dest = base_work_dir / "llm-load-test"
 
     if remote_access.exists(dest):
         logging.info(f"{dest} already exists, not cloning it.")
         return
+
+    # running this locally to know llm-load-test is configured in TOPSAIL's repo
+    submodule_status = run.run("git submodule status | grep llm-load-test", capture_stdout=True).stdout
+    submodule_commit = submodule_status.split()[0].replace("+", "")
+    submodule_path = submodule_status.split()[1]
+    repo_url= run.run(f"git config --file=.gitmodules submodule.'{submodule_path}'.url", capture_stdout=True).stdout.strip()
 
     run.run_toolbox(
         "remote", "clone",
