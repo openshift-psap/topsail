@@ -157,6 +157,7 @@ prepare:
 
     machine:
       enabled: true
+      force_configuration: false
       set_default: true
       name: podman-machine-default
       configuration:
