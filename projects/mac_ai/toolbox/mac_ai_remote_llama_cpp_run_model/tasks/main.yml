@@ -14,6 +14,7 @@
         --model {{ mac_ai_remote_llama_cpp_run_model_name }} \
         --host 0.0.0.0 \
         --port {{ mac_ai_remote_llama_cpp_run_model_port }} \
+        --n-gpu-layers {{ mac_ai_remote_llama_cpp_run_model_ngl }} \
         &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
         &
     environment:

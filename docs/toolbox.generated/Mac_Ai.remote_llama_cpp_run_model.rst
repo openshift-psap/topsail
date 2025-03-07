@@ -37,3 +37,10 @@ Parameters
 
 * The name of the model to fetch
 
+
+``ngl``  
+
+* Number of layers to store in VRAM
+
+* default value: ``99``
+

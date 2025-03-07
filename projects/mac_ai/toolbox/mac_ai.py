@@ -80,6 +80,7 @@ class Mac_Ai:
             path,
             port,
             name,
+            ngl=99,
     ):
         """
         Runs a model with llama_cpp, on a remote host
@@ -89,6 +90,7 @@ class Mac_Ai:
           path: the path to the llama-server binary
           port: the port number on which llama-cpp should listen
           name: the name of the model to fetch
+          ngl: number of layers to store in VRAM
         """
 
         return RunAnsibleRole(locals())
