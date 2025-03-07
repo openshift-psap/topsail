@@ -103,15 +103,17 @@ def configure_and_start(base_work_dir, force_restart=True):
     was_stopped = machine_state[0]["State"] == "stopped"
 
     if force_restart and not was_stopped:
-        stop(base_work_dir)
-        was_stopped = True
+        if config.project.get_config("prepare.podman.machine.force_configuration"):
+            stop(base_work_dir)
+            was_stopped = True
 
-    if was_stopped:
-        configure(base_work_dir)
-
-        start(base_work_dir)
-    else:
+    if not was_stopped:
         logging.info("podman machine already running. Skipping the configuration part.")
+        return
+
+    configure(base_work_dir)
+
+    start(base_work_dir)
 
     machine_state = inspect(base_work_dir)
     if not machine_state:

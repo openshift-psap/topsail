@@ -80,15 +80,19 @@ class Mac_Ai:
             path,
             port,
             name,
+            prefix="",
+            ngl=99,
     ):
         """
         Runs a model with llama_cpp, on a remote host
 
         Args:
           base_work_dir: the base directory where to store things
+          prefix: the prefix to get the llama-server running
           path: the path to the llama-server binary
           port: the port number on which llama-cpp should listen
           name: the name of the model to fetch
+          ngl: number of layers to store in VRAM
         """
 
         return RunAnsibleRole(locals())

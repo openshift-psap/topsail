@@ -5,13 +5,16 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import ollama, llama_cpp, utils, remote_access, podman_machine, brew, podman
+import prepare_llama_cpp, llama_cpp, utils, remote_access, podman_machine, brew, podman
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
+PREPARE_INFERENCE_SERVERS = dict(
+    llama_cpp=prepare_llama_cpp,
+)
+
 INFERENCE_SERVERS = dict(
-    ollama=ollama,
     llama_cpp=llama_cpp,
 )
 
@@ -23,7 +26,7 @@ def cleanup():
         cleanup_llm_load_test(base_work_dir)
 
     if config.project.get_config(f"cleanup.llama_cpp.files"):
-        llama_cpp.cleanup_files(base_work_dir)
+        prepare_llama_cpp.cleanup_files(base_work_dir)
 
     if config.project.get_config(f"cleanup.llama_cpp.image"):
         is_running = podman_machine.is_running(base_work_dir)
@@ -38,7 +41,7 @@ def cleanup():
                 is_running = None
 
         if is_running:
-            llama_cpp.cleanup_image(base_work_dir)
+            prepare_llama_cpp.cleanup_image(base_work_dir)
 
     if config.project.get_config(f"cleanup.podman_machine.delete"):
         is_running = podman_machine.is_running(base_work_dir)
@@ -70,19 +73,21 @@ def prepare():
     brew.install_dependencies(base_work_dir)
 
     inference_server_name = config.project.get_config("test.inference_server.name")
+    prepare_inference_server_mod = PREPARE_INFERENCE_SERVERS.get(inference_server_name)
     inference_server_mod = INFERENCE_SERVERS.get(inference_server_name)
-    if not inference_server_mod:
+
+    if not (prepare_inference_server_mod and inference_server_mod):
         msg = f"Invalid inference server ({inference_server_name}). Expected one of {', '.join(INFERENCE_SERVERS)}"
         logging.fatal(msg)
         raise ValueError(msg)
 
-    native_system = config.project.get_config("prepare.native_platform")
+    native_platform = config.project.get_config("prepare.native_platform")
     inference_server_binaries = {}
 
-    for system in config.project.get_config("prepare.platforms"):
-        inference_server_binaries[system] = inference_server_mod.prepare_binary(base_work_dir, system)
+    for platform in config.project.get_config("prepare.platforms"):
+        inference_server_binaries[platform] = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
 
-    inference_server_native_binary = inference_server_binaries[native_system]
+    inference_server_native_binary = inference_server_binaries[native_platform]
 
     model = config.project.get_config("test.model.name")
 
@@ -102,7 +107,7 @@ def prepare():
 def cleanup_llm_load_test(base_work_dir):
     dest = base_work_dir / "llm-load-test"
 
-    if not remote_access.exists(dest, is_dir=True):
+    if not remote_access.exists(dest):
         logging.info(f"{dest} does not exists, nothing to remove.")
         return
 
@@ -111,17 +116,17 @@ def cleanup_llm_load_test(base_work_dir):
 
 
 def prepare_llm_load_test(base_work_dir):
-    # running this locally to know llm-load-test is configured in TOPSAIL's repo
-    submodule_status = run.run("git submodule status | grep llm-load-test", capture_stdout=True).stdout
-    submodule_commit = submodule_status.split()[0].replace("+", "")
-    submodule_path = submodule_status.split()[1]
-    repo_url= run.run(f"git config --file=.gitmodules submodule.'{submodule_path}'.url", capture_stdout=True).stdout.strip()
-
     dest = base_work_dir / "llm-load-test"
 
     if remote_access.exists(dest):
         logging.info(f"{dest} already exists, not cloning it.")
         return
+
+    # running this locally to know llm-load-test is configured in TOPSAIL's repo
+    submodule_status = run.run("git submodule status | grep llm-load-test", capture_stdout=True).stdout
+    submodule_commit = submodule_status.split()[0].replace("+", "")
+    submodule_path = submodule_status.split()[1]
+    repo_url= run.run(f"git config --file=.gitmodules submodule.'{submodule_path}'.url", capture_stdout=True).stdout.strip()
 
     run.run_toolbox(
         "remote", "clone",

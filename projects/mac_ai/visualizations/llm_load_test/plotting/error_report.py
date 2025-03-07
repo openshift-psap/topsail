@@ -49,6 +49,21 @@ def _get_test_setup(entry):
     if artifacts_basedir:
         setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
 
+        if entry.results.file_links.server_logs:
+            setup_info += [html.Li(["Inference server:", html.A("execution logs", href=artifacts_basedir /entry.results.file_links.server_logs, target="_blank")])]
+        else:
+            setup_info += [html.Li(["Inference server:", "execution logs not available"])]
+
+        if entry.results.file_links.server_build_logs:
+            setup_info += [html.Li(
+                ["Server build logs:",
+                 html.Ul(
+                     [html.Li(html.A(name, href=artifacts_basedir / log_file, target="_blank")) for name, log_file in entry.results.file_links.server_build_logs.items()]
+                 )
+                ]
+            )]
+        else:
+            setup_info += [html.Li(["Server build logs:", "not available"])]
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 

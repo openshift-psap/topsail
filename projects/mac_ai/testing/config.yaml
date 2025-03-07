@@ -1,8 +1,9 @@
 __platforms: &all_platforms
+  - darwin/upstream
   - darwin/metal
   - darwin/vulkan
-  - darwin/upstream
-  - podman/linux
+  - podman/vulkan
+  - podman/no-gpu/kompute
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -65,19 +66,19 @@ prepare:
   llama_cpp:
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4735
+      version: b4688
       source:
         cmake:
           parallel: 5
           common: -DGGML_CPU_ARM_ARCH=native
           flavors:
-            metal: -DGGML_VULKAN=OFF  -DGGML_NATIVE=ON
-            vulkan: -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
+            metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
+            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
       darwin:
         upstream:
           file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
           tarball: true
-      podman/linux:
+      podman:
         build_from: local_container_file # desktop_playground
         command: # will be set in prepare_test
 
@@ -86,6 +87,10 @@ prepare:
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
             LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
+            LLAMA_CPP_CMAKE_FLAGS: # set at runtime from the flavor
+          flavors:
+            kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
+            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
         desktop_playground:
           url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
           # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
@@ -152,6 +157,7 @@ prepare:
 
     machine:
       enabled: true
+      force_configuration: false
       set_default: true
       name: podman-machine-default
       configuration:
@@ -162,7 +168,7 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman/linux
+  platform: podman/vulkan
   platforms_to_skip: [darwin/upstream] # need to build it to download the models, but no need to test it every time
 
   inference_server:

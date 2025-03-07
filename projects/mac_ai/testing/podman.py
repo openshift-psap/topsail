@@ -11,7 +11,7 @@ def cleanup(base_work_dir):
 
     dest = base_work_dir / f"podman-{version}"
 
-    if not remote_access.exists(dest, is_dir=True):
+    if not remote_access.exists(dest):
         logging.info(f"{dest} does not exists, nothing to remove.")
         return
 
