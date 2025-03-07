@@ -29,9 +29,6 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
     if python_bin := config.project.get_config("remote_host.python_bin"):
         llm_load_test_kwargs["python_cmd"] = python_bin
 
-    if (port := llm_load_test_kwargs["port"]) and isinstance(port, str) and port.startswith("@"):
-        llm_load_test_kwargs["port"] = config.project.get_config(port[1:])
-
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
         model_id = model_name,
@@ -128,6 +125,9 @@ def test_all_platforms():
         test_inference(all_platforms)
     else:
         for platform in all_platforms:
+            if platform in config.project.get_config("test.platforms_to_skip", print=False):
+                continue
+
             config.project.set_config("test.platform", platform) # for the post-processing
             with env.NextArtifactDir(f"{platform}_test".replace("/", "_")):
                 with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
@@ -189,21 +189,16 @@ def test_inference(platform):
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
-    system = config.project.get_config(
-        "prepare.podman.container.system" if use_podman else "remote_host.system"
-    )
     model_name = config.project.get_config("test.model.name")
 
     inference_server_mod.prepare_test(base_work_dir, use_podman)
 
     inference_server_path = inference_server_mod.get_binary_path(
-        base_work_dir, system,
-        use_podman=use_podman,
+        base_work_dir, platform,
     )
 
     inference_server_native_path = inference_server_mod.get_binary_path(
-        base_work_dir, config.project.get_config("remote_host.system"),
-        use_podman=False,
+        base_work_dir, config.project.get_config("prepare.native_platform"),
     )
 
     inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
@@ -324,7 +319,9 @@ def matbench_run(matrix_source_keys, with_deploy):
 
         failed = matbenchmark.run_benchmark(args)
         if failed:
-            logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
+            msg = f"_run_test_matbenchmarking: matbench benchmark failed :/"
+            logging.error(msg)
+            raise RuntimeError(msg)
 
 
 def matbench_run_one(with_deploy):
@@ -342,6 +339,10 @@ def matbench_run_one(with_deploy):
         config.project.set_config("test.matbenchmarking.enabled", False)
 
         platform = config.project.get_config("test.platform")
+
+        if platform in config.project.get_config("test.platforms_to_skip", print=False):
+            logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
+            return
 
         if with_deploy:
             test_inference(platform)

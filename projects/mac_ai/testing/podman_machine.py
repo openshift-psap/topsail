@@ -29,11 +29,6 @@ def init(base_work_dir):
 
     return inspect(base_work_dir)
 
-def delete(base_work_dir):
-    name = config.project.get_config("prepare.podman.machine.name", print=False)
-    return _run(base_work_dir, f"rm {name}")
-
-
 def stop(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     return _run(base_work_dir, f"stop {name}")
@@ -42,6 +37,14 @@ def stop(base_work_dir):
 def start(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     return _run(base_work_dir, f"start {name}")
+
+
+def rm(base_work_dir):
+    name = config.project.get_config("prepare.podman.machine.name", print=False)
+    return _run(base_work_dir, f"rm {name} --force")
+
+def reset(base_work_dir):
+    return _run(base_work_dir, f"reset --force")
 
 #
 
@@ -57,6 +60,14 @@ def get_ssh_command_prefix():
     return _run(None, f"ssh {name}", get_command=True)
 
 #
+
+def is_running(base_work_dir):
+    machine_state = inspect(base_work_dir)
+    if not machine_state:
+        return None
+
+    return machine_state[0]["State"] != "stopped"
+
 
 def info(base_work_dir):
     return _run(base_work_dir, "info")

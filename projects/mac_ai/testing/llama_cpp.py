@@ -70,7 +70,7 @@ def __get_local_image_name_from_desktop_playground(base_work_dir, repo_cfg, only
     return f"localhost/{image}:{tag}", dest
 
 
-def prepare_podman_image(base_work_dir, system="podman/linux"):
+def prepare_for_podman(base_work_dir, platform="podman/linux"):
     FROM = dict(
         desktop_playground=prepare_podman_image_from_desktop_playground,
         local_container_file=prepare_podman_image_from_local_container_file,
@@ -79,29 +79,18 @@ def prepare_podman_image(base_work_dir, system="podman/linux"):
     if build_from not in FROM:
         raise ValueError(f"{build_from} not in {', '.join(FROM.keys())}")
 
-    return FROM[build_from](base_work_dir, system)
+    return FROM[build_from](base_work_dir, platform)
 
 
-def delete_podman_image_from_local_container_file(base_work_dir):
-    podman_cmd = podman_mod.get_podman_binary()
-
-    local_image_name = __get_local_image_name_from_local_container_file()
-
-    container_name = config.project.get_config("prepare.podman.container.name")
-
-    podman_mod.stop(base_work_dir, container_name)
-
-    return remote_access.run_with_ansible_ssh_conf(
-        base_work_dir,
-        f"{podman_cmd} image rm {local_image_name}",
-        capture_stdout=True,
-    )
-
-
-def prepare_podman_image_from_local_container_file(base_work_dir, system="podman/linux"):
+def prepare_podman_image_from_local_container_file(base_work_dir, platform="podman/linux"):
     local_image_name = __get_local_image_name_from_local_container_file()
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.path")
     build_args = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.local_container_file.build_args")
+
+    if podman_mod.has_image(base_work_dir, local_image_name):
+        logging.info(f"Image {local_image_name} already exists, not rebuilding it.")
+        return
+
     run.run_toolbox(
         "remote", "build_image",
         podman_cmd=podman_mod.get_podman_binary(),
@@ -111,11 +100,11 @@ def prepare_podman_image_from_local_container_file(base_work_dir, system="podman
         container_file_is_local=True,
         image=local_image_name,
         build_args=build_args,
-        artifact_dir_suffix=pathlib.Path(container_file).name,
+        artifact_dir_suffix="_"+pathlib.Path(container_file).name,
     )
 
 
-def prepare_podman_image_from_desktop_playground(base_work_dir, system="podman/linux"):
+def prepare_podman_image_from_desktop_playground(base_work_dir, platform="podman/linux"):
     repo_cfg = config.project.get_config("prepare.llama_cpp.repo.'podman/linux'.desktop_playground")
     repo_url = repo_cfg["url"]
 
@@ -150,24 +139,25 @@ def prepare_podman_image_from_desktop_playground(base_work_dir, system="podman/l
     return local_image_name
 
 
-def prepare_from_gh_binary(base_work_dir, system="darwin"):
-    tarball = config.project.get_config(f"prepare.llama_cpp.repo.{system}.tarball")
+def prepare_from_binary(base_work_dir, platform="darwin"):
+    if not platform == "darwin/upstream":
+        raise ValueError(f"Expected the platform to be 'darwin/upstream', got '{platform}'")
+
+    tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.tarball")
     if not tarball:
         raise ValueError("llama_cpp on darwin should be a tarball :/")
 
-    use_podman = "podman" in system
-
-    llama_cpp_path, dest, system_file = _get_binary_path(base_work_dir, system, use_podman)
+    llama_cpp_path, dest, platform_file = _get_binary_path(base_work_dir, platform)
 
     source = "/".join([
         config.project.get_config("prepare.llama_cpp.repo.url"),
         "releases/download",
         config.project.get_config(f"prepare.llama_cpp.repo.version"),
-        system_file,
+        platform_file,
     ])
 
     if remote_access.exists(llama_cpp_path):
-        logging.info(f"llama_cpp {system} already exists, not downloading it.")
+        logging.info(f"llama_cpp {platform} already exists, not downloading it.")
         return llama_cpp_path
 
     run.run_toolbox(
@@ -180,22 +170,108 @@ def prepare_from_gh_binary(base_work_dir, system="darwin"):
     return llama_cpp_path
 
 
-def prepare_binary(base_work_dir, system):
-    PREPARE_BY_SYSTEM = {
-        "darwin": prepare_from_gh_binary,
-        "linux": prepare_from_gh_binary,
-        "podman/linux": prepare_podman_image,
-    }
+def prepare_from_source(base_work_dir, platform):
+    version = config.project.get_config(f"prepare.llama_cpp.repo.version")
 
-    prepare = PREPARE_BY_SYSTEM.get(system)
-    if not prepare:
-        raise ValueError(f"Invalid system to prepare: {system}. Expected one of {', '.join(PREPARE_BY_SYSTEM)}.")
+    file_name = f"{version}.tar.gz"
 
-    return prepare(base_work_dir, system)
+    dest = base_work_dir / "llama_cpp" / file_name
+
+    if not remote_access.exists(dest):
+        source = "/".join([
+            config.project.get_config("prepare.llama_cpp.repo.url"),
+            "archive/tags",
+            file_name
+        ])
+
+        run.run_toolbox(
+            "remote", "download",
+            source=source,
+            dest=dest,
+            tarball=True,
+        )
+
+    src_dir = dest.parent / f"llama.cpp-tags-{version}"
+    cmake_parallel = config.project.get_config("prepare.llama_cpp.repo.source.cmake.parallel")
+
+    flavor = platform.rpartition("/")[-1]
+    flavors_cmake_flags = config.project.get_config("prepare.llama_cpp.repo.source.cmake.flavors")
+    if flavor not in flavors_cmake_flags:
+        msg = f"Invalid llama-cpp compile flavor: {flavor}. Expected one of {', '.join(flavors_cmake_flags.keys())}."
+        logging.fatal(msg)
+        raise ValueError(msg)
+
+    build_dir = dest.parent / f"build-{platform.replace('/', '-')}-{version}"
+
+    llama_cpp_server_path = build_dir / "bin" / "llama-server"
+    if remote_access.exists(llama_cpp_server_path):
+        logging.info(f"{llama_cpp_server_path} already exists. Not recompiling it.")
+        return llama_cpp_server_path
+
+    cmake_flags = config.project.get_config("prepare.llama_cpp.repo.source.cmake.common")
+    cmake_flags += " " + flavors_cmake_flags[flavor]
+
+    with env.NextArtifactDir(f"build_llama_cpp_{flavor}"):
+        prepare_cmd = f"cmake -B {build_dir} {cmake_flags}"
+        build_cmd = f"cmake --build {build_dir} --config Release --parallel {cmake_parallel} | tee {build_dir}/build.log"
+
+        with open(env.ARTIFACT_DIR / "prepare.cmd", "a") as f:
+            print(prepare_cmd, file=f)
+
+        with open(env.ARTIFACT_DIR / "build.cmd", "a") as f:
+            print(build_cmd, file=f)
+
+        ret = remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            prepare_cmd,
+            chdir=src_dir,
+            capture_stdout=True,
+            check=False,
+        )
+
+        with open(env.ARTIFACT_DIR / "prepare.log", "w") as f:
+            print(ret.stdout, file=f)
+
+        if ret.returncode != 0:
+            raise RuntimeError(f"Failed to prepare llama-cpp/{flavor}. See {env.ARTIFACT_DIR}/prepare.log")
+
+        ret = remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            build_cmd,
+            chdir=src_dir,
+            capture_stdout=True,
+            check=False,
+        )
+
+        with open(env.ARTIFACT_DIR / "build.log", "w") as f:
+            print(ret.stdout, file=f)
+
+        if ret.returncode != 0:
+            raise RuntimeError(f"Failed to build llama-cpp/{flavor}. See {env.ARTIFACT_DIR}/build.log")
+
+    return llama_cpp_server_path
 
 
-def _get_binary_path(base_work_dir, system, use_podman):
-    if use_podman:
+def prepare_for_darwin(base_work_dir, platform):
+    build_from = platform.rpartition("/")[-1]
+
+    if build_from == "upstream":
+        return prepare_from_binary(base_work_dir, platform)
+    else:
+        return prepare_from_source(base_work_dir, platform)
+
+
+def prepare_binary(base_work_dir, platform):
+    if platform.startswith("darwin"):
+        return prepare_for_darwin(base_work_dir, platform)
+
+    if platform.startswith("podman"):
+        return prepare_for_podman(base_work_dir, platform)
+
+    raise ValueError(f"Invalid platform to prepare: {platform}. Expected one of darwin/*, podman/*.")
+
+def _get_binary_path(base_work_dir, platform):
+    if platform.startswith("podman"):
         podman_prefix = podman_mod.get_exec_command_prefix()
         container_command = config.project.get_config(f"prepare.llama_cpp.repo.'podman/linux'.command")
         command = f"{podman_prefix} {container_command}"
@@ -205,23 +281,29 @@ def _get_binary_path(base_work_dir, system, use_podman):
     version = config.project.get_config(f"prepare.llama_cpp.repo.version")
     arch = config.project.get_config("remote_host.arch")
 
-    file_name = config.project.get_config(f"prepare.llama_cpp.repo.{system}.file")
-    system_file = file_name.replace("{@prepare.llama_cpp.repo.version}", version).replace("{@remote_host.arch}", arch)
+    if platform == "darwin/upstream":
+        file_name = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.file")
+        dest = base_work_dir / "llama_cpp" / f"release-{platform}-{version}" / file_name
+        llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
-    dest = base_work_dir / f"llama_cpp-{system}-{version}" / system_file
+        return llama_cpp_path, dest, file_name
+    elif platform.startswith("darwin/"):
+        llama_cpp_path = base_work_dir / "llama_cpp" / f"build-{platform.replace('/', '-')}-{version}" / "bin" / "llama-server"
+        return llama_cpp_path, None, None
+    else:
+        pass
 
-    llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
-
-    return llama_cpp_path, dest, system_file
+    raise ValueError(f"Invalid platform: {platform}")
 
 
-def get_binary_path(base_work_dir, system, use_podman):
-    llama_cpp_path, _, _ = _get_binary_path(base_work_dir, system, use_podman)
+def get_binary_path(base_work_dir, platform):
+    llama_cpp_path, _, _ = _get_binary_path(base_work_dir, platform)
     return llama_cpp_path
 
 
 def pull_model(base_work_dir, llama_cpp_path, model):
     inference_server_port = config.project.get_config("test.inference_server.port")
+
     llama_cpp_path = llama_cpp_path.parent / 'llama-run'
 
     return run.run_toolbox(
@@ -264,7 +346,26 @@ def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
         check=False,
     )
 
+def cleanup_files(base_work_dir):
+    dest = base_work_dir / "llama_cpp"
 
+    if not remote_access.exists(dest, is_dir=True):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
+
+
+def cleanup_image(base_work_dir):
+    prepare_test(base_work_dir, use_podman=True)
+    local_image_name = __get_local_image_name_from_local_container_file()
+
+    if not podman_mod.has_image(base_work_dir, local_image_name):
+        logging.info(f"Image {local_image_name} does not exist, nothing to remove.")
+        return
+
+    return podman_mod.rm_image(base_work_dir, local_image_name)
 
 # ---
 
@@ -274,7 +375,7 @@ def rebuild_image(start=True):
     prepare_test(base_work_dir, use_podman=True)
 
     try:
-        delete_podman_image_from_local_container_file(base_work_dir)
+        cleanup_image(base_work_dir)
     except subprocess.CalledProcessError as e:
         if e.returncode == 1:
             logging.info("Couldn't delete the image: image not known. Ignoring.")
