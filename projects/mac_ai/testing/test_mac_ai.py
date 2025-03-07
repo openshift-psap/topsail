@@ -180,27 +180,25 @@ def capture_metrics(platform, stop=False):
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
+    prepare_inference_server_mod = prepare_mac_ai.PREPARE_INFERENCE_SERVERS.get(inference_server_name)
 
     base_work_dir = remote_access.prepare()
 
     do_matbenchmarking = config.project.get_config("test.llm_load_test.matbenchmarking")
 
-    use_podman = platform.startswith("podman")
-
-    inference_server_mod.prepare_test(base_work_dir, use_podman)
+    prepare_inference_server_mod.prepare_test(base_work_dir, platform)
 
     model_name = config.project.get_config("test.model.name")
 
-    inference_server_mod.prepare_test(base_work_dir, use_podman)
-
-    inference_server_path = inference_server_mod.get_binary_path(
+    inference_server_path = prepare_inference_server_mod.get_binary_path(
         base_work_dir, platform,
     )
 
-    inference_server_native_path = inference_server_mod.get_binary_path(
+    inference_server_native_path = prepare_inference_server_mod.get_binary_path(
         base_work_dir, config.project.get_config("prepare.native_platform"),
     )
 
+    use_podman = platform.startswith("podman")
     inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
     inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
 

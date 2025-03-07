@@ -16,13 +16,14 @@ RUN dnf install -y python3-dnf-plugin-versionlock && \
 WORKDIR /app/llama.cpp
 
 ARG LLAMA_CPP_VERSION="b4735"
+ARG LLAMA_CPP_CMAKE_FLAGS="-DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native"
 
 RUN git clone https://github.com/ggml-org/llama.cpp src -b ${LLAMA_CPP_VERSION}
 RUN mkdir build
 RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
 
 RUN cd src && \
-    cmake -S . -B ../build -DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native && \
+    cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} && \
     cmake --build ../build/
 
 # ---
