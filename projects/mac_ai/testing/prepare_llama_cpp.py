@@ -220,7 +220,7 @@ def prepare_from_source(base_work_dir, platform):
 
         ret = remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
-            f"echo 'Build flags: {cmake_flags}' > {build_dir}/build.flags.log",
+            f"mkdir -p '{build_dir}' && echo 'Build flags: {cmake_flags}' > {build_dir}/build.flags.log",
             chdir=src_dir,
             capture_stdout=True,
         )
@@ -306,7 +306,7 @@ def _get_binary_path(base_work_dir, platform):
     else:
         pass
 
-    raise ValueError(f"Invalid platform: {platform}")
+    raise ValueError(f"Invalid platform: {platform}. Expected darwin/native, podman/*, darwin/*")
 
 
 def get_binary_path(base_work_dir, platform):

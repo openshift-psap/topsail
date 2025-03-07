@@ -41,10 +41,13 @@ def stop(base_work_dir, llama_cpp_path, use_podman=False):
 
 def run_model(base_work_dir, llama_cpp_path, model, use_podman=False):
     inference_server_port = config.project.get_config("test.inference_server.port")
+    # dirty, I know ...
+    prefix, _, path = str(llama_cpp_path).rpartition(" ")
     run.run_toolbox(
         "mac_ai", "remote_llama_cpp_run_model",
         base_work_dir=base_work_dir,
-        path=llama_cpp_path,
+        prefix=prefix,
+        path=path,
         name=model,
         port=inference_server_port,
     )
