@@ -72,14 +72,13 @@ def safety_checks():
     if not multi_test:
         return # safe
 
-    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")\
-        or not config.project.get_config("test.inference_server.stop_on_exit")
+    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")
+
     if not keep_running:
         return # safe
 
     # unsafe
-    msg = ("test.inference_server.unload_on_exit and test.inference_server.stop_on_exit "
-           "cannot be enabled when running multiple tests")
+    msg = ("test.inference_server.unload_on_exit cannot be enabled when running multiple tests")
     logging.fatal(msg)
     raise ValueError(msg)
 
@@ -89,7 +88,7 @@ def test():
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         base_work_dir = remote_access.prepare()
-        #podman_machine.configure_and_start(base_work_dir, force_restart=False)
+        podman_machine.configure_and_start(base_work_dir, force_restart=False)
 
     failed = False
     try:
@@ -200,7 +199,6 @@ def test_inference(platform):
 
     use_podman = platform.startswith("podman")
     inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
-    inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
 
     brew.capture_dependencies_version(base_work_dir)
 
@@ -212,9 +210,11 @@ def test_inference(platform):
     else:
         podman.stop(base_work_dir)
 
-    if config.project.get_config("test.inference_server.always_pull"):
-        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
-    inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
+    model_fname = prepare_mac_ai.model_to_fname(base_work_dir, model_name)
+    if not remote_access.exists(model_fname):
+        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
+
+    inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
 
     try:
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
@@ -225,9 +225,6 @@ def test_inference(platform):
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
             exc = run.run_and_catch(exc, inference_server_mod.unload_model, base_work_dir, inference_server_path, model_name, use_podman=use_podman)
-
-        if config.project.get_config("test.inference_server.stop_on_exit"):
-            exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir)

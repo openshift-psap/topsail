@@ -175,12 +175,11 @@ test:
     name: llama_cpp
     port: 11434
     unload_on_exit: true
-    stop_on_exit: true
-    always_pull: true
 
   model:
     name: llama3.2
     size: small
+    cache_dir: models
 
   llm_load_test:
     enabled: true
