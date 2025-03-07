@@ -50,7 +50,7 @@
          -f "{{ remote_build_image_container_file }}" \
       {% endif %}
       {% for k, v in remote_build_image_build_args.items() -%}
-         --build-arg {k}={v} \
+         --build-arg "{{ k }}={{v }}" \
       {% endfor -%}
          . \
         > "{{ artifact_extra_logs_dir }}/artifacts/build.log"
