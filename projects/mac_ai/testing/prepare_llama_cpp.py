@@ -91,8 +91,10 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     if cmake_flags is None:
         raise ValueError(f"Invalid image flavor: {platform}. Expected one of {', '.join(flavors)}")
 
+    cmake_parallel = config.project.get_config("prepare.llama_cpp.repo.source.cmake.parallel")
+    cmake_build_flags = f"--parallel {cmake_parallel}"
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
-
+    build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, flavor])
 
     run.run_toolbox(

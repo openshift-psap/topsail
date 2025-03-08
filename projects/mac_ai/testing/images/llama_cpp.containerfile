@@ -17,6 +17,7 @@ WORKDIR /app/llama.cpp
 
 ARG LLAMA_CPP_VERSION="b4735"
 ARG LLAMA_CPP_CMAKE_FLAGS="-DGGML_VULKAN=ON  -DGGML_NATIVE=OFF -DGGML_CPU_ARM_ARCH=native"
+ARG LLAMA_CPP_CMAKE_BUILD_FLAGS="--parallel 4"
 
 RUN git clone https://github.com/ggml-org/llama.cpp src -b ${LLAMA_CPP_VERSION}
 RUN mkdir build
@@ -25,7 +26,7 @@ RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
 RUN mkdir -p ../build && echo 'Build flags: ${LLAMA_CPP_CMAKE_FLAGS}' > ../build/build.flags.log
 RUN cd src && \
     cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} | tee ../build/build.prepare.log && \
-    cmake --build ../build/ | tee ../build/build.compile.log
+    cmake --build ../build/ ${LLAMA_CPP_CMAKE_BUILD_FLAGS} | tee ../build/build.compile.log
 
 # ---
 
