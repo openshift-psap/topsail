@@ -88,6 +88,7 @@ prepare:
           build_args:
             LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
             LLAMA_CPP_CMAKE_FLAGS: # set at runtime from the flavor
+            LLAMA_CPP_CMAKE_BUILD_FLAGS: # set at runtime with --parallel
           flavors:
             kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
