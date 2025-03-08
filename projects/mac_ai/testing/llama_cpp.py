@@ -18,9 +18,7 @@ from entrypoint import entrypoint
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 
-def pull_model(base_work_dir, llama_cpp_path, model):
-    inference_server_port = config.project.get_config("test.inference_server.port")
-
+def pull_model(base_work_dir, llama_cpp_path, model, dest):
     llama_cpp_path = llama_cpp_path.parent / 'llama-run'
 
     return run.run_toolbox(
@@ -28,18 +26,11 @@ def pull_model(base_work_dir, llama_cpp_path, model):
         base_work_dir=base_work_dir,
         path=llama_cpp_path,
         name=model,
+        dest=dest,
     )
 
 
-def start(base_work_dir, llama_cpp_path, use_podman=False):
-    logging.info("Nothing to do to start the llama_cpp server")
-
-
-def stop(base_work_dir, llama_cpp_path, use_podman=False):
-    logging.info("Nothing to do to stop the llama_cpp server")
-
-
-def run_model(base_work_dir, llama_cpp_path, model, use_podman=False):
+def run_model(base_work_dir, llama_cpp_path, model):
     inference_server_port = config.project.get_config("test.inference_server.port")
     # dirty, I know ...
     prefix, _, path = str(llama_cpp_path).rpartition(" ")

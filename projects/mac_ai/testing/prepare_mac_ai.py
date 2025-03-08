@@ -91,12 +91,9 @@ def prepare():
 
     model = config.project.get_config("test.model.name")
 
-    inference_server_mod.start(base_work_dir, inference_server_native_binary)
-    try:
-        inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model)
-    finally:
-        inference_server_mod.stop(base_work_dir, inference_server_native_binary)
-
+    model_fname = model_to_fname(model)
+    if not remote_access.exists(model_fname):
+        inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
@@ -148,5 +145,10 @@ def cleanup_models(base_work_dir):
         models = [models]
 
     for model in models:
-        dest = base_work_dir / model
+        dest = base_work_dir / model_to_fname(model)
         remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {dest}")
+
+
+def model_to_fname(model):
+    model_cache_dir = config.project.get_config("test.model.cache_dir")
+    return pathlib.Path(model_cache_dir) / pathlib.Path(model).name
