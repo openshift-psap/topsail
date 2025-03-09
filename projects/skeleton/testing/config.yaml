@@ -18,9 +18,8 @@ ci_presets:
   light:
     extends: [light_cluster]
 
-  prom:
-    tests.capture_prometheus: true
-    tests.sleep_duration: 1
+  quick:
+    tests.sleep_duration: 0
 
   metal:
     clusters.sutest.is_metal: true
@@ -110,7 +109,7 @@ clusters:
           effect: NoSchedule
   cleanup_on_exit: false
 tests:
-  capture_prometheus: false
+  capture_prometheus: true
   sleep_duration: 5 # minutes
 matbench:
   preset: null

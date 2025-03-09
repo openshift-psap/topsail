@@ -1,10 +1,3 @@
-__platforms: &all_platforms
-  - darwin/upstream
-  - darwin/metal
-  - darwin/vulkan
-  - podman/vulkan
-  - podman/no-gpu/kompute
-
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
   to_apply: []
@@ -19,14 +12,12 @@ ci_presets:
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: *all_platforms
+    test.platform: [podman/linux, native]
     test.model.name: llama3.2
 
     test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-
-    prepare.brew.capture_dependencies: true
 
   keep_running:
     test.inference_server.unload_on_exit: false
@@ -44,11 +35,11 @@ secrets:
 
 remote_host:
   run_locally: false
-  private_key_filename: "@secrets.private_key_path" # in the secret dir
-  hostname: "*$@secrets.hostname"
-  username: "*$@secrets.username"
+  private_key_path: "@secrets.private_key_path"
+  hostname: "@secrets.hostname"
+  username: "@secrets.username"
   port: 22
-  base_work_dir: "*$@secrets.base_work_dir"
+  base_work_dir: "@secrets.base_work_dir"
   ssh_flags:
   - -oStrictHostKeyChecking=no
   - -oUserKnownHostsFile=/dev/null
@@ -59,26 +50,18 @@ remote_host:
   podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
     PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
-    HOME: "*$@secrets.base_work_dir"
+    HOME: "@secrets.base_work_dir"
 
 prepare:
   cleanup_on_exit: false
   llama_cpp:
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4688
-      source:
-        cmake:
-          parallel: 5
-          common: -DGGML_CPU_ARM_ARCH=native
-          flavors:
-            metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
-            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
+      version: b4735
       darwin:
-        upstream:
-          file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
-          tarball: true
-      podman:
+        file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
+        tarball: true
+      podman/linux:
         build_from: local_container_file # desktop_playground
         command: # will be set in prepare_test
 
@@ -86,11 +69,7 @@ prepare:
           path: images/llama_cpp.containerfile
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
-            LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
-            LLAMA_CPP_CMAKE_FLAGS: # set at runtime from the flavor
-          flavors:
-            kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
-            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
+            LLAMA_CPP_VERSION: b4735
         desktop_playground:
           url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
           # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
@@ -113,8 +92,6 @@ prepare:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
   brew:
-    install_dependencies: true
-    capture_dependencies: false
     dependencies:
     - krunkit
     - vulkan-headers
@@ -122,13 +99,9 @@ prepare:
     - virglrenderer
     - molten-vk
     - molten-vk-krunkit
-    - cmake
-    - shaderc
 
-  # the list of platform environments to prepare
-  platforms: *all_platforms
-
-  native_platform: darwin/upstream
+  # the list of system binaries to prepare
+  systems: [darwin, podman/linux]
 
   podman:
     repo:
@@ -157,7 +130,6 @@ prepare:
 
     machine:
       enabled: true
-      force_configuration: false
       set_default: true
       name: podman-machine-default
       configuration:
@@ -168,18 +140,18 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman/vulkan
-  platforms_to_skip: [darwin/upstream] # need to build it to download the models, but no need to test it every time
+  platform: [darwin, podman/linux]
 
   inference_server:
     name: llama_cpp
     port: 11434
     unload_on_exit: true
+    stop_on_exit: true
+    always_pull: true
 
   model:
     name: llama3.2
     size: small
-    cache_dir: models
 
   llm_load_test:
     enabled: true
@@ -216,17 +188,6 @@ test:
       rate: 1000
     virtgpu:
       enabled: true
-
-cleanup:
-  llm-load-test: true
-  llama_cpp:
-    image: true
-    files: true
-  models: true
-  podman_machine:
-    delete: true
-    reset: true
-  podman: true
 
 export_artifacts:
   enabled: false

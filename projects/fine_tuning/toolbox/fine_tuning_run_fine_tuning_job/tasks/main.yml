@@ -193,6 +193,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
       set -o pipefail;
 
       oc create cm {{ job_name_safe }}-nic-mapping \
+      -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
        --from-file="{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml" \
        --dry-run=client \
        -oyaml \

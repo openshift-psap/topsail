@@ -117,17 +117,13 @@ def test_ci():
         test_artifact_dir_p = [None]
         _run_test(test_artifact_dir_p)
     finally:
-        capture_prometheus = config.project.get_config("tests.capture_prometheus")
-
         try:
-            if not capture_prometheus:
-                logging.warning("Not generating the visualization as the Prometheus capture was disabled.")
-            elif test_artifact_dir_p[0] is None:
-                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
-            else:
+            if test_artifact_dir_p[0] is not None:
                 next_count = env.next_artifact_index()
                 with env.TempArtifactDir(env.ARTIFACT_DIR / f"{next_count:03d}__plots"):
                     generate_plots(test_artifact_dir_p[0])
+            else:
+                logging.warning("Not generating the visualization as the test artifact directory hasn't been created.")
 
         finally:
             if config.project.get_config("clusters.cleanup_on_exit"):
