@@ -122,6 +122,7 @@ class Config:
             logging.info(f"jsonpath: {jsonpath}")
             logging.info(f"json_pars: {jsonpath_ng.parse(jsonpath)}")
             logging.info(f"self.config: {self.config}")
+            logging.info(f"jsonpath_ng.parse(jsonpath).find(self.config): {jsonpath_ng.parse(jsonpath).find(self.config)}")
             value = jsonpath_ng.parse(jsonpath).find(self.config)[0].value
         except IndexError as ex:
             if default_value != ...:
