@@ -289,6 +289,10 @@ class Config:
                 logging.fatal(msg)
                 raise ValueError(msg)
 
+            if not (v.startswith("@") or "{@" in v):
+                # don't go further if the derefence anchor isn't found
+                continue
+
             if v.startswith("@"):
                 ref_key = v[1:]
                 new_value = self.get_config(ref_key)
@@ -299,8 +303,12 @@ class Config:
                     ref_value = self.get_config(ref_key, print=False)
                     new_value = new_value.replace(ref, ref_value)
 
-            self.set_config(safe_key, new_value, print=False)
-            logging.info(f"resolve_references: {k} ==> '{new_value}'")
+                logging.info(f"resolve_references: {k} ==> '{new_value}'")
+            try:
+                self.set_config(safe_key, new_value, print=False)
+            except:
+                logging.error(f"resolve_references: failed to replace '{safe_key}' ==> {new_key}")
+                raise
 
 
 def _set_config_environ(testing_dir):
