@@ -23,7 +23,7 @@ def report_index_to_html(report_index):
     print("<ul>")
     for glob in ("*.html", "*.json"):
         for report_file in sorted(report_dir.glob(glob)):
-            if file_path.name in IGNORED_FILES: continue
+            if report_file.name in IGNORED_FILES: continue
 
             add_entry(report_file)
 

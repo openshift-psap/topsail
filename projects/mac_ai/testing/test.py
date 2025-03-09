@@ -70,7 +70,7 @@ def cleanup_ci(mute=False):
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    prepare_mac_ai.cleanup()
+    return prepare_mac_ai.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)

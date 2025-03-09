@@ -5,15 +5,28 @@
     state: directory
     mode: '0755'
 
+- name: Try to capture the build logs
+  shell: |
+    {{ mac_ai_remote_llama_cpp_run_model_prefix }} bash -c 'ls $(dirname "{{ mac_ai_remote_llama_cpp_run_model_path }}")/../*.log'
+  ignore_errors: true
+  register: build_logs_cmd
+
+- name: Capture the build logs
+  when: build_logs_cmd.rc == 0
+  shell: |
+    {{ mac_ai_remote_llama_cpp_run_model_prefix }} cat "{{ item }}" > "{{ artifact_extra_logs_dir }}/artifacts/$(basename '{{ item }}')"
+  with_items: "{{ build_logs_cmd.stdout_lines }}"
+
 - name: Execute and retrieve the artifacts
   block:
   - name: Start serving the llama_cpp model
     shell:
       cd "{{ mac_ai_remote_llama_cpp_run_model_base_work_dir }}";
-      nohup {{ mac_ai_remote_llama_cpp_run_model_path }} \
+      nohup {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} \
         --model {{ mac_ai_remote_llama_cpp_run_model_name }} \
         --host 0.0.0.0 \
         --port {{ mac_ai_remote_llama_cpp_run_model_port }} \
+        --n-gpu-layers {{ mac_ai_remote_llama_cpp_run_model_ngl }} \
         &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
         &
     environment:
