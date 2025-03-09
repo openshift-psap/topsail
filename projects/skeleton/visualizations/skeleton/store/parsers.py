@@ -61,9 +61,6 @@ def parse_once(results, dirname):
 
 
 def _extract_metrics(dirname):
-    if not artifact_paths.CLUSTER_DUMP_PROM_DB_DIR:
-        return None
-
     db_files = {
         "sutest": (str(artifact_paths.CLUSTER_DUMP_PROM_DB_DIR / "prometheus.t*"), workload_prom.get_sutest_metrics()),
     }

@@ -29,6 +29,9 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
     if python_bin := config.project.get_config("remote_host.python_bin"):
         llm_load_test_kwargs["python_cmd"] = python_bin
 
+    if (port := llm_load_test_kwargs["port"]) and isinstance(port, str) and port.startswith("@"):
+        llm_load_test_kwargs["port"] = config.project.get_config(port[1:])
+
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
         model_id = model_name,
@@ -72,13 +75,14 @@ def safety_checks():
     if not multi_test:
         return # safe
 
-    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")
-
+    keep_running = not config.project.get_config("test.inference_server.unload_on_exit")\
+        or not config.project.get_config("test.inference_server.stop_on_exit")
     if not keep_running:
         return # safe
 
     # unsafe
-    msg = ("test.inference_server.unload_on_exit cannot be enabled when running multiple tests")
+    msg = ("test.inference_server.unload_on_exit and test.inference_server.stop_on_exit "
+           "cannot be enabled when running multiple tests")
     logging.fatal(msg)
     raise ValueError(msg)
 
@@ -88,7 +92,7 @@ def test():
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         base_work_dir = remote_access.prepare()
-        podman_machine.configure_and_start(base_work_dir, force_restart=False)
+        #podman_machine.configure_and_start(base_work_dir, force_restart=False)
 
     failed = False
     try:
@@ -124,9 +128,6 @@ def test_all_platforms():
         test_inference(all_platforms)
     else:
         for platform in all_platforms:
-            if platform in config.project.get_config("test.platforms_to_skip", print=False):
-                continue
-
             config.project.set_config("test.platform", platform) # for the post-processing
             with env.NextArtifactDir(f"{platform}_test".replace("/", "_")):
                 with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
@@ -179,26 +180,34 @@ def capture_metrics(platform, stop=False):
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
     inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
-    prepare_inference_server_mod = prepare_mac_ai.PREPARE_INFERENCE_SERVERS.get(inference_server_name)
 
     base_work_dir = remote_access.prepare()
 
     do_matbenchmarking = config.project.get_config("test.llm_load_test.matbenchmarking")
 
-    prepare_inference_server_mod.prepare_test(base_work_dir, platform)
+    use_podman = platform.startswith("podman")
 
+    inference_server_mod.prepare_test(base_work_dir, use_podman)
+
+    system = config.project.get_config(
+        "prepare.podman.container.system" if use_podman else "remote_host.system"
+    )
     model_name = config.project.get_config("test.model.name")
 
-    inference_server_path = prepare_inference_server_mod.get_binary_path(
-        base_work_dir, platform,
+    inference_server_mod.prepare_test(base_work_dir, use_podman)
+
+    inference_server_path = inference_server_mod.get_binary_path(
+        base_work_dir, system,
+        use_podman=use_podman,
     )
 
-    inference_server_native_path = prepare_inference_server_mod.get_binary_path(
-        base_work_dir, config.project.get_config("prepare.native_platform"),
+    inference_server_native_path = inference_server_mod.get_binary_path(
+        base_work_dir, config.project.get_config("remote_host.system"),
+        use_podman=False,
     )
 
-    use_podman = platform.startswith("podman")
     inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
+    inference_server_mod.stop(base_work_dir, inference_server_path, use_podman=(not use_podman))
 
     brew.capture_dependencies_version(base_work_dir)
 
@@ -210,11 +219,9 @@ def test_inference(platform):
     else:
         podman.stop(base_work_dir)
 
-    model_fname = prepare_mac_ai.model_to_fname(model_name)
-    if not remote_access.exists(model_fname):
-        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
-
-    inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
+    if config.project.get_config("test.inference_server.always_pull"):
+        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name)
+    inference_server_mod.run_model(base_work_dir, inference_server_path, model_name, use_podman=use_podman)
 
     try:
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
@@ -225,6 +232,9 @@ def test_inference(platform):
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
             exc = run.run_and_catch(exc, inference_server_mod.unload_model, base_work_dir, inference_server_path, model_name, use_podman=use_podman)
+
+        if config.project.get_config("test.inference_server.stop_on_exit"):
+            exc = run.run_and_catch(exc, inference_server_mod.stop, base_work_dir, inference_server_path, use_podman=use_podman)
 
         if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir)
@@ -314,9 +324,7 @@ def matbench_run(matrix_source_keys, with_deploy):
 
         failed = matbenchmark.run_benchmark(args)
         if failed:
-            msg = f"_run_test_matbenchmarking: matbench benchmark failed :/"
-            logging.error(msg)
-            raise RuntimeError(msg)
+            logging.error(f"_run_test_matbenchmarking: matbench benchmark failed :/")
 
 
 def matbench_run_one(with_deploy):
@@ -334,10 +342,6 @@ def matbench_run_one(with_deploy):
         config.project.set_config("test.matbenchmarking.enabled", False)
 
         platform = config.project.get_config("test.platform")
-
-        if platform in (config.project.get_config("test.platforms_to_skip", print=False) or []):
-            logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
-            return
 
         if with_deploy:
             test_inference(platform)
