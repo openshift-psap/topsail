@@ -32,8 +32,3 @@ Parameters
 
 * The name of the model to fetch
 
-
-``dest``  
-
-* If specified, where to put the model being pulled
-

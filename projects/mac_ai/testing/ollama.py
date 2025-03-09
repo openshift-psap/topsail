@@ -17,7 +17,7 @@ def _get_binary_path(base_work_dir, system, use_podman):
     version = config.project.get_config("prepare.ollama.repo.version")
     arch = config.project.get_config("remote_host.arch")
 
-    system_file = config.project.get_config(f"prepare.ollama.repo.{system}.file")
+    system_file = config.project.get_config(f"prepare.ollama.repo.{system}.file").replace("{@remote_host.arch}", arch)
 
     executable = config.project.get_config(f"prepare.ollama.repo.{system}.executable", False, warn=False)
     tarball = config.project.get_config(f"prepare.ollama.repo.{system}.tarball", False, warn=False)
