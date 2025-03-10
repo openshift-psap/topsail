@@ -51,7 +51,7 @@ Parameters
 
 * The ID of the model to pass along with the GRPC call
 
-* default value: ``not-used``
+* default value: ``/mnt/models/``
 
 
 ``src_path``  
@@ -116,4 +116,11 @@ Parameters
 * Name of the endpoint to query (for openai plugin only)
 
 * default value: ``/v1/completions``
+
+
+``python_cmd``  
+
+* Command to use to launch Python
+
+* default value: ``python3``
 

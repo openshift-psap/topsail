@@ -24,6 +24,7 @@ artifact_dirnames.LLM_LOAD_TEST_RUN_DIR = "*__llm_load_test__run"
 artifact_dirnames.MAC_AI_POWER_USAGE_GPU = "*__mac_ai__remote_capture_power_usage_gpu_power"
 artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usage"
 artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_memory"
+artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL = "*__mac_ai__remote_llama_cpp_run_model"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -38,6 +39,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_CPU_RAM_USAGE}/artifacts/cpu_ram_usage.txt",
     f"{artifact_dirnames.MAC_AI_VIRTGPU_MEMORY}/artifacts/memory.txt",
 
+    f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL}/artifacts/build.*.log",
 ]
 
 
@@ -57,8 +59,24 @@ def parse_once(results, dirname):
     results.gpu_power_usage = _parse_gpu_power_metrics(dirname)
     results.cpu_ram_usage = _parse_cpu_ram_metrics(dirname)
     results.virtgpu_metrics = _parse_virtgpu_memory_metrics(dirname)
+    results.file_links = _parse_file_links(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+
+
+def _parse_file_links(dirname):
+    file_links = types.SimpleNamespace()
+
+    server_logs = dirname / artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL / "artifacts" / "llama_cpp.log"
+
+    file_links.server_logs = server_logs.relative_to(dirname) \
+        if server_logs.exists() else None
+
+    file_links.server_build_logs = {}
+    for f in (dirname / artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL / "artifacts").glob("build.*.log"):
+        file_links.server_build_logs[f.name] = f.relative_to(dirname)
+
+    return file_links
 
 
 @helpers_store_parsers.ignore_file_not_found

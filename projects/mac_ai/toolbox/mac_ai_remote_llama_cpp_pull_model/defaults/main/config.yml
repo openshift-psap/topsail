@@ -14,3 +14,6 @@ mac_ai_remote_llama_cpp_pull_model_path:
 # the name of the model to fetch
 # Mandatory value
 mac_ai_remote_llama_cpp_pull_model_name:
+
+# if specified, where to put the model being pulled
+mac_ai_remote_llama_cpp_pull_model_dest: null
