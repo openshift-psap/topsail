@@ -1,9 +1,7 @@
 __platforms: &all_platforms
-  - darwin/upstream
   - darwin/metal
   - darwin/vulkan
   - podman/vulkan
-  - podman/no-gpu/kompute
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -70,6 +68,9 @@ prepare:
       source:
         cmake:
           parallel: 5
+          openmp:
+            enabled: true
+            flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/include/" -DOpenMP_CXX_LIB_NAMES=omp
           common: -DGGML_CPU_ARM_ARCH=native
           flavors:
             metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
@@ -87,8 +88,9 @@ prepare:
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
             LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
-            LLAMA_CPP_CMAKE_FLAGS: # set at runtime from the flavor
             LLAMA_CPP_CMAKE_BUILD_FLAGS: # set at runtime with --parallel
+            # ..flavors.<name> will be appended to this
+            LLAMA_CPP_CMAKE_FLAGS:
           flavors:
             kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
@@ -116,6 +118,9 @@ prepare:
   brew:
     install_dependencies: true
     capture_dependencies: false
+    _libomp:
+      location: /opt/homebrew/Cellar/libomp/
+      version: "20.1"
     dependencies:
     - krunkit
     - vulkan-headers
@@ -125,6 +130,7 @@ prepare:
     - molten-vk-krunkit
     - cmake
     - shaderc
+    - libomp@{@prepare.brew._libomp.version}
 
   # the list of platform environments to prepare
   platforms: *all_platforms
@@ -170,7 +176,9 @@ prepare:
 
 test:
   platform: podman/vulkan
-  platforms_to_skip: [darwin/upstream] # need to build it to download the models, but no need to test it every time
+  platforms_to_skip:
+  - darwin/upstream # always built, but no need to test it every time
+  - podman/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
     name: llama_cpp
