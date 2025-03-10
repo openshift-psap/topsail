@@ -97,7 +97,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: 8
 
     tests.fine_tuning.test_settings.hyper_parameters.gradient_accumulation_steps: 2
-    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [2, 4, 8, 16, 32, 36, 40, 42, 44, 46]
+    tests.fine_tuning.test_settings.hyper_parameters.per_device_train_batch_size: [1, 2, 3, 4, 5, 6]
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "none"
     tests.fine_tuning.test_settings.hyper_parameters.max_seq_length: 256
     tests.fine_tuning.test_settings.hyper_parameters.use_flash_attn: true
@@ -106,12 +106,13 @@ ci_presets:
     - model_name:
       # - meta-llama/Llama-2-13b-hf
       # - meta-llama/Meta-Llama-3.1-70B
-      - ibm-granite/granite-3b-code-instruct
+      # - ibm-granite/granite-3b-code-instruct
       # - instructlab/granite-7b-lab
-      - ibm-granite/granite-8b-code-base
+      # - ibm-granite/granite-8b-code-base
       # - meta-llama/Meta-Llama-3.1-8B
       # - mistralai/Mistral-7B-v0.3
       # - mistralai/Mixtral-8x7B-v0.1
+      - meta-llama/Meta-Llama-3.1-70B
 
   ibm_80gb_models:
     extends: [fms, hf_evaluation, dgx_small_footprint]
