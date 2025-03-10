@@ -70,7 +70,7 @@ prepare:
           parallel: 5
           openmp:
             enabled: true
-            flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}.0/include/" -DOpenMP_CXX_LIB_NAMES=omp
+            flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
           common: -DGGML_CPU_ARM_ARCH=native
           flavors:
             metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
@@ -120,7 +120,7 @@ prepare:
     capture_dependencies: false
     _libomp:
       location: /opt/homebrew/Cellar/libomp/
-      version: "20.1"
+      version: "20.1.0"
     dependencies:
     - krunkit
     - vulkan-headers
@@ -130,7 +130,8 @@ prepare:
     - molten-vk-krunkit
     - cmake
     - shaderc
-    - libomp@{@prepare.brew._libomp.version}
+    - libomp
+    - glslang
 
   # the list of platform environments to prepare
   platforms: *all_platforms
