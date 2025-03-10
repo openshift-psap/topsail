@@ -84,7 +84,11 @@ def prepare():
     native_platform = config.project.get_config("prepare.native_platform")
     inference_server_binaries = {}
 
-    for platform in config.project.get_config("prepare.platforms"):
+    platforms = config.project.get_config("prepare.platforms")
+    # always prepare the native platform
+    platforms += [native_platform]
+
+    for platform in set(platforms):
         inference_server_binaries[platform] = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
 
     inference_server_native_binary = inference_server_binaries[native_platform]
