@@ -87,14 +87,20 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
 
     flavor = platform.split("/")[-1]
     flavors = config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.flavors")
-    cmake_flags = flavors.get(flavor)
-    if cmake_flags is None:
+    flavor_cmake_flags = flavors.get(flavor)
+    if flavor_cmake_flags is None:
         raise ValueError(f"Invalid image flavor: {platform}. Expected one of {', '.join(flavors)}")
+
+
+    cmake_flags = build_args["LLAMA_CPP_CMAKE_FLAGS"] or ""
+    cmake_flags += " " + flavor_cmake_flags
 
     cmake_parallel = config.project.get_config("prepare.llama_cpp.repo.source.cmake.parallel")
     cmake_build_flags = f"--parallel {cmake_parallel}"
+
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
     build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
+
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, flavor])
 
     run.run_toolbox(
@@ -215,6 +221,9 @@ def prepare_from_source(base_work_dir, platform):
 
     cmake_flags = config.project.get_config("prepare.llama_cpp.repo.source.cmake.common")
     cmake_flags += " " + flavors_cmake_flags[flavor]
+
+    if config.project.get_config("prepare.llama_cpp.repo.source.cmake.openmp.enabled"):
+        cmake_flags += " " + config.project.get_config("prepare.llama_cpp.repo.source.cmake.openmp.flags")
 
     with env.NextArtifactDir(f"build_llama_cpp_{flavor}"):
         prepare_cmd = f"cmake -B {build_dir} {cmake_flags} | tee {build_dir}/build.prepare.log"
