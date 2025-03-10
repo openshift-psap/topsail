@@ -294,10 +294,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 32
-    - name: mpt-7b-instruct2
-      testing:
-        size: small
-        max_concurrency: 64
     - name: llama-3-70b-instruct
       testing:
         size: large
@@ -503,9 +499,9 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.17@sha256:d5223103d49934a96a896310c57777b149dba99c472b3574e3d6c4805d58172f
+    tag: rhoai-2.18@sha256:9cf24f4bfb33c67ca7012477de6e2f4394d54772637d16cc366effcbb52abe27
     channel: fast
-    version: 2.17.0
+    version: 2.18.0
     version_name: rc1
     opendatahub: false
     managed_rhoai: false
