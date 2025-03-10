@@ -23,8 +23,8 @@ RUN git clone https://github.com/ggml-org/llama.cpp src -b ${LLAMA_CPP_VERSION}
 RUN mkdir build
 RUN git -C src submodule update --init ggml/src/ggml-kompute/kompute
 
-RUN mkdir -p ../build && echo 'Build flags: ${LLAMA_CPP_CMAKE_FLAGS}' > ../build/build.flags.log
-RUN cd src && \
+RUN mkdir -p ../build && echo "Build flags: $LLAMA_CPP_CMAKE_FLAGS" > ../build/build.flags.log
+RUN cd src && set -o pipefail && \
     cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} | tee ../build/build.prepare.log && \
     cmake --build ../build/ ${LLAMA_CPP_CMAKE_BUILD_FLAGS} | tee ../build/build.compile.log
 
