@@ -226,8 +226,8 @@ def prepare_from_source(base_work_dir, platform):
         cmake_flags += " " + config.project.get_config("prepare.llama_cpp.repo.source.cmake.openmp.flags")
 
     with env.NextArtifactDir(f"build_llama_cpp_{flavor}"):
-        prepare_cmd = f"cmake -B {build_dir} {cmake_flags} | tee {build_dir}/build.prepare.log"
-        build_cmd = f"cmake --build {build_dir} --config Release --parallel {cmake_parallel} | tee {build_dir}/build.compile.log"
+        prepare_cmd = f"cmake -B {build_dir} {cmake_flags} 2>&1 | tee {build_dir}/build.prepare.log"
+        build_cmd = f"cmake --build {build_dir} --config Release --parallel {cmake_parallel} 2>&1 | tee {build_dir}/build.compile.log"
 
         ret = remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
