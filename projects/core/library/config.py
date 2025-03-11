@@ -301,7 +301,7 @@ class Config:
                 for ref in re.findall(r"\{@.*?\}", v):
                     ref_key = ref.strip("{@}")
                     ref_value = self.get_config(ref_key, print=False)
-                    new_value = new_value.replace(ref, ref_value)
+                    new_value = new_value.replace(ref, str(ref_value))
 
                 logging.info(f"resolve_references: {k} ==> '{new_value}'")
             try:
