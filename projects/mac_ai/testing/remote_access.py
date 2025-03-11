@@ -114,7 +114,7 @@ def run_with_ansible_ssh_conf(
 
     export_cmd = "\n".join(f"export {k}='{v}'" for k, v in (ansible_extra_env|extra_env).items())
 
-    chdir_cmd = f"cd '{chdir}'" if chdir else "# no chdir"
+    chdir_cmd = f"cd '{chdir}'" if chdir else "cd $HOME # no explicit chdir"
 
     tmp_file_path, tmp_file = utils.get_tmp_fd()
 
