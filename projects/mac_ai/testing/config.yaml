@@ -57,7 +57,7 @@ remote_host:
   podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
     PATH: "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
-    HOME: "*$@secrets.base_work_dir"
+    HOME: "@remote_host.base_work_dir"
 
 prepare:
   cleanup_on_exit: false
