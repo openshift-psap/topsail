@@ -67,10 +67,11 @@ def prepare():
         podman.prepare_from_gh_binary(base_work_dir)
         podman.prepare_gv_from_gh_binary(base_work_dir)
 
+    brew.install_dependencies(base_work_dir)
+
     podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     prepare_llm_load_test(base_work_dir)
-    brew.install_dependencies(base_work_dir)
 
     inference_server_name = config.project.get_config("test.inference_server.name")
     prepare_inference_server_mod = PREPARE_INFERENCE_SERVERS.get(inference_server_name)
