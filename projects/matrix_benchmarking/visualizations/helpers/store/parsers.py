@@ -159,6 +159,17 @@ def parse_env(dirname, test_config, capture_state_dir):
 
             s3_path = f"middleware_jenkins/{job_id}/{build_number}"
 
+        elif ansible_env.get("TOPSAIL_LOCAL_CI") == "true":
+            bucket = ansible_env.get("TOPSAIL_LOCAL_CI_BUCKET_NAME")
+            job_name_safe = ansible_env.get("JOB_NAME_SAFE")
+            run_id = ansible_env.get("TEST_RUN_IDENTIFIER")
+
+            path_prefix = "local-ci"
+            s3_path = f"{job_name_safe}/{run_id}"
+
+        else:
+            raise RuntimeError("CI environment not recognized :/")
+
         from_env.test.urls |= dict(
             RHOAI_CPT_S3=f"https://{bucket}.s3.amazonaws.com/index.html#{path_prefix}/{s3_path}/{from_env.test.test_path}/"
         )
