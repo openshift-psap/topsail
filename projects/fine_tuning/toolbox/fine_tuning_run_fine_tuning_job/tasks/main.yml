@@ -98,7 +98,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
   block:
   - name: List the GPU nodes
     command:
-      oc get nodes -oname -lnvidia.com/gpu.present=true
+      oc get nodes -l nvidia.com/gpu.present=true -o custom-columns="NODE:.metadata.name,STATUS:.status.conditions[?(@.type=='Ready')].status" | grep 'True' | awk '{print $1}'
     register: gpu_node_names_cmd
 
   - name: Prepare the secondary nic list
