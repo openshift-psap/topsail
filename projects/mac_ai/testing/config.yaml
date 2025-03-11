@@ -64,7 +64,7 @@ prepare:
   llama_cpp:
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4688
+      version: b4870
       source:
         cmake:
           parallel: 5
