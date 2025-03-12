@@ -26,6 +26,7 @@ artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usag
 artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_memory"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL = "*__mac_ai__remote_llama_cpp_run_model"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH = "*__mac_ai__remote_llama_cpp_run_bench"
+artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE = "*__mac_ai__remote_capture_system_state"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -43,6 +44,9 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL}/artifacts/build.*.log",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/llama-bench.log",
+
+    f"{artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
+
 ]
 
 
@@ -67,6 +71,8 @@ def parse_once(results, dirname):
     results.llama_bench_results = _parse_llama_bench_results(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
+
+    results.system_state = _parse_system_state(dirname)
 
 
 def _parse_file_links(dirname):
@@ -291,3 +297,12 @@ def _parse_llama_bench_results(dirname):
         llama_bench_results.append(results)
 
     return llama_bench_results
+
+
+def _parse_system_state(dirname):
+    system_state = types.SimpleNamespace()
+
+    with open(register_important_file(dirname, artifact_paths.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE / "artifacts" / "system_profiler.txt")) as f:
+        system_state = yaml.safe_load(f)
+
+    return system_state

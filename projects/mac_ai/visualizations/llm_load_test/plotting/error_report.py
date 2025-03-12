@@ -26,44 +26,65 @@ def _get_test_setup(entry):
     artifacts_basedir = entry.results.from_local_env.artifacts_basedir
 
     setup_info += [html.Li([
-        "Test UUID: ",
+        "Test UUID",
         html.Code(f"- {entry.results.test_uuid}\n", style={"white-space": "pre-wrap"}),
     ])]
 
     setup_info += [html.Li([
-        "Test variables: ",
+        "Test variables",
         html.Code(yaml.dump([entry.settings.__dict__]), style={"white-space": "pre-wrap"}),
     ])]
 
 
-    setup_info += [html.Li([
-        "Model configuration: ",
-        html.Code(yaml.dump([entry.results.test_config.get("test.model")]), style={"white-space": "pre-wrap"}),
-    ])]
+    inference_server_cfg = dict()
+    inference_server_cfg["platform"] = entry.results.test_config.get("test.platform")
+    inference_server_cfg["engine"] = entry.results.test_config.get("test.inference_server.name")
+    inference_server_cfg["version"] = entry.results.test_config.get("prepare.llama_cpp.repo.version")
+    inference_server_links = []
 
-    setup_info += [html.Li([
-        "Llm-load-test configuration: ",
-        html.Code(yaml.dump([entry.results.test_config.get("test.llm_load_test.args")]), style={"white-space": "pre-wrap"}),
-    ])]
+    inference_server_info = [
+        "Inference server",
+    ]
 
+    inference_server_links += [html.Li(["configuration", html.Code(yaml.dump([inference_server_cfg]).strip(), style={"white-space": "pre-wrap"})])]
     if artifacts_basedir:
-        setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
-
         if entry.results.file_links.server_logs:
-            setup_info += [html.Li(["Inference server:", html.A("execution logs", href=artifacts_basedir /entry.results.file_links.server_logs, target="_blank")])]
+            inference_server_links += [html.Li([html.A("execution logs", href=artifacts_basedir /entry.results.file_links.server_logs, target="_blank")])]
         else:
-            setup_info += [html.Li(["Inference server:", "execution logs not available"])]
+            inference_server_links += [html.Li(["execution logs not available :/"])]
 
         if entry.results.file_links.server_build_logs:
-            setup_info += [html.Li(
-                ["Server build logs:",
+            inference_server_links += [html.Li(
+                ["build logs:",
                  html.Ul(
                      [html.Li(html.A(name, href=artifacts_basedir / log_file, target="_blank")) for name, log_file in entry.results.file_links.server_build_logs.items()]
                  )
                 ]
             )]
         else:
-            setup_info += [html.Li(["Server build logs:", "not available"])]
+            inference_server_links += [html.Li(["Server build logs:", "not available"])]
+
+    inference_server_info += [html.Ul(inference_server_links)]
+    setup_info += [html.Li(inference_server_info)]
+
+    setup_info += [html.Li([
+        html.Details([html.Summary("Operating system: "), html.Code(yaml.dump(entry.results.system_state), style={"white-space": "pre-wrap"})]),
+        html.Br(),
+    ])]
+
+    setup_info += [html.Li([
+        "Model configuration",
+        html.Code(yaml.dump([entry.results.test_config.get("test.model")]), style={"white-space": "pre-wrap"}),
+    ])]
+
+    if entry.results.llm_load_test_output:
+        setup_info += [html.Li([
+            "Llm-load-test configuration",
+            html.Code(yaml.dump([entry.results.test_config.get("test.llm_load_test.args")]), style={"white-space": "pre-wrap"}),
+        ])]
+
+    if artifacts_basedir:
+        setup_info += [html.Li(html.A("Results artifacts", href=str(artifacts_basedir), target="_blank"))]
     else:
         setup_info += [html.Li(f"Results artifacts: NOT AVAILABLE ({entry.results.from_local_env.source_url})")]
 
