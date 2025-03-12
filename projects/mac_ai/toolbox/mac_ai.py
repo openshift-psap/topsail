@@ -172,3 +172,17 @@ class Mac_Ai:
         """
 
         return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("mac_ai_remote_capture_system_state")
+    @AnsibleMappedParams
+    def remote_capture_system_state(
+            self,
+    ):
+        """
+        Captures the state of the remote Mac system
+
+        Args:
+        """
+
+        return RunAnsibleRole(locals())
