@@ -25,5 +25,9 @@ def capture_dependencies_version(base_work_dir):
     with env.NextArtifactDir("brew_dependencies"):
         ret = install_dependencies(base_work_dir, capture_stderr=True)
 
+        if ret is None:
+            logging.warning("brew: capture_dependencies_version: install_dependencies didn't run.")
+            return
+
         with open(env.ARTIFACT_DIR / "dependencies.txt", "w") as f:
             print(ret.stderr, file=f)
