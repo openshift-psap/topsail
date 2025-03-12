@@ -107,8 +107,6 @@ def run_with_ansible_ssh_conf(
     user = ansible_ssh_config["ansible_ssh_user"]
     private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
 
-    logging.info(f"Running on the jump host: {cmd}")
-
     with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
         ansible_extra_env = yaml.safe_load(f)
 
@@ -130,6 +128,8 @@ set -o errtrace
 
 exec {cmd}
     """
+
+    logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
 
     with open(tmp_file_path, "w") as f:
         print(entrypoint_script, file=f)
