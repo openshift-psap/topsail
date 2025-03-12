@@ -220,6 +220,7 @@ Toolbox Documentation
 * :doc:`remote_capture_system_state <Mac_Ai.remote_capture_system_state>`	 Captures the state of the remote Mac system
 * :doc:`remote_capture_virtgpu_memory <Mac_Ai.remote_capture_virtgpu_memory>`	 Captures the virt-gpu memory usage
 * :doc:`remote_llama_cpp_pull_model <Mac_Ai.remote_llama_cpp_pull_model>`	 Pulls a model with llama-cpp, on a remote host
+* :doc:`remote_llama_cpp_run_bench <Mac_Ai.remote_llama_cpp_run_bench>`	 Benchmark a model with llama_cpp, on a remote host
 * :doc:`remote_llama_cpp_run_model <Mac_Ai.remote_llama_cpp_run_model>`	 Runs a model with llama_cpp, on a remote host
 * :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host
 * :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Runs a model with ollama, on a remote host

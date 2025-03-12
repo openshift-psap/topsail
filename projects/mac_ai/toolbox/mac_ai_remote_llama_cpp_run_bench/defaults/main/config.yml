@@ -1,0 +1,21 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_llama_cpp_run_bench
+
+# Parameters
+# the path to the llama-bench binary
+# Mandatory value
+mac_ai_remote_llama_cpp_run_bench_path:
+
+# the name of the model to use
+# Mandatory value
+mac_ai_remote_llama_cpp_run_bench_name:
+
+# the prefix to get the llama-server running
+mac_ai_remote_llama_cpp_run_bench_prefix:
+
+# number of layers to store in VRAM
+mac_ai_remote_llama_cpp_run_bench_ngl: 99
+
+# if true, runs the benchmark in verbose mode
+mac_ai_remote_llama_cpp_run_bench_verbose: true
