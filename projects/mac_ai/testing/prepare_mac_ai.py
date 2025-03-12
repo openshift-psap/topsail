@@ -162,5 +162,6 @@ def cleanup_models(base_work_dir):
 
 
 def model_to_fname(model):
+    base_work_dir = remote_access.prepare()
     model_cache_dir = config.project.get_config("test.model.cache_dir")
-    return pathlib.Path(model_cache_dir) / pathlib.Path(model).name
+    return base_work_dir / model_cache_dir / pathlib.Path(model).name
