@@ -15,6 +15,11 @@ ci_presets:
 
   local_config: null # defined locally in variable_overrides.yaml
 
+  mac4:
+    secrets.hostname: mac_ai__hostname.mac4
+    secrets.username: mac_ai__username.mac4
+    secrets.base_work_dir: mac_ai__base_work_dir.mac4
+
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
