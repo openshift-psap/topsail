@@ -121,7 +121,7 @@ prepare:
         file: ollama-linux-{@remote_host.arch}.tgz
         tarball: true
   brew:
-    install_dependencies: true
+    install_dependencies: false
     capture_dependencies: false
     _libomp:
       location: /opt/homebrew/Cellar/libomp/
