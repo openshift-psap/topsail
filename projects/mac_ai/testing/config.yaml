@@ -67,6 +67,10 @@ remote_host:
 
 prepare:
   cleanup_on_exit: false
+
+  llm_load_test:
+    install_requirements: false
+
   llama_cpp:
     repo:
       url: https://github.com/ggml-org/llama.cpp
