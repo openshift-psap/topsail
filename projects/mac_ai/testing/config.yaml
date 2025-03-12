@@ -62,7 +62,7 @@ remote_host:
   podman_bin: podman # only used if not prepare.podman.repo.enabled
   env:
     PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
-    HOME: "/Users/podmanqe/topsail_kpouget"
+  home_is_base_work_dir: true
 
 prepare:
   cleanup_on_exit: false

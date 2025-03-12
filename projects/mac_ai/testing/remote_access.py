@@ -49,6 +49,9 @@ def prepare():
         if not v.startswith("*$@"): continue
         env[k] = config.project.get_config(f"remote_host.env.{k}", handled_secretly=True).strip()
 
+    if config.project.get_config("remote_host.home_is_base_work_dir"):
+        env["HOME"] = str(base_work_dir)
+
     yaml.dump(env, extra_env_file)
     extra_env_file.flush()
 
