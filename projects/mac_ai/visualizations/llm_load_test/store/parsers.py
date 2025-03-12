@@ -25,6 +25,7 @@ artifact_dirnames.MAC_AI_POWER_USAGE_GPU = "*__mac_ai__remote_capture_power_usag
 artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usage"
 artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_memory"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL = "*__mac_ai__remote_llama_cpp_run_model"
+artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH = "*__mac_ai__remote_llama_cpp_run_bench"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -40,6 +41,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_VIRTGPU_MEMORY}/artifacts/memory.txt",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL}/artifacts/build.*.log",
+
+    f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/llama-bench.log",
 ]
 
 
@@ -60,6 +63,8 @@ def parse_once(results, dirname):
     results.cpu_ram_usage = _parse_cpu_ram_metrics(dirname)
     results.virtgpu_metrics = _parse_virtgpu_memory_metrics(dirname)
     results.file_links = _parse_file_links(dirname)
+
+    results.llama_bench_results = _parse_llama_bench_results(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
 
@@ -250,3 +255,39 @@ def _parse_test_start_end(dirname, llm_load_test_output):
         logging.warning("Could not find the end time of the test...")
 
     return test_start_end
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_llama_bench_results(dirname):
+    if not artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH:
+        return None
+    llama_bench_results = []
+
+    llama_bench_output_file =  artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH / "artifacts" / "llama-bench.log"
+    register_important_file(dirname, llama_bench_output_file)
+
+    with open(dirname / llama_bench_output_file) as f:
+        llama_bench_output = f.readlines()
+
+    keys = []
+    for line in llama_bench_output:
+        if not line.startswith("|"): continue
+        line = " ".join(line.strip().split()) # remove the extra spaces
+
+        # remove the extra spaces
+        array_values = line.removeprefix("| ").removesuffix(" |").replace(": |", "|").replace(" | ", "|").split("|")
+
+        # skip the split lines
+        if "".join(array_values).count("-") > 20: continue
+        if not keys:
+            keys = array_values
+            continue
+
+        results = dict(zip(keys, array_values))
+        results["backend"] = results["backend"].split(",")
+        results["t/s"], results["t/s err"] = map(float, results["t/s"].split(" ± "))
+        results["file_path"] = str(llama_bench_output_file)
+
+        llama_bench_results.append(results)
+
+    return llama_bench_results

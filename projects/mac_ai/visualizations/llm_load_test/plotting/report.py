@@ -18,6 +18,7 @@ def register():
     LtsReport()
     GPUUsageReport()
     CpuRamUsageReport()
+    LlamaBenchReport()
 
 
 class CallDetailsReport():
@@ -253,5 +254,27 @@ class LtsReport():
         header += html.Br()
         header += html.Br()
 
+        return None, header
+
+
+class LlamaBenchReport():
+    def __init__(self):
+        self.name = "report: Llama-bench Results"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+        header += [html.H1("Llama-bench results")]
+        for llama_bench_test in "pp512", "tg128":
+            header += [html.H1(f"llama-bench '{llama_bench_test}' test")]
+            header += report.Plot_and_Text(f"Llama-bench results table", report.set_config(dict(llama_bench_test=llama_bench_test), args))
+            header.pop(-2) # remove the empty plot
+            header += report.Plot_and_Text(f"Llama-bench results plot", report.set_config(dict(llama_bench_test=llama_bench_test), args))
+            header += html.Br()
+            header += html.Br()
 
         return None, header
