@@ -17,6 +17,14 @@
     {{ mac_ai_remote_llama_cpp_run_model_prefix }} cat "{{ item }}" > "{{ artifact_extra_logs_dir }}/artifacts/$(basename '{{ item }}')"
   with_items: "{{ build_logs_cmd.stdout_lines }}"
 
+- name: Capture the version
+  shell: |
+    set -e;
+    {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --version \
+        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.version"
+    {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --list-devices \
+        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.list-devices"
+
 - name: Execute and retrieve the artifacts
   block:
   - name: Start serving the llama_cpp model
