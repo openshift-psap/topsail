@@ -186,6 +186,9 @@ test:
     port: 11434
     unload_on_exit: true
 
+    benchmark:
+      enabled: true
+
   model:
     name: llama3.2
     size: small
