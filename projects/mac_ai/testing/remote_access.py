@@ -132,6 +132,9 @@ set -o errtrace
 exec {cmd}
     """
 
+    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
+        entrypoint_script = f"set -x\n{entrypoint_script}"
+
     logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
 
     with open(tmp_file_path, "w") as f:
