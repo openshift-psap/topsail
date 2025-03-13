@@ -145,7 +145,7 @@ def prepare_llm_load_test(base_work_dir):
     if config.project.get_config("prepare.llm_load_test.install_requirements"):
         remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
-            f"{python_bin} -m pip install -r {dest}/requirements.txt",
+            f"{python_bin} -m pip install -r {dest}/requirements.txt --user",
         )
     else:
         logging.info("Not installing llm-load-test requirements.")
