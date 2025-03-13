@@ -31,7 +31,7 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
 
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
-        model_id = model_name,
+        model_id = prepare_mac_ai.model_to_fname(model_name),
     )
 
     return llm_load_test_kwargs
