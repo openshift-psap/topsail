@@ -137,12 +137,15 @@ prepare:
       location: /opt/homebrew/Cellar/libomp/
       version: "20.1.0"
     dependencies:
+    # brew tap slp/krunkit
     - krunkit
+    # brew link --overwrite molten-vk-krunkit
+    - molten-vk-krunkit
+
     - vulkan-headers
     - libkrun-efi
     - virglrenderer
     - molten-vk
-    - molten-vk-krunkit
     - cmake
     - shaderc
     - libomp
@@ -239,6 +242,9 @@ test:
   capture_metrics:
     enabled: true
     gpu:
+      # needs this in visudo:
+      # $USER ALL = (root) NOPASSWD: /usr/bin/pkill powermetrics
+      # $USER ALL = (root) NOPASSWD: /usr/bin/powermetrics *
       enabled: true
       sampler: gpu_power
       rate: 1000
