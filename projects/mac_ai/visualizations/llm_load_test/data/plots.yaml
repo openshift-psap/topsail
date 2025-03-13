@@ -2,9 +2,9 @@ visualize:
 - id: llm_test
   generate:
   - "report: Error report"
-  - "report: Throughput"
+  - "report: Llm-load-test Results"
+  - "report: Llama-bench Results"
   - "report: CPU RAM Usage"
   - "report: GPU Usage"
   - "report: LTS Documentation"
-  - "report: KPI Table Report by labels"
-  - "report: KPI Plot Report"
+  - "report: KPI Table Report by settings"

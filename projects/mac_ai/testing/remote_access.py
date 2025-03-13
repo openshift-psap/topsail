@@ -49,6 +49,9 @@ def prepare():
         if not v.startswith("*$@"): continue
         env[k] = config.project.get_config(f"remote_host.env.{k}", handled_secretly=True).strip()
 
+    if config.project.get_config("remote_host.home_is_base_work_dir"):
+        env["HOME"] = str(base_work_dir)
+
     yaml.dump(env, extra_env_file)
     extra_env_file.flush()
 
@@ -107,14 +110,12 @@ def run_with_ansible_ssh_conf(
     user = ansible_ssh_config["ansible_ssh_user"]
     private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
 
-    logging.info(f"Running on the jump host: {cmd}")
-
     with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
         ansible_extra_env = yaml.safe_load(f)
 
     export_cmd = "\n".join(f"export {k}='{v}'" for k, v in (ansible_extra_env|extra_env).items())
 
-    chdir_cmd = f"cd '{chdir}'" if chdir else "# no chdir"
+    chdir_cmd = f"cd '{chdir}'" if chdir else "cd $HOME # no explicit chdir"
 
     tmp_file_path, tmp_file = utils.get_tmp_fd()
 
@@ -130,6 +131,11 @@ set -o errtrace
 
 exec {cmd}
     """
+
+    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
+        entrypoint_script = f"set -x\n{entrypoint_script}"
+
+    logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
 
     with open(tmp_file_path, "w") as f:
         print(entrypoint_script, file=f)

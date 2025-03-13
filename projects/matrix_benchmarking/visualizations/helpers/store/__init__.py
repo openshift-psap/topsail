@@ -179,6 +179,11 @@ class BaseStore():
 
         lts_payload.metadata.exit_code = exit_code
 
+        # this allows the LTS payload to tell that it shouldn't be validated
+        # to be improved and streamlined
+        if hasattr(lts_payload, "is_valid"):
+            return
+
         validate_lts_payload(self.lts_payload_model, lts_payload, import_settings, reraise=False)
 
 

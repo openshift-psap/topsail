@@ -57,6 +57,19 @@ def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
         check=False,
     )
 
+
+def run_benchmark(base_work_dir, llama_cpp_path, model):
+    # dirty, I know ...
+    prefix, _, path = str(llama_cpp_path).rpartition(" ")
+    path = path.replace("llama-server", "llama-bench")
+
+    run.run_toolbox(
+        "mac_ai", "remote_llama_cpp_run_bench",
+        path=path,
+        prefix=prefix,
+        name=model,
+    )
+
 # ---
 
 @entrypoint()

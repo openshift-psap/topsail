@@ -6,6 +6,7 @@ from . import throughput
 from . import lts
 from . import power
 from . import cpu_ram
+from . import llama_bench
 
 import projects.matrix_benchmarking.visualizations.helpers.plotting.lts_documentation as lts_documentation
 import projects.matrix_benchmarking.visualizations.helpers.plotting.kpi_table as kpi_table
@@ -23,3 +24,4 @@ def register():
     kpi_plot.register()
     power.register()
     cpu_ram.register()
+    llama_bench.register()

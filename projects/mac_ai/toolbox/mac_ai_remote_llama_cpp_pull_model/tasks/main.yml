@@ -35,7 +35,9 @@
 
   - name: Move the model file to its dest location
     command:
-      mv "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}" "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
+      mv
+         "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}"
+         "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir if not mac_ai_remote_llama_cpp_pull_model_dest.startswith('/') else '' }}/{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
     when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
 
   rescue:

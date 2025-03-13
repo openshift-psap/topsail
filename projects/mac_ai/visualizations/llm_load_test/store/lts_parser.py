@@ -15,6 +15,9 @@ def generate_lts_payload(results, import_settings):
     lts_payload.results = generate_lts_results(results)
     # lts_payload.kpis is generated in the helper store
 
+    # skip the LTS validation for the time being
+    lts_payload.is_valid = False
+
     return lts_payload
 
 
@@ -64,12 +67,14 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
 
     lts_settings.model_name = results.test_config.get("test.model.name")
-    lts_settings.virtual_users = results.test_config.get("test.llm_load_test.args.concurrency")
-    lts_settings.test_duration = results.test_config.get("test.llm_load_test.args.duration")
 
-    lts_settings.dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name
+    if results.llm_load_test_config:
+        lts_settings.virtual_users = results.test_config.get("test.llm_load_test.args.concurrency")
+        lts_settings.test_duration = results.test_config.get("test.llm_load_test.args.duration")
 
-    lts_settings.streaming = _is_streaming(results)
+        lts_settings.dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name
+
+        lts_settings.streaming = _is_streaming(results)
 
     lts_settings.urls = {}
 

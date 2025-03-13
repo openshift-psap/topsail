@@ -97,6 +97,30 @@ class Mac_Ai:
 
         return RunAnsibleRole(locals())
 
+    @AnsibleRole("mac_ai_remote_llama_cpp_run_bench")
+    @AnsibleMappedParams
+    def remote_llama_cpp_run_bench(
+            self,
+            path,
+            name,
+            prefix="",
+            ngl=99,
+            verbose=True,
+    ):
+        """
+        Benchmark a model with llama_cpp, on a remote host
+
+        Args:
+          prefix: the prefix to get the llama-server running
+          path: the path to the llama-bench binary
+          port: the port number on which llama-cpp should listen
+          name: the name of the model to use
+          ngl: number of layers to store in VRAM
+          verbose: if true, runs the benchmark in verbose mode
+        """
+
+        return RunAnsibleRole(locals())
+
 
     @AnsibleRole("mac_ai_remote_llama_cpp_pull_model")
     @AnsibleMappedParams
@@ -169,6 +193,20 @@ class Mac_Ai:
         Args:
           podman_machine_ssh_cmd: the command to execute to enter the VM host
           stop: if true, only stop the capture
+        """
+
+        return RunAnsibleRole(locals())
+
+
+    @AnsibleRole("mac_ai_remote_capture_system_state")
+    @AnsibleMappedParams
+    def remote_capture_system_state(
+            self,
+    ):
+        """
+        Captures the state of the remote Mac system
+
+        Args:
         """
 
         return RunAnsibleRole(locals())

@@ -67,10 +67,11 @@ def prepare():
         podman.prepare_from_gh_binary(base_work_dir)
         podman.prepare_gv_from_gh_binary(base_work_dir)
 
+    brew.install_dependencies(base_work_dir)
+
     podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     prepare_llm_load_test(base_work_dir)
-    brew.install_dependencies(base_work_dir)
 
     inference_server_name = config.project.get_config("test.inference_server.name")
     prepare_inference_server_mod = PREPARE_INFERENCE_SERVERS.get(inference_server_name)
@@ -119,6 +120,10 @@ def cleanup_llm_load_test(base_work_dir):
 def prepare_llm_load_test(base_work_dir):
     dest = base_work_dir / "llm-load-test"
 
+    if not  config.project.get_config("test.llm_load_test.enabled"):
+        logging.info(f"llm-load-test not enabled, not preparting it.")
+        return
+
     if remote_access.exists(dest):
         logging.info(f"{dest} already exists, not cloning it.")
         return
@@ -137,10 +142,13 @@ def prepare_llm_load_test(base_work_dir):
 
     python_bin = config.project.get_config("remote_host.python_bin", "python3")
 
-    remote_access.run_with_ansible_ssh_conf(
-        base_work_dir,
-        f"{python_bin} -m pip install -r {dest}/requirements.txt",
-    )
+    if config.project.get_config("prepare.llm_load_test.install_requirements"):
+        remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            f"{python_bin} -m pip install -r {dest}/requirements.txt",
+        )
+    else:
+        logging.info("Not installing llm-load-test requirements.")
 
 
 def cleanup_models(base_work_dir):
@@ -154,5 +162,6 @@ def cleanup_models(base_work_dir):
 
 
 def model_to_fname(model):
+    base_work_dir = remote_access.prepare()
     model_cache_dir = config.project.get_config("test.model.cache_dir")
-    return pathlib.Path(model_cache_dir) / pathlib.Path(model).name
+    return base_work_dir / model_cache_dir / pathlib.Path(model).name

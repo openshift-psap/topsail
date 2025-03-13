@@ -65,6 +65,12 @@ def prepare_matbench_test_files():
 
 
 def safety_checks():
+    if config.project.get_config("test.llm_load_test.matbenchmarking") \
+       and config.project.get_config("test.inference_server.benchmark.enabled"):
+        msg = "llm-load-test matbenchmarking and the inference server benchmarking shouldn't be enabled simultaneously"
+        logging.fatal(msg)
+        raise ValueError(msg)
+
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
@@ -175,6 +181,11 @@ def capture_metrics(platform, stop=False):
         artifact_dir_suffix="_stop" if stop else None,
     )
 
+    if not stop:
+        run.run_toolbox(
+            "mac_ai", "remote_capture_system_state",
+        )
+
 
 def test_inference(platform):
     inference_server_name = config.project.get_config("test.inference_server.name")
@@ -211,6 +222,7 @@ def test_inference(platform):
         podman.stop(base_work_dir)
 
     model_fname = prepare_mac_ai.model_to_fname(model_name)
+
     if not remote_access.exists(model_fname):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
 
@@ -220,7 +232,7 @@ def test_inference(platform):
         if config.project.get_config("test.llm_load_test.matbenchmarking"):
             matbench_run(["test.llm_load_test.args"], with_deploy=False)
         else:
-            run_llm_load_test(base_work_dir, model_name, platform)
+            run_load_test(base_work_dir, model_name, platform, inference_server_path)
     finally:
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
@@ -240,8 +252,11 @@ def test_inference(platform):
             raise exc
 
 
-def run_llm_load_test(base_work_dir, model_name, platform):
-    if not config.project.get_config("test.llm_load_test.enabled"):
+def run_load_test(base_work_dir, model_name, platform, inference_server_path):
+    llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
+    server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
+
+    if not (llm_load_test_enabled or server_benchmark_enabled):
         return
 
     capture_metrics(platform)
@@ -249,12 +264,22 @@ def run_llm_load_test(base_work_dir, model_name, platform):
 
     exit_code = 1
     try:
-        llm_load_test_kwargs = prepare_llm_load_test_args(base_work_dir, model_name)
+        if server_benchmark_enabled:
+            inference_server_name = config.project.get_config("test.inference_server.name")
+            inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
+            inference_server_mod.run_benchmark(
+                base_work_dir,
+                inference_server_path,
+                prepare_mac_ai.model_to_fname(model_name)
+            )
 
-        run.run_toolbox(
-            "llm_load_test", "run",
-            **llm_load_test_kwargs
-        )
+        if llm_load_test_enabled:
+            llm_load_test_kwargs = prepare_llm_load_test_args(base_work_dir, model_name)
+
+            run.run_toolbox(
+                "llm_load_test", "run",
+                **llm_load_test_kwargs
+            )
         exit_code = 0
     finally:
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
@@ -287,7 +312,7 @@ def matbench_run(matrix_source_keys, with_deploy):
             else:
                 base_work_dir = remote_access.prepare()
                 model_name = config.project.get_config("test.model.name")
-                run_llm_load_test(base_work_dir, model_name)
+                run_load_test(base_work_dir, model_name, platform)
             return
 
         first_key = list(benchmark_values)[0]
@@ -344,7 +369,7 @@ def matbench_run_one(with_deploy):
         else:
             base_work_dir = remote_access.prepare()
             model_name = config.project.get_config("test.model.name")
-            run_llm_load_test(base_work_dir, model_name, platform)
+            run_load_test(base_work_dir, model_name, platform)
 
 
 def generate_visualization(test_artifact_dir):
