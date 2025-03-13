@@ -153,7 +153,7 @@ class LatencyReport():
 
 class ThroughputReport():
     def __init__(self):
-        self.name = "report: Throughput"
+        self.name = "report: Llm-load-test Results"
         self.id_name = self.name.lower().replace(" ", "_")
         self.no_graph = True
         self.is_report = True
@@ -162,7 +162,7 @@ class ThroughputReport():
 
     def do_plot(self, *args):
         header = []
-        header += [html.H1("llm-load-test Throughput")]
+        header += [html.H1("llm-load-test results")]
 
         header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True), args))
         header += html.Br()
