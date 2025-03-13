@@ -208,6 +208,9 @@ def _parse_cpu_ram_metrics(dirname):
 
 @helpers_store_parsers.ignore_file_not_found
 def _parse_llm_load_test_output(dirname):
+    if not artifact_paths.LLM_LOAD_TEST_RUN_DIR:
+        return None
+
     llm_output_file = dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "output" / "output.json"
     register_important_file(dirname, llm_output_file.relative_to(dirname))
 
@@ -219,6 +222,9 @@ def _parse_llm_load_test_output(dirname):
 
 @helpers_store_parsers.ignore_file_not_found
 def _parse_llm_load_test_config(dirname):
+    if not artifact_paths.LLM_LOAD_TEST_RUN_DIR:
+        return None
+
     llm_config_file = dirname / artifact_paths.LLM_LOAD_TEST_RUN_DIR / "src" / "llm_load_test.config.yaml"
     register_important_file(dirname, llm_config_file.relative_to(dirname))
 

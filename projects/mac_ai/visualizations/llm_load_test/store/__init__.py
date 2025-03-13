@@ -19,13 +19,15 @@ IMPORTANT_FILES = parsers.IMPORTANT_FILES
 
 class KserverLlmStore(helpers_store.BaseStore):
     def prepare_for_pickle(self, results):
-        results.llm_load_test_config.get = None
+        if results.llm_load_test_config:
+            results.llm_load_test_config.get = None
 
     def prepare_after_pickle(self, results):
-        results.llm_load_test_config.get = helpers_store.get_yaml_get_key(
-            results.llm_load_test_config.name,
-            results.llm_load_test_config.yaml_file
-        )
+        if results.llm_load_test_config:
+            results.llm_load_test_config.get = helpers_store.get_yaml_get_key(
+                results.llm_load_test_config.name,
+                results.llm_load_test_config.yaml_file
+            )
 
 local_store = KserverLlmStore(
     cache_filename=CACHE_FILENAME, important_files=IMPORTANT_FILES,
