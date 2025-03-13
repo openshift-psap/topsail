@@ -7,5 +7,4 @@ visualize:
   - "report: CPU RAM Usage"
   - "report: GPU Usage"
   - "report: LTS Documentation"
-  - "report: KPI Table Report by labels"
-  - "report: KPI Plot Report"
+  - "report: KPI Table Report by settings"
