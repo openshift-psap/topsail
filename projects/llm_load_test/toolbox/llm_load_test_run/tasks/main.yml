@@ -44,6 +44,7 @@
       set -e
       cd "{{ llm_load_test_run_src_path }}"
       export OPENBLAS_NUM_THREADS=1 # https://github.com/OpenMathLib/OpenBLAS/wiki/Faq#how-can-i-use-openblas-in-multi-threaded-applications
+      export PYTHONPATH="$PYTHONPATH:$PWD/src"
 
       if ! which timeout &>/dev/null; then
         echo "no timeout on mac ..."
