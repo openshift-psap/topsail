@@ -54,6 +54,7 @@ def AnsibleRole(role_name):
             run_ansible_role.ansible_constants = getattr(fct, "ansible_constants", {})
             run_ansible_role.ansible_mapped_params = getattr(fct, "ansible_mapped_params", False)
             run_ansible_role.ansible_skip_config_generation = getattr(fct, "ansible_skip_config_generation", False)
+            run_ansible_role.ansible_gather_facts = getattr(fct, "ansible_gather_facts", False)
 
             if not run_ansible_role.group:
                 run_ansible_role.group = fct.__qualname__.partition(".")[0].lower()
@@ -86,6 +87,10 @@ def AnsibleConstant(description, name, value):
         return fct
 
     return decorator
+
+def AnsibleGatherFacts(fct):
+    fct.ansible_gather_facts = True
+    return fct
 
 class RunAnsibleRole:
     """
@@ -238,9 +243,10 @@ class RunAnsibleRole:
         remote_hostname = env.get("TOPSAIL_REMOTE_HOSTNAME")
         if remote_hostname:
             print(f"Using TOPSAIL_REMOTE_HOSTNAME={remote_hostname}") # value will be censored by OpenShift
-            # gather only env values
-            generated_play[0]["gather_facts"] = True
-            generated_play[0]["gather_subset"] = ['env','!all','!min']
+            if self.ansible_gather_facts:
+                # gather only env values
+                generated_play[0]["gather_facts"] = True
+                generated_play[0]["gather_subset"] = ['env','!all','!min']
 
             # run remotely
             generated_play[0]["hosts"] = "remote"
