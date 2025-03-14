@@ -215,11 +215,14 @@ def test_inference(platform):
 
     if use_podman:
         inference_server_port = config.project.get_config("test.inference_server.port")
-
+        if not podman_machine.is_running(base_work_dir):
+            podman_machine.start(base_work_dir)
         podman.test(base_work_dir)
         podman.start(base_work_dir, inference_server_port)
     else:
-        podman.stop(base_work_dir)
+        if podman_machine.is_running(base_work_dir):
+            podman.stop(base_work_dir)
+            podman_machine.stop(base_work_dir)
 
     model_fname = prepare_mac_ai.model_to_fname(model_name)
 
