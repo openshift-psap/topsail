@@ -5,7 +5,8 @@ import sys
 from projects.core.library.ansible_toolbox import (
     RunAnsibleRole, AnsibleRole,
     AnsibleMappedParams, AnsibleConstant,
-    AnsibleSkipConfigGeneration
+    AnsibleSkipConfigGeneration,
+    AnsibleGatherFacts,
 )
 
 class Jump_Ci:
@@ -15,6 +16,7 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_take_lock")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def take_lock(self, cluster, owner):
         """
         Take a lock with a given cluster name on a remote node
@@ -32,6 +34,7 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_ensure_lock")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def ensure_lock(self, cluster, owner, check_kubeconfig=True):
         """
         Ensure that cluster lock with a given name is taken. Fails otherwise.
@@ -49,6 +52,7 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_release_lock")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def release_lock(self, cluster, owner):
         """
         Release a cluster lock with a given name on a remote node
@@ -63,9 +67,9 @@ class Jump_Ci:
 
         return RunAnsibleRole(locals())
 
-
     @AnsibleRole("jump_ci_prepare_topsail")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def prepare_topsail(
             self,
             cluster,
@@ -107,6 +111,7 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_prepare_step")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def prepare_step(
             self,
             cluster,
@@ -137,6 +142,7 @@ class Jump_Ci:
 
     @AnsibleRole("jump_ci_retrieve_artifacts")
     @AnsibleMappedParams
+    @AnsibleGatherFacts
     def retrieve_artifacts(
             self,
             cluster,
