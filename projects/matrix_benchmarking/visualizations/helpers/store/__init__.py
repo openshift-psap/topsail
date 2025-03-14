@@ -148,7 +148,7 @@ class BaseStore():
         results = types.SimpleNamespace()
 
         parse_once_kwargs = {}
-        if "import_settings" in inspect.getargspec(self.parse_once).args:
+        if "import_settings" in inspect.signature(self.parse_once).parameters:
             parse_once_kwargs["import_settings"] = import_settings
 
         self.parse_once(results, dirname, **parse_once_kwargs)
