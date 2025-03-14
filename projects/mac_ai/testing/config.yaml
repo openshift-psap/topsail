@@ -1,7 +1,7 @@
 __platforms: &all_platforms
-  - darwin/metal
   - darwin/vulkan
   - podman/vulkan
+  - darwin/metal
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
