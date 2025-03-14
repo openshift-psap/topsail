@@ -20,6 +20,11 @@ ci_presets:
     secrets.username: mac_ai__username.mac4
     secrets.base_work_dir: mac_ai__base_work_dir.mac4
 
+  mac-m4:
+    secrets.hostname: mac_ai__hostname.mac-m4
+    secrets.username: mac_ai__username.mac-m4
+    secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
+
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
@@ -33,7 +38,6 @@ ci_presets:
 
   keep_running:
     test.inference_server.unload_on_exit: false
-    test.inference_server.stop_on_exit: false
     prepare.podman.stop_on_exit: false
 
 secrets:
@@ -132,12 +136,15 @@ prepare:
       location: /opt/homebrew/Cellar/libomp/
       version: "20.1.0"
     dependencies:
+    # brew tap slp/krunkit
     - krunkit
+    # brew link --overwrite molten-vk-krunkit
+    - molten-vk-krunkit
+
     - vulkan-headers
     - libkrun-efi
     - virglrenderer
     - molten-vk
-    - molten-vk-krunkit
     - cmake
     - shaderc
     - libomp
@@ -234,6 +241,9 @@ test:
   capture_metrics:
     enabled: true
     gpu:
+      # needs this in visudo:
+      # $USER ALL = (root) NOPASSWD: /usr/bin/pkill powermetrics
+      # $USER ALL = (root) NOPASSWD: /usr/bin/powermetrics *
       enabled: true
       sampler: gpu_power
       rate: 1000

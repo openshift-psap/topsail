@@ -31,7 +31,7 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
 
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
-        model_id = model_name,
+        model_id = prepare_mac_ai.model_to_fname(model_name),
     )
 
     return llm_load_test_kwargs
@@ -369,7 +369,13 @@ def matbench_run_one(with_deploy):
         else:
             base_work_dir = remote_access.prepare()
             model_name = config.project.get_config("test.model.name")
-            run_load_test(base_work_dir, model_name, platform)
+
+            inference_server_name = config.project.get_config("test.inference_server.name")
+            prepare_inference_server_mod = prepare_mac_ai.PREPARE_INFERENCE_SERVERS.get(inference_server_name)
+            inference_server_path = prepare_inference_server_mod.get_binary_path(
+                base_work_dir, platform,
+            )
+            run_load_test(base_work_dir, model_name, platform, inference_server_path)
 
 
 def generate_visualization(test_artifact_dir):

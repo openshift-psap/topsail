@@ -48,12 +48,12 @@ def _get_test_setup(entry):
 
     inference_server_links += [html.Li(["configuration", html.Code(yaml.dump([inference_server_cfg]).strip(), style={"white-space": "pre-wrap"})])]
     if artifacts_basedir:
-        if entry.results.file_links.server_logs:
+        if entry.results.file_links and entry.results.file_links.server_logs:
             inference_server_links += [html.Li([html.A("execution logs", href=artifacts_basedir /entry.results.file_links.server_logs, target="_blank")])]
         else:
             inference_server_links += [html.Li(["execution logs not available :/"])]
 
-        if entry.results.file_links.server_build_logs:
+        if entry.results.file_links and entry.results.file_links.server_build_logs:
             inference_server_links += [html.Li(
                 ["build logs:",
                  html.Ul(

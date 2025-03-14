@@ -23,11 +23,17 @@
     dest: "{{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml"
     mode: '0400'
 
+- name: Show the start time
+  command:
+    date +%H:%M:%S
+  register: start_time_cmd
+
 - name: Inform | Next task runs the load test
   debug:
     msg: |
       Next task runs the load test.
       It takes {{ llm_load_test_run_duration }}s to complete.
+      Starting at {{ start_time_cmd.stdout }}.
       Artifacts will be saved into '{{ artifact_extra_logs_dir }}/output'.
       Configuration file is {{ artifact_extra_logs_dir }}/src/llm_load_test.config.yaml
 

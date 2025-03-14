@@ -46,8 +46,7 @@ def generateLlamaBenchData(entries, _variables, _ordered_vars, llama_bench_test=
         else:
             datum["test_name:sort_index"] = datum["test_name"]
 
-
-        for llama_bench_result in entry.results.llama_bench_results:
+        for llama_bench_result in (entry.results.llama_bench_results or []):
             if llama_bench_test and llama_bench_result["test"] != llama_bench_test:
                 continue
 

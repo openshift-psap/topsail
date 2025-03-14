@@ -77,6 +77,8 @@ def parse_once(results, dirname):
 
 def _parse_file_links(dirname):
     file_links = types.SimpleNamespace()
+    if not  artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL:
+        return None
 
     server_logs = dirname / artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL / "artifacts" / "llama_cpp.log"
 
@@ -307,6 +309,8 @@ def _parse_llama_bench_results(dirname):
 
 def _parse_system_state(dirname):
     system_state = types.SimpleNamespace()
+    if not  artifact_paths.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE:
+        return None
 
     with open(register_important_file(dirname, artifact_paths.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE / "artifacts" / "system_profiler.txt")) as f:
         system_state = yaml.safe_load(f)
