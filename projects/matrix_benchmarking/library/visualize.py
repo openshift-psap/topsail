@@ -43,8 +43,7 @@ def init(allow_no_config_file=False):
 
         # remove the matbench preset from the main config and store it in matbench.preset
         config.project.set_config("PR_POSITIONAL_ARG_1", None)
-        config.project.set_config("matbench.preset", pr_arg_1,
-                                  dump_command_args=False)
+        config.project.set_config("matbench.preset", pr_arg_1)
 
         config.project.apply_preset_from_pr_args()
         config.project.apply_config_overrides()
@@ -57,10 +56,10 @@ def init(allow_no_config_file=False):
     if not matbench_preset:
         pass # no preset defined, nothing to do
     elif "://" in str(matbench_preset):
-        config.project.set_config("matbench.download.url", matbench_preset, dump_command_args=False)
+        config.project.set_config("matbench.download.url", matbench_preset)
     else:
-        config.project.set_config("matbench.config_file", f"{matbench_preset}.yaml", dump_command_args=False)
-        config.project.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml", dump_command_args=False)
+        config.project.set_config("matbench.config_file", f"{matbench_preset}.yaml")
+        config.project.set_config("matbench.download.url_file", workload_storage_dir / "data" / f"{matbench_preset}.yaml")
 
     matbench_config = config.Config(workload_storage_dir, workload_storage_dir / "data" / config.project.get_config("matbench.config_file"))
 
