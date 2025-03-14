@@ -7,11 +7,14 @@ LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
  	name="topsail" \
 	url="https://github.com/openshift-psap/"
 
+ARG PYTHON_VERSION=3.11
 RUN dnf install -y --quiet \
 	        git jq vim wget rsync time file psmisc \
-		python3 python3-pip python3-setuptools gcc g++ \
-  && dnf clean all \
-  && rm -rf $HOME/.cache && rm -rf /var/cache/yum
+    python${PYTHON_VERSION} python${PYTHON_VERSION}-pip python3-setuptools gcc g++ \
+    && dnf clean all \
+    && alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1 \
+    && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 \
+    && rm -rf $HOME/.cache && rm -rf /var/cache/yum
 
 
 # Set up the runner user

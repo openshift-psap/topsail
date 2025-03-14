@@ -7,16 +7,17 @@ LABEL 	io.k8s.display-name="OpenShift PSAP topsail" \
  	name="topsail" \
 	url="https://github.com/openshift-psap/"
 
+ARG PYTHON_VERSION=3.11
 RUN dnf install -y epel-release && \
     dnf install --quiet -y \
          git jq vim wget rsync time gettext httpd-tools make file psmisc \
-         python3-pip python3-setuptools procps gcc g++ \
-         python3 python3-devel \
-         python-kubernetes python3-numpy python3-pyyaml \
-  && dnf clean all \
-  && pip install virtualenv \
-  && rm -rf $HOME/.cache && rm -rf /var/cache/yum \
-  && pip install --upgrade pip
+         python${PYTHON_VERSION}-pip python${PYTHON_VERSION}-setuptools procps gcc g++ \
+         python${PYTHON_VERSION} python${PYTHON_VERSION}-devel \
+         python-kubernetes python${PYTHON_VERSION}-numpy python3-pyyaml \
+    && dnf clean all \
+    && alternatives --install /usr/bin/python python3 /usr/bin/python${PYTHON_VERSION} 1 \
+    && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 \
+    && rm -rf $HOME/.cache && rm -rf /var/cache/yum
 
 # Install dependencies: ocm, oc
 
@@ -61,9 +62,7 @@ exec ${HOME}/testing/run "$@" \n\
  \
  && mkdir -p ${HOME}/.ansible/tmp && chmod 777 ${HOME} -R \
  \
- && ln -s /usr/bin/python3 /usr/bin/python
-
-RUN ln -s $(which oc) /usr/bin/kubectl
+ && ln -s $(which oc) /usr/bin/kubectl && ln -s pip${PYTHON_VERSION} /usr/bin/pip
 
 # Install Python requirements
 
