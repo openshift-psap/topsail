@@ -118,7 +118,7 @@ def test():
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
 
-        logging.info(f"Test artifacts have been saved in {env.ARTIFACT_DIR}")
+        logging.info(f"Test artifacts have been saved in {env.ARTIFACT_DIR}/reports_index.html")
 
         if not failed and exc:
             raise exc
