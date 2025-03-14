@@ -21,9 +21,10 @@
   shell: |
     set -e;
     {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --version \
-        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.version"
+        &>  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.version";
+
     {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --list-devices \
-        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.list-devices"
+        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-server.list-devices"
 
 - name: Execute and retrieve the artifacts
   block:
@@ -45,7 +46,7 @@
       curl -sSf localhost:{{ mac_ai_remote_llama_cpp_run_model_port }}/v1/models
     register: ollama_running_cmd
     until: ollama_running_cmd.rc == 0
-    retries: 2
+    retries: 4
     delay: 5
 
   rescue:
