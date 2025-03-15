@@ -21,15 +21,19 @@
   shell: |
     set -e;
     {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --version \
-        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.version"
+        &>  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.version";
+
     {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} --list-devices \
-        >  "{{ artifact_extra_logs_dir }}/artifacts/llama-server.list-devices"
+        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-server.list-devices"
 
 - name: Execute and retrieve the artifacts
   block:
   - name: Start serving the llama_cpp model
-    shell:
+    shell: |
+      set -o pipefail;
+
       cd "{{ mac_ai_remote_llama_cpp_run_model_base_work_dir }}";
+      echo Starting llama-server ...;
       nohup {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} \
         --model {{ mac_ai_remote_llama_cpp_run_model_name }} \
         --host 0.0.0.0 \
@@ -37,18 +41,31 @@
         --n-gpu-layers {{ mac_ai_remote_llama_cpp_run_model_ngl }} \
         &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
         &
+        pid=$!;
+        sleep 5;
+        echo Running with PID=$pid;
+        ps ux -p "$pid"
+        echo "---"
+        head "{{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log"
+        echo "---"
     environment:
       HOME: "{{ mac_ai_remote_llama_cpp_run_model_base_work_dir }}"
 
   - name: Wait for llama_cpp to start responding correctly
     command:
       curl -sSf localhost:{{ mac_ai_remote_llama_cpp_run_model_port }}/v1/models
-    register: ollama_running_cmd
-    until: ollama_running_cmd.rc == 0
-    retries: 2
+    register: llama_cpp_running_cmd
+    until: llama_cpp_running_cmd.rc == 0
+    retries: 4
     delay: 5
 
   rescue:
+  - name: Check if the server is still running
+    shell:
+      set -o pipefail;
+      ps aux | grep llama-server
+    failed_when: false
+
   - name: Show the logs of the server
     command:
       cat {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log
