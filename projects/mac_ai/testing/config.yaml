@@ -20,6 +20,11 @@ ci_presets:
     secrets.username: mac_ai__username.mac4
     secrets.base_work_dir: mac_ai__base_work_dir.mac4
 
+  mac5:
+    secrets.hostname: mac_ai__hostname.mac5
+    secrets.username: mac_ai__username.mac5
+    secrets.base_work_dir: mac_ai__base_work_dir.mac5
+
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
@@ -44,9 +49,9 @@ secrets:
     name: crc-mac-ai-secret
     env_key: CRC_MAC_AI_SECRET_PATH
   private_key_path: mac_ai__private_key
-  hostname: mac_ai__hostname
-  username: mac_ai__username
-  base_work_dir: mac_ai__base_work_dir
+  hostname: mac_ai__hostname.mac-m4
+  username: mac_ai__username.mac-m4
+  base_work_dir: mac_ai__base_work_dir.mac-m4
 
 remote_host:
   run_locally: false
