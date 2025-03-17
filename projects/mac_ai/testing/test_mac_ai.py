@@ -109,7 +109,7 @@ def test():
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
 
-        logging.info(f"Test artifacts have been saved in {env.ARTIFACT_DIR}/reports_index.html")
+        logging.info(f"Test artifacts have been saved in {env.ARTIFACT_DIR}")
 
         if not failed and exc:
             raise exc
@@ -348,6 +348,6 @@ def generate_visualization(test_artifact_dir):
     with env.NextArtifactDir("plots"):
         exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
 
-        logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}")
+        logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
     return exc
