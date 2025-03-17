@@ -132,18 +132,8 @@ class Config:
         if isinstance(value, str) and value.startswith("*$@"):
             print = False
 
-            if not handled_secretly:
-                msg = f"{jsonpath} -> {value} is a secret dereference, but get_config(..., handled_secretly=False). Aborting"
-                logging.fatal(msg)
-                raise ValueError(msg)
 
-            ref_key = value.removeprefix("*$@")
-            ref_value = self.get_config(ref_key, print=False)
-
-            secret_dir = pathlib.Path(os.environ[self.get_config("secrets.dir.env_key", print=False)])
-            secret_value = (secret_dir / ref_value).read_text().strip()
-
-            value = secret_value
+        value = self.resolve_reference(value, handled_secretly)
 
         if print:
             logging.info(f"get_config: {jsonpath} --> {value}")
@@ -259,56 +249,67 @@ class Config:
 
         return False
 
-    def resolve_references(self):
-        # https://stackoverflow.com/a/71159744
-        def flatten_nested_json(d: dict)-> dict:
-            auto_id_field = 'json_path'
-            jsonpath_ng.jsonpath.auto_id_field = auto_id_field
-            expr = jsonpath_ng.parse(f'$..*.{auto_id_field}')
-            pat = re.compile(r'(?:\.\[\d+]\.|\.)')
-            dd = defaultdict(list)
-            for m in expr.find(d):
-                if not isinstance(m.datum.value, (dict, list)):
-                    dd[pat.sub('.', m.value)].append(m.datum.value)
-            for k, v in dd.items():
-                if len(v) == 1:
-                    dd[k] = v[0]
-            return dict(dd)
+    def resolve_reference(self, value, handled_secretly=False):
+        if not isinstance(value, str): return value
+        if "@" not in value: return value
 
-        flat_dict = flatten_nested_json(project.config)
-        for k, v in flat_dict.items():
-            safe_key  = ".".join([f'"{key}"' for key in k.split(".")])
+        # --- #
 
-            if not isinstance(v, str): continue
-            if "@" not in v: continue
-            if v.startswith("*$@"):
-                logging.info(f"resolve_references: secret reference, ignoring it here | {k} --> '{v}'")
-                continue
-            if v.startswith("*@"):
-                msg = f"resolve_references: '*@' references not supported (not sure how to handle it wrt to secrets) --> {k}: {v}"
+        def secret_file_dereference():
+            if not handled_secretly:
+                msg = f"{value} is a secret dereference, but get_config(..., handled_secretly=False). Aborting"
                 logging.fatal(msg)
                 raise ValueError(msg)
 
-            if not (v.startswith("@") or "{@" in v):
-                # don't go further if the derefence anchor isn't found
-                continue
+            ref_key = value.removeprefix("*$@")
+            ref_value = self.get_config(ref_key, print=False)
 
-            if v.startswith("@"):
-                ref_key = v[1:]
-                new_value = self.get_config(ref_key)
-            else:
-                new_value = v
-                for ref in re.findall(r"\{@.*?\}", v):
-                    ref_key = ref.strip("{@}")
-                    ref_value = self.get_config(ref_key, print=False)
-                    new_value = new_value.replace(ref, str(ref_value))
+            secret_dir = pathlib.Path(os.environ[self.get_config("secrets.dir.env_key", print=False)])
+            secret_value = (secret_dir / ref_value).read_text().strip()
 
-                logging.info(f"resolve_references: {k} ==> '{new_value}'")
-            try:
-                self.set_config(safe_key, new_value, print=False)
-            except:
-                logging.error(f"resolve_references: failed to replace '{safe_key}' ==> {new_key}")
-                raise
+            return secret_value
+
+
+        # --- #
+
+        def simple_dereference():
+            ref_key = value[1:]
+            return self.get_config(ref_key)
+
+
+        def multi_dereference():
+            new_value = value
+            for ref in re.findall(r"\{@.*?\}", value):
+                ref_key = ref.strip("{@}")
+                ref_value = self.get_config(ref_key, print=False)
+                new_value = new_value.replace(ref, str(ref_value))
+
+            return new_value
+
+        # --- #
+
+        if value.startswith("*$@"):
+            return secret_file_dereference()
+
+        if value.startswith("*@"):
+            msg = f"resolve_reference: '*@' references not supported (not sure how to handle it wrt to secrets) --> {k}: {value}"
+            logging.fatal(msg)
+            raise ValueError(msg)
+
+        if not (value.startswith("@") or "{@" in value):
+            # don't go further if the derefence anchor isn't found
+            return value
+
+        # --- #
+
+
+        new_value = simple_dereference() if value.startswith("@") \
+            else multi_dereference()
+
+        if not handled_secretly:
+            logging.info(f"resolve_reference: {value} ==> '{new_value}'")
+
+        return new_value
 
 
 def _set_config_environ(testing_dir):
@@ -452,7 +453,5 @@ def init(testing_dir, apply_preset_from_pr_args=False, apply_config_overrides=Tr
         project.apply_config_overrides(log=False)
 
     test_skip_list()
-
-    project.resolve_references()
 
     pass
