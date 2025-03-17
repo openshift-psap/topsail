@@ -1,5 +1,6 @@
 import copy
 import logging
+import itertools
 
 from dash import html
 from dash import dcc
@@ -19,6 +20,7 @@ def register():
     GPUUsageReport()
     CpuRamUsageReport()
     LlamaBenchReport()
+    LlamaMicroBenchReport()
 
 
 class CallDetailsReport():
@@ -272,6 +274,7 @@ class LlamaBenchReport():
 
     def do_plot(self, *args):
         header = []
+
         header += [html.H1("Llama-bench results")]
         for llama_bench_test in "pp512", "tg128":
             header += [html.H1(f"llama-bench '{llama_bench_test}' test")]
@@ -280,5 +283,48 @@ class LlamaBenchReport():
             header += report.Plot_and_Text(f"Llama-bench results plot", report.set_config(dict(llama_bench_test=llama_bench_test), args))
             header += html.Br()
             header += html.Br()
+
+        return None, header
+
+
+class LlamaMicroBenchReport():
+    def __init__(self):
+        self.name = "report: Llama-micro-bench Results"
+        self.id_name = self.name.lower().replace(" ", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+
+    def do_plot(self, *args):
+        header = []
+
+        header += [html.H1("Llama.cpp micro-benchmarks results")]
+        for llama_micro_bench_group in "compute", "transfer":
+            header += [html.H2(f"llama.cpp micro-bench '{llama_micro_bench_group}' tests")]
+            header += report.Plot_and_Text("Llama-micro-bench results plot",
+                                           report.set_config(dict(group=llama_micro_bench_group), args))
+
+            header += report.Plot_and_Text("Llama-micro-bench results table",
+                                           report.set_config(dict(group=llama_micro_bench_group), args))
+            header.pop(-2) # remove the empty plot
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        if not len(ordered_vars) == 1:
+            header += [html.B(f"Cannot generate the performance comparison with more than 1 variable (got: {', '.join(ordered_vars)})")]
+            return None, header
+
+        for group in "compute", "transfer":
+
+            header += [html.H2(f"Performance Comparisons of the <i>{group}</i> operations")]
+
+            # take all the possibilities two by two
+            first_vars = variables[ordered_vars[0]]
+            for ref, comp in (itertools.combinations(first_vars, 2)):
+                header += report.Plot_and_Text(
+                    "Llama-micro-bench comparison plot",
+                    report.set_config(dict(group=group, ref=ref, comp=comp), args)
+                )
 
         return None, header

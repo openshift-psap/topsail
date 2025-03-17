@@ -44,6 +44,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL}/artifacts/build.*.log",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/llama-bench.log",
+    f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/test-backend-ops_perf.log",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
 
@@ -69,6 +70,7 @@ def parse_once(results, dirname):
     results.file_links = _parse_file_links(dirname)
 
     results.llama_bench_results = _parse_llama_bench_results(dirname)
+    results.llama_micro_bench_results = _parse_llama_micro_bench_results(dirname)
 
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
 
@@ -309,6 +311,87 @@ def _parse_llama_bench_results(dirname):
         llama_bench_results.append(results)
 
     return llama_bench_results
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_llama_micro_bench_results(dirname):
+    if not artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH:
+        return None
+
+    llama_micro_bench_results = types.SimpleNamespace()
+    llama_micro_bench_results.compute = []
+    llama_micro_bench_results.transfer = []
+
+    llama_micro_bench_output_file =  artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH / "artifacts" / "test-backend-ops_perf.log"
+
+    with open(register_important_file(dirname, llama_micro_bench_output_file)) as f:
+        llama_micro_bench_output = f.readlines()
+
+    llama_micro_bench_results.file_path = str(llama_micro_bench_output_file)
+
+    current_backend = None
+    for line in llama_micro_bench_output:
+        line = line.strip()
+
+        if line.startswith("Backend "):
+            if current_backend in ("Metal", "Vulkan0"):
+                break
+            current_backend = line.split(": ")[1]
+
+        if not "runs" in line: continue
+        # ['ADD(type=f32,ne=[4096,1,1,1],nr=[1,1,1,1]):', '548730', 'runs', '-', '1.84', 'us/run', '-', '48', 'kB/run', '-', '24.84', 'GB/s']
+        raw_data = line.replace("\x1b[0m", "").replace("\x1b[1;34m", "").split()
+
+        line_data = types.SimpleNamespace()
+        line_data.name = raw_data[0].strip(":")
+        line_data.runs = int(raw_data[1])
+        line_data.run_duration = float(raw_data[4])
+        line_data.run_duration_unit = raw_data[5]
+        if line_data.run_duration_unit != "us/run":
+            raise ValueError(f"Unexpected duration unit: {line_data.duration_unit}")
+
+        is_compute = "FLOP/run" in raw_data[8]
+
+        if is_compute:
+            line_data.run_throughput = float(raw_data[7])
+            line_data.run_throughput_unit = raw_data[8]
+
+            if line_data.run_throughput_unit  == "GFLOP/run":
+                line_data.run_throughput *= 1000
+                line_data.run_throughput_unit = "MFLOP/run"
+
+            if line_data.run_throughput_unit != "MFLOP/run":
+                raise ValueError(f"Unexpected duration unit: {line_data.duration_unit}")
+
+            line_data.throughput = float(raw_data[10])
+            line_data.throughput_unit = raw_data[11]
+            if line_data.throughput_unit  == "TFLOPS":
+                line_data.throughput *= 1000
+                line_data.throughput_unit = "GFLOPS"
+
+            if line_data.throughput_unit not in ("GFLOPS"):
+                import pdb;pdb.set_trace()
+                raise ValueError(f"Unexpected throughput unit: {line_data.throughput_unit}")
+
+            dest = llama_micro_bench_results.compute
+        else:
+            line_data.run_data = float(raw_data[7])
+            line_data.run_data_unit = raw_data[8]
+
+            if line_data.run_data_unit != "kB/run":
+                raise ValueError(f"Unexpected run data unit: {line_data.run_data_unit}")
+
+            line_data.speed = float(raw_data[10])
+            line_data.speed_unit = raw_data[11]
+
+            if line_data.speed_unit not in ("GB/s"):
+                import pdb;pdb.set_trace()
+                raise ValueError(f"Unexpected speed unit: {line_data.speed_unit}")
+
+            dest = llama_micro_bench_results.transfer
+        dest.append(line_data)
+
+    return llama_micro_bench_results
 
 
 def _parse_system_state(dirname):
