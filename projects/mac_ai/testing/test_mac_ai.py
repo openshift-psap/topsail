@@ -65,12 +65,6 @@ def prepare_matbench_test_files():
 
 
 def safety_checks():
-    if config.project.get_config("test.llm_load_test.matbenchmarking") \
-       and config.project.get_config("test.inference_server.benchmark.enabled"):
-        msg = "llm-load-test matbenchmarking and the inference server benchmarking shouldn't be enabled simultaneously"
-        logging.fatal(msg)
-        raise ValueError(msg)
-
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
@@ -101,10 +95,7 @@ def test():
         do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
 
         if config.project.get_config("test.matbenchmarking.enabled"):
-            matbench_run(
-                ["test.model.name", "test.platform"],
-                with_deploy=True,
-            )
+            matbench_run(config.project.get_config("test.matbenchmarking.fields"))
         else:
             test_all_platforms()
     except Exception as e:
@@ -194,8 +185,6 @@ def test_inference(platform):
 
     base_work_dir = remote_access.prepare()
 
-    do_matbenchmarking = config.project.get_config("test.llm_load_test.matbenchmarking")
-
     prepare_inference_server_mod.prepare_test(base_work_dir, platform)
 
     model_name = config.project.get_config("test.model.name")
@@ -232,9 +221,6 @@ def test_inference(platform):
     inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
 
     try:
-        if config.project.get_config("test.llm_load_test.matbenchmarking"):
-            matbench_run(["test.llm_load_test.args"], with_deploy=False)
-        else:
             run_load_test(base_work_dir, model_name, platform, inference_server_path)
     finally:
         exc = None
@@ -290,7 +276,7 @@ def run_load_test(base_work_dir, model_name, platform, inference_server_path):
 
         capture_metrics(platform, stop=True)
 
-def matbench_run(matrix_source_keys, with_deploy):
+def matbench_run(matrix_source_keys):
     with env.NextArtifactDir("matbenchmarking"):
         benchmark_values = {}
 
@@ -309,25 +295,17 @@ def matbench_run(matrix_source_keys, with_deploy):
 
         if not benchmark_values:
             logging.info("No benchmark values to pass to MatrixBenchmarking. Skipping it.")
+            test_inference(config.project.get_config("test.platform"))
 
-            if with_deploy:
-                test_inference(config.project.get_config("test.platform"))
-            else:
-                base_work_dir = remote_access.prepare()
-                model_name = config.project.get_config("test.model.name")
-                run_load_test(base_work_dir, model_name, platform)
             return
 
         first_key = list(benchmark_values)[0]
         first_key_name = first_key.rpartition(".")[-1]
         path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
 
-        entrypoint = "matbench_run_with_deploy" if with_deploy \
-            else "matbench_run_without_deploy"
-
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,
-            script_tpl=f"{sys.argv[0]} {entrypoint}",
+            script_tpl=f"{sys.argv[0]} matbench_run",
             stop_on_error=config.project.get_config("test.matbenchmarking.stop_on_error"),
             common_settings=dict(),
             test_files={},
@@ -347,14 +325,13 @@ def matbench_run(matrix_source_keys, with_deploy):
             raise RuntimeError(msg)
 
 
-def matbench_run_one(with_deploy):
+def matbench_run_one():
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
 
-        if with_deploy:
-            with open(env.ARTIFACT_DIR / "skip", "w") as f:
-                print("Results are in a subdirectory, not here.", file=f)
+        with open(env.ARTIFACT_DIR / "skip", "w") as f:
+            print("Results are in a subdirectory, not here.", file=f)
 
         for k, v in settings.items():
             config.project.set_config(k, v)
@@ -367,18 +344,7 @@ def matbench_run_one(with_deploy):
             logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
             return
 
-        if with_deploy:
-            test_inference(platform)
-        else:
-            base_work_dir = remote_access.prepare()
-            model_name = config.project.get_config("test.model.name")
-
-            inference_server_name = config.project.get_config("test.inference_server.name")
-            prepare_inference_server_mod = prepare_mac_ai.PREPARE_INFERENCE_SERVERS.get(inference_server_name)
-            inference_server_path = prepare_inference_server_mod.get_binary_path(
-                base_work_dir, platform,
-            )
-            run_load_test(base_work_dir, model_name, platform, inference_server_path)
+        test_inference(platform)
 
 
 def generate_visualization(test_artifact_dir):

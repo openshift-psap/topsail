@@ -30,7 +30,6 @@ ci_presets:
     test.platform: *all_platforms
     test.model.name: llama3.2
 
-    test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
@@ -213,7 +212,6 @@ test:
 
   llm_load_test:
     enabled: true
-    matbenchmarking: false
 
     args:
       host: localhost
@@ -237,7 +235,11 @@ test:
   matbenchmarking:
     enabled: false
     stop_on_error: true
-
+    fields:
+    - test.model.name
+    - test.platform
+    - test.llm_load_test.args
+    - prepare.llama_cpp.repo.version
   capture_metrics:
     enabled: true
     gpu:
@@ -287,5 +289,4 @@ exec_list:
   prepare_ci: null
   test_ci: null
   post_cleanup_ci: null
-  matbench_run_with_deploy: true
-  matbench_run_without_deploy: true
+  matbench_run: true
