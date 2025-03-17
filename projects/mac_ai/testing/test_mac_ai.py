@@ -34,7 +34,7 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
         model_id = prepare_mac_ai.model_to_fname(model_name),
     )
 
-    return llm_load_test_kwargs
+    return {k:config.project.resolve_reference(v) for k, v in llm_load_test_kwargs.items()}
 
 
 def prepare_matbench_test_files():
