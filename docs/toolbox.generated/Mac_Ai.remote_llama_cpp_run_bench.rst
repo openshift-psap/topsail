@@ -20,17 +20,17 @@ Parameters
 
 ``path``  
 
-* The path to the llama-bench binary
+* The path to the llama.cpp bin directory
 
 
-``name``  
+``model_name``  
 
 * The name of the model to use
 
 
 ``prefix``  
 
-* The prefix to get the llama-server running
+* The prefix to get the llama.cpp binaries running
 
 
 ``ngl``  
@@ -43,6 +43,20 @@ Parameters
 ``verbose``  
 
 * If true, runs the benchmark in verbose mode
+
+* default value: ``True``
+
+
+``llama_bench``  
+
+* If true, runs the llama-bench benchmark
+
+* default value: ``True``
+
+
+``test_backend_ops``  
+
+* If true, runs the test-backend-ops benchmark
 
 * default value: ``True``
 

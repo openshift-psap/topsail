@@ -5,12 +5,19 @@
     state: directory
     mode: '0755'
 
-- name: Run the benchmark
+- name: Run the llama-bench benchmark
   shell: |
-    {{ mac_ai_remote_llama_cpp_run_bench_prefix }} {{ mac_ai_remote_llama_cpp_run_bench_path }} \
-        --model {{ mac_ai_remote_llama_cpp_run_bench_name }} \
+    {{ mac_ai_remote_llama_cpp_run_bench_prefix }} {{ mac_ai_remote_llama_cpp_run_bench_path }}/llama-bench \
+        --model {{ mac_ai_remote_llama_cpp_run_bench_model_name }} \
         --n-gpu-layers {{ mac_ai_remote_llama_cpp_run_bench_ngl }} \
     {% if mac_ai_remote_llama_cpp_run_bench_verbose -%}
         --verbose 2> "{{ artifact_extra_logs_dir }}/artifacts/verbose.log" \
     {% endif -%}
         > "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
+  when: mac_ai_remote_llama_cpp_run_bench_llama_bench | bool
+
+- name: Run the test-backend-ops perf benchmark
+  shell: |
+    {{ mac_ai_remote_llama_cpp_run_bench_prefix }} {{ mac_ai_remote_llama_cpp_run_bench_path }}/test-backend-ops perf \
+        > "{{ artifact_extra_logs_dir }}/artifacts/test-backend-ops_perf.log"
+  when: mac_ai_remote_llama_cpp_run_bench_test_backend_ops | bool
