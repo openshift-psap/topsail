@@ -218,10 +218,35 @@ def test_inference(platform):
     if not remote_access.exists(model_fname):
         inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
 
-    inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
+    llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
+    server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
+
+    if not (llm_load_test_enabled or server_benchmark_enabled):
+        return
+
+    capture_metrics(platform)
+    prepare_matbench_test_files()
+    exit_code = 1
 
     try:
-            run_load_test(base_work_dir, model_name, platform, inference_server_path)
+        if server_benchmark_enabled:
+            inference_server_name = config.project.get_config("test.inference_server.name")
+            inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
+            inference_server_mod.run_benchmark(
+                base_work_dir,
+                inference_server_path,
+                prepare_mac_ai.model_to_fname(model_name)
+            )
+
+        inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
+
+        if llm_load_test_enabled:
+            run.run_toolbox(
+                "llm_load_test", "run",
+                **prepare_llm_load_test_args(base_work_dir, model_name)
+            )
+
+        exit_code = 0
     finally:
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
@@ -236,45 +261,15 @@ def test_inference(platform):
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
                                     mute_stdout=True, mute_stderr=True)
 
+        with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
+            print(exit_code, file=f)
+
+        exc = run.run_and_catch(exc, capture_metrics, platform, stop=True)
+
         if exc:
             logging.warning(f"Test crashed ({exc})")
             raise exc
 
-
-def run_load_test(base_work_dir, model_name, platform, inference_server_path):
-    llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
-    server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
-
-    if not (llm_load_test_enabled or server_benchmark_enabled):
-        return
-
-    capture_metrics(platform)
-    prepare_matbench_test_files()
-
-    exit_code = 1
-    try:
-        if server_benchmark_enabled:
-            inference_server_name = config.project.get_config("test.inference_server.name")
-            inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
-            inference_server_mod.run_benchmark(
-                base_work_dir,
-                inference_server_path,
-                prepare_mac_ai.model_to_fname(model_name)
-            )
-
-        if llm_load_test_enabled:
-            llm_load_test_kwargs = prepare_llm_load_test_args(base_work_dir, model_name)
-
-            run.run_toolbox(
-                "llm_load_test", "run",
-                **llm_load_test_kwargs
-            )
-        exit_code = 0
-    finally:
-        with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
-            print(exit_code, file=f)
-
-        capture_metrics(platform, stop=True)
 
 def matbench_run(matrix_source_keys):
     with env.NextArtifactDir("matbenchmarking"):
