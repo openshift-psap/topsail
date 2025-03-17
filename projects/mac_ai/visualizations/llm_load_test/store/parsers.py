@@ -189,6 +189,8 @@ def _parse_cpu_ram_metrics(dirname):
 
         for line in f.readlines():
             if line.startswith("CPU usage"):
+                if not line.strip().endswith("idle"):
+                    continue # incomplete line, skip it
                 cpu = types.SimpleNamespace()
                 idle = line.split()[-2]
                 cpu.idle_pct = float(idle[:-1])
@@ -196,6 +198,8 @@ def _parse_cpu_ram_metrics(dirname):
 
                 pass
             elif line.startswith("PhysMem"):
+                if not line.strip().endswith("unused."):
+                    continue # incomplete line, skip it
                 memory = types.SimpleNamespace()
                 mem_line = line.split()
                 unused = mem_line[-2]
