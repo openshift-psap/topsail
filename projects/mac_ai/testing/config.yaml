@@ -42,6 +42,9 @@ ci_presets:
 
     prepare.brew.capture_dependencies: true
 
+  bench_only:
+    test.llm_load_test.enabled: false
+
   multi-version:
     prepare.llama_cpp.repo.version:
     - b4688 # slp's
