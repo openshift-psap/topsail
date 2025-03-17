@@ -30,6 +30,8 @@ ci_presets:
     secrets.username: mac_ai__username.mac-m4
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
 
+  # ---
+
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
@@ -39,6 +41,13 @@ ci_presets:
     test.llm_load_test.args.duration: 300
 
     prepare.brew.capture_dependencies: true
+
+  multi-version:
+    prepare.llama_cpp.repo.version:
+    - b4688 # slp's
+    - b4897 # latest - 25-03-17
+
+  # ---
 
   keep_running:
     test.inference_server.unload_on_exit: false
