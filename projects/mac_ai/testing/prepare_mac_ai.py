@@ -83,16 +83,23 @@ def prepare():
         raise ValueError(msg)
 
     native_platform = config.project.get_config("prepare.native_platform")
-    inference_server_binaries = {}
 
     platforms = config.project.get_config("prepare.platforms")
     # always prepare the native platform
     platforms += [native_platform]
+    inference_server_native_binary = None
 
-    for platform in set(platforms):
-        inference_server_binaries[platform] = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
+    versions = config.project.get_config("prepare.llama_cpp.repo.version")
+    for version in versions if isinstance(versions, list) else [versions]:
+        config.project.set_config("prepare.llama_cpp.repo.version", version)
+        for platform in set(platforms):
+            binary = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
+            if platform == native_platform and inference_server_native_binary is None:
+                # keeping only the first native binary here
+                inference_server_native_binary = binary
+    config.project.set_config("prepare.llama_cpp.repo.version", versions)
 
-    inference_server_native_binary = inference_server_binaries[native_platform]
+    # --- #
 
     model = config.project.get_config("test.model.name")
 
