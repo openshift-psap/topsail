@@ -62,6 +62,7 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
         datum["tpot_mean"] = entry.results.lts.kpis["kserve_llm_load_test_tpot_mean"].value
         datum["itl_mean"] = entry.results.lts.kpis["kserve_llm_load_test_itl_mean"].value
         datum["ttft_mean"] = entry.results.lts.kpis["kserve_llm_load_test_ttft_mean"].value
+        datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
 
         datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
             if ordered_vars else 0
@@ -90,30 +91,38 @@ class Throughput():
         cfg__itl = cfg.get("itl", False)
         cfg__ttft = cfg.get("ttft", False)
         cfg__tpot = cfg.get("tpot", False)
+        cfg__gen_throughput = cfg.get("gen_throughput", False)
 
+        subtitle = ""
         if cfg__itl:
             y_name = "Inter-Token Latency"
             y_unit = "ms"
             y_key = "itl_mean"
             lower_better = True
+        elif cfg__gen_throughput:
+            y_name = "Generation Throughput"
+            y_unit = "token/s"
+            y_key = "gen_throughput"
+            lower_better = False
+            subtitle = "<br>(1 / Inter-Token Latency)"
         elif cfg__tpot:
             y_name = "Time Per Output Token"
             y_unit = "ms/token"
             y_key = "tpot_mean"
             lower_better = True
         elif cfg__ttft:
-            y_name = "Time To FIrst Token"
+            y_name = "Time To First Token"
             y_unit = "ms"
             y_key = "ttft_mean"
             lower_better = True
         else:
             if cfg__bar_plot:
-                y_name = "Throughput"
+                y_name = "Overall Throughput"
                 y_unit = "token/s"
                 y_key = "throughput"
                 lower_better = False
             else:
-                msg = "Throughput/line: must select between between TTFT and ITL"
+                msg = "Throughput/line: must select between between TTFT/ITL/TOPT"
                 return None, msg
 
         entries = [cfg__entry] if cfg__entry else \
@@ -125,7 +134,6 @@ class Throughput():
             return None, "Not data available ..."
 
         vus = ", ".join(map(str, sorted(df["vusers"].unique())))
-        subtitle = ""
         if len(vus) > 1:
             subtitle += f"<br>for {vus} users"
         if cfg__model_name:

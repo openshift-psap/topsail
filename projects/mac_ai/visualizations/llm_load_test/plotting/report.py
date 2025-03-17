@@ -168,6 +168,10 @@ class ThroughputReport():
         header += html.Br()
         header += html.Br()
 
+        header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, gen_throughput=True), args))
+        header += html.Br()
+        header += html.Br()
+
         header += report.Plot_and_Text(f"Throughput", report.set_config(dict(bar_plot=True, ttft=True), args))
         header += html.Br()
         header += html.Br()
