@@ -47,6 +47,12 @@ ci_presets:
     - b4688 # slp's
     - b4897 # latest - 25-03-17
 
+  multi-model:
+    test.model.name:
+    - hf://TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+    - hf://ibm-granite/granite-8b-code-base-4k-GGUF
+    - llama3.2
+
   # ---
 
   keep_running:
