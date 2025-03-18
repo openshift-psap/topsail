@@ -23,6 +23,8 @@ def rewrite_variables_overrides(variable_overrides_dict):
 
     new_args_str = new_variable_overrides[f"PR_POSITIONAL_ARGS"] = " ".join(new_args)
     new_variable_overrides["PR_POSITIONAL_ARGS"] = variable_overrides_dict["PR_POSITIONAL_ARG_0"]
+    new_variable_overrides["PR_POSITIONAL_ARG_0"] = variable_overrides_dict["PR_POSITIONAL_ARG_0"]
+
     logging.info(f"New args to execute on the jump host: {new_args_str}")
 
     idx = 0
