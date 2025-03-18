@@ -313,3 +313,4 @@ exec_list:
   test_ci: null
   post_cleanup_ci: null
   matbench_run: true
+  generate_plots_from_pr_args: true
