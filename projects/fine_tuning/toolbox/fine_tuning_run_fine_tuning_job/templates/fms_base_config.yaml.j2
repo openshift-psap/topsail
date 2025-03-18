@@ -15,7 +15,7 @@ save_model_dir: "/mnt/output/save-model-dir"
 accelerate_launch_args:
   num_processes: {{ fine_tuning_run_fine_tuning_job_gpu or 1 }}
   num_machines: {{ fine_tuning_run_fine_tuning_job_pod_count }}
-  mixed_precision: "no"
+  mixed_precision: "bf16"
   dynamo_backend: "no"
 
   downcast_bf16: 'no'
@@ -23,6 +23,7 @@ accelerate_launch_args:
   rdzv_backend: static
   same_network: true
   tpu_use_sudo: false
+  config_file: "/app/accelerate_fsdp_defaults.yaml"
 {% if (fine_tuning_run_fine_tuning_job_gpu or 1) > 1 %}
   use_fsdp: true
 {% endif %}
@@ -43,4 +44,8 @@ max_seq_length: 4096
 
 include_tokens_per_second: true
 dataset_text_field: output
-use_flash_attn: false
+use_flash_attn: true
+
+max_steps: 50
+torch_dtype: bfloat16
+packing: true
