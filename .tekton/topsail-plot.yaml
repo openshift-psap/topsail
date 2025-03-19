@@ -1,0 +1,109 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/openshift-psap/topsail?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
+      == "main"
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: topsail
+    appstudio.openshift.io/component: topsail
+    pipelines.appstudio.openshift.io/type: build
+  name: topsail-plot
+  namespace: kpouget2-tenant
+spec:
+  params:
+  - name: git-url
+    value: '{{source_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: project
+    value: "mac_ai"
+  - name: plot-url
+    value: "https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/openshift-psap_topsail/711/pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci/1901959558209736704/artifacts/jump-ci/005-test/artifacts/test-artifacts/000__matbenchmarking/"
+  pipelineSpec:
+    description: Run TOPSAIL replot task
+    params:
+    - description: Source Repository URL
+      name: git-url
+      type: string
+    - default: ""
+      description: Revision of the Source Repository
+      name: revision
+      type: string
+    - description: The name of the TOPSAIL project to run
+      name: project
+      type: string
+    tasks:
+    - name: run-plot
+      params:
+      - name: revision
+        value: $(params.revision)
+      - name: project
+        value: $(params.project)
+      - name: plot-url
+        value: $(params.plot-url)
+      taskSpec:
+        description: Task to run TOPSAIL's plotting engine
+        params:
+        - description: The TOPSAIL commit to use
+          name: revision
+          type: string
+        - description: The name of the TOPSAIL project to run
+          name: project
+          type: string
+        - description: The URL to replot
+          name: plot-url
+          type: string
+        steps:
+        - name: generate-plots-from-pr-args
+          image: quay.io/redhat-user-workloads/kpouget2-tenant/topsail:main
+          script: |
+            #!/bin/sh
+            set -o pipefail
+            set -o errexit
+            set -o nounset
+            set -o errtrace
+            set -x
+
+            git fetch origin $(params.revision)
+            git reset --hard FETCH_HEAD
+            git switch -c pipeline
+
+            git show --quiet
+            echo
+            env
+            echo
+
+            export ARTIFACT_DIR=/tmp/topsail
+            mkdir -p "$ARTIFACT_DIR"
+            cat <<EOF > "$ARTIFACT_DIR/variable_overrides.yaml"
+            matbench.download.url: "$(params.plot-url)"
+            EOF
+
+            run $(params.project) test generate_plots_from_pr_args
+
+            find "$ARTIFACT_DIR"
+
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+      status: {}
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+status: {}
