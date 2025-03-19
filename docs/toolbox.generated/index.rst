@@ -3,22 +3,6 @@ Toolbox Documentation
 =====================
             
 
-``busy_cluster``
-****************
-
-::
-
-    Commands relating to make a cluster busy with lot of resources
-    
-
-                
-* :doc:`cleanup <Busy_Cluster.cleanup>`	 Cleanups namespaces to make a cluster un-busy
-* :doc:`create_configmaps <Busy_Cluster.create_configmaps>`	 Creates configmaps and secrets to make a cluster busy
-* :doc:`create_deployments <Busy_Cluster.create_deployments>`	 Creates configmaps and secrets to make a cluster busy
-* :doc:`create_jobs <Busy_Cluster.create_jobs>`	 Creates jobs to make a cluster busy
-* :doc:`create_namespaces <Busy_Cluster.create_namespaces>`	 Creates namespaces to make a cluster busy
-* :doc:`status <Busy_Cluster.status>`	 Shows the busyness of the cluster
-
 ``cluster``
 ***********
 
@@ -59,17 +43,6 @@ Toolbox Documentation
 * :doc:`enter <Configure.enter>`	 Enter into a custom configuration file for a TOPSAIL project
 * :doc:`get <Configure.get>`	 Gives the value of a given key, in the current configuration file
 * :doc:`name <Configure.name>`	 Gives the name of the current configuration
-
-``cpt``
-*******
-
-::
-
-    Commands relating to continuous performance testing management
-    
-
-                
-* :doc:`deploy_cpt_dashboard <Cpt.deploy_cpt_dashboard>`	 Deploy and configure the CPT Dashboard
 
 ``fine_tuning``
 ***************
@@ -130,18 +103,6 @@ Toolbox Documentation
 * :doc:`retrieve_artifacts <Jump_Ci.retrieve_artifacts>`	 Prepares the jump host for running a CI test step:
 * :doc:`take_lock <Jump_Ci.take_lock>`	 Take a lock with a given cluster name on a remote node
 
-``kepler``
-**********
-
-::
-
-    Commands relating to kepler deployment
-    
-
-                
-* :doc:`deploy_kepler <Kepler.deploy_kepler>`	 Deploy the Kepler operator and monitor to track energy consumption
-* :doc:`undeploy_kepler <Kepler.undeploy_kepler>`	 Cleanup the Kepler operator and associated resources
-
 ``kserve``
 **********
 
@@ -158,30 +119,6 @@ Toolbox Documentation
 * :doc:`extract_protos_grpcurl <Kserve.extract_protos_grpcurl>`	 Extracts the protos of an inference service, with GRPCurl observe
 * :doc:`undeploy_model <Kserve.undeploy_model>`	 Undeploy a KServe model
 * :doc:`validate_model <Kserve.validate_model>`	 Validate the proper deployment of a KServe model
-
-``kubemark``
-************
-
-::
-
-    Commands relating to kubemark deployment
-    
-
-                
-* :doc:`deploy_capi_provider <Kubemark.deploy_capi_provider>`	 Deploy the Kubemark Cluster-API provider
-* :doc:`deploy_nodes <Kubemark.deploy_nodes>`	 Deploy a set of Kubemark nodes
-
-``kwok``
-********
-
-::
-
-    Commands relating to KWOK deployment
-    
-
-                
-* :doc:`deploy_kwok_controller <Kwok.deploy_kwok_controller>`	 Deploy the KWOK hollow node provider
-* :doc:`set_scale <Kwok.set_scale>`	 Deploy a set of KWOK nodes
 
 ``llm_load_test``
 *****************
@@ -318,20 +255,6 @@ Toolbox Documentation
 * :doc:`update_datasciencecluster <Rhods.update_datasciencecluster>`	 Update RHOAI datasciencecluster resource
 * :doc:`wait_odh <Rhods.wait_odh>`	 Wait for ODH to finish its deployment
 * :doc:`wait_ods <Rhods.wait_ods>`	 Wait for ODS to finish its deployment
-
-``scheduler``
-*************
-
-::
-
-    Commands relating to RHOAI scheduler testing
-    
-
-                
-* :doc:`cleanup <Scheduler.cleanup>`	 Clean up the scheduler load namespace
-* :doc:`create_mcad_canary <Scheduler.create_mcad_canary>`	 Create a canary for MCAD Appwrappers and track the time it takes to be scheduled
-* :doc:`deploy_mcad_from_helm <Scheduler.deploy_mcad_from_helm>`	 Deploys MCAD from helm
-* :doc:`generate_load <Scheduler.generate_load>`	 Generate scheduler load
 
 ``server``
 **********
