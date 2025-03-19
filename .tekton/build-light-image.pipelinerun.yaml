@@ -23,7 +23,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/kpouget2-tenant/topsail-light:{{revision}}
+    value: quay.io/redhat-user-workloads/kpouget2-tenant/topsail:main-light
   - name: dockerfile
     value: build/Dockerfile.lightweight
   pipelineRef:
