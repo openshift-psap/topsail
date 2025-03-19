@@ -49,7 +49,7 @@ RUN chgrp -R 0 "$HOME" \
 
 # Install Python requirements
 
-RUN pip install --quiet --no-cache-dir -r ${HOME}/requirements-light.txt
+RUN pip${PYTHON_VERSION} install --quiet --no-cache-dir -r ${HOME}/requirements-light.txt
 
 WORKDIR ${HOME}
 
