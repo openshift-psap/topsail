@@ -850,7 +850,7 @@ fine_tuning:
 
     granite-3.1-8b-starter-v1:
       type: model
-      source_dir: 's3://psap-hf-models/granite-3.1-8b-starter-v1/'
+      source_dir: 's3://psap-hf-models/'
       secret_key: secrets.aws_credentials
 tests:
   capture_prom: true
