@@ -20,21 +20,43 @@ ci_presets:
     secrets.username: mac_ai__username.mac4
     secrets.base_work_dir: mac_ai__base_work_dir.mac4
 
+  mac5:
+    secrets.hostname: mac_ai__hostname.mac5
+    secrets.username: mac_ai__username.mac5
+    secrets.base_work_dir: mac_ai__base_work_dir.mac5
+
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
+
+  # ---
 
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
     test.model.name: llama3.2
 
-    test.llm_load_test.matbenchmarking: false
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
     prepare.brew.capture_dependencies: true
+
+  bench_only:
+    test.llm_load_test.enabled: false
+
+  multi-version:
+    prepare.llama_cpp.repo.version:
+    - b4688 # slp's
+    - b4897 # latest - 25-03-17
+
+  multi-model:
+    test.model.name:
+    - hf://TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+    - hf://ibm-granite/granite-8b-code-base-4k-GGUF
+    - llama3.2
+
+  # ---
 
   keep_running:
     test.inference_server.unload_on_exit: false
@@ -45,9 +67,9 @@ secrets:
     name: crc-mac-ai-secret
     env_key: CRC_MAC_AI_SECRET_PATH
   private_key_path: mac_ai__private_key
-  hostname: mac_ai__hostname
-  username: mac_ai__username
-  base_work_dir: mac_ai__base_work_dir
+  hostname: mac_ai__hostname.mac-m4
+  username: mac_ai__username.mac-m4
+  base_work_dir: mac_ai__base_work_dir.mac-m4
 
 remote_host:
   run_locally: false
@@ -213,7 +235,6 @@ test:
 
   llm_load_test:
     enabled: true
-    matbenchmarking: false
 
     args:
       host: localhost
@@ -237,7 +258,11 @@ test:
   matbenchmarking:
     enabled: false
     stop_on_error: true
-
+    fields:
+    - test.model.name
+    - test.platform
+    - test.llm_load_test.args
+    - prepare.llama_cpp.repo.version
   capture_metrics:
     enabled: true
     gpu:
@@ -287,5 +312,5 @@ exec_list:
   prepare_ci: null
   test_ci: null
   post_cleanup_ci: null
-  matbench_run_with_deploy: true
-  matbench_run_without_deploy: true
+  matbench_run: true
+  generate_plots_from_pr_args: true

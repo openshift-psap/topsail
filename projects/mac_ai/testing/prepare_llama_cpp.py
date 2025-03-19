@@ -101,6 +101,8 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
     build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
 
+    build_args["LLAMA_CPP_VERSION"] =  config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
+
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, flavor])
 
     run.run_toolbox(

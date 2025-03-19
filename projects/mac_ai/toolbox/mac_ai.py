@@ -102,21 +102,26 @@ class Mac_Ai:
     def remote_llama_cpp_run_bench(
             self,
             path,
-            name,
+            model_name,
             prefix="",
             ngl=99,
             verbose=True,
+            llama_bench=True,
+            test_backend_ops=True,
     ):
         """
         Benchmark a model with llama_cpp, on a remote host
 
         Args:
-          prefix: the prefix to get the llama-server running
-          path: the path to the llama-bench binary
+          prefix: the prefix to get the llama.cpp binaries running
+          path: the path to the llama.cpp bin directory
           port: the port number on which llama-cpp should listen
-          name: the name of the model to use
+          model_name: the name of the model to use
           ngl: number of layers to store in VRAM
           verbose: if true, runs the benchmark in verbose mode
+
+          llama_bench: if true, runs the llama-bench benchmark
+          test_backend_ops: if true, runs the test-backend-ops benchmark
         """
 
         return RunAnsibleRole(locals())

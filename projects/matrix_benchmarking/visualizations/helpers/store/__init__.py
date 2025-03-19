@@ -196,7 +196,12 @@ class BaseStore():
             try:
                 kpi["value"] = kpi_func(lts_payload)
             except Exception as e:
-                logging.error(f"Failed to generate KPI {name}: {e}")
+                msg = f"Failed to generate KPI {name}: {e}"
+                # don't write an error (TOPSAIL detects it and fails
+                # the test) if the LTS has already been marked as
+                # invalid
+                (logging.error if lts_payload.is_valid else logging.warning)(msg)
+
                 kpi["value"] = None
 
             kpis[name] = types.SimpleNamespace(**kpi)

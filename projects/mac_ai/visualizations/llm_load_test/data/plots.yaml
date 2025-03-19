@@ -4,6 +4,7 @@ visualize:
   - "report: Error report"
   - "report: Llm-load-test Results"
   - "report: Llama-bench Results"
+  - "report: Llama-micro-bench Results"
   - "report: CPU RAM Usage"
   - "report: GPU Usage"
   - "report: LTS Documentation"

@@ -83,27 +83,40 @@ def prepare():
         raise ValueError(msg)
 
     native_platform = config.project.get_config("prepare.native_platform")
-    inference_server_binaries = {}
 
     platforms = config.project.get_config("prepare.platforms")
     # always prepare the native platform
     platforms += [native_platform]
+    inference_server_native_binary = None
 
-    for platform in set(platforms):
-        inference_server_binaries[platform] = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
+    versions = config.project.get_config("prepare.llama_cpp.repo.version")
+    for version in versions if isinstance(versions, list) else [versions]:
+        config.project.set_config("prepare.llama_cpp.repo.version", version)
+        for platform in set(platforms):
+            binary = prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
+            if platform == native_platform and inference_server_native_binary is None:
+                # keeping only the first native binary here
+                inference_server_native_binary = binary
+    config.project.set_config("prepare.llama_cpp.repo.version", versions)
 
-    inference_server_native_binary = inference_server_binaries[native_platform]
+    # --- #
 
-    model = config.project.get_config("test.model.name")
+    models = config.project.get_config("test.model.name")
 
-    model_fname = model_to_fname(model)
-    if not remote_access.exists(model_fname):
-        inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
+    for model in models if isinstance(models, list) else [models]:
+        config.project.set_config("test.model.name", model)
+        pull_model(base_work_dir, inference_server_native_binary, model)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
 
     return 0
+
+
+def pull_model(base_work_dir, inference_server_native_binary, model):
+    model_fname = model_to_fname(model)
+    if not remote_access.exists(model_fname):
+        inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
 
 
 def cleanup_llm_load_test(base_work_dir):
@@ -157,8 +170,11 @@ def cleanup_models(base_work_dir):
         models = [models]
 
     for model in models:
+        config.project.set_config("test.model.name", model)
         dest = base_work_dir / model_to_fname(model)
         remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {dest}")
+
+    config.project.set_config("test.model.name", models)
 
 
 def model_to_fname(model):

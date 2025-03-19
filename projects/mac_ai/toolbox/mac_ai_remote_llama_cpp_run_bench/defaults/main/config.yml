@@ -3,15 +3,15 @@
 # Source component: Mac_Ai.remote_llama_cpp_run_bench
 
 # Parameters
-# the path to the llama-bench binary
+# the path to the llama.cpp bin directory
 # Mandatory value
 mac_ai_remote_llama_cpp_run_bench_path:
 
 # the name of the model to use
 # Mandatory value
-mac_ai_remote_llama_cpp_run_bench_name:
+mac_ai_remote_llama_cpp_run_bench_model_name:
 
-# the prefix to get the llama-server running
+# the prefix to get the llama.cpp binaries running
 mac_ai_remote_llama_cpp_run_bench_prefix:
 
 # number of layers to store in VRAM
@@ -19,3 +19,9 @@ mac_ai_remote_llama_cpp_run_bench_ngl: 99
 
 # if true, runs the benchmark in verbose mode
 mac_ai_remote_llama_cpp_run_bench_verbose: true
+
+# if true, runs the llama-bench benchmark
+mac_ai_remote_llama_cpp_run_bench_llama_bench: true
+
+# if true, runs the test-backend-ops benchmark
+mac_ai_remote_llama_cpp_run_bench_test_backend_ops: true
