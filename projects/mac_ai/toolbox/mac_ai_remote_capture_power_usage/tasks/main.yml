@@ -15,8 +15,16 @@
   when: mac_ai_remote_capture_power_usage_stop | bool
 
 - name: Start capturing the power usage
-  shell:
-    nohup sudo powermetrics
-         --samplers {{ mac_ai_remote_capture_power_usage_samplers }}
-         --sample-rate {{ mac_ai_remote_capture_power_usage_sample_rate }}
+  shell: |
+    nohup sudo powermetrics \
+         --samplers {{ mac_ai_remote_capture_power_usage_samplers }} \
+         --sample-rate {{ mac_ai_remote_capture_power_usage_sample_rate }} \
          &> "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt" &
+
+    pid=$!;
+    sleep 5; # give nohup time to start
+    echo Running with PID=$pid;
+    ps ux -p "$pid"
+    echo "---"
+    head "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt"
+    echo "---"
