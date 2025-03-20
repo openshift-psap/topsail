@@ -33,10 +33,8 @@ def generateLlamaBenchData(entries, variables, ordered_vars, llama_bench_test=No
     for entry in entries:
         datum = dict()
 
-        datum["test_name"] = entry.get_name([v for v in variables if v != ordered_vars[0]]).replace(", ", "<br>").replace("model_name=", "")
+        test_name = entry.get_name([v for v in variables if v != ordered_vars[0]]).replace(", ", "<br>").replace("model_name=", "")
         datum["legend_name"] = entry.settings.__dict__.get(ordered_vars[0]) if ordered_vars else "single-entry"
-
-        datum["test_name:sort_index"] = datum["test_name"]
 
         for llama_bench_result in (entry.results.llama_bench_results or []):
             if llama_bench_test and llama_bench_result["test"] != llama_bench_test:
@@ -44,6 +42,7 @@ def generateLlamaBenchData(entries, variables, ordered_vars, llama_bench_test=No
 
             test_datum = datum.copy() | llama_bench_result
 
+            test_datum["test_name"] = f"{test_datum['test']} | {test_name}" if test_name else test_datum['test']
             data.append(test_datum)
 
     return data
@@ -75,9 +74,9 @@ class LlamaBenchPlot():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.sort_values(by=["test_name:sort_index", "test_name"], ascending=True)
+        df = df.sort_values(by=["test_name"], ascending=True)
 
-        fig = px.bar(df, x='legend_name', y=y_key, color="test",
+        fig = px.bar(df, x='legend_name', y=y_key, color="test_name",
                      hover_data=df.columns, text=y_key, text_auto='.0f')
         title = f"{y_name} (in {y_unit})"
         y_title = f"{y_name} (in {y_unit})"
@@ -131,7 +130,7 @@ class LlamaBenchTable():
         if df.empty:
             return None, "Not data available ..."
 
-        df = df.drop(["test_name:sort_index", "file_path"], axis=1)
+        df = df.drop(["file_path"], axis=1)
 
         link_list = []
         for entry in common.Matrix.all_records(settings, setting_lists):
