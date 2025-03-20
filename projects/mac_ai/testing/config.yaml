@@ -57,8 +57,8 @@ ci_presets:
 
   multi-model:
     test.model.name:
-    - hf://TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-    - hf://ibm-granite/granite-8b-code-base-4k-GGUF
+    - Mistral-7B-Instruct-v0.2-GGUF
+    - llama2
     - llama3.2
 
   # ---
