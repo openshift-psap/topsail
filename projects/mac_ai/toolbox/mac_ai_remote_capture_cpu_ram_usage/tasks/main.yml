@@ -15,8 +15,10 @@
   when: mac_ai_remote_capture_cpu_ram_usage_stop | bool
 
 - name: Start capturing the CPU and RAM usage
-  shell:
+  shell: |
     set -o pipefail;
 
-    nohup bash -c 'set -o pipefail; top | grep -E "^CPU|^Phys"'
+    nohup bash -c 'set -o pipefail; top | grep -E "^CPU|^Phys"' \
          &> "{{ artifact_extra_logs_dir }}/artifacts/cpu_ram_usage.txt" &
+
+    sleep 1 # give nohup time to start
