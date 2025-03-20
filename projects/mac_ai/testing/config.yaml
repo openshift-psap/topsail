@@ -44,6 +44,11 @@ ci_presets:
 
   bench_only:
     test.llm_load_test.enabled: false
+    test.inference_server.benchmark.enabled: true
+
+  inference_only:
+    test.llm_load_test.enabled: true
+    test.inference_server.benchmark.enabled: false
 
   multi-version:
     prepare.llama_cpp.repo.version:
