@@ -9,13 +9,15 @@
 
 - name: Create the lock directory
   shell: |
-    if ! mkdir "{{ cluster_lock_dir }}" 2>/dev/null; then
-      echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' already taken ..."
-      cat "{{ cluster_lock_dir }}/lock_owner 2>/dev/null" || true
-      exit 1
-    else
+    if mkdir "{{ cluster_lock_dir }}" 2>/dev/null; then
       echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' acquired.";
+      exit 0
     fi
+
+    echo "$(date) Lock '{{ jump_ci_take_lock_cluster }}' already taken ..."
+    cat "{{ cluster_lock_dir }}/lock_owner" 2>/dev/null || true
+    exit 1
+
   register: lock_directory_created_cmd
   until: lock_directory_created_cmd.rc == 0
   retries: 9999

@@ -13,13 +13,12 @@ configure_logging()
 
 from projects.jump_ci.testing import utils, prepare_jump_ci, tunnelling
 
-def rewrite_variables_overrides(variable_overrides_dict):
+def rewrite_variables_overrides(variable_overrides_dict, nb_args_to_eat):
     new_variable_overrides = dict()
 
-    old_args = variable_overrides_dict["PR_POSITIONAL_ARGS"].split()
-    # remove the 2 first args of the jump-ci test (project and cluster)
-    NUMBER_OF_ARGS_TO_SKIP = 2
-    new_args = old_args[NUMBER_OF_ARGS_TO_SKIP:]
+    old_args = (variable_overrides_dict["PR_POSITIONAL_ARGS"] or "").split()
+    # remove the first args of the jump-ci test (project and cluster)
+    new_args = old_args[nb_args_to_eat:]
 
     new_args_str = new_variable_overrides[f"PR_POSITIONAL_ARGS"] = " ".join(new_args)
     new_variable_overrides["PR_POSITIONAL_ARGS"] = variable_overrides_dict["PR_POSITIONAL_ARG_0"]
@@ -30,7 +29,7 @@ def rewrite_variables_overrides(variable_overrides_dict):
     idx = 0
     for idx, value in enumerate(new_args):
         new_variable_overrides[f"PR_POSITIONAL_ARG_{idx+1}"] = value
-    next_pr_positional_arg_count = idx + 2
+    next_pr_positional_arg_count = idx + nb_args_to_eat
 
     for k, v in variable_overrides_dict.items():
         if k.startswith("PR_POSITIONAL_ARG"): continue
@@ -125,10 +124,21 @@ def jump_ci(command):
                 logging.fatal("Not running in OpenShift CI. Don't know how to rewrite the variable_overrides_file. Aborting.")
                 raise SystemExit(1)
 
-            project = config.project.get_config("overrides.PR_POSITIONAL_ARG_2")
+            nb_args_to_eat = 0
+            if config.project.get_config("rewrite_variables_overrides.cluster_found_in_pr_args"):
+                nb_args_to_eat = 1
+
+            project = config.project.get_config("project.name")
+            if not project:
+                project = config.project.get_config(f"overrides.PR_POSITIONAL_ARG_{1+nb_args_to_eat}", None)
+                if not project:
+                    raise ValueError(f"Expected to find the projec name in project.name or overrides.PR_POSITIONAL_ARG_{1+nb_args_to_eat}, but both of them were empty :/")
+                nb_args_to_eat += 1
+
 
             variables_overrides_dict, next_pr_positional_arg_count = rewrite_variables_overrides(
-                config.project.get_config("overrides")
+                config.project.get_config("overrides"),
+                nb_args_to_eat,
             )
 
         for idx, multi_run_args in enumerate((config.project.get_config("multi_run.args") or [...])):

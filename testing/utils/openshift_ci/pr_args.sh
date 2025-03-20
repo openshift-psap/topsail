@@ -106,20 +106,17 @@ fi
 pos_args=$(echo "$last_user_test_comment" |
                (grep "$test_anchor" || true) | cut -d" " -f3- | tr -d '\n' | tr -d '\r')
 
-args_list=""
-if [[ "$pos_args" ]]; then
-    args_list="$args_list
+args_list="
 PR_POSITIONAL_ARGS: $pos_args
-PR_POSITIONAL_ARG_0: $test_name"
+PR_POSITIONAL_ARG_0: $test_name
+"
+if [[ "$pos_args" ]]; then
     i=1
     for pos_arg in $pos_args; do
         args_list="$args_list
 PR_POSITIONAL_ARG_$i: $pos_arg"
         i=$((i + 1))
     done
-else
-    args_list="$args_list
-PR_POSITIONAL_ARG_0: $test_name"
 fi
 
 exec_list=""
