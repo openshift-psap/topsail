@@ -15,8 +15,14 @@ def lock_cluster(cluster=None):
     if os.environ.get("OPENSHIFT_CI") == "true":
         config.project.set_config("ssh_tunnel.enabled", "true")
 
-        override_cluster = config.project.get_config("overrides.PR_POSITIONAL_ARG_1")
-        config.project.set_config("cluster.name", override_cluster)
+        if config.project.get_config("cluster.name", print=False) is None:
+            override_cluster = config.project.get_config("overrides.PR_POSITIONAL_ARG_1", None)
+            if not override_cluster:
+                raise ValueError("Expected to find the cluster name in overrides.PR_POSITIONAL_ARG_1 (1st test argument) or cluster.name, but none of them were set ...")
+
+            config.project.set_config("cluster.name", override_cluster)
+            config.project.set_config("rewrite_variables_overrides.cluster_found_in_pr_args", True)
+
 
     if cluster is None:
         cluster = config.project.get_config("cluster.name")
