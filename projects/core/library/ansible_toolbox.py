@@ -247,6 +247,8 @@ class RunAnsibleRole:
                 # gather only env values
                 generated_play[0]["gather_facts"] = True
                 generated_play[0]["gather_subset"] = ['env','!all','!min']
+            else:
+                generated_play[0]["gather_facts"] = False
 
             # run remotely
             generated_play[0]["hosts"] = "remote"
