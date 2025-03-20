@@ -396,7 +396,7 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 12
     tests.fine_tuning.test_settings.gpu: 2
     clusters.sutest.compute.machineset.count: 12
-    tests.fine_tuning.test_settings.hyper_parameters.fsdp_sharding_strategy: HYBRID_SHARD # ,HYBRID_SHARD, FULL_SHARD, NO_SHARD, SHARD_GRAD_OP
+    tests.fine_tuning.test_settings.hyper_parameters.fsdp_sharding_strategy: FULL_SHARD # ,HYBRID_SHARD, FULL_SHARD, NO_SHARD, SHARD_GRAD_OP
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: true
