@@ -134,6 +134,7 @@ class LlamaBenchTable():
 
         link_list = []
         for entry in common.Matrix.all_records(settings, setting_lists):
+            if not entry.results.llama_bench_results: continue
             artifacts_basedir = entry.results.from_local_env.artifacts_basedir
 
             link_list.append(html.Li(html.A(entry.get_name(variables) or "single-entry", href=artifacts_basedir / entry.results.llama_bench_results[0]["file_path"])))
