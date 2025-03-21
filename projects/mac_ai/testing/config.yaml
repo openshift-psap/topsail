@@ -1,6 +1,6 @@
 __platforms: &all_platforms
-  - darwin/metal
-  - darwin/vulkan
+  - macos/metal
+  - macos/vulkan
   - podman/vulkan
 
 ci_presets:
@@ -180,7 +180,7 @@ prepare:
   # the list of platform environments to prepare
   platforms: *all_platforms
 
-  native_platform: darwin/upstream
+  native_platform: macos/upstream
 
   podman:
     repo:
@@ -222,7 +222,7 @@ prepare:
 test:
   platform: podman/vulkan
   platforms_to_skip:
-  - darwin/upstream # always built, but no need to test it every time
+  - macos/upstream # always built, but no need to test it every time
   - podman/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
