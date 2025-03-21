@@ -3,7 +3,7 @@ import pathlib
 import logging
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access
+import remote_access, utils
 
 
 def cleanup(base_work_dir):
@@ -159,13 +159,15 @@ def start(base_work_dir, port):
     image = config.project.get_config("prepare.podman.container.image")
     podman_bin = get_podman_binary()
 
-    platform = config.project.get_config("test.platform")
+    platform = utils.parse_platform(config.project.get_config("test.platform"))
 
     podman_device_cmd = ""
-    if "no-gpu" in platform:
+    if platform.podman_no_gpu:
+        logging.info(f"podman.start: No GPU device for {platform}")
         pass
     elif podman_device := config.project.get_config("prepare.podman.container.device"):
         podman_device_cmd = f"--device {podman_device} "
+        logging.info(f"podman.start: GPU device for {platform}: {podman_device}")
 
     command = (
         f"{podman_bin} run "

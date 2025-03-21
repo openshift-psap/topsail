@@ -4,12 +4,13 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 import json
 import signal
+import itertools
 
 import subprocess
 
 import joblib
 
-from . import env
+from . import env, config
 
 # create new process group, become its leader, except if we're already pid 1 (defacto group leader, setpgrp gets permission denied error)
 try:
@@ -199,3 +200,33 @@ def run_and_catch(exc, fct, *args, **kwargs):
         logging.error(f"{e.__class__.__name__}: {e}")
         exc = exc or e
     return exc
+
+
+# applies the different values of the fields and runs fct(*args, **kwargs)
+# example: iterable_fields=[my.config.value1, my.config.value2] and:
+# my.config.value1: [1, 2]
+# my.config.value2: [a, b]
+# this will run 4 times, with
+# - my.config.value1: 1, my.config.value2: a
+# - my.config.value1: 1, my.config.value2: b
+# - my.config.value1: 2, my.config.value2: a
+# - my.config.value1: 2, my.config.value2: b
+def run_iterable_fields(iterable_fields, fct, *args, **kwargs):
+    iterable_kv = {}
+    for iterable_key in iterable_fields:
+        iterable_values = config.project.get_config(iterable_key, print=False)
+        if not isinstance(iterable_values, list): continue
+        iterable_kv[iterable_key] = iterable_values
+
+    kv_list = [[(key, v) for v in iterable_kv[key]] for key in iterable_kv]
+    for kv_entry in itertools.product(*kv_list):
+        for k, v in kv_entry:
+            config.project.set_config(k, v)
+
+        fct(*args, **kwargs)
+
+        for iter_key, iter_values in iterable_kv.items():
+            config.project.set_config(iter_key, iter_values, print=False)
+
+    for iter_key, iter_values in iterable_kv.items():
+        config.project.set_config(iter_key, iter_values, print=False)

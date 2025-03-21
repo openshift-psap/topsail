@@ -188,11 +188,11 @@ def generateLlamaMicroBenchComparisonData(entries, variables, ordered_vars,
 
     if not (ref_entry and cmp_entry):
         logging.warning(f"generateLlamaMicroBenchComparisonData: Couldn't find the reference ({ref}) & comparison ({comp}) entries :/")
-        return []
+        return [], None
 
     if not (ref_entry.results.llama_micro_bench_results and cmp_entry.results.llama_micro_bench_results):
         logging.warning(f"generateLlamaMicroBenchComparisonData: no micro-benchmark results available ...")
-        return []
+        return [], None
 
 
     ref_df = pd.DataFrame([e.__dict__ | {first_var: ref} for e in ref_entry.results.llama_micro_bench_results.__dict__[group]])
@@ -299,7 +299,7 @@ class LlamaMicroBenchComparisonPlot():
             key=y_key,
         )
 
-        if df.empty:
+        if not df or df.empty:
             return None, "Not data available ..."
 
         fig = px.line(df, x='name', y="comparison", color=ordered_vars[0],
