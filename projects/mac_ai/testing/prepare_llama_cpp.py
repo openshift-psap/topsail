@@ -164,7 +164,7 @@ def prepare_podman_image_from_desktop_playground(base_work_dir, platform):
 def prepare_from_binary(base_work_dir, platform):
     error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream")
     if error_msg:
-        raise ValueError(f"prepare_from_binary: Unexpected platform: {error_msg} :/")
+        raise ValueError(f"prepare_llama_cpp.prepare_from_binary: unexpected platform: {error_msg} :/")
 
     tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.tarball")
     if not tarball:
@@ -356,7 +356,7 @@ def cleanup_files(base_work_dir):
 
 
 def cleanup_image(base_work_dir):
-    for platform_str in config.project.get_config("prepare.platforms"):
+    for platform_str in config.project.get_config("prepare.platforms.to_build"):
         platform = utils.parse_platform(platform_str)
         if not platform.needs_podman: continue
 

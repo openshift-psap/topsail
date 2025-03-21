@@ -1,9 +1,11 @@
 import tempfile
 import os
 import types
+import pathlib
 
 from projects.core.library import env, config, run, configure_logging, export
 
+import remote_access
 
 __keep_open = []
 def get_tmp_fd():
@@ -31,11 +33,11 @@ def parse_platform(platform_str):
 
     expected_systems = config.project.get_config("__platform_check.system", print=False)
     if not platform.system in expected_systems:
-        raise ValueError(f"Invalid platform system ({platform.system}) in {platform_str}. Expected one of {expected_systems}")
+        raise ValueError(f"Invalid platform system '{platform.system}' in {platform_str}. Expected one of {expected_systems}")
 
     expected_servers = config.project.get_config("__platform_check.inference_server", print=False)
     if not platform.inference_server_name in expected_servers:
-        raise ValueError(f"Invalid platform inference server ({platform.inference_server_name}) in {platform_str}. Expected one of {expected_servers}")
+        raise ValueError(f"Invalid platform inference server '{platform.inference_server_name}' in {platform_str}. Expected one of {expected_servers}")
 
     platform.needs_podman = platform.system in config.project.get_config("__platform_check.system_needs_podman", print=False)
 
@@ -95,3 +97,9 @@ def check_expected_platform(
         errors.append(f"Invalid {k}: expected {v}, got {platform_value}")
 
     return ". ".join(errors)
+
+
+def model_to_fname(model):
+    base_work_dir = remote_access.prepare()
+    model_cache_dir = config.project.get_config("test.model.cache_dir")
+    return base_work_dir / model_cache_dir / pathlib.Path(model).name

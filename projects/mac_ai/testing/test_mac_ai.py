@@ -18,7 +18,7 @@ os.chdir(TOPSAIL_DIR)
 
 import prepare_mac_ai, remote_access, podman, podman_machine, brew, utils
 
-def prepare_llm_load_test_args(base_work_dir, model_name):
+def prepare_llm_load_test_args(base_work_dir, model_id):
     llm_load_test_kwargs = dict()
 
     model_size = config.project.get_config("test.model.size")
@@ -31,7 +31,7 @@ def prepare_llm_load_test_args(base_work_dir, model_name):
 
     llm_load_test_kwargs |= dict(
         src_path = base_work_dir / "llm-load-test",
-        model_id = prepare_mac_ai.model_to_fname(model_name),
+        model_id = model_id,
     )
 
     return {k:config.project.resolve_reference(v) for k, v in llm_load_test_kwargs.items()}
@@ -119,18 +119,20 @@ def test_all_platforms():
     all_platforms_str = config.project.get_config("test.platform")
     if isinstance(all_platforms_str, str):
         test_inference(utils.parse_platform(all_platforms_str))
-    else:
-        for platform_str in all_platforms_str:
-            if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
-                continue
+        return
 
-            config.project.set_config("test.platform", platform_str) # for the post-processing
-            with env.NextArtifactDir(f"{platform_str}_test".replace("/", "_")):
-                with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
-                    yaml.dump(dict(platform=platform_str), f)
+    for platform_str in all_platforms_str:
+        if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
+            continue
 
-                platform = utils.parse_platform(platform_str)
-                test_inference(platform)
+        config.project.set_config("test.platform", platform_str) # for the post-processing
+
+        with env.NextArtifactDir(f"{platform_str}_test".replace("/", "_")):
+            with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
+                yaml.dump(dict(platform=platform_str), f)
+
+            platform = utils.parse_platform(platform_str)
+            test_inference(platform)
 
 
 def capture_metrics(platform, stop=False):
@@ -190,10 +192,6 @@ def test_inference(platform):
         base_work_dir, platform,
     )
 
-    inference_server_native_path = platform.prepare_inference_server_mod.get_binary_path(
-        base_work_dir,
-        utils.parse_platform(config.project.get_config("prepare.native_platform")),
-    )
 
     platform.inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, platform)
 
@@ -210,10 +208,15 @@ def test_inference(platform):
             podman.stop(base_work_dir)
             podman_machine.stop(base_work_dir)
 
-    model_fname = prepare_mac_ai.model_to_fname(model_name)
+    inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
-    if not remote_access.exists(model_fname):
-        platform.inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
+    try:
+        platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+
+        if not platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model_name):
+            platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model_name)
+    finally:
+        platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
 
     llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
     server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
@@ -226,27 +229,36 @@ def test_inference(platform):
     exit_code = 1
 
     try:
+        platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+
         if server_benchmark_enabled:
             platform.inference_server_mod.run_benchmark(
                 base_work_dir,
                 inference_server_path,
-                prepare_mac_ai.model_to_fname(model_name)
+                model_name,
             )
 
-        platform.inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
+        model_id = platform.inference_server_mod.run_model(
+            base_work_dir, inference_server_path, model_name
+        )
 
         if llm_load_test_enabled:
             run.run_toolbox(
                 "llm_load_test", "run",
-                **prepare_llm_load_test_args(base_work_dir, model_name)
+                **prepare_llm_load_test_args(base_work_dir, model_id)
             )
 
         exit_code = 0
     finally:
         exc = None
+
         if config.project.get_config("test.inference_server.unload_on_exit"):
             exc = run.run_and_catch(exc, platform.inference_server_mod.unload_model,
                                     base_work_dir, inference_server_path, model_name, platform)
+
+        if config.project.get_config("test.inference_server.stop_on_exit"):
+            exc = run.run_and_catch(exc, platform.inference_server_mod.stop_server,
+                                    base_work_dir, inference_server_binary)
 
         if platform.needs_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir)
