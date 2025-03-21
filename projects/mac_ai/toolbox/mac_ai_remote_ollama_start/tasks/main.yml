@@ -18,6 +18,7 @@
   block:
   - name: Start the ollama server
     shell: |
+      OLLAMA_HOST=0.0.0.0:{{ mac_ai_remote_ollama_start_port }} \
       nohup {{ mac_ai_remote_ollama_start_path }} start &> {{ artifact_extra_logs_dir }}/artifacts/ollama.log &
 
       sleep 1 # give nohup time to start
@@ -26,7 +27,7 @@
 
   - name: Wait for ollama to start responding correctly
     command:
-      curl -sSf localhost:11434
+      curl -sSf localhost:{{ mac_ai_remote_ollama_start_port }}
     register: ollama_running_cmd
     until: ollama_running_cmd.rc == 0
     retries: 2

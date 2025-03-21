@@ -17,6 +17,7 @@ class Mac_Ai:
             self,
             base_work_dir,
             path,
+            port,
             stop=False
     ):
         """
@@ -25,6 +26,7 @@ class Mac_Ai:
         Args:
           base_work_dir: the base directory where to store things
           path: the path to the ollama binary
+          port: the port on which the server should listen
           stop: if true, stop the server instead of starting it
         """
 
