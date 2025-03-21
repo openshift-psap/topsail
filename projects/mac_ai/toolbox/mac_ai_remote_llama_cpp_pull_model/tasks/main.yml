@@ -7,7 +7,7 @@
 
 - name: Execute and retrieve the artifacts
   block:
-  - name: Start pulling the llama_cpp model
+  - name: Start pulling the llama_cpp model {{ mac_ai_remote_llama_cpp_pull_model_name }}
     shell: |
       cd "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}";
 
