@@ -38,3 +38,5 @@
           sleep 1
         done" \
       > "{{ artifact_extra_logs_dir }}/artifacts/memory.txt" &
+
+    sleep 1 # give nohup time to start

@@ -17,8 +17,10 @@
 - name: Execute and retrieve the artifacts
   block:
   - name: Start the ollama server
-    shell:
+    shell: |
       nohup {{ mac_ai_remote_ollama_start_path }} start &> {{ artifact_extra_logs_dir }}/artifacts/ollama.log &
+
+      sleep 1 # give nohup time to start
     environment:
       HOME: "{{ mac_ai_remote_ollama_start_base_work_dir }}"
 

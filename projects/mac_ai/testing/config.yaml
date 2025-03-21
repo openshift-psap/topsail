@@ -44,6 +44,11 @@ ci_presets:
 
   bench_only:
     test.llm_load_test.enabled: false
+    test.inference_server.benchmark.enabled: true
+
+  inference_only:
+    test.llm_load_test.enabled: true
+    test.inference_server.benchmark.enabled: false
 
   multi-version:
     prepare.llama_cpp.repo.version:
@@ -52,8 +57,8 @@ ci_presets:
 
   multi-model:
     test.model.name:
-    - hf://TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-    - hf://ibm-granite/granite-8b-code-base-4k-GGUF
+    - Mistral-7B-Instruct-v0.2-GGUF
+    - llama2
     - llama3.2
 
   # ---
@@ -100,7 +105,7 @@ prepare:
   llama_cpp:
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4870
+      version: b4897
       source:
         cmake:
           parallel: 5

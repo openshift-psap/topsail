@@ -9,6 +9,7 @@ import threading
 import re
 from collections import defaultdict
 import jsonpath_ng
+import copy
 
 from . import env
 from . import run
@@ -131,7 +132,6 @@ class Config:
 
         if isinstance(value, str) and value.startswith("*$@"):
             print = False
-
 
         value = self.resolve_reference(value, handled_secretly)
 
@@ -309,7 +309,7 @@ class Config:
         if not handled_secretly:
             logging.info(f"resolve_reference: {value} ==> '{new_value}'")
 
-        return new_value
+        return copy.deepcopy(new_value)
 
 
 def _set_config_environ(testing_dir):

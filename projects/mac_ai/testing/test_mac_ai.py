@@ -296,7 +296,7 @@ def matbench_run(matrix_source_keys):
 
         first_key = list(benchmark_values)[0]
         first_key_name = first_key.rpartition(".")[-1]
-        path_tpl = f"{first_key_name}={{settings[{first_key}]}}"
+        path_tpl = f"test"
 
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl=path_tpl,

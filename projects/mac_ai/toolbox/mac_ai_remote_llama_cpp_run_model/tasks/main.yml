@@ -41,13 +41,14 @@
         --n-gpu-layers {{ mac_ai_remote_llama_cpp_run_model_ngl }} \
         &> {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log \
         &
-        pid=$!;
-        sleep 5;
-        echo Running with PID=$pid;
-        ps ux -p "$pid"
-        echo "---"
-        head "{{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log"
-        echo "---"
+      pid=$!;
+      sleep 5; # give nohup time to start
+      echo Running with PID=$pid;
+      ps ux -p "$pid"
+      echo "---"
+      head "{{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log"
+      echo "---"
+
     environment:
       HOME: "{{ mac_ai_remote_llama_cpp_run_model_base_work_dir }}"
 

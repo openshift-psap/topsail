@@ -116,6 +116,8 @@ def prepare():
 def pull_model(base_work_dir, inference_server_native_binary, model):
     model_fname = model_to_fname(model)
     if not remote_access.exists(model_fname):
+        inference_server_name = config.project.get_config("test.inference_server.name", print=False)
+        inference_server_mod = INFERENCE_SERVERS.get(inference_server_name)
         inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
 
 
