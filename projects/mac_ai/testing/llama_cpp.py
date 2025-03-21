@@ -63,11 +63,20 @@ def run_benchmark(base_work_dir, llama_cpp_path, model):
     prefix, _, path = str(llama_cpp_path).rpartition(" ")
     path = path.replace("llama-server", "")
 
+    do_llama_bench = config.project.get_config("test.inference_server.benchmark.llama_cpp.llama_bench")
+    do_test_backend_ops = config.project.get_config("test.inference_server.benchmark.llama_cpp.backend_ops_perf")
+
+    if not (do_llama_bench or do_test_backend_ops):
+        logging.warning("run_benchmark: inference server benchmark enabled, but llama_cpp test enabled...")
+        return
+
     run.run_toolbox(
         "mac_ai", "remote_llama_cpp_run_bench",
         path=path,
         prefix=prefix,
         model_name=model,
+        llama_bench=do_llama_bench,
+        test_backend_ops=do_test_backend_ops,
     )
 
 # ---

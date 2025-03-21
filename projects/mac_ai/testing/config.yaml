@@ -232,7 +232,9 @@ test:
 
     benchmark:
       enabled: true
-
+      llama_cpp:
+        llama_bench: true
+        backend_ops_perf: false
   model:
     name: llama3.2
     size: small
