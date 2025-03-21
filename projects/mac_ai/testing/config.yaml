@@ -1,7 +1,7 @@
 __platforms: &all_platforms
-  - macos/metal
-  - macos/vulkan
-  - podman/vulkan
+  - macos/llama_cpp/metal
+  - macos/llama_cpp/vulkan
+  - podman/llama_cpp/vulkan
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -103,6 +103,9 @@ prepare:
     install_requirements: false
 
   llama_cpp:
+    iterable_build_fields:
+    - prepare.llama_cpp.repo.version
+    - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
       url: https://github.com/ggml-org/llama.cpp
       version: b4897
@@ -180,7 +183,7 @@ prepare:
   # the list of platform environments to prepare
   platforms: *all_platforms
 
-  native_platform: macos/upstream
+  native_platform: macos/llama_cpp/upstream
 
   podman:
     repo:
@@ -220,13 +223,12 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman/vulkan
+  platform: podman/llama_cpp/vulkan
   platforms_to_skip:
-  - macos/upstream # always built, but no need to test it every time
-  - podman/no-gpu/kompute # slow, not interesting atm
+  - macos/llama_cpp/upstream # always built, but no need to test it every time
+  - podman/llama_cpp/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
-    name: llama_cpp
     port: 11434
     unload_on_exit: true
 
@@ -321,3 +323,14 @@ exec_list:
   post_cleanup_ci: null
   matbench_run: true
   generate_plots_from_pr_args: true
+
+__platform_check:
+  system: [macos, podman]
+  inference_server: [llama_cpp]
+  system_needs_podman: [podman]
+
+  options:
+    no_gpu: no-gpu
+
+  flavors:
+    llama_cpp: [metal, vulkan, upstream, kompute]

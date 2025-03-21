@@ -16,7 +16,7 @@ CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "
 RUN_DIR = pathlib.Path(os.getenv('PWD')) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
-import prepare_mac_ai, remote_access, podman, podman_machine, brew
+import prepare_mac_ai, remote_access, podman, podman_machine, brew, utils
 
 def prepare_llm_load_test_args(base_work_dir, model_name):
     llm_load_test_kwargs = dict()
@@ -78,7 +78,7 @@ def safety_checks():
         return # safe
 
     # unsafe
-    msg = ("test.inference_server.unload_on_exit cannot be enabled when running multiple tests")
+    msg = "test.inference_server.unload_on_exit cannot be enabled when running multiple tests"
     logging.fatal(msg)
     raise ValueError(msg)
 
@@ -116,19 +116,20 @@ def test():
 
 
 def test_all_platforms():
-    all_platforms = config.project.get_config("test.platform")
-    if isinstance(all_platforms, str):
-        test_inference(all_platforms)
+    all_platforms_str = config.project.get_config("test.platform")
+    if isinstance(all_platforms_str, str):
+        test_inference(utils.parse_platform(all_platforms_str))
     else:
-        for platform in all_platforms:
-            if platform in config.project.get_config("test.platforms_to_skip", print=False):
+        for platform_str in all_platforms_str:
+            if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
                 continue
 
-            config.project.set_config("test.platform", platform) # for the post-processing
-            with env.NextArtifactDir(f"{platform}_test".replace("/", "_")):
+            config.project.set_config("test.platform", platform_str) # for the post-processing
+            with env.NextArtifactDir(f"{platform_str}_test".replace("/", "_")):
                 with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
-                    yaml.dump(dict(platform=platform), f)
+                    yaml.dump(dict(platform=platform_str), f)
 
+                platform = utils.parse_platform(platform_str)
                 test_inference(platform)
 
 
@@ -155,7 +156,7 @@ def capture_metrics(platform, stop=False):
 
 
     if (config.project.get_config("test.capture_metrics.virtgpu.enabled")
-        and "podman" in platform):
+        and platform.needs_podman):
 
         run.run_toolbox(
             "mac_ai", "remote_capture_virtgpu_memory",
@@ -179,30 +180,26 @@ def capture_metrics(platform, stop=False):
 
 
 def test_inference(platform):
-    inference_server_name = config.project.get_config("test.inference_server.name")
-    inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
-    prepare_inference_server_mod = prepare_mac_ai.PREPARE_INFERENCE_SERVERS.get(inference_server_name)
-
     base_work_dir = remote_access.prepare()
 
-    prepare_inference_server_mod.prepare_test(base_work_dir, platform)
+    platform.prepare_inference_server_mod.prepare_test(base_work_dir, platform)
 
     model_name = config.project.get_config("test.model.name")
 
-    inference_server_path = prepare_inference_server_mod.get_binary_path(
+    inference_server_path = platform.prepare_inference_server_mod.get_binary_path(
         base_work_dir, platform,
     )
 
-    inference_server_native_path = prepare_inference_server_mod.get_binary_path(
-        base_work_dir, config.project.get_config("prepare.native_platform"),
+    inference_server_native_path = platform.prepare_inference_server_mod.get_binary_path(
+        base_work_dir,
+        utils.parse_platform(config.project.get_config("prepare.native_platform")),
     )
 
-    use_podman = platform.startswith("podman")
-    inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, use_podman=(not use_podman))
+    platform.inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, platform)
 
     brew.capture_dependencies_version(base_work_dir)
 
-    if use_podman:
+    if platform.needs_podman:
         inference_server_port = config.project.get_config("test.inference_server.port")
         if not podman_machine.is_running(base_work_dir):
             podman_machine.start(base_work_dir)
@@ -216,7 +213,7 @@ def test_inference(platform):
     model_fname = prepare_mac_ai.model_to_fname(model_name)
 
     if not remote_access.exists(model_fname):
-        inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
+        platform.inference_server_mod.pull_model(base_work_dir, inference_server_native_path, model_name, model_fname)
 
     llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
     server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
@@ -230,15 +227,13 @@ def test_inference(platform):
 
     try:
         if server_benchmark_enabled:
-            inference_server_name = config.project.get_config("test.inference_server.name")
-            inference_server_mod = prepare_mac_ai.INFERENCE_SERVERS.get(inference_server_name)
-            inference_server_mod.run_benchmark(
+            platform.inference_server_mod.run_benchmark(
                 base_work_dir,
                 inference_server_path,
                 prepare_mac_ai.model_to_fname(model_name)
             )
 
-        inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
+        platform.inference_server_mod.run_model(base_work_dir, inference_server_path, model_fname)
 
         if llm_load_test_enabled:
             run.run_toolbox(
@@ -250,9 +245,10 @@ def test_inference(platform):
     finally:
         exc = None
         if config.project.get_config("test.inference_server.unload_on_exit"):
-            exc = run.run_and_catch(exc, inference_server_mod.unload_model, base_work_dir, inference_server_path, model_name, use_podman=use_podman)
+            exc = run.run_and_catch(exc, platform.inference_server_mod.unload_model,
+                                    base_work_dir, inference_server_path, model_name, platform)
 
-        if use_podman and config.project.get_config("prepare.podman.stop_on_exit"):
+        if platform.needs_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir)
 
         if not config.project.get_config("remote_host.run_locally"):
@@ -290,7 +286,7 @@ def matbench_run(matrix_source_keys):
 
         if not benchmark_values:
             logging.info("No benchmark values to pass to MatrixBenchmarking. Skipping it.")
-            test_inference(config.project.get_config("test.platform"))
+            test_inference(utils.parse_platform(config.project.get_config("test.platform")))
 
             return
 
@@ -333,13 +329,13 @@ def matbench_run_one():
 
         config.project.set_config("test.matbenchmarking.enabled", False)
 
-        platform = config.project.get_config("test.platform")
+        platform_str = config.project.get_config("test.platform")
 
-        if platform in (config.project.get_config("test.platforms_to_skip", print=False) or []):
-            logging.info(f"Skipping {platform} test as per test.platforms_to_skip.")
+        if platform_str in (config.project.get_config("test.platforms_to_skip", print=False) or []):
+            logging.info(f"Skipping {platform_str} test as per test.platforms_to_skip.")
             return
 
-        test_inference(platform)
+        test_inference(utils.parse_platform(platform_str))
 
 
 def generate_visualization(test_artifact_dir):

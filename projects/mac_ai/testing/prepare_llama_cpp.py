@@ -7,11 +7,12 @@ from projects.matrix_benchmarking.library import visualize
 
 import remote_access
 import podman as podman_mod
+import utils
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
 def prepare_test(base_work_dir, platform):
-    if "podman" not in platform: return
+    if not platform.needs_podman: return
 
     local_image_name = get_local_image_name(base_work_dir, platform)
     config.project.set_config("prepare.podman.container.image", local_image_name)
@@ -35,9 +36,12 @@ def get_local_image_name(base_work_dir, platform):
 def __get_local_image_name_from_local_container_file(platform):
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.path")
 
-    flavor = platform.split("/")[-1]
-    version = config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.build_args.LLAMA_CPP_VERSION")
-    tag = f"{version}-{flavor}"
+    if not platform.inference_server_flavor:
+        raise ValueError(f"Platform {platform} doesn't have a flavor :/")
+
+    inference_server_flavor = platform.inference_server_flavor
+    version = config.project.get_config("prepare.llama_cpp.repo.version")
+    tag = f"{version}-{inference_server_flavor}"
     return f"localhost/llama_cpp:{tag}"
 
 
@@ -85,11 +89,15 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
         logging.info(f"Image {local_image_name} already exists, not rebuilding it.")
         return
 
-    flavor = platform.split("/")[-1]
+    if not platform.inference_server_flavor:
+        raise ValueError(f"Platform {platform} doesn't have a flavor :/")
+
+    inference_server_flavor = platform.inference_server_flavor
     flavors = config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.flavors")
-    flavor_cmake_flags = flavors.get(flavor)
+    flavor_cmake_flags = flavors.get(inference_server_flavor)
     if flavor_cmake_flags is None:
-        raise ValueError(f"Invalid image flavor: {platform}. Expected one of {', '.join(flavors)}")
+        raise ValueError(f"Invalid platform flavor: {inference_server_flavor}. "
+                         f"Expected one of {', '.join(flavors)}")
 
 
     cmake_flags = build_args["LLAMA_CPP_CMAKE_FLAGS"] or ""
@@ -103,7 +111,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
 
     build_args["LLAMA_CPP_VERSION"] =  config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
 
-    artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, flavor])
+    artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, inference_server_flavor])
 
     run.run_toolbox(
         "remote", "build_image",
@@ -153,9 +161,10 @@ def prepare_podman_image_from_desktop_playground(base_work_dir, platform):
     return local_image_name
 
 
-def prepare_from_binary(base_work_dir, platform="macos/upstream"):
-    if not platform == "macos/upstream":
-        raise ValueError(f"Expected the platform to be 'macos/upstream', got '{platform}'")
+def prepare_from_binary(base_work_dir, platform):
+    error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream")
+    if error_msg:
+        raise ValueError(f"prepare_from_binary: Unexpected platform: {error_msg} :/")
 
     tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.tarball")
     if not tarball:
@@ -166,7 +175,7 @@ def prepare_from_binary(base_work_dir, platform="macos/upstream"):
     source = "/".join([
         config.project.get_config("prepare.llama_cpp.repo.url"),
         "releases/download",
-        config.project.get_config(f"prepare.llama_cpp.repo.version"),
+        config.project.get_config("prepare.llama_cpp.repo.version"),
         platform_file,
     ])
 
@@ -207,14 +216,17 @@ def prepare_from_source(base_work_dir, platform):
     src_dir = dest.parent / f"llama.cpp-tags-{version}"
     cmake_parallel = config.project.get_config("prepare.llama_cpp.repo.source.cmake.parallel")
 
-    flavor = platform.rpartition("/")[-1]
+    if not platform.inference_server_flavor:
+        raise ValueError(f"Platform {platform} doesn't have a flavor :/")
+
+    inference_server_flavor = platform.inference_server_flavor
     flavors_cmake_flags = config.project.get_config("prepare.llama_cpp.repo.source.cmake.flavors")
-    if flavor not in flavors_cmake_flags:
-        msg = f"Invalid llama-cpp compile flavor: {flavor}. Expected one of {', '.join(flavors_cmake_flags.keys())}."
+    if inference_server_flavor not in flavors_cmake_flags:
+        msg = f"Invalid llama-cpp compile flavor: {inference_server_flavor}. Expected one of {', '.join(flavors_cmake_flags.keys())}."
         logging.fatal(msg)
         raise ValueError(msg)
 
-    build_dir = dest.parent / f"build-{platform.replace('/', '-')}-{version}"
+    build_dir = dest.parent / f"build-{platform.name.replace('/', '-')}-{version}"
 
     llama_cpp_server_path = build_dir / "bin" / "llama-server"
     if remote_access.exists(llama_cpp_server_path):
@@ -222,12 +234,12 @@ def prepare_from_source(base_work_dir, platform):
         return llama_cpp_server_path
 
     cmake_flags = config.project.get_config("prepare.llama_cpp.repo.source.cmake.common")
-    cmake_flags += " " + flavors_cmake_flags[flavor]
+    cmake_flags += " " + flavors_cmake_flags[inference_server_flavor]
 
     if config.project.get_config("prepare.llama_cpp.repo.source.cmake.openmp.enabled"):
         cmake_flags += " " + config.project.get_config("prepare.llama_cpp.repo.source.cmake.openmp.flags")
 
-    with env.NextArtifactDir(f"build_llama_cpp_{flavor}"):
+    with env.NextArtifactDir(f"build_llama_cpp_{inference_server_flavor}"):
         prepare_cmd = f"cmake -B {build_dir} {cmake_flags} 2>&1 | tee {build_dir}/build.prepare.log"
         build_cmd = f"cmake --build {build_dir} --config Release --parallel {cmake_parallel} 2>&1 | tee {build_dir}/build.compile.log"
 
@@ -257,7 +269,7 @@ def prepare_from_source(base_work_dir, platform):
             print(ret.stdout, file=f)
 
         if ret.returncode != 0:
-            raise RuntimeError(f"Failed to prepare llama-cpp/{flavor}. See {env.ARTIFACT_DIR}/prepare.log")
+            raise RuntimeError(f"Failed to prepare llama-cpp/{inference_server_flavor}. See {env.ARTIFACT_DIR}/prepare.log")
 
         ret = remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
@@ -272,54 +284,59 @@ def prepare_from_source(base_work_dir, platform):
             print(ret.stdout, file=f)
 
         if ret.returncode != 0:
-            raise RuntimeError(f"Failed to build llama-cpp/{flavor}. See {env.ARTIFACT_DIR}/build.log")
+            raise RuntimeError(f"Failed to build llama-cpp/{inference_server_flavor}. See {env.ARTIFACT_DIR}/build.log")
 
     return llama_cpp_server_path
 
 
 def prepare_for_macos(base_work_dir, platform):
-    build_from = platform.rpartition("/")[-1]
+    error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp")
+    if error_msg:
+        raise ValueError(f"prepare_for_macos: unexpected platform: {error_msg} :/")
 
-    if build_from == "upstream":
+    if not platform.inference_server_flavor:
+        raise ValueError(f"Platform {platform} doesn't have a flavor :/")
+
+    if platform.inference_server_flavor == "upstream":
         return prepare_from_binary(base_work_dir, platform)
     else:
         return prepare_from_source(base_work_dir, platform)
 
 
 def prepare_binary(base_work_dir, platform):
-    if platform.startswith("macos"):
+    if platform.system == "macos":
         return prepare_for_macos(base_work_dir, platform)
 
-    if platform.startswith("podman"):
+    if platform.system == "podman":
         return prepare_for_podman(base_work_dir, platform)
 
-    raise ValueError(f"Invalid platform to prepare: {platform}. Expected one of macos/*, podman/*.")
+    raise ValueError(f"Invalid platform.system to prepare: {platform.system}. Expected one of [macos, podman].")
 
 
 def _get_binary_path(base_work_dir, platform):
-    if platform.startswith("podman"):
+    if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
         container_command = config.project.get_config(f"prepare.llama_cpp.repo.podman.command")
         command = f"{podman_prefix} {container_command}"
 
         return command, None, None
 
-    version = config.project.get_config(f"prepare.llama_cpp.repo.version")
-    arch = config.project.get_config("remote_host.arch")
+    version = config.project.get_config(f"prepare.llama_cpp.repo.version", print=False)
+    arch = config.project.get_config("remote_host.arch", print=False)
 
-    if platform == "macos/upstream":
-        file_name = config.project.get_config(f"prepare.llama_cpp.repo.macos.upstream.file")
-        dest = base_work_dir / "llama_cpp" / f"release-{platform}-{version}" / file_name
+    if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream"):
+        file_name = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.file")
+        dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
         llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
         return llama_cpp_path, dest, file_name
-    elif platform.startswith("macos/"):
-        llama_cpp_path = base_work_dir / "llama_cpp" / f"build-{platform.replace('/', '-')}-{version}" / "bin" / "llama-server"
+    elif platform.system == "macos":
+        llama_cpp_path = base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server"
         return llama_cpp_path, None, None
     else:
         pass
 
-    raise ValueError(f"Invalid platform: {platform}. Expected macos/native, podman/*, macos/*")
+    raise ValueError(f"Invalid platform: {platform}. Expected macos/llama_cpp/upstream, podman/llama_cpp/*, macos/llama_cpp/*")
 
 
 def get_binary_path(base_work_dir, platform):
@@ -339,8 +356,9 @@ def cleanup_files(base_work_dir):
 
 
 def cleanup_image(base_work_dir):
-    for platform in config.project.get_config("prepare.platforms"):
-        if not platform.startswith("podman"): continue
+    for platform_str in config.project.get_config("prepare.platforms"):
+        platform = utils.parse_platform(platform_str)
+        if not platform.needs_podman: continue
 
         prepare_test(base_work_dir, platform)
 

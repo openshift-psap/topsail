@@ -38,8 +38,6 @@ def _get_test_setup(entry):
 
     inference_server_cfg = dict()
     inference_server_cfg["platform"] = entry.results.test_config.get("test.platform")
-    inference_server_cfg["engine"] = entry.results.test_config.get("test.inference_server.name")
-    inference_server_cfg["version"] = entry.results.test_config.get("prepare.llama_cpp.repo.version")
     inference_server_links = []
 
     inference_server_info = [

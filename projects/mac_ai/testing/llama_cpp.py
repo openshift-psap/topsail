@@ -44,8 +44,8 @@ def run_model(base_work_dir, llama_cpp_path, model):
     )
 
 
-def unload_model(base_work_dir, llama_cpp_path, model, use_podman=False):
-    if use_podman:
+def unload_model(base_work_dir, llama_cpp_path, model, platform):
+    if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
         command = f"{podman_prefix} pkill python"
     else:
