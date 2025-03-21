@@ -22,16 +22,9 @@ def register():
     Throughput()
     ByUsers()
 
-def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
+def generateThroughputData(entries, variables, ordered_vars, model_name=None):
     data = []
 
-    variables = dict(_variables) # make a copy before modifying
-
-    has_multiple_modes = True
-
-    variables.pop("index", None)
-    variables.pop("model_name", None)
-    ordered_vars = [v for v in _ordered_vars if v in variables]
 
     for entry in entries:
         llm_data = entry.results.llm_load_test_output
@@ -45,13 +38,12 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
         datum["legend_name"] = entry.settings.__dict__.get(ordered_vars[0]) if ordered_vars else "single-entry"
 
         datum["test_name"] = entry.get_name([v for v in variables if v != ordered_vars[0]]).replace(", ", "<br>").replace("model_name=", "")
+        if len(ordered_vars) == 2:
+            datum["test_name"] = datum["test_name"].replace(f"{ordered_vars[1]}=", "")
+
+        datum["test_full_name"] = entry.get_name(variables)
 
         if datum["test_name"]: datum["test_name"] += "<br>"
-
-        if _variables and not has_multiple_modes:
-            datum["test_name:sort_index"] = entry.settings.__dict__[list(_variables.keys())[0]]
-        else:
-            datum["test_name:sort_index"] = datum["test_name"]
 
         if not entry.results.llm_load_test_output: continue
 
@@ -63,9 +55,6 @@ def generateThroughputData(entries, _variables, _ordered_vars, model_name=None):
         datum["itl_mean"] = entry.results.lts.kpis["kserve_llm_load_test_itl_mean"].value
         datum["ttft_mean"] = entry.results.lts.kpis["kserve_llm_load_test_ttft_mean"].value
         datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
-
-        datum["sort_index"] = entry.settings.__dict__[ordered_vars[0]] \
-            if ordered_vars else 0
 
         data.append(datum)
 
@@ -140,7 +129,7 @@ class Throughput():
             subtitle += f"<br><b>{cfg__model_name}</b>"
 
         if cfg__bar_plot:
-            df = df.sort_values(by=["sort_index", "test_name"], ascending=True)
+            df = df.sort_values(by=["test_name"], ascending=True)
 
             fig = px.bar(df, x='legend_name', y=y_key, color="test_name",
                          hover_data=df.columns, text=y_key, text_auto='.0f')
@@ -163,12 +152,17 @@ class Throughput():
             fig.update_layout(title=f"{title}{subtitle}", title_x=0.5,)
             fig.update_layout(legend_title_text="Test")
 
-            if cfg__entry or cfg__model_name:
+            fig.update_xaxes(title=ordered_vars[0].title().replace("_", " "))
+
+            if len(ordered_vars) == 2:
+                fig.update_layout(legend_title_text=ordered_vars[1].title().replace("_", " "))
+
+            if len(ordered_vars) <= 1:
                 fig.layout.update(showlegend=False)
         else:
-            df = df.sort_values(by=["sort_index", "legend_name"], ascending=False)
+            df = df.sort_values(by=["legend_name"], ascending=False)
 
-            if len(variables) > 2:
+            if len(variables) >= 2:
                 color = "legend_name"
                 text = "test_name"
             else:
@@ -185,8 +179,11 @@ class Throughput():
 
             fig.update_yaxes(title=f"❮ Mean {y_name} (in {y_unit})<br>Lower is better")
             fig.update_layout(title=f"Throughput vs {y_name}{subtitle}", title_x=0.5,)
-            if ordered_vars:
-                fig.update_layout(legend_title_text=ordered_vars[0].title())
+
+            if len(ordered_vars) == 2:
+                fig.update_layout(legend_title_text=ordered_vars[1].title())
+            else:
+                fig.update_layout(legend_title_text="Test")
 
             if not color or len(df[color].unique()) <= 1:
                 fig.layout.update(showlegend=False)
