@@ -276,8 +276,7 @@ def test_inference(platform):
         exc = run.run_and_catch(exc, capture_metrics, platform, stop=True)
 
         if exc:
-            logging.warning(f"Test crashed ({exc})")
-            raise exc
+            logging.exception(f"Test tear-down crashed ({exc})")
 
 
 def matbench_run(matrix_source_keys):
