@@ -1,9 +1,10 @@
 __platforms: &all_platforms
   - macos/llama_cpp/metal
   - macos/llama_cpp/vulkan
+  - macos/llama_cpp/upstream
   - podman/llama_cpp/vulkan
   - macos/ollama
-  - macos/llama_cpp/upstream
+  - macos/ramalama
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -34,11 +35,13 @@ ci_presets:
 
   # ---
 
-  ollama:
-    test.platform: &ollama_test_platform
+  multi-servers:
+    test.platform:
+    - podman/ramalama
+    - podman/llama_cpp/vulkan
     - macos/ollama
     - macos/llama_cpp/upstream
-    prepare.platforms.to_build: *ollama_test_platform
+    prepare.platforms.to_build: null # use test.platform
 
   # ---
 
