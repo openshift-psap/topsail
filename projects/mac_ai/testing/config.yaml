@@ -349,7 +349,6 @@ exec_list:
 __platform_check:
   system: [macos, podman]
   inference_server: [llama_cpp, ollama, ramalama]
-  system_needs_podman: [podman]
 
   options:
     no_gpu: no-gpu
