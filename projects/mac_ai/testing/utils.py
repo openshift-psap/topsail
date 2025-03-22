@@ -27,6 +27,8 @@ def parse_platform(platform_str):
     platform = types.SimpleNamespace()
 
     platform_parts = platform_str.split("/")
+    if not len(platform_parts) >= 2:
+        raise ValueError(f"Invalid platform string: {platform_str}. Expected at least <system>/>inference_server_name>")
 
     platform.system = platform_parts.pop(0)
     platform.inference_server_name = platform_parts.pop(0)
@@ -65,7 +67,7 @@ def parse_platform(platform_str):
 
     if not (platform.prepare_inference_server_mod and platform.inference_server_mod):
         msg = (f"Inference server ({platform.inference_server_name}) incorrectly configured :/. "
-               f"Expected one of {', '.join(INFERENCE_SERVERS)}")
+               f"Expected one of {', '.join(prepare_mac_ai.INFERENCE_SERVERS)}")
         logging.fatal(msg)
         raise ValueError(msg)
 
