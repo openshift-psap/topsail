@@ -115,7 +115,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
 
     run.run_toolbox(
         "remote", "build_image",
-        podman_cmd=podman_mod.get_podman_binary(),
+        podman_cmd=podman_mod.get_podman_binary(base_work_dir),
         base_directory=None,
         prepare_script=None,
         container_file=container_file,
@@ -151,7 +151,7 @@ def prepare_podman_image_from_desktop_playground(base_work_dir, platform):
 
     run.run_toolbox(
         "remote", "build_image",
-        podman_cmd=podman_mod.get_podman_binary(),
+        podman_cmd=podman_mod.get_podman_binary(base_work_dir),
         base_directory=dest / root_directory,
         prepare_script=repo_cfg["prepare_script"],
         container_file=container_file,
