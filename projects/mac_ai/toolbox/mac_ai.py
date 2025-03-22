@@ -67,7 +67,7 @@ class Mac_Ai:
         Args:
           base_work_dir: the base directory where to store things
           path: the path to the ollama binary
-          name: the name of the model to fetch
+          name: the name of the model to run
           unload: if True, unloads (stops serving) this model
         """
 
@@ -93,7 +93,7 @@ class Mac_Ai:
           prefix: the prefix to get the llama-server running
           path: the path to the llama-server binary
           port: the port number on which llama-cpp should listen
-          name: the name of the model to fetch
+          name: the name of the model to run
           ngl: number of layers to store in VRAM
         """
 

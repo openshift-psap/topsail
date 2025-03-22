@@ -30,7 +30,7 @@ Parameters
 
 ``name``  
 
-* The name of the model to fetch
+* The name of the model to run
 
 
 ``unload``  

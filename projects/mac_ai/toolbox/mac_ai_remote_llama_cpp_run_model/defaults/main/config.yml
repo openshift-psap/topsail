@@ -15,7 +15,7 @@ mac_ai_remote_llama_cpp_run_model_path:
 # Mandatory value
 mac_ai_remote_llama_cpp_run_model_port:
 
-# the name of the model to fetch
+# the name of the model to run
 # Mandatory value
 mac_ai_remote_llama_cpp_run_model_name:
 
