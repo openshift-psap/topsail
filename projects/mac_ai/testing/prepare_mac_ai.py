@@ -65,17 +65,20 @@ def cleanup():
 
 def prepare():
     base_work_dir = remote_access.prepare()
-    if config.project.get_config(f"prepare.podman.repo.enabled", print=False):
-        podman.prepare_from_gh_binary(base_work_dir)
-        podman.prepare_gv_from_gh_binary(base_work_dir)
+    if not config.project.get_config(f"prepare.prepare_only_inference_server"):
+        if config.project.get_config(f"prepare.podman.repo.enabled"):
+            podman.prepare_from_gh_binary(base_work_dir)
+            podman.prepare_gv_from_gh_binary(base_work_dir)
 
-    brew.install_dependencies(base_work_dir)
+        brew.install_dependencies(base_work_dir)
 
-    podman_machine.configure_and_start(base_work_dir, force_restart=True)
+        podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
-    prepare_llm_load_test(base_work_dir)
+        prepare_llm_load_test(base_work_dir)
 
     platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
+    if not isinstance(platforms_to_build_str, list):
+        platforms_to_build_str = [platforms_to_build_str]
 
     puller_platforms = []
     platforms_to_build = [
