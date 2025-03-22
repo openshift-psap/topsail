@@ -356,7 +356,14 @@ def cleanup_files(base_work_dir):
 
 
 def cleanup_image(base_work_dir):
-    for platform_str in config.project.get_config("prepare.platforms.to_build"):
+    platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
+    if not platforms_to_build_str:
+        platforms_to_build_str = config.project.get_config("test.platform")
+
+    if not isinstance(platforms_to_build_str, list):
+        platforms_to_build_str = [platforms_to_build_str]
+
+    for platform_str in platforms_to_build_str:
         platform = utils.parse_platform(platform_str)
         if not platform.needs_podman: continue
 

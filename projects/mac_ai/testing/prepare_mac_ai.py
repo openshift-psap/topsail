@@ -80,6 +80,9 @@ def prepare():
         prepare_llm_load_test(base_work_dir)
 
     platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
+    if not platforms_to_build_str:
+        platforms_to_build_str = config.project.get_config("test.platform")
+
     if not isinstance(platforms_to_build_str, list):
         platforms_to_build_str = [platforms_to_build_str]
 
