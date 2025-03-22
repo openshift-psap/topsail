@@ -14,24 +14,41 @@ from projects.matrix_benchmarking.library import visualize
 import podman as podman_mod
 import remote_access, podman_machine
 from entrypoint import entrypoint
+import utils
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
+def start_server(base_work_dir, llama_cpp_path):
+    pass # nothing to start
 
-def pull_model(base_work_dir, llama_cpp_path, model, dest):
+
+def stop_server(base_work_dir, llama_cpp_path):
+    pass # nothing to stop
+
+
+def has_model(base_work_dir, llama_cpp_path, model):
+    model_fname = utils.model_to_fname(model)
+
+    return remote_access.exists(model_fname)
+
+
+def pull_model(base_work_dir, llama_cpp_path, model):
     llama_cpp_path = llama_cpp_path.parent / 'llama-run'
+    model_fname = utils.model_to_fname(model)
 
     return run.run_toolbox(
         "mac_ai", "remote_llama_cpp_pull_model",
         base_work_dir=base_work_dir,
         path=llama_cpp_path,
         name=model,
-        dest=dest,
+        dest=model_fname,
     )
 
 
 def run_model(base_work_dir, llama_cpp_path, model):
     inference_server_port = config.project.get_config("test.inference_server.port")
+    model_fname = utils.model_to_fname(model)
+
     # dirty, I know ...
     prefix, _, path = str(llama_cpp_path).rpartition(" ")
     run.run_toolbox(
@@ -39,9 +56,11 @@ def run_model(base_work_dir, llama_cpp_path, model):
         base_work_dir=base_work_dir,
         prefix=prefix,
         path=path,
-        name=model,
+        name=model_fname,
         port=inference_server_port,
     )
+
+    return model_fname
 
 
 def unload_model(base_work_dir, llama_cpp_path, model, platform):
@@ -59,6 +78,8 @@ def unload_model(base_work_dir, llama_cpp_path, model, platform):
 
 
 def run_benchmark(base_work_dir, llama_cpp_path, model):
+    model_fname = utils.model_to_fname(model)
+
     # dirty, I know ...
     prefix, _, path = str(llama_cpp_path).rpartition(" ")
     path = path.replace("llama-server", "")
@@ -74,7 +95,7 @@ def run_benchmark(base_work_dir, llama_cpp_path, model):
         "mac_ai", "remote_llama_cpp_run_bench",
         path=path,
         prefix=prefix,
-        model_name=model,
+        model_name=model_fname,
         llama_bench=do_llama_bench,
         test_backend_ops=do_test_backend_ops,
     )
@@ -84,7 +105,7 @@ def run_benchmark(base_work_dir, llama_cpp_path, model):
 @entrypoint()
 def rebuild_image(start=True):
     base_work_dir = remote_access.prepare()
-    prepare_test(base_work_dir, use_podman=True)
+    prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream"))
 
     try:
         cleanup_image(base_work_dir)
@@ -107,7 +128,7 @@ def rebuild_image(start=True):
 def start_podman():
     base_work_dir = remote_access.prepare()
 
-    prepare_test(base_work_dir, use_podman=True)
+    prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream"))
 
     inference_server_port = config.project.get_config("test.inference_server.port")
     podman_container_name = config.project.get_config("prepare.podman.container.name")

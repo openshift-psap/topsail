@@ -28,6 +28,11 @@ Parameters
 * The path to the ollama binary
 
 
+``port``  
+
+* The port on which the server should listen
+
+
 ``stop``  
 
 * If true, stop the server instead of starting it

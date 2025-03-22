@@ -5,17 +5,22 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_llama_cpp, llama_cpp, utils, remote_access, podman_machine, brew, podman
+import prepare_llama_cpp,  utils, remote_access, podman_machine, brew, podman
+import llama_cpp, ollama, ramalama
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
 
 PREPARE_INFERENCE_SERVERS = dict(
     llama_cpp=prepare_llama_cpp,
+    ollama=ollama,
+    ramalama=ramalama,
 )
 
 INFERENCE_SERVERS = dict(
     llama_cpp=llama_cpp,
+    ollama=ollama,
+    ramalama=ramalama,
 )
 
 
@@ -63,28 +68,37 @@ def cleanup():
 
 def prepare():
     base_work_dir = remote_access.prepare()
-    if config.project.get_config(f"prepare.podman.repo.enabled", print=False):
-        podman.prepare_from_gh_binary(base_work_dir)
-        podman.prepare_gv_from_gh_binary(base_work_dir)
+    if not config.project.get_config(f"prepare.prepare_only_inference_server"):
+        if config.project.get_config(f"prepare.podman.repo.enabled"):
+            podman.prepare_from_gh_binary(base_work_dir)
+            podman.prepare_gv_from_gh_binary(base_work_dir)
 
-    brew.install_dependencies(base_work_dir)
+        brew.install_dependencies(base_work_dir)
 
-    podman_machine.configure_and_start(base_work_dir, force_restart=True)
+        podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
-    prepare_llm_load_test(base_work_dir)
-    native_platform_str = config.project.get_config("prepare.native_platform")
-    platforms = [
+        prepare_llm_load_test(base_work_dir)
+
+    platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
+    if not isinstance(platforms_to_build_str, list):
+        platforms_to_build_str = [platforms_to_build_str]
+
+    puller_platforms = []
+    platforms_to_build = [
         utils.parse_platform(platform_str)
-        for platform_str in set(
-                config.project.get_config("prepare.platforms")
-                +
-                [native_platform_str] # always prepare the native platform
-        )
+        for platform_str in platforms_to_build_str
     ]
 
-    platform_inference_server_mod = {}
+    for platform in platforms_to_build:
+        model_puller_str = config.project.get_config(f"prepare.platforms.model_pullers.{platform.inference_server_name}")
+        puller_platform = utils.parse_platform(model_puller_str)
+        puller_platforms.append(puller_platform)
+
+        if model_puller_str not in platforms_to_build_str:
+            platforms_to_build.append(puller_platform)
+
     platform_binaries = {}
-    for platform in platforms:
+    for platform in platforms_to_build:
         inference_server_config = config.project.get_config(f"prepare.{platform.inference_server_name}", None, print=False)
         if not inference_server_config:
             raise ValueError(f"Cannot prepare the {platform.inference_server_name} inference server: no configuration available :/")
@@ -96,27 +110,32 @@ def prepare():
             platform_binaries[platform.name] = platform.prepare_inference_server_mod.prepare_binary(base_work_dir, platform)
 
         run.run_iterable_fields(
-            inference_server_config["iterable_build_fields"],
+            inference_server_config.get("iterable_build_fields"),
             prepare_binary
         )
 
-    # keeping only the first native binary here
-    inference_server_native_binary = platform_binaries[native_platform_str]
-
     # --- #
-
-    def pull_model(model):
-        model_fname = model_to_fname(model)
-        if remote_access.exists(model_fname):
-            return
-
-        platform.inference_server_mod.pull_model(base_work_dir, inference_server_native_binary, model, model_fname)
 
     models = config.project.get_config("test.model.name")
 
-    for model in models if isinstance(models, list) else [models]:
-        config.project.set_config("test.model.name", model)
-        pull_model(model)
+    platforms_pulled = set()
+    for puller_platform in puller_platforms:
+        if puller_platform.name in platforms_pulled: continue
+
+        inference_server_binary = platform_binaries[puller_platform.name]
+        try:
+            puller_platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+            for model in models if isinstance(models, list) else [models]:
+                config.project.set_config("test.model.name", model)
+
+                if puller_platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model):
+                    continue
+
+                puller_platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model)
+
+                platforms_pulled.add(puller_platform.name)
+        finally:
+            puller_platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
@@ -176,13 +195,9 @@ def cleanup_models(base_work_dir):
 
     for model in models:
         config.project.set_config("test.model.name", model)
-        dest = base_work_dir / model_to_fname(model)
+        dest = base_work_dir / utils.model_to_fname(model)
         remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {dest}")
 
+        # delete from the other inference servers as well
+
     config.project.set_config("test.model.name", models)
-
-
-def model_to_fname(model):
-    base_work_dir = remote_access.prepare()
-    model_cache_dir = config.project.get_config("test.model.cache_dir")
-    return base_work_dir / model_cache_dir / pathlib.Path(model).name

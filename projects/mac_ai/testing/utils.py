@@ -1,9 +1,11 @@
 import tempfile
 import os
 import types
+import pathlib
 
 from projects.core.library import env, config, run, configure_logging, export
 
+import remote_access
 
 __keep_open = []
 def get_tmp_fd():
@@ -25,17 +27,19 @@ def parse_platform(platform_str):
     platform = types.SimpleNamespace()
 
     platform_parts = platform_str.split("/")
+    if not len(platform_parts) >= 2:
+        raise ValueError(f"Invalid platform string: {platform_str}. Expected at least <system>/>inference_server_name>")
 
     platform.system = platform_parts.pop(0)
     platform.inference_server_name = platform_parts.pop(0)
 
     expected_systems = config.project.get_config("__platform_check.system", print=False)
     if not platform.system in expected_systems:
-        raise ValueError(f"Invalid platform system ({platform.system}) in {platform_str}. Expected one of {expected_systems}")
+        raise ValueError(f"Invalid platform system '{platform.system}' in {platform_str}. Expected one of {expected_systems}")
 
     expected_servers = config.project.get_config("__platform_check.inference_server", print=False)
     if not platform.inference_server_name in expected_servers:
-        raise ValueError(f"Invalid platform inference server ({platform.inference_server_name}) in {platform_str}. Expected one of {expected_servers}")
+        raise ValueError(f"Invalid platform inference server '{platform.inference_server_name}' in {platform_str}. Expected one of {expected_servers}")
 
     platform.needs_podman = platform.system in config.project.get_config("__platform_check.system_needs_podman", print=False)
 
@@ -63,7 +67,7 @@ def parse_platform(platform_str):
 
     if not (platform.prepare_inference_server_mod and platform.inference_server_mod):
         msg = (f"Inference server ({platform.inference_server_name}) incorrectly configured :/. "
-               f"Expected one of {', '.join(INFERENCE_SERVERS)}")
+               f"Expected one of {', '.join(prepare_mac_ai.INFERENCE_SERVERS)}")
         logging.fatal(msg)
         raise ValueError(msg)
 
@@ -95,3 +99,9 @@ def check_expected_platform(
         errors.append(f"Invalid {k}: expected {v}, got {platform_value}")
 
     return ". ".join(errors)
+
+
+def model_to_fname(model):
+    base_work_dir = remote_access.prepare()
+    model_cache_dir = config.project.get_config("test.model.cache_dir")
+    return base_work_dir / model_cache_dir / pathlib.Path(model).name

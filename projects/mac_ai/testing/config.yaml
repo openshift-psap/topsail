@@ -2,6 +2,8 @@ __platforms: &all_platforms
   - macos/llama_cpp/metal
   - macos/llama_cpp/vulkan
   - podman/llama_cpp/vulkan
+  - macos/ollama
+  - macos/llama_cpp/upstream
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -29,6 +31,14 @@ ci_presets:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
+
+  # ---
+
+  ollama:
+    test.platform: &ollama_test_platform
+    - macos/ollama
+    - macos/llama_cpp/upstream
+    prepare.platforms.to_build: *ollama_test_platform
 
   # ---
 
@@ -97,7 +107,17 @@ remote_host:
   verbose_ssh_commands: true
 
 prepare:
+  # the list of platform environments to prepare
+  platforms:
+    to_build: *all_platforms
+
+    model_pullers:
+      llama_cpp: macos/llama_cpp/upstream
+      ollama: macos/ollama
+      ramalama: podman/ramalama
+
   cleanup_on_exit: false
+  prepare_only_inference_server: false
 
   llm_load_test:
     install_requirements: false
@@ -153,12 +173,14 @@ prepare:
     repo:
       url: https://github.com/ollama/ollama/
       version: v0.5.7
-      darwin:
+      macos:
         file: ollama-darwin
-        executable: true
-      podman/linux:
-        file: ollama-linux-{@remote_host.arch}.tgz
-        tarball: true
+
+  ramalama:
+    repo:
+      url: https://github.com/containers/ramalama
+      version: v0.6.4
+
   brew:
     install_dependencies: false
     capture_dependencies: false
@@ -179,11 +201,6 @@ prepare:
     - shaderc
     - libomp
     - glslang
-
-  # the list of platform environments to prepare
-  platforms: *all_platforms
-
-  native_platform: macos/llama_cpp/upstream
 
   podman:
     repo:
@@ -223,14 +240,16 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 test:
-  platform: podman/llama_cpp/vulkan
+  platform: *all_platforms
+
   platforms_to_skip:
-  - macos/llama_cpp/upstream # always built, but no need to test it every time
+  # - macos/llama_cpp/upstream # always built, but no need to test it every time
   - podman/llama_cpp/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
     port: 11434
     unload_on_exit: true
+    stop_on_exit: true
 
     benchmark:
       enabled: true
@@ -326,7 +345,7 @@ exec_list:
 
 __platform_check:
   system: [macos, podman]
-  inference_server: [llama_cpp]
+  inference_server: [llama_cpp, ollama, ramalama]
   system_needs_podman: [podman]
 
   options:

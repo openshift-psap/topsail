@@ -11,5 +11,9 @@ mac_ai_remote_ollama_start_base_work_dir:
 # Mandatory value
 mac_ai_remote_ollama_start_path:
 
+# the port on which the server should listen
+# Mandatory value
+mac_ai_remote_ollama_start_port:
+
 # if true, stop the server instead of starting it
 mac_ai_remote_ollama_start_stop: false
