@@ -162,6 +162,8 @@ Toolbox Documentation
 * :doc:`remote_ollama_pull_model <Mac_Ai.remote_ollama_pull_model>`	 Pulls a model with ollama, on a remote host
 * :doc:`remote_ollama_run_model <Mac_Ai.remote_ollama_run_model>`	 Runs a model with ollama, on a remote host
 * :doc:`remote_ollama_start <Mac_Ai.remote_ollama_start>`	 Starts ollama, on a remote host
+* :doc:`remote_ramalama_run_bench <Mac_Ai.remote_ramalama_run_bench>`	 Benchmark a model with ramalama, on a remote host
+* :doc:`remote_ramalama_run_model <Mac_Ai.remote_ramalama_run_model>`	 Runs a model with ramalama, on a remote host
 
 ``nfd``
 *******

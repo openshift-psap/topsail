@@ -1,0 +1,33 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_ramalama_run_model
+
+# Parameters
+# the base directory where to store things
+# Mandatory value
+mac_ai_remote_ramalama_run_model_base_work_dir:
+
+# the path to the llama-server binary
+# Mandatory value
+mac_ai_remote_ramalama_run_model_path:
+
+# the port number on which llama-cpp should listen
+# Mandatory value
+mac_ai_remote_ramalama_run_model_port:
+
+# the name of the model to run
+# Mandatory value
+mac_ai_remote_ramalama_run_model_name:
+
+# the env values to set before running ramalama
+# Mandatory value
+mac_ai_remote_ramalama_run_model_env:
+
+# number of layers to store in VRAM
+mac_ai_remote_ramalama_run_model_ngl: 99
+
+# name of the device to pass to the container
+mac_ai_remote_ramalama_run_model_device: null
+
+# if True, unloads (stops serving) this model
+mac_ai_remote_ramalama_run_model_unload: false

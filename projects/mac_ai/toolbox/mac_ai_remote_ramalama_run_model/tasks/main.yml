@@ -1,0 +1,64 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Define the container name
+  set_fact:
+    container_name: topsail_ramalama
+
+- name: Stop serving this model, if requested
+  shell: |
+    export {{ mac_ai_remote_ramalama_run_model_env }}
+    {{ mac_ai_remote_ramalama_run_model_path }} stop {{ container_name }}
+  ignore_errors: true
+  environment:
+    HOME: "{{ mac_ai_remote_ramalama_run_model_base_work_dir }}"
+
+- name: Unload stops here
+  meta: end_play
+  when: mac_ai_remote_ramalama_run_model_unload | bool
+
+- name: Execute and retrieve the artifacts
+  block:
+  - name: Start serving the ramalama model
+    shell: |
+      export {{ mac_ai_remote_ramalama_run_model_env }}
+      nohup {{ mac_ai_remote_ramalama_run_model_path }} \
+         --debug \
+         serve \
+         --pull=never \
+         {{ mac_ai_remote_ramalama_run_model_name }} \
+         --ngl {{ mac_ai_remote_ramalama_run_model_ngl }} \
+         --port {{ mac_ai_remote_ramalama_run_model_port }} \
+         --host 0.0.0.0 \
+         --name {{ container_name }} \
+      {% if mac_ai_remote_ramalama_run_model_device -%}
+         --device {{ mac_ai_remote_ramalama_run_model_device }} \
+      {% endif -%}
+         --detach
+    environment:
+      HOME: "{{ mac_ai_remote_ramalama_run_model_base_work_dir }}"
+
+  - name: Wait for ramalama to start responding correctly
+    command:
+      curl -sSf localhost:{{ mac_ai_remote_ramalama_run_model_port }}/models
+    register: ramalama_running_cmd
+    until: ramalama_running_cmd.rc == 0
+    retries: 2
+    delay: 5
+
+  always:
+  - name: Capture the container logs
+    shell: |
+      export {{ mac_ai_remote_ramalama_run_model_env }}
+
+      $RAMALAMA_CONTAINER_ENGINE logs {{ container_name }} > {{ artifact_extra_logs_dir }}/artifacts/ramalama.log
+  - name: Retrieve the artifact files locally
+    include_role:
+      name: remote_retrieve
+    vars:
+      remote_retrieve_path: "{{ artifact_extra_logs_dir }}"
+      remote_retrieve_dest: "{{ artifact_extra_logs_dir }}"
