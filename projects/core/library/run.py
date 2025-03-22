@@ -212,6 +212,11 @@ def run_and_catch(exc, fct, *args, **kwargs):
 # - my.config.value1: 2, my.config.value2: a
 # - my.config.value1: 2, my.config.value2: b
 def run_iterable_fields(iterable_fields, fct, *args, **kwargs):
+    if not iterable_fields:
+        # nothing to do
+        fct(*args, **kwargs)
+        return
+
     iterable_kv = {}
     for iterable_key in iterable_fields:
         iterable_values = config.project.get_config(iterable_key, print=False)
