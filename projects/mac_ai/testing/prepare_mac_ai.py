@@ -5,7 +5,8 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_llama_cpp, llama_cpp, utils, remote_access, podman_machine, brew, podman, ollama
+import prepare_llama_cpp,  utils, remote_access, podman_machine, brew, podman
+import llama_cpp, ollama, ramalama
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
@@ -13,11 +14,13 @@ CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "
 PREPARE_INFERENCE_SERVERS = dict(
     llama_cpp=prepare_llama_cpp,
     ollama=ollama,
+    ramalama=ramalama,
 )
 
 INFERENCE_SERVERS = dict(
     llama_cpp=llama_cpp,
-    ollama=ollama
+    ollama=ollama,
+    ramalama=ramalama,
 )
 
 
