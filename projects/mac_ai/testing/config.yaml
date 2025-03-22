@@ -7,7 +7,7 @@ __platforms: &all_platforms
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: []
+  to_apply: [multi-users, llama-cpp]
 
   # dict of variables to apply
   variable_overrides: {}
@@ -114,6 +114,7 @@ prepare:
     model_pullers:
       llama_cpp: macos/llama_cpp/upstream
       ollama: macos/ollama
+      ramalama: podman/ramalama
 
   cleanup_on_exit: false
   prepare_only_inference_server: false
@@ -174,7 +175,12 @@ prepare:
       version: v0.5.7
       macos:
         file: ollama-darwin
-        executable: true
+
+  ramalama:
+    repo:
+      url: https://github.com/containers/ramalama
+      version: v0.6.4
+
   brew:
     install_dependencies: false
     capture_dependencies: false
@@ -339,7 +345,7 @@ exec_list:
 
 __platform_check:
   system: [macos, podman]
-  inference_server: [llama_cpp, ollama]
+  inference_server: [llama_cpp, ollama, ramalama]
   system_needs_podman: [podman]
 
   options:
