@@ -262,7 +262,7 @@ test:
   model:
     name: llama3.2
     size: small
-    cache_dir: models
+    gguf_dir: models
 
   llm_load_test:
     enabled: true
@@ -307,15 +307,24 @@ test:
       enabled: true
 
 cleanup:
-  llm-load-test: true
-  llama_cpp:
-    image: true
-    files: true
-  models: true
+  models:
+    gguf: true
+    ollama: true
+    ramalama: true
+
+  files:
+    llama_cpp: true
+    ollama: true
+    ramalama: true
+    llm-load-test: true
+    podman: true
+
+  images:
+    llama_cpp: true
+
   podman_machine:
     delete: true
     reset: true
-  podman: true
 
 export_artifacts:
   enabled: false

@@ -27,13 +27,7 @@ INFERENCE_SERVERS = dict(
 def cleanup():
     base_work_dir = remote_access.prepare()
 
-    if config.project.get_config(f"cleanup.llm-load-test"):
-        cleanup_llm_load_test(base_work_dir)
-
-    if config.project.get_config(f"cleanup.llama_cpp.files"):
-        prepare_llama_cpp.cleanup_files(base_work_dir)
-
-    if config.project.get_config(f"cleanup.llama_cpp.image"):
+    if config.project.get_config("cleanup.images.llama_cpp"):
         is_running = podman_machine.is_running(base_work_dir)
         if is_running is None:
             logging.warning("Podman machine doesn't exist.")
@@ -48,28 +42,52 @@ def cleanup():
         if is_running:
             prepare_llama_cpp.cleanup_image(base_work_dir)
 
-    if config.project.get_config(f"cleanup.podman_machine.delete"):
+    # ***
+
+    if config.project.get_config("cleanup.files.ollama"):
+        ollama.cleanup_files(base_work_dir)
+
+    if config.project.get_config("cleanup.models.ollama"):
+        ollama.cleanup_models(base_work_dir)
+
+    if config.project.get_config("cleanup.models.gguf"):
+        cleanup_gguf_models(base_work_dir)
+
+    if config.project.get_config("cleanup.models.ramalama"):
+        ramalama.cleanup_models(base_work_dir)
+
+    # ***
+
+    if config.project.get_config("cleanup.files.llm-load-test"):
+        cleanup_llm_load_test(base_work_dir)
+
+    if config.project.get_config("cleanup.files.llama_cpp"):
+        prepare_llama_cpp.cleanup_files(base_work_dir)
+
+    if config.project.get_config("cleanup.files.ramalama"):
+        ramalama.cleanup_files(base_work_dir)
+
+    # ***
+
+    if config.project.get_config("cleanup.podman_machine.delete"):
         is_running = podman_machine.is_running(base_work_dir)
         if is_running:
             podman_machine.stop(base_work_dir)
         if is_running is not None:
             podman_machine.rm(base_work_dir)
-            if config.project.get_config(f"cleanup.podman_machine.reset"):
+            if config.project.get_config("cleanup.podman_machine.reset"):
                 podman_machine.reset(base_work_dir)
 
-    if config.project.get_config(f"cleanup.podman"):
+    if config.project.get_config("cleanup.files.podman"):
         podman.cleanup(base_work_dir)
-
-    if config.project.get_config(f"cleanup.models"):
-        cleanup_models(base_work_dir)
 
     return 0
 
 
 def prepare():
     base_work_dir = remote_access.prepare()
-    if not config.project.get_config(f"prepare.prepare_only_inference_server"):
-        if config.project.get_config(f"prepare.podman.repo.enabled"):
+    if not config.project.get_config("prepare.prepare_only_inference_server"):
+        if config.project.get_config("prepare.podman.repo.enabled"):
             podman.prepare_from_gh_binary(base_work_dir)
             podman.prepare_gv_from_gh_binary(base_work_dir)
 
@@ -161,7 +179,7 @@ def prepare_llm_load_test(base_work_dir):
     dest = base_work_dir / "llm-load-test"
 
     if not  config.project.get_config("test.llm_load_test.enabled"):
-        logging.info(f"llm-load-test not enabled, not preparting it.")
+        logging.info("llm-load-test not enabled, not preparing it.")
         return
 
     if remote_access.exists(dest):
@@ -191,16 +209,13 @@ def prepare_llm_load_test(base_work_dir):
         logging.info("Not installing llm-load-test requirements.")
 
 
-def cleanup_models(base_work_dir):
-    models = config.project.get_config("test.model.name")
-    if not isinstance(models, list):
-        models = [models]
+def cleanup_gguf_models(base_work_dir):
+    model_gguf_dir = config.project.get_config("test.model.gguf_dir")
+    dest = base_work_dir / model_gguf_dir
 
-    for model in models:
-        config.project.set_config("test.model.name", model)
-        dest = base_work_dir / utils.model_to_fname(model)
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {dest}")
+    if not remote_access.exists(dest):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
 
-        # delete from the other inference servers as well
-
-    config.project.set_config("test.model.name", models)
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")

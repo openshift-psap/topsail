@@ -111,5 +111,5 @@ def check_expected_platform(
 
 def model_to_fname(model):
     base_work_dir = remote_access.prepare()
-    model_cache_dir = config.project.get_config("test.model.cache_dir")
-    return base_work_dir / model_cache_dir / pathlib.Path(model).name
+    model_gguf_dir = config.project.get_config("test.model.gguf_dir")
+    return base_work_dir / model_gguf_dir / pathlib.Path(model).name

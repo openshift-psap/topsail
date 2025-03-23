@@ -161,3 +161,25 @@ def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_std
         check=check, capture_stdout=capture_stdout, capture_stderr=capture_stderr,
         extra_env=extra_env,
     )
+
+
+def cleanup_files(base_work_dir):
+    dest = base_work_dir / "ramalama-ai"
+
+    if not remote_access.exists(dest):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
+
+
+def cleanup_models(base_work_dir):
+    dest = base_work_dir / ".local/share/ramalama"
+
+    if not remote_access.exists(dest):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
