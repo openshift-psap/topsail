@@ -74,7 +74,18 @@ ci_presets:
     - llama2
     - llama3.2
 
+  multi-users:
+    test.matbenchmarking.enabled: true
+    test.llm_load_test.args.concurrency: [1, 2, 4]
+
   # ---
+
+  llama-cpp:
+    prepare.platforms.to_build: null # use test.platform
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
+    - podman/llama_cpp/vulkan
 
   keep_running:
     test.inference_server.unload_on_exit: false
