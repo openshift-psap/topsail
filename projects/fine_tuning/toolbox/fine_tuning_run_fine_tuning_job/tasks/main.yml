@@ -97,8 +97,8 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
   - not fine_tuning_run_fine_tuning_job_prepare_only | bool
   block:
   - name: List the GPU nodes
-    command:
-      oc get nodes -oname -lnvidia.com/gpu.present=true
+    shell:
+      set -o pipefail; oc get nodes -l nvidia.com/gpu.present=true -o json | jq -r '.items[] | select(.status.conditions[] | .type == "Ready" and .status == "True") | "node/\(.metadata.name)"'
     register: gpu_node_names_cmd
 
   - name: Prepare the secondary nic list
@@ -193,6 +193,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
       set -o pipefail;
 
       oc create cm {{ job_name_safe }}-nic-mapping \
+      -n {{ fine_tuning_run_fine_tuning_job_namespace }} \
        --from-file="{{ artifact_extra_logs_dir }}/src/nodename_ip_mapping.yaml" \
        --dry-run=client \
        -oyaml \
