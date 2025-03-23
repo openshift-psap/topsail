@@ -26,6 +26,7 @@ artifact_dirnames.MAC_AI_CPU_RAM_USAGE = "*__mac_ai__remote_capture_cpu_ram_usag
 artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_memory"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL = "*__mac_ai__remote_llama_cpp_run_model"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH = "*__mac_ai__remote_llama_cpp_run_bench"
+artifact_dirnames.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH = "*__mac_ai__remote_ramalama_run_bench"
 artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE = "*__mac_ai__remote_capture_system_state"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
@@ -279,11 +280,14 @@ def _parse_test_start_end(dirname, llm_load_test_output):
 
 @helpers_store_parsers.ignore_file_not_found
 def _parse_llama_bench_results(dirname):
-    if not artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH:
+    bench_dir = (artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH or artifact_paths.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH)
+    if not bench_dir:
         return None
+
     llama_bench_results = []
 
-    llama_bench_output_file =  artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH / "artifacts" / "llama-bench.log"
+    llama_bench_output_file = bench_dir / "artifacts" / "llama-bench.log"
+
     register_important_file(dirname, llama_bench_output_file)
 
     with open(dirname / llama_bench_output_file) as f:
