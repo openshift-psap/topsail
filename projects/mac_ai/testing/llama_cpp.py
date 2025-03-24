@@ -12,7 +12,7 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import remote_access, podman_machine
+import remote_access, prepare_llama_cpp
 from entrypoint import entrypoint
 import utils
 
@@ -105,7 +105,7 @@ def run_benchmark(base_work_dir, llama_cpp_path, model):
 @entrypoint()
 def rebuild_image(start=True):
     base_work_dir = remote_access.prepare()
-    prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream_bin"))
+    prepare_llama_cpp.prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream_bin"))
 
     try:
         cleanup_image(base_work_dir)
@@ -128,7 +128,7 @@ def rebuild_image(start=True):
 def start_podman():
     base_work_dir = remote_access.prepare()
 
-    prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream_bin"))
+    prepare_llama_cpp.prepare_test(base_work_dir, utils.parse_platform("macos/llama_cpp/upstream_bin"))
 
     inference_server_port = config.project.get_config("test.inference_server.port")
     podman_container_name = config.project.get_config("prepare.podman.container.name")

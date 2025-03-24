@@ -166,7 +166,7 @@ def prepare_from_binary(base_work_dir, platform):
     if error_msg:
         raise ValueError(f"prepare_llama_cpp.prepare_from_binary: unexpected platform: {error_msg} :/")
 
-    tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream_bin.tarball")
+    tarball = config.project.get_config("prepare.llama_cpp.repo.darwin.upstream_bin.tarball")
     if not tarball:
         raise ValueError("llama_cpp on MacOS/Darwin should be a tarball :/")
 
@@ -194,14 +194,12 @@ def prepare_from_binary(base_work_dir, platform):
 
 
 def prepare_from_source(base_work_dir, platform):
-    version = config.project.get_config(f"prepare.llama_cpp.repo.version")
-
-    file_name = f"{version}.tar.gz"
+    version = config.project.get_config("prepare.llama_cpp.repo.version")
 
     dest = base_work_dir / "llama_cpp" / f"llama.cpp-tags-{version}"
 
     if not remote_access.exists(dest):
-        repo_url = config.project.get_config(f"prepare.llama_cpp.repo.url")
+        repo_url = config.project.get_config("prepare.llama_cpp.repo.url")
 
         run.run_toolbox(
             "remote", "clone",
@@ -316,16 +314,15 @@ def prepare_binary(base_work_dir, platform):
 def _get_binary_path(base_work_dir, platform):
     if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
-        container_command = config.project.get_config(f"prepare.llama_cpp.repo.podman.command")
+        container_command = config.project.get_config("prepare.llama_cpp.repo.podman.command")
         command = f"{podman_prefix} {container_command}"
 
         return command, None, None
 
-    version = config.project.get_config(f"prepare.llama_cpp.repo.version", print=False)
-    arch = config.project.get_config("remote_host.arch", print=False)
+    version = config.project.get_config("prepare.llama_cpp.repo.version", print=False)
 
     if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin"):
-        file_name = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream_bin.file")
+        file_name = config.project.get_config("prepare.llama_cpp.repo.darwin.upstream_bin.file")
         dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
         llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
