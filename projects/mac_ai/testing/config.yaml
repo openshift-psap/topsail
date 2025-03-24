@@ -178,6 +178,7 @@ prepare:
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
             LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
+            LLAMA_CPP_REPO: "@prepare.llama_cpp.repo.url"
             LLAMA_CPP_CMAKE_BUILD_FLAGS: # set at runtime with --parallel
             # ..flavors.<name> will be appended to this
             LLAMA_CPP_CMAKE_FLAGS:
