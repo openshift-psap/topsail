@@ -1,7 +1,7 @@
 __platforms: &all_platforms
   - macos/llama_cpp/metal
   - macos/llama_cpp/vulkan
-  - macos/llama_cpp/upstream
+  - macos/llama_cpp/upstream_bin
   - podman/llama_cpp/vulkan
   - macos/ollama
   - macos/ramalama
@@ -40,7 +40,7 @@ ci_presets:
     - podman/ramalama
     - podman/llama_cpp/vulkan
     - macos/ollama
-    - macos/llama_cpp/upstream
+    - macos/llama_cpp/upstream_bin
     prepare.platforms.to_build: null # use test.platform
 
   # ---
@@ -126,7 +126,7 @@ prepare:
     to_build: *all_platforms
 
     model_pullers:
-      llama_cpp: macos/llama_cpp/upstream
+      llama_cpp: macos/llama_cpp/upstream_bin
       ollama: macos/ollama
       ramalama: podman/ramalama
 
@@ -154,7 +154,7 @@ prepare:
             metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
       darwin:
-        upstream:
+        upstream_bin:
           file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
           tarball: true
       podman:
@@ -257,7 +257,7 @@ test:
   platform: *all_platforms
 
   platforms_to_skip:
-  # - macos/llama_cpp/upstream # always built, but no need to test it every time
+  # - macos/llama_cpp/upstream_bin # always built, but no need to test it every time
   - podman/llama_cpp/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
@@ -374,4 +374,4 @@ __platform_check:
     no_gpu: no-gpu
 
   flavors:
-    llama_cpp: [metal, vulkan, upstream, kompute]
+    llama_cpp: [metal, vulkan, upstream_bin, kompute]

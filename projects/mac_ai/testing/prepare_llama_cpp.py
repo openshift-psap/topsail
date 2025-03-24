@@ -162,11 +162,11 @@ def prepare_podman_image_from_desktop_playground(base_work_dir, platform):
 
 
 def prepare_from_binary(base_work_dir, platform):
-    error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream")
+    error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin")
     if error_msg:
         raise ValueError(f"prepare_llama_cpp.prepare_from_binary: unexpected platform: {error_msg} :/")
 
-    tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.tarball")
+    tarball = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream_bin.tarball")
     if not tarball:
         raise ValueError("llama_cpp on MacOS/Darwin should be a tarball :/")
 
@@ -297,7 +297,7 @@ def prepare_for_macos(base_work_dir, platform):
     if not platform.inference_server_flavor:
         raise ValueError(f"Platform {platform} doesn't have a flavor :/")
 
-    if platform.inference_server_flavor == "upstream":
+    if platform.inference_server_flavor == "upstream_bin":
         return prepare_from_binary(base_work_dir, platform)
     else:
         return prepare_from_source(base_work_dir, platform)
@@ -324,8 +324,8 @@ def _get_binary_path(base_work_dir, platform):
     version = config.project.get_config(f"prepare.llama_cpp.repo.version", print=False)
     arch = config.project.get_config("remote_host.arch", print=False)
 
-    if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream"):
-        file_name = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream.file")
+    if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin"):
+        file_name = config.project.get_config(f"prepare.llama_cpp.repo.darwin.upstream_bin.file")
         dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
         llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
@@ -336,7 +336,7 @@ def _get_binary_path(base_work_dir, platform):
     else:
         pass
 
-    raise ValueError(f"Invalid platform: {platform}. Expected macos/llama_cpp/upstream, podman/llama_cpp/*, macos/llama_cpp/*")
+    raise ValueError(f"Invalid platform: {platform}. Expected macos/llama_cpp/upstream_bin, podman/llama_cpp/*, macos/llama_cpp/*")
 
 
 def get_binary_path(base_work_dir, platform):
