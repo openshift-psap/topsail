@@ -74,6 +74,18 @@ ci_presets:
     - llama2
     - llama3.2
 
+  multi-quant:
+    test.model.name:
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_S
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_0
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_M
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q3_K_M
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q5_K_S
+    prepare.platforms.to_build: null # use test.platform
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
+
   multi-users:
     test.matbenchmarking.enabled: true
     test.llm_load_test.args.concurrency: [1, 2, 4]
