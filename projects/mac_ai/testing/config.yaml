@@ -63,6 +63,11 @@ ci_presets:
     test.llm_load_test.enabled: true
     test.inference_server.benchmark.enabled: false
 
+  compare-pr:
+    prepare.llama_cpp.repo.version:
+    - b4897 # latest - 25-03-17
+    - pr_11525 # SLP: vulkan: use kompute matmul shaders on embedded GPUs #11525
+    prepare.llama_cpp.repo.url: https://github.com/kpouget/llama.cpp
   multi-version:
     prepare.llama_cpp.repo.version:
     - b4688 # slp's
