@@ -131,3 +131,26 @@ def unload_model(base_work_dir, ollama_path, model, platform):
 def run_benchmark(base_work_dir, inference_server_path, model_fname):
     # no internal benchmark to run
     pass
+
+
+def cleanup_models(base_work_dir):
+    dest = base_work_dir / ".ollama"
+
+    if not remote_access.exists(dest):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
+
+
+
+def cleanup_files(base_work_dir):
+    dest = base_work_dir / "ollama"
+
+    if not remote_access.exists(dest):
+        logging.info(f"{dest} does not exists, nothing to remove.")
+        return
+
+    logging.info(f"Removing {dest} ...")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")

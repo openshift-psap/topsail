@@ -1,0 +1,26 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Mac_Ai.remote_ramalama_run_bench
+
+# Parameters
+# the base directory where to store things
+# Mandatory value
+mac_ai_remote_ramalama_run_bench_base_work_dir:
+
+# the path to the llama.cpp bin directory
+# Mandatory value
+mac_ai_remote_ramalama_run_bench_path:
+
+# the name of the model to use
+# Mandatory value
+mac_ai_remote_ramalama_run_bench_model_name:
+
+# the env values to set before running ramalama
+# Mandatory value
+mac_ai_remote_ramalama_run_bench_env:
+
+# number of layers to store in VRAM
+mac_ai_remote_ramalama_run_bench_ngl: 99
+
+# name of the device to pass to the container
+mac_ai_remote_ramalama_run_bench_device: null

@@ -8,9 +8,9 @@ import remote_access, podman
 
 
 def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True, get_command=False):
-    podman_bin = podman.get_podman_binary()
+    podman_cmd = podman.get_podman_command()
 
-    cmd = f"{podman_bin} {'machine' if machine else ''} {cmd}"
+    cmd = f"{podman_cmd} {'machine' if machine else ''} {cmd}"
     if get_command:
         return cmd
 

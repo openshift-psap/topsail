@@ -158,7 +158,7 @@ def capture_metrics(platform, stop=False):
 
 
     if (config.project.get_config("test.capture_metrics.virtgpu.enabled")
-        and platform.needs_podman):
+        and platform.needs_podman_machine):
 
         run.run_toolbox(
             "mac_ai", "remote_capture_virtgpu_memory",
@@ -197,16 +197,17 @@ def test_inference(platform):
 
     brew.capture_dependencies_version(base_work_dir)
 
-    if platform.needs_podman:
-        inference_server_port = config.project.get_config("test.inference_server.port")
+    if platform.needs_podman_machine:
         if not podman_machine.is_running(base_work_dir):
             podman_machine.start(base_work_dir)
-        podman.test(base_work_dir)
-        podman.start(base_work_dir, inference_server_port)
-    else:
-        if podman_machine.is_running(base_work_dir):
-            podman.stop(base_work_dir)
-            podman_machine.stop(base_work_dir)
+
+        if platform.needs_podman:
+            inference_server_port = config.project.get_config("test.inference_server.port")
+            podman.start(base_work_dir, inference_server_port)
+
+    elif podman_machine.is_running(base_work_dir):
+        podman.stop(base_work_dir)
+        podman_machine.stop(base_work_dir)
 
     inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
@@ -275,8 +276,7 @@ def test_inference(platform):
         exc = run.run_and_catch(exc, capture_metrics, platform, stop=True)
 
         if exc:
-            logging.warning(f"Test crashed ({exc})")
-            raise exc
+            logging.exception(f"Test tear-down crashed ({exc})")
 
 
 def matbench_run(matrix_source_keys):

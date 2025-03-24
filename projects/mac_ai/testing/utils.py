@@ -41,7 +41,13 @@ def parse_platform(platform_str):
     if not platform.inference_server_name in expected_servers:
         raise ValueError(f"Invalid platform inference server '{platform.inference_server_name}' in {platform_str}. Expected one of {expected_servers}")
 
-    platform.needs_podman = platform.system in config.project.get_config("__platform_check.system_needs_podman", print=False)
+    # too complex to put in the configuration file!
+    if platform.inference_server_name == "ramalama":
+        platform.needs_podman_machine = True
+        platform.needs_podman= False
+    else:
+        platform.needs_podman = platform.system == "podman"
+        platform.needs_podman_machine = platform.needs_podman
 
     inference_server_has_flavors = config.project.get_config("__platform_check.flavors", print=False).get(platform.inference_server_name)
 
@@ -81,12 +87,14 @@ def check_expected_platform(
         platform,
         system=None,
         needs_podman=None,
+        needs_podman_machine=None,
         inference_server_name=None,
         inference_server_flavor=None,
 ):
     kwargs = dict(
         system=system,
         needs_podman=needs_podman,
+        needs_podman_machine=needs_podman_machine,
         inference_server_name=inference_server_name,
         inference_server_flavor=inference_server_flavor,
     )
@@ -103,5 +111,5 @@ def check_expected_platform(
 
 def model_to_fname(model):
     base_work_dir = remote_access.prepare()
-    model_cache_dir = config.project.get_config("test.model.cache_dir")
-    return base_work_dir / model_cache_dir / pathlib.Path(model).name
+    model_gguf_dir = config.project.get_config("test.model.gguf_dir")
+    return base_work_dir / model_gguf_dir / pathlib.Path(model).name

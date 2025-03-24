@@ -3,13 +3,13 @@
 ..
     _Auto-generated file, do not edit manually ...
     _Toolbox generate command: repo generate_toolbox_rst_documentation
-    _ Source component: Mac_Ai.remote_llama_cpp_run_model
+    _ Source component: Mac_Ai.remote_ramalama_run_model
 
 
-mac_ai remote_llama_cpp_run_model
-=================================
+mac_ai remote_ramalama_run_model
+================================
 
-Runs a model with llama_cpp, on a remote host
+Runs a model with ramalama, on a remote host
 
 
 
@@ -38,9 +38,9 @@ Parameters
 * The name of the model to run
 
 
-``prefix``  
+``env``  
 
-* The prefix to get the llama-server running
+* The env values to set before running ramalama
 
 
 ``ngl``  
@@ -48,4 +48,14 @@ Parameters
 * Number of layers to store in VRAM
 
 * default value: ``99``
+
+
+``device``  
+
+* Name of the device to pass to the container
+
+
+``unload``  
+
+* If True, unloads (stops serving) this model
 

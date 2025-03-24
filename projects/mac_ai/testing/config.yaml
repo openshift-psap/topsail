@@ -1,13 +1,14 @@
 __platforms: &all_platforms
   - macos/llama_cpp/metal
   - macos/llama_cpp/vulkan
+  - macos/llama_cpp/upstream_bin
   - podman/llama_cpp/vulkan
   - macos/ollama
-  - macos/llama_cpp/upstream
+  - macos/ramalama
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: []
+  to_apply: [multi-users, llama-cpp]
 
   # dict of variables to apply
   variable_overrides: {}
@@ -34,11 +35,13 @@ ci_presets:
 
   # ---
 
-  ollama:
-    test.platform: &ollama_test_platform
+  multi-servers:
+    test.platform:
+    - podman/ramalama
+    - podman/llama_cpp/vulkan
     - macos/ollama
-    - macos/llama_cpp/upstream
-    prepare.platforms.to_build: *ollama_test_platform
+    - macos/llama_cpp/upstream_bin
+    prepare.platforms.to_build: null # use test.platform
 
   # ---
 
@@ -71,7 +74,18 @@ ci_presets:
     - llama2
     - llama3.2
 
+  multi-users:
+    test.matbenchmarking.enabled: true
+    test.llm_load_test.args.concurrency: [1, 2, 4]
+
   # ---
+
+  llama-cpp:
+    prepare.platforms.to_build: null # use test.platform
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
+    - podman/llama_cpp/vulkan
 
   keep_running:
     test.inference_server.unload_on_exit: false
@@ -112,7 +126,7 @@ prepare:
     to_build: *all_platforms
 
     model_pullers:
-      llama_cpp: macos/llama_cpp/upstream
+      llama_cpp: macos/llama_cpp/upstream_bin
       ollama: macos/ollama
       ramalama: podman/ramalama
 
@@ -140,7 +154,7 @@ prepare:
             metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
       darwin:
-        upstream:
+        upstream_bin:
           file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
           tarball: true
       podman:
@@ -243,7 +257,7 @@ test:
   platform: *all_platforms
 
   platforms_to_skip:
-  # - macos/llama_cpp/upstream # always built, but no need to test it every time
+  # - macos/llama_cpp/upstream_bin # always built, but no need to test it every time
   - podman/llama_cpp/no-gpu/kompute # slow, not interesting atm
 
   inference_server:
@@ -259,7 +273,7 @@ test:
   model:
     name: llama3.2
     size: small
-    cache_dir: models
+    gguf_dir: models
 
   llm_load_test:
     enabled: true
@@ -304,15 +318,24 @@ test:
       enabled: true
 
 cleanup:
-  llm-load-test: true
-  llama_cpp:
-    image: true
-    files: true
-  models: true
+  models:
+    gguf: true
+    ollama: true
+    ramalama: true
+
+  files:
+    llama_cpp: true
+    ollama: true
+    ramalama: true
+    llm-load-test: true
+    podman: true
+
+  images:
+    llama_cpp: true
+
   podman_machine:
     delete: true
     reset: true
-  podman: true
 
 export_artifacts:
   enabled: false
@@ -346,10 +369,9 @@ exec_list:
 __platform_check:
   system: [macos, podman]
   inference_server: [llama_cpp, ollama, ramalama]
-  system_needs_podman: [podman]
 
   options:
     no_gpu: no-gpu
 
   flavors:
-    llama_cpp: [metal, vulkan, upstream, kompute]
+    llama_cpp: [metal, vulkan, upstream_bin, kompute]

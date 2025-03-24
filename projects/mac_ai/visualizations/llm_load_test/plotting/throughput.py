@@ -152,7 +152,8 @@ class Throughput():
             fig.update_layout(title=f"{title}{subtitle}", title_x=0.5,)
             fig.update_layout(legend_title_text="Test")
 
-            fig.update_xaxes(title=ordered_vars[0].title().replace("_", " "))
+            if ordered_vars:
+                fig.update_xaxes(title=ordered_vars[0].title().replace("_", " "))
 
             if len(ordered_vars) == 2:
                 fig.update_layout(legend_title_text=ordered_vars[1].title().replace("_", " "))

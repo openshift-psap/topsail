@@ -67,7 +67,7 @@ class Mac_Ai:
         Args:
           base_work_dir: the base directory where to store things
           path: the path to the ollama binary
-          name: the name of the model to fetch
+          name: the name of the model to run
           unload: if True, unloads (stops serving) this model
         """
 
@@ -93,7 +93,7 @@ class Mac_Ai:
           prefix: the prefix to get the llama-server running
           path: the path to the llama-server binary
           port: the port number on which llama-cpp should listen
-          name: the name of the model to fetch
+          name: the name of the model to run
           ngl: number of layers to store in VRAM
         """
 
@@ -128,7 +128,6 @@ class Mac_Ai:
 
         return RunAnsibleRole(locals())
 
-
     @AnsibleRole("mac_ai_remote_llama_cpp_pull_model")
     @AnsibleMappedParams
     def remote_llama_cpp_pull_model(
@@ -146,6 +145,61 @@ class Mac_Ai:
           path: the path to the llama-cpp binary
           name: the name of the model to fetch
           dest: if specified, where to put the model being pulled
+        """
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("mac_ai_remote_ramalama_run_model")
+    @AnsibleMappedParams
+    def remote_ramalama_run_model(
+            self,
+            base_work_dir,
+            path,
+            port,
+            name,
+            env,
+            ngl=99,
+            device=None,
+            unload=False,
+    ):
+        """
+        Runs a model with ramalama, on a remote host
+
+        Args:
+          base_work_dir: the base directory where to store things
+          path: the path to the llama-server binary
+          pythonpath: the value to pass as PYTHONPATH
+          port: the port number on which llama-cpp should listen
+          name: the name of the model to run
+          env: the env values to set before running ramalama
+          ngl: number of layers to store in VRAM
+          device: name of the device to pass to the container
+          unload: if True, unloads (stops serving) this model
+        """
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("mac_ai_remote_ramalama_run_bench")
+    @AnsibleMappedParams
+    def remote_ramalama_run_bench(
+            self,
+            base_work_dir,
+            path,
+            model_name,
+            env,
+            ngl=99,
+            device=None,
+    ):
+        """
+        Benchmark a model with ramalama, on a remote host
+
+        Args:
+          base_work_dir: the base directory where to store things
+          path: the path to the llama.cpp bin directory
+          model_name: the name of the model to use
+          env: the env values to set before running ramalama
+          ngl: number of layers to store in VRAM
+          device: name of the device to pass to the container
         """
 
         return RunAnsibleRole(locals())

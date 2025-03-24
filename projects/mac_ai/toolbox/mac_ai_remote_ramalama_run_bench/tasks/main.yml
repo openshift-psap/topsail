@@ -1,0 +1,21 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Run the ramalama bench benchmark
+  shell: |
+    export {{ mac_ai_remote_ramalama_run_bench_env }}
+
+    {{ mac_ai_remote_ramalama_run_bench_path }} bench \
+        {{ mac_ai_remote_ramalama_run_bench_model_name }} \
+        --ngl {{ mac_ai_remote_ramalama_run_bench_ngl }} \
+    {% if mac_ai_remote_ramalama_run_bench_device -%}
+         --device {{ mac_ai_remote_ramalama_run_bench_device }} \
+    {% endif -%}
+        2> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.stderr.log" \
+        > "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
+  environment:
+    HOME: "{{ mac_ai_remote_ramalama_run_bench_base_work_dir }}"

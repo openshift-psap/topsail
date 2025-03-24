@@ -11,7 +11,7 @@ mac_ai_remote_ollama_run_model_base_work_dir:
 # Mandatory value
 mac_ai_remote_ollama_run_model_path:
 
-# the name of the model to fetch
+# the name of the model to run
 # Mandatory value
 mac_ai_remote_ollama_run_model_name:
 
