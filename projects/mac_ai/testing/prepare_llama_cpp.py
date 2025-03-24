@@ -109,7 +109,15 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
     build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
 
-    build_args["LLAMA_CPP_VERSION"] =  config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
+    version = config.project.get_config("prepare.llama_cpp.repo.version")
+    if version.startswith("pr-"):
+        pr_number = version.removeprefix("pr-")
+        git_version = f"refs/pull/{pr_number}/head"
+    else:
+        git_version = version
+
+
+    build_args["LLAMA_CPP_VERSION"] = git_version
 
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, inference_server_flavor])
 
@@ -201,9 +209,15 @@ def prepare_from_source(base_work_dir, platform):
     if not remote_access.exists(dest):
         repo_url = config.project.get_config("prepare.llama_cpp.repo.url")
 
+        if version.startswith("pr-"):
+            pr_number = version.removeprefix("pr-")
+            git_version = f"refs/pull/{pr_number}/head"
+        else:
+            git_version = version
+
         run.run_toolbox(
             "remote", "clone",
-            repo_url=repo_url, dest=dest, version=version,
+            repo_url=repo_url, dest=dest, version=git_version,
             artifact_dir_suffix="_llama_cpp",
         )
 
