@@ -32,7 +32,10 @@ Parameters
 
 * The git version to clone
 
-* default value: ``main``
+
+``refspec``  
+
+* The git ref to clone. Can't be set with version
 
 
 ``force``  

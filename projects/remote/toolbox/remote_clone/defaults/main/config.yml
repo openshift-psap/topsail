@@ -12,7 +12,10 @@ remote_clone_repo_url:
 remote_clone_dest:
 
 # the git version to clone
-remote_clone_version: main
+remote_clone_version: null
+
+# the git ref to clone. Can't be set with version
+remote_clone_refspec: null
 
 # force the git clone
 remote_clone_force: false
