@@ -81,6 +81,14 @@ def prepare_for_podman(base_work_dir, platform):
 
 
 def prepare_podman_image_from_local_container_file(base_work_dir, platform):
+    """
+    Builds a Podman image from a local container file.
+    
+    This function retrieves build configurations and custom arguments (including CMake
+    flags and version information with pull request handling) based on the provided
+    platform and project settings. It skips the build if the image already exists and
+    raises a ValueError when the platform lacks a valid inference server flavor.
+    """
     local_image_name = __get_local_image_name_from_local_container_file(platform)
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.path")
     build_args = config.project.get_config("prepare.llama_cpp.repo.podman.local_container_file.build_args")
@@ -109,7 +117,15 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
     build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
 
-    build_args["LLAMA_CPP_VERSION"] =  config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
+    version = config.project.get_config("prepare.llama_cpp.repo.version")
+    if version.startswith("pr-"):
+        pr_number = version.removeprefix("pr-")
+        git_version = f"refs/pull/{pr_number}/head"
+    else:
+        git_version = version
+
+
+    build_args["LLAMA_CPP_VERSION"] = git_version
 
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, inference_server_flavor])
 
@@ -194,6 +210,27 @@ def prepare_from_binary(base_work_dir, platform):
 
 
 def prepare_from_source(base_work_dir, platform):
+    """
+    Prepare and build the llama-cpp source, returning the server binary path.
+    
+    This function retrieves configuration details to determine the repository version and URL.
+    It clones the llama-cpp repository if necessary, applies a patch for the Kompute build,
+    and verifies that the target platform specifies a valid inference server flavor.
+    It then configures the CMake build with appropriate flags and executes both a preparation
+    and compilation step. If the build has already been completed, the existing binary is
+    returned; otherwise, the newly built binary path is provided.
+    
+    Args:
+        base_work_dir: The base directory for cloning and building the source.
+        platform: The target platform configuration; its 'inference_server_flavor' must be valid.
+    
+    Raises:
+        ValueError: If the platform does not specify a flavor or if the flavor is unsupported.
+        RuntimeError: If the preparation or build process fails.
+    
+    Returns:
+        The path to the compiled 'llama-server' binary.
+    """
     version = config.project.get_config("prepare.llama_cpp.repo.version")
 
     dest = base_work_dir / "llama_cpp" / f"llama.cpp-tags-{version}"
@@ -201,9 +238,15 @@ def prepare_from_source(base_work_dir, platform):
     if not remote_access.exists(dest):
         repo_url = config.project.get_config("prepare.llama_cpp.repo.url")
 
+        if version.startswith("pr-"):
+            pr_number = version.removeprefix("pr-")
+            git_version = f"refs/pull/{pr_number}/head"
+        else:
+            git_version = version
+
         run.run_toolbox(
             "remote", "clone",
-            repo_url=repo_url, dest=dest, version=version,
+            repo_url=repo_url, dest=dest, version=git_version,
             artifact_dir_suffix="_llama_cpp",
         )
 
