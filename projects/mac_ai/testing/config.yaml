@@ -8,7 +8,7 @@ __platforms: &all_platforms
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: [multi-users, llama-cpp]
+  to_apply: []
 
   # dict of variables to apply
   variable_overrides: {}
@@ -73,6 +73,18 @@ ci_presets:
     - Mistral-7B-Instruct-v0.2-GGUF
     - llama2
     - llama3.2
+
+  multi-quant:
+    test.model.name:
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_S
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_0
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_M
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q3_K_M
+    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q5_K_S
+    prepare.platforms.to_build: null # use test.platform
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
 
   multi-users:
     test.matbenchmarking.enabled: true
@@ -165,7 +177,7 @@ prepare:
           path: images/llama_cpp.containerfile
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
-            LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
+            LLAMA_CPP_VERSION: # set at runtime from prepare.llama_cpp.repo.version
             LLAMA_CPP_CMAKE_BUILD_FLAGS: # set at runtime with --parallel
             # ..flavors.<name> will be appended to this
             LLAMA_CPP_CMAKE_FLAGS:

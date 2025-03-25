@@ -8,6 +8,9 @@ ci_presets:
     cluster.name: mac
     project.name: mac_ai
 
+  plot_cluster:
+    cluster.name: plot
+
 secrets:
   dir:
     name: psap-ods-secret
@@ -20,6 +23,7 @@ secrets:
 prepare:
   job_name_to_preset:
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci: mac_ai
+    pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
 
 ssh_tunnel:
   # creates a tunnel to the bastion via the jump host, if enabled
