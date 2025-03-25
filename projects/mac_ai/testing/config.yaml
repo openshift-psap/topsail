@@ -8,7 +8,7 @@ __platforms: &all_platforms
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: [multi-users, llama-cpp]
+  to_apply: []
 
   # dict of variables to apply
   variable_overrides: {}
