@@ -5,8 +5,13 @@
     state: directory
     mode: '0755'
 
+- name: Set the name of the exit file
+  set_fact:
+    exit_file: /tmp/exit_topsail_power_usage_capture
+
 - name: Ensure that there is no other sampler running
-  command:
+  shell: |
+    touch {{ exit_file }}
     sudo pkill powermetrics
   failed_when: false
 
@@ -14,17 +19,22 @@
   meta: end_play
   when: mac_ai_remote_capture_power_usage_stop | bool
 
+- name: Give a bit of time for the previous samples command to terminate
+  command:
+    sleep 5 # give time to exit to the previous samplers ...
+
 - name: Start capturing the power usage
   shell: |
-    nohup sudo powermetrics \
-         --samplers {{ mac_ai_remote_capture_power_usage_samplers }} \
-         --sample-rate {{ mac_ai_remote_capture_power_usage_sample_rate }} \
-         &> "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt" &
-
-    pid=$!;
-    sleep 5; # give nohup time to start
-    echo Running with PID=$pid;
-    ps ux -p "$pid"
-    echo "---"
-    head "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt"
-    echo "---"
+    rm -f {{ exit_file }}
+    nohup bash > "{{ artifact_extra_logs_dir }}/artifacts/power_usage.txt"  -c '
+      while true; do
+        sudo powermetrics \
+          --samplers {{ mac_ai_remote_capture_power_usage_samplers }} \
+          --sample-rate {{ mac_ai_remote_capture_power_usage_sample_rate }} \
+          --sample-count 10;
+        sleep 1;
+        if [[ -e "{{ exit_file }}" ]]; then
+          echo Exiting.
+          exit 0
+        fi
+      done' &
