@@ -109,15 +109,12 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_CMAKE_FLAGS"] = cmake_flags
     build_args["LLAMA_CPP_CMAKE_BUILD_FLAGS"] = cmake_build_flags
 
-    version = config.project.get_config("prepare.llama_cpp.repo.version")
+    build_args["LLAMA_CPP_REPO"] = config.project.resolve_reference(build_args["LLAMA_CPP_REPO"])
+    version = build_args["LLAMA_CPP_VERSION"] = config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
+
     if version.startswith("pr-"):
         pr_number = version.removeprefix("pr-")
-        git_version = f"refs/pull/{pr_number}/head"
-    else:
-        git_version = version
-
-
-    build_args["LLAMA_CPP_VERSION"] = git_version
+        build_args["LLAMA_CPP_VERSION"] = f"refs/pull/{pr_number}/head"
 
     artifact_dir_suffix = "_" + "_".join([pathlib.Path(container_file).name, inference_server_flavor])
 
@@ -178,12 +175,12 @@ def prepare_from_binary(base_work_dir, platform):
     if not tarball:
         raise ValueError("llama_cpp on MacOS/Darwin should be a tarball :/")
 
-    llama_cpp_path, dest, platform_file = _get_binary_path(base_work_dir, platform)
+    llama_cpp_path, dest, platform_file, version = _get_binary_path(base_work_dir, platform)
 
     source = "/".join([
         config.project.get_config("prepare.llama_cpp.repo.url"),
         "releases/download",
-        config.project.get_config("prepare.llama_cpp.repo.version"),
+        version,
         platform_file,
     ])
 
@@ -204,28 +201,39 @@ def prepare_from_binary(base_work_dir, platform):
 def prepare_from_source(base_work_dir, platform):
     version = config.project.get_config("prepare.llama_cpp.repo.version")
 
-    dest = base_work_dir / "llama_cpp" / f"llama.cpp-tags-{version}"
+    dirname = "llama.cpp-"
+    if version.startswith("pr-"):
+        dirname += version
+    else:
+        dirname += f"tag-{version}"
+
+    dest = base_work_dir / "llama_cpp" / dirname
 
     if not remote_access.exists(dest):
         repo_url = config.project.get_config("prepare.llama_cpp.repo.url")
 
+        kwargs = dict(
+            repo_url=repo_url,
+            dest=dest,
+        )
+
         if version.startswith("pr-"):
             pr_number = version.removeprefix("pr-")
-            git_version = f"refs/pull/{pr_number}/head"
+            kwargs["refspec"] = f"refs/pull/{pr_number}/head"
         else:
-            git_version = version
+            kwargs["version"] = version
 
         run.run_toolbox(
             "remote", "clone",
-            repo_url=repo_url, dest=dest, version=git_version,
+            **kwargs,
             artifact_dir_suffix="_llama_cpp",
         )
 
         # for the Kompute build
-        cmd = f"sed -i.bu s/-Werror//g llama_cpp/llama.cpp-tags-{version}/ggml/src/ggml-kompute/kompute/CMakeLists.txt"
+        cmd = f"sed -i.bu s/-Werror//g {dest}/ggml/src/ggml-kompute/kompute/CMakeLists.txt"
         remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
 
-    src_dir = dest.parent / f"llama.cpp-tags-{version}"
+    src_dir = dest
     cmake_parallel = config.project.get_config("prepare.llama_cpp.repo.source.cmake.parallel")
 
     if not platform.inference_server_flavor:
@@ -331,19 +339,25 @@ def _get_binary_path(base_work_dir, platform):
         container_command = config.project.get_config("prepare.llama_cpp.repo.podman.command")
         command = f"{podman_prefix} {container_command}"
 
-        return command, None, None
+        return command, None, None, None
 
     version = config.project.get_config("prepare.llama_cpp.repo.version", print=False)
 
     if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin"):
         file_name = config.project.get_config("prepare.llama_cpp.repo.darwin.upstream_bin.file")
+
+        if True: #version.startswith("pr-"):
+            VERSION = "b4897"
+            logging.info(f"Version {version} is a PR. Using hardcoded version {VERSION} for downloading the upstream binary.")
+            version = VERSION
+
         dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
         llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
 
-        return llama_cpp_path, dest, file_name
+        return llama_cpp_path, dest, file_name, version
     elif platform.system == "macos":
         llama_cpp_path = base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server"
-        return llama_cpp_path, None, None
+        return llama_cpp_path, None, None, version
     else:
         pass
 
@@ -351,7 +365,7 @@ def _get_binary_path(base_work_dir, platform):
 
 
 def get_binary_path(base_work_dir, platform):
-    llama_cpp_path, _, _ = _get_binary_path(base_work_dir, platform)
+    llama_cpp_path, _, _, _ = _get_binary_path(base_work_dir, platform)
     return llama_cpp_path
 
 

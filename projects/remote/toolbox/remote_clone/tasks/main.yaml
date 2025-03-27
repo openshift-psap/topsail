@@ -7,12 +7,22 @@
 
 - name: Execute the remote clone
   block:
-  - name: Git checkout
+  - name: Git checkout by refspec
+    ansible.builtin.git:
+      repo: '{{ remote_clone_repo_url }}'
+      dest: "{{ remote_clone_dest }}"
+      refspec: "{{ remote_clone_refspec }}"
+      force: "{{ remote_clone_force }}"
+    when: remote_clone_refspec or '' | length
+
+   # noqa latest[git]
+  - name: Git checkout by version
     ansible.builtin.git:
       repo: '{{ remote_clone_repo_url }}'
       dest: "{{ remote_clone_dest }}"
       version: "{{ remote_clone_version }}"
       force: "{{ remote_clone_force }}"
+    when: remote_clone_version or '' | length
 
   - name: Show the commit of the version that has been cloned
     shell:

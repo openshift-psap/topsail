@@ -17,7 +17,8 @@ class Remote:
             self,
             repo_url,
             dest,
-            version="main",
+            version=None,
+            refspec=None,
             force=False
     ):
         """
@@ -27,8 +28,12 @@ class Remote:
           repo_url: the URL of the repo to clone
           dest: the directory where the repo should be cloned
           version: the git version to clone
+          refspec: the git ref to clone. Can't be set with version
           force: force the git clone
         """
+
+        if version and refspec:
+            raise ValueError(f"--version={version} and --refspec={refspec} can't be pass together")
 
         return RunAnsibleRole(locals())
 
