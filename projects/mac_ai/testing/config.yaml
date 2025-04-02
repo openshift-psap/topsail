@@ -145,7 +145,7 @@ remote_host:
 prepare:
   # the list of platform environments to prepare
   platforms:
-    to_build: *all_platforms
+    to_build: null
 
     model_pullers:
       llama_cpp: macos/llama_cpp/upstream_bin
