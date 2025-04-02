@@ -4,7 +4,7 @@ __platforms: &all_platforms
   - macos/llama_cpp/upstream_bin
   - podman/llama_cpp/vulkan
   - macos/ollama
-  - macos/ramalama
+  - podman/ramalama
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
