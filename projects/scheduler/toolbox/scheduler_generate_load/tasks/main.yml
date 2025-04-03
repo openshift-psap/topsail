@@ -12,9 +12,9 @@
     oc delete podgroups --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
   when: scheduler_generate_load_mode == "coscheduling"
 
-#- name: Ensure that there are no Pod in the namespace
-#  shell:
-#    oc delete pods --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
+- name: Ensure that there are no Pod in the namespace
+  shell:
+    oc delete pods --all -n "{{ scheduler_generate_load_namespace }}" > /dev/null
 # ---
 
 - name: Create the src artifacts directory
