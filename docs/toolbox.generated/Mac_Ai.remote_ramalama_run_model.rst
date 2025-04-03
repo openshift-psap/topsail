@@ -59,3 +59,10 @@ Parameters
 
 * If True, unloads (stops serving) this model
 
+
+``image``  
+
+* The image to use to run ramalama
+
+* default value: ``quay.io/ramalama/ramalama:latest``
+

@@ -161,6 +161,7 @@ class Mac_Ai:
             ngl=99,
             device=None,
             unload=False,
+            image="quay.io/ramalama/ramalama:latest",
     ):
         """
         Runs a model with ramalama, on a remote host
@@ -175,6 +176,7 @@ class Mac_Ai:
           ngl: number of layers to store in VRAM
           device: name of the device to pass to the container
           unload: if True, unloads (stops serving) this model
+          image: the image to use to run ramalama
         """
 
         return RunAnsibleRole(locals())
@@ -189,6 +191,7 @@ class Mac_Ai:
             env,
             ngl=99,
             device=None,
+            image="quay.io/ramalama/ramalama:latest",
     ):
         """
         Benchmark a model with ramalama, on a remote host
@@ -200,6 +203,7 @@ class Mac_Ai:
           env: the env values to set before running ramalama
           ngl: number of layers to store in VRAM
           device: name of the device to pass to the container
+          image: the image to use to run ramalama
         """
 
         return RunAnsibleRole(locals())

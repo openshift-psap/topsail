@@ -49,3 +49,10 @@ Parameters
 
 * Name of the device to pass to the container
 
+
+``image``  
+
+* The image to use to run ramalama
+
+* default value: ``quay.io/ramalama/ramalama:latest``
+
