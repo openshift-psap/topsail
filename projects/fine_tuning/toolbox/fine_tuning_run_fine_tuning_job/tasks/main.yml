@@ -219,9 +219,9 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
     dest: "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml"
     mode: '0400'
 
-- name: Delete the fine-tuning job, if it exists
-  command:
-    oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
+#- name: Delete the fine-tuning job, if it exists
+#  command:
+#    oc delete -f "{{ artifact_extra_logs_dir }}/src/pytorchjob_fine_tuning.yaml" --ignore-not-found
 
 - name: Exit the play in 'prepare_only' mode
   meta: end_play
