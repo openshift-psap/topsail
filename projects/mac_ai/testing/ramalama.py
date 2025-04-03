@@ -102,10 +102,10 @@ def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
         logging.info("Unloading the model from ramalama server ...")
         artifact_dir_suffix = "_unload"
 
-    needs_gpu = True # not platform.podman_no_gpu, but the platform isn't available in this method at the moment...
+    want_gpu = platform.want_gpu
 
     device = config.project.get_config("prepare.podman.container.device") \
-        if needs_gpu else None
+        if want_gpu else None
 
     env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
 
@@ -131,9 +131,10 @@ def unload_model(base_work_dir, platform, ramalama_path, model):
 def run_benchmark(base_work_dir, platform, ramalama_path, model):
     env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
 
-    needs_gpu = True # not platform.podman_no_gpu
+    want_gpu = platform.want_gpu
+
     device = config.project.get_config("prepare.podman.container.device") \
-        if needs_gpu else None
+        if want_gpu else None
 
     run.run_toolbox(
         "mac_ai", "remote_ramalama_run_bench",
