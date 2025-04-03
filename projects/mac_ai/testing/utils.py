@@ -60,10 +60,10 @@ def parse_platform(platform_str):
 
     no_gpu_option_name = config.project.get_config("__platform_check.options.no_gpu", print=False)
     if no_gpu_option_name in platform_parts:
-        platform.podman_no_gpu = True
+        platform.want_gpu = False
         platform_parts.remove(no_gpu_option_name)
     else:
-        platform.podman_no_gpu = False
+        platform.want_gpu = True
 
     platform.name = platform_str
 
