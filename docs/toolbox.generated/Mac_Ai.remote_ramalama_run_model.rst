@@ -33,7 +33,7 @@ Parameters
 * The port number on which llama-cpp should listen
 
 
-``name``  
+``model_name``  
 
 * The name of the model to run
 

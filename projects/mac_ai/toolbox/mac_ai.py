@@ -156,7 +156,7 @@ class Mac_Ai:
             base_work_dir,
             path,
             port,
-            name,
+            model_name,
             env,
             ngl=99,
             device=None,
@@ -171,7 +171,7 @@ class Mac_Ai:
           path: the path to the llama-server binary
           pythonpath: the value to pass as PYTHONPATH
           port: the port number on which llama-cpp should listen
-          name: the name of the model to run
+          model_name: the name of the model to run
           env: the env values to set before running ramalama
           ngl: number of layers to store in VRAM
           device: name of the device to pass to the container
