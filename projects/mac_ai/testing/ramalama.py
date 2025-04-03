@@ -102,24 +102,15 @@ def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
         logging.info("Unloading the model from ramalama server ...")
         artifact_dir_suffix = "_unload"
 
-    want_gpu = platform.want_gpu
-
-    device = config.project.get_config("prepare.podman.container.device") \
-        if want_gpu else None
-
-    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
-
-    run.run_toolbox(
-        "mac_ai", "remote_ramalama_run_model",
-        base_work_dir=base_work_dir,
-        path=ramalama_path,
-        name=model,
-        unload=unload,
-        port=inference_server_port,
-        device=device,
-        env=env_str,
-        mute_stdout=unload,
-        artifact_dir_suffix=artifact_dir_suffix,
+    _run_from_toolbox(
+        "run_model",
+        base_work_dir, platform, ramalama_path, model,
+        extra_kwargs=dict(
+            unload=unload,
+            port=inference_server_port,
+            mute_stdout=unload,
+            artifact_dir_suffix=artifact_dir_suffix,
+        )
     )
 
     return model
@@ -129,21 +120,7 @@ def unload_model(base_work_dir, platform, ramalama_path, model):
 
 
 def run_benchmark(base_work_dir, platform, ramalama_path, model):
-    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
-
-    want_gpu = platform.want_gpu
-
-    device = config.project.get_config("prepare.podman.container.device") \
-        if want_gpu else None
-
-    run.run_toolbox(
-        "mac_ai", "remote_ramalama_run_bench",
-        base_work_dir=base_work_dir,
-        path=ramalama_path,
-        device=device,
-        env=env_str,
-        model_name=model,
-    )
+    return _run_from_toolbox("run_bench", base_work_dir, platform, ramalama_path, model)
 
 
 def _get_env(base_work_dir, ramalama_path):
@@ -161,6 +138,28 @@ def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_std
         f"{ramalama_path} {ramalama_cmd}",
         check=check, capture_stdout=capture_stdout, capture_stderr=capture_stderr,
         extra_env=extra_env,
+    )
+
+
+def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, model, extra_kwargs={}):
+    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
+
+    want_gpu = platform.want_gpu
+    device = config.project.get_config("prepare.podman.container.device") \
+        if want_gpu else "/dev/null"
+
+    version = config.project.get_config("prepare.ramalama.repo.version").removeprefix("v")
+    image = f"quay.io/ramalama/ramalama:{version}"
+
+    run.run_toolbox(
+        "mac_ai", f"remote_ramalama_{ramalama_cmd}",
+        base_work_dir=base_work_dir,
+        path=ramalama_path,
+        device=device,
+        env=env_str,
+        model_name=model,
+        image=image,
+        **extra_kwargs,
     )
 
 
