@@ -45,7 +45,7 @@ def pull_model(base_work_dir, llama_cpp_path, model):
     )
 
 
-def run_model(base_work_dir, llama_cpp_path, model):
+def run_model(base_work_dir, platform, llama_cpp_path, model):
     inference_server_port = config.project.get_config("test.inference_server.port")
     model_fname = utils.model_to_fname(model)
 
@@ -63,7 +63,7 @@ def run_model(base_work_dir, llama_cpp_path, model):
     return model_fname
 
 
-def unload_model(base_work_dir, llama_cpp_path, model, platform):
+def unload_model(base_work_dir, platform, llama_cpp_path, model):
     if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
         command = f"{podman_prefix} pkill python"
@@ -77,7 +77,7 @@ def unload_model(base_work_dir, llama_cpp_path, model, platform):
     )
 
 
-def run_benchmark(base_work_dir, llama_cpp_path, model):
+def run_benchmark(base_work_dir, platform, llama_cpp_path, model):
     model_fname = utils.model_to_fname(model)
 
     # dirty, I know ...

@@ -94,7 +94,7 @@ def stop_server(base_work_dir, ramalama_path):
     return # nothing to do
 
 
-def run_model(base_work_dir, ramalama_path, model, unload=False):
+def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
     inference_server_port = config.project.get_config("test.inference_server.port")
 
     artifact_dir_suffix=None
@@ -124,11 +124,11 @@ def run_model(base_work_dir, ramalama_path, model, unload=False):
 
     return model
 
-def unload_model(base_work_dir, ramalama_path, model, platform):
-    run_model(base_work_dir, ramalama_path, model, unload=True)
+def unload_model(base_work_dir, platform, ramalama_path, model):
+    run_model(base_work_dir, platform, ramalama_path, model, unload=True)
 
 
-def run_benchmark(base_work_dir, ramalama_path, model):
+def run_benchmark(base_work_dir, platform, ramalama_path, model):
     env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
 
     needs_gpu = True # not platform.podman_no_gpu

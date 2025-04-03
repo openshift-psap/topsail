@@ -102,7 +102,7 @@ def stop_server(base_work_dir, ollama_path):
     start_server(base_work_dir, ollama_path, stop=True)
 
 
-def run_model(base_work_dir, ollama_path, model, unload=False):
+def run_model(base_work_dir, platform, ollama_path, model, unload=False):
     artifact_dir_suffix=None
     if unload:
         logging.info("Unloading the model from ollama server ...")
@@ -120,7 +120,7 @@ def run_model(base_work_dir, ollama_path, model, unload=False):
 
     return model
 
-def unload_model(base_work_dir, ollama_path, model, platform):
+def unload_model(base_work_dir, platform, ollama_path, model):
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         f"{ollama_path} stop {model}",
@@ -128,7 +128,7 @@ def unload_model(base_work_dir, ollama_path, model, platform):
     )
 
 
-def run_benchmark(base_work_dir, inference_server_path, model_fname):
+def run_benchmark(base_work_dir, platform, inference_server_path, model_fname):
     # no internal benchmark to run
     pass
 
