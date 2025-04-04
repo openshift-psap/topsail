@@ -28,9 +28,10 @@
       export {{ mac_ai_remote_ramalama_run_model_env }}
       nohup {{ mac_ai_remote_ramalama_run_model_path }} \
          --debug \
+         --image {{ mac_ai_remote_ramalama_run_model_image }} \
          serve \
          --pull=never \
-         {{ mac_ai_remote_ramalama_run_model_name }} \
+         {{ mac_ai_remote_ramalama_run_model_model_name }} \
          --ngl {{ mac_ai_remote_ramalama_run_model_ngl }} \
          --port {{ mac_ai_remote_ramalama_run_model_port }} \
          --host 0.0.0.0 \

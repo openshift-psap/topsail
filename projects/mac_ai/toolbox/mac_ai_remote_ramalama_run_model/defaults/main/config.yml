@@ -17,7 +17,7 @@ mac_ai_remote_ramalama_run_model_port:
 
 # the name of the model to run
 # Mandatory value
-mac_ai_remote_ramalama_run_model_name:
+mac_ai_remote_ramalama_run_model_model_name:
 
 # the env values to set before running ramalama
 # Mandatory value
@@ -31,3 +31,6 @@ mac_ai_remote_ramalama_run_model_device: null
 
 # if True, unloads (stops serving) this model
 mac_ai_remote_ramalama_run_model_unload: false
+
+# the image to use to run ramalama
+mac_ai_remote_ramalama_run_model_image: quay.io/ramalama/ramalama:latest

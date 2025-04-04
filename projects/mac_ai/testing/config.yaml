@@ -4,7 +4,7 @@ __platforms: &all_platforms
   - macos/llama_cpp/upstream_bin
   - podman/llama_cpp/vulkan
   - macos/ollama
-  - macos/ramalama
+  - podman/ramalama
 
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
@@ -34,6 +34,11 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
 
   # ---
+
+  ramalama:
+    test.model.name: ollama://llama3.1:8b
+    test.platform:
+    - podman/ramalama
 
   multi-servers:
     test.platform:
@@ -140,7 +145,7 @@ remote_host:
 prepare:
   # the list of platform environments to prepare
   platforms:
-    to_build: *all_platforms
+    to_build: null
 
     model_pullers:
       llama_cpp: macos/llama_cpp/upstream_bin
@@ -211,7 +216,7 @@ prepare:
   ramalama:
     repo:
       url: https://github.com/containers/ramalama
-      version: v0.6.4
+      version: v0.7.2
 
   brew:
     install_dependencies: false

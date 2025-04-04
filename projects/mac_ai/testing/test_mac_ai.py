@@ -193,7 +193,7 @@ def test_inference(platform):
     )
 
 
-    platform.inference_server_mod.unload_model(base_work_dir, inference_server_path, model_name, platform)
+    platform.inference_server_mod.unload_model(base_work_dir, platform, inference_server_path, model_name)
 
     brew.capture_dependencies_version(base_work_dir)
 
@@ -235,12 +235,13 @@ def test_inference(platform):
         if server_benchmark_enabled:
             platform.inference_server_mod.run_benchmark(
                 base_work_dir,
+                platform,
                 inference_server_path,
                 model_name,
             )
 
         model_id = platform.inference_server_mod.run_model(
-            base_work_dir, inference_server_path, model_name
+            base_work_dir, platform, inference_server_path, model_name
         )
 
         if llm_load_test_enabled:
@@ -255,7 +256,7 @@ def test_inference(platform):
 
         if config.project.get_config("test.inference_server.unload_on_exit"):
             exc = run.run_and_catch(exc, platform.inference_server_mod.unload_model,
-                                    base_work_dir, inference_server_path, model_name, platform)
+                                    base_work_dir, platform, inference_server_path, model_name)
 
         if config.project.get_config("test.inference_server.stop_on_exit"):
             exc = run.run_and_catch(exc, platform.inference_server_mod.stop_server,

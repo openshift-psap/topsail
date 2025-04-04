@@ -24,3 +24,6 @@ mac_ai_remote_ramalama_run_bench_ngl: 99
 
 # name of the device to pass to the container
 mac_ai_remote_ramalama_run_bench_device: null
+
+# the image to use to run ramalama
+mac_ai_remote_ramalama_run_bench_image: quay.io/ramalama/ramalama:latest

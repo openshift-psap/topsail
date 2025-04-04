@@ -169,12 +169,14 @@ def start(base_work_dir, port):
     platform = utils.parse_platform(config.project.get_config("test.platform"))
 
     podman_device_cmd = ""
-    if platform.podman_no_gpu:
+    if not platform.want_gpu:
         logging.info(f"podman.start: No GPU device for {platform}")
         pass
     elif podman_device := config.project.get_config("prepare.podman.container.device"):
         podman_device_cmd = f"--device {podman_device} "
         logging.info(f"podman.start: GPU device for {platform}: {podman_device}")
+    else:
+        logging.warn(f"podman.start: No GPU device configured")
 
     command = (
         f"{podman_cmd} run "
