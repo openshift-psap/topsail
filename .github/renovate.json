@@ -1,0 +1,7 @@
+{
+  "ignorePaths": [
+      "projects/fine_tuning/toolbox/fine_tuning_ray_fine_tuning_job/workloads/ray-finetune-llm-deepspeed/app/requirements.txt",
+      "projects/deprecated/codeflare/testing/sdk_user/sample/requirements.txt",
+      "projects/mac_ai/testing/images/llama_cpp.containerfile"
+  ]
+}
