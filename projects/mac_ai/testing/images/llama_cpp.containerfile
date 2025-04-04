@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-311:9.5 AS builder
+FROM registry.access.redhat.com/ubi9/python-311:9.5-1743582312 AS builder
 USER 0
 
 RUN dnf install -y python3-dnf-plugin-versionlock && \
@@ -37,7 +37,7 @@ RUN mkdir -p build \
 # ---
 
 # Stage 2: Create final image with minimal content
-FROM registry.access.redhat.com/ubi9/python-311:9.5
+FROM registry.access.redhat.com/ubi9/python-311:9.5-1743582312
 
 COPY --from=builder /app/ /app
 COPY --from=builder /usr/bin/vkcube* /usr/bin/
