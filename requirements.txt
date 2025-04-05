@@ -7,7 +7,7 @@ pylint
 awscli
 joblib
 jsonpath_ng
-state-signals==0.5.2
+state-signals==1.0.1
 kopf
 pyjwt
 slack_sdk==3.35.0
