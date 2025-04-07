@@ -74,7 +74,8 @@ class Config:
 
         for key, value in variable_overrides.items():
             MAGIC_DEFAULT_VALUE = object()
-            current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
+            handled_secretly = True # current_value MUST NOT be printed below.
+            current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False, handled_secretly=handled_secretly)
             if current_value == MAGIC_DEFAULT_VALUE:
                 if ignore_not_found:
                     continue
