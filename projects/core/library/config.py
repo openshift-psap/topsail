@@ -136,7 +136,7 @@ class Config:
 
         value = self.resolve_reference(value, handled_secretly)
 
-        if print:
+        if print and not handled_secretly:
             logging.info(f"get_config: {jsonpath} --> {value}")
 
         return value
