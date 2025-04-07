@@ -80,9 +80,12 @@ ci_presets:
 
   multi-model:
     test.model.name:
-    - Mistral-7B-Instruct-v0.2-GGUF
-    - llama2
-    - llama3.2
+    - ollama://llama3.2:1b
+    - ollama://llama3.2:3b
+    - ollama://llama3.1:8b
+    - ollama://llama2:13b
+    test.platform:
+    - podman/ramalama
 
   multi-quant:
     test.model.name:
