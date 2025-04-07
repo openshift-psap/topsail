@@ -74,7 +74,8 @@ class Config:
 
         for key, value in variable_overrides.items():
             MAGIC_DEFAULT_VALUE = object()
-            current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False)
+            handled_secretly = True # current_value MUST NOT be printed below.
+            current_value = self.get_config(key, MAGIC_DEFAULT_VALUE, print=False, warn=False, handled_secretly=handled_secretly)
             if current_value == MAGIC_DEFAULT_VALUE:
                 if ignore_not_found:
                     continue
@@ -135,7 +136,7 @@ class Config:
 
         value = self.resolve_reference(value, handled_secretly)
 
-        if print:
+        if print and not handled_secretly:
             logging.info(f"get_config: {jsonpath} --> {value}")
 
         return value
@@ -152,7 +153,7 @@ class Config:
                 raise RuntimeError(msg)
 
         try:
-            self.get_config(jsonpath, print=False) # will raise an exception if the jsonpath does not exist
+            self.get_config(jsonpath, print=False, handled_secretly=True) # will raise an exception if the jsonpath does not exist
             jsonpath_ng.parse(jsonpath).update(self.config, value)
         except Exception as ex:
             logging.error(f"set_config: {jsonpath}={value} --> {ex}")
