@@ -73,10 +73,11 @@ ci_presets:
     - b4897 # latest - 25-03-17
     - pr_11525 # SLP: vulkan: use kompute matmul shaders on embedded GPUs #11525
     prepare.llama_cpp.repo.url: https://github.com/kpouget/llama.cpp
+
   multi-version:
     prepare.llama_cpp.repo.version:
-    - b4688 # slp's
     - b4897 # latest - 25-03-17
+    - b5076 # latest - 25-04-08
 
   multi-model:
     test.model.name:
@@ -167,7 +168,7 @@ prepare:
     - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4897
+      version: b5076
       source:
         cmake:
           parallel: 5
