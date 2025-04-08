@@ -35,6 +35,12 @@ ci_presets:
 
   # ---
 
+  llama_cpp:
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
+    - podman/llama_cpp/vulkan
+
   ramalama:
     test.model.name: ollama://llama3.1:8b
     test.platform:
