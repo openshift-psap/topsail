@@ -173,7 +173,7 @@ def cleanup(mute=True):
 
 def update_serving_runtime_images(runtime=None):
     if runtime == "vllm":
-        TEMPLATE_NAME = "vllm-runtime-template"
+        TEMPLATE_NAME = "vllm-cuda-runtime-template"
     else:
         TEMPLATE_NAME  = "tgis-grpc-serving-template"
 
