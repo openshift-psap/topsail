@@ -278,6 +278,54 @@ ci_presets:
     tests.e2e.matbenchmark.enabled: true
     tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
 
+  vllm_cpt_single_model_gating_latest_collection:
+    extends: [e2e_perf, gating, raw, use_intlab_minio, vllm]
+    tests.e2e.models:
+    - name: phi-4
+      testing:
+        size: small
+        max_concurrency: 1
+    - name: granite-3-1-8b-instruct
+      model: granite-3.1-8b-instruct
+      testing:
+       size: small
+       max_concurrency: 1
+    - name: llama-3-1-8b-instruct
+      model: llama-3.1-8b-instruct 
+      testing:
+        size: small
+        max_concurrency: 1
+    - name: qwen2-5-7B-instruct
+      model: qwen2.5-7B-Instruct 
+      testing:
+        size: small
+        max_concurrency: 1
+    - name: mistral-small-3-1-24B-instruct-2503
+      model: mistral-small-3.1-24B-Instruct-2503
+      testing:
+        size: large
+        max_concurrency: 1
+    - name: mixtral-8x7b-instruct
+      model: mixtral-8x7b-instruct-v0.1
+      testing:
+        size: large
+        max_concurrency: 1
+    - name: llama-3-3-70b-instruct
+      model: llama-3.3-70b-instruct
+      testing:
+        size: large
+        max_concurrency: 1
+    matbench.lts.horreum.test_name: rhoai-kserve-single
+    matbench.lts.opensearch.index: rhoai-kserve-single
+    matbench.lts.opensearch.export.enabled: false
+    matbench.lts.regression_analyses.enabled: false
+
+    tests.e2e.matbenchmark.enabled: true
+    tests.e2e.llm_load_test.args.duration: 60
+    # small models will stop at 32
+    tests.e2e.llm_load_test.args.concurrency: [1, 2, 4, 8, 16, 32, 64, 96, 128]
+    export_artifacts.enabled: false
+
   vllm_cpt_single_model_gating:
     extends: [e2e_perf, gating, 3min, raw, use_intlab_minio, vllm]
     tests.e2e.models:
@@ -499,10 +547,10 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.18@sha256:9cf24f4bfb33c67ca7012477de6e2f4394d54772637d16cc366effcbb52abe27
+    tag: rhoai-2.19@sha256:55010c0ecab0feb87cb37f4f6a473481dd6cd0f6ec0dc0a96c96375845cda03e
     channel: fast
-    version: 2.18.0
-    version_name: rc1
+    version: 2.19.0
+    version_name: rc2
     opendatahub: false
     managed_rhoai: false
   operator:
