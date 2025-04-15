@@ -11,4 +11,4 @@ RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL
 # install llm-load-test requirements
 RUN python3 -m ensurepip
 
-RUN pip install -r projects/llm_load_test/subprojects/llm-load-test/requirements.txt
+RUN pip install projects/llm_load_test/subprojects/llm-load-test
