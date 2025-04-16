@@ -142,6 +142,7 @@ def generate_lts_results(results):
         results_lts.time_to_first_token = None
 
     # Model Load Duration (scalar, in seconds)
+    logging.info(f"Model Load duration values: results.predictor_pod - {results.predictor_pod}, results.predictor_pod.load_time - {results.predictor_pod.load_time}")
     if results.predictor_pod and results.predictor_pod.load_time:
         results_lts.model_load_duration = results.predictor_pod.load_time.total_seconds()
     else:

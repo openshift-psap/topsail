@@ -175,6 +175,8 @@ def _parse_predictor_pod(dirname):
     else:
         predictor_pod.load_time = condition_times["Ready"] - containers_start_time["kserve-container"]
 
+    logging.info(f"kserve-container predictor pod load time - {predictor_pod.load_time}")
+
     for container in pod["spec"]["containers"]:
         if container["name"] != "kserve-container": continue
         try:
