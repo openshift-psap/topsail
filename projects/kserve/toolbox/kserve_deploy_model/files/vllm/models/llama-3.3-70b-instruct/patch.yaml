@@ -9,7 +9,6 @@ spec:
     model:
       storageUri: s3://psap-hf-models/meta-llama/Llama-3.3-70B-Instruct
       args:
-      - --dtype=float16
       - --tensor-parallel-size=4
       - --max-model-len=4096
       resources:
