@@ -7,7 +7,7 @@ spec:
     minReplicas: 1
     maxReplicas: 1
     model:
-      storageUri: s3://psap-hf-models/Qwen/Qwen2.5-7B-Instruct 
+      storageUri: s3://psap-hf-models/Qwen/Qwen2.5-7B-Instruct
       resources:
         requests:
           cpu: "2"
