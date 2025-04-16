@@ -4,6 +4,8 @@ metadata:
   name: isvc
 spec:
   predictor:
+    minReplicas: 1
+    maxReplicas: 1
     model:
       storageUri: s3://psap-hf-models/meta-llama/Llama-3.1-8B-Instruct
       resources:

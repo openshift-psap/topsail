@@ -4,12 +4,13 @@ metadata:
   name: isvc
 spec:
   predictor:
+    minReplicas: 1
+    maxReplicas: 1
     model:
       storageUri: s3://psap-hf-models/microsoft/phi-4
       args:
       - --uvicorn-log-level=debug
       - --trust-remote-code
-      - --num-scheduler-steps=1
       resources:
         requests:
           cpu: "2"

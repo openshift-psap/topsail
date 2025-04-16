@@ -5,6 +5,7 @@ metadata:
 spec:
   predictor:
     minReplicas: 1
+    maxReplicas: 1
     model:
       storageUri: s3://psap-hf-models/ibm-granite/granite-3.1-8b-instruct 
       resources:
