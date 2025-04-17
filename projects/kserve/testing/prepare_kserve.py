@@ -3,6 +3,8 @@ import os
 import logging
 import time
 
+from packaging.version import Version
+
 from projects.core.library import env, config, run, sizing
 from projects.rhods.library import prepare_rhoai
 
@@ -173,7 +175,13 @@ def cleanup(mute=True):
 
 def update_serving_runtime_images(runtime=None):
     if runtime == "vllm":
-        TEMPLATE_NAME = "vllm-cuda-runtime-template"
+        # vLLM Serving Runtime Template naming changes - RHOAIENG-20597
+        # To maintain backward compatibility
+        rhods_catalog_version = config.project.get_config("rhods.catalog.version")
+        if Version(rhods_catalog_version) < Version("2.19.0"):
+            TEMPLATE_NAME = "vllm-runtime-template"
+        else:
+            TEMPLATE_NAME = "vllm-cuda-runtime-template"
     else:
         TEMPLATE_NAME  = "tgis-grpc-serving-template"
 
