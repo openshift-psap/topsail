@@ -546,9 +546,9 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment
-    tag: rhoai-2.19@sha256:55010c0ecab0feb87cb37f4f6a473481dd6cd0f6ec0dc0a96c96375845cda03e
+    tag: rhoai-2.18@sha256:14408b32fe556cb8b5c4d0874c0eef98a5d9bee81bb988b328cc28fcfeb66dab
     channel: fast
-    version: 2.19.0
+    version: 2.18.0
     version_name: rc2
     opendatahub: false
     managed_rhoai: false
