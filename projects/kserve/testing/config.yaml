@@ -311,11 +311,6 @@ ci_presets:
       testing:
         size: small
         max_concurrency: 64
-    - name: mistral-small-3-1-24b-instruct-2503
-      model: mistral-small-3.1-24B-Instruct-2503
-      testing:
-        size: large
-        max_concurrency: 64
     - name: mixtral-8x7b-instruct
       model: mixtral-8x7b-instruct-v0.1
       testing:
