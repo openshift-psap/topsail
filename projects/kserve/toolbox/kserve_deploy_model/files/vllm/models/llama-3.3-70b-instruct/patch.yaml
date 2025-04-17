@@ -1,0 +1,36 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: isvc
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      storageUri: s3://psap-hf-models/meta-llama/Llama-3.3-70B-Instruct
+      args:
+      - --tensor-parallel-size=4
+      - --max-model-len=4096
+      resources:
+        requests:
+          cpu: "8"
+          memory: "40Gi"
+          nvidia.com/gpu: "4"
+        limits:
+          nvidia.com/gpu: "4"
+      volumeMounts:
+      - name: shared-memory
+        mountPath: /dev/shm
+      - name: tmp
+        mountPath: /tmp
+      - name: home
+        mountPath: /home/vllm
+    volumes:
+    - name: shared-memory
+      emptyDir:
+        medium: Memory
+        sizeLimit: 32Gi
+    - name: tmp
+      emptyDir: {}
+    - name: home
+      emptyDir: {}
