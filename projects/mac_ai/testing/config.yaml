@@ -77,7 +77,6 @@ ci_presets:
 
   compare-pr:
     test.matbenchmarking.enabled: true
-    test.matbenchmarking.enabled: true
     prepare.llama_cpp.repo.version:
     - b4897 # latest - 25-03-17
     - pr_11525 # SLP: vulkan: use kompute matmul shaders on embedded GPUs #11525
