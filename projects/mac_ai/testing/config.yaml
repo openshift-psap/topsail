@@ -35,12 +35,19 @@ ci_presets:
 
   # ---
 
+  llama_cpp:
+    test.platform:
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
+    - podman/llama_cpp/vulkan
+
   ramalama:
     test.model.name: ollama://llama3.1:8b
     test.platform:
     - podman/ramalama
 
   multi-servers:
+    test.matbenchmarking.enabled: true
     test.platform:
     - podman/ramalama
     - podman/llama_cpp/vulkan
@@ -69,14 +76,17 @@ ci_presets:
     test.inference_server.benchmark.enabled: false
 
   compare-pr:
+    test.matbenchmarking.enabled: true
     prepare.llama_cpp.repo.version:
     - b4897 # latest - 25-03-17
     - pr_11525 # SLP: vulkan: use kompute matmul shaders on embedded GPUs #11525
     prepare.llama_cpp.repo.url: https://github.com/kpouget/llama.cpp
+
   multi-version:
+    test.matbenchmarking.enabled: true
     prepare.llama_cpp.repo.version:
-    - b4688 # slp's
     - b4897 # latest - 25-03-17
+    - b5076 # latest - 25-04-08
 
   multi-model:
     test.model.name:
@@ -167,7 +177,7 @@ prepare:
     - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b4897
+      version: b5076
       source:
         cmake:
           parallel: 5
