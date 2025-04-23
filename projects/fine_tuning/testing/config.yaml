@@ -632,12 +632,12 @@ ci_presets:
   # ---
 
   cluster_instructlab:
-    fine_tuning.pvc.storage_class_name: nfs-csi
+    fine_tuning.pvc.storage_class_name: nfs-provisioner
     fine_tuning.pvc.access_mode: ReadWriteMany
     fine_tuning.pvc.size: 500Gi
     clusters.sutest.is_metal: true
     clusters.sutest.compute.machineset.type: gx3-48x240x2l40s
-    clusters.sutest.compute.machineset.name: instructlab-standalon-6rjg8-worker-1
+    clusters.sutest.compute.machineset.name: psap-ilab-training-h65rv-master-0
     clusters.sutest.compute.machineset.taint: null
     clusters.sutest.compute.machineset.rest_count: 1
     tests.fine_tuning.test_settings.ephemeral_output_pvc_size: 500Gi
