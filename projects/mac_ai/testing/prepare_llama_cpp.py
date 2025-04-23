@@ -346,7 +346,7 @@ def _get_binary_path(base_work_dir, platform):
     if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin"):
         file_name = config.project.get_config("prepare.llama_cpp.repo.darwin.upstream_bin.file")
 
-        if True: #version.startswith("pr-"):
+        if version.startswith("pr-"):
             VERSION = "b4897"
             logging.info(f"Version {version} is a PR. Using hardcoded version {VERSION} for downloading the upstream binary.")
             version = VERSION
