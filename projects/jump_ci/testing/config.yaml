@@ -6,7 +6,7 @@ ci_presets:
     secrets.dir.name: crc-mac-ai-secret # key/value never actually used
     secrets.dir.env_key: CRC_MAC_AI_SECRET_PATH
     cluster.name: mac
-    project.name: mac_ai
+    project.name: ramalama
 
   plot_cluster:
     cluster.name: plot
