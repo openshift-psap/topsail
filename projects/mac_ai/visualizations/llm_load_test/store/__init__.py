@@ -47,7 +47,16 @@ is_mandatory_file = local_store.is_mandatory_file
 is_cache_file = local_store.is_cache_file
 is_important_file = local_store.is_important_file
 
-def _rewrite_settings(settings_dict, results, is_lts):
+def _rewrite_settings(settings_dict, results=None, is_lts=None):
+    if is_lts:
+        return settings_dict
+
+    if results is None:
+        # when trying to find simular results
+        # (matrix_benchmarking.common.similar_records), the results
+        # aren't available. Cannot rewrite the settings without it.
+        return settings_dict
+
     model_name = settings_dict.pop("test.model.name", results.test_config.get("test.model.name"))
     if "model_name" not in settings_dict:
         settings_dict["model_name"] = model_name
