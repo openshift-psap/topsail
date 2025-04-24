@@ -62,7 +62,7 @@ then
         echo "ERROR: credentials file does not exist :/"
         exit 1
     fi
-    cat /mnt/download-secret/cred
+
     dnf install --quiet -y unzip
 
     echo "Building AWS cli ..."
