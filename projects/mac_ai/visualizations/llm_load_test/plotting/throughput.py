@@ -49,11 +49,10 @@ def generateThroughputData(entries, variables, ordered_vars, model_name=None):
 
         datum["throughput"] = entry.results.lts.results.throughput
 
-        datum["vusers"] = entry.results.lts.metadata.settings.virtual_users
+        datum["tpot_mean"] = entry.results.lts.kpis["tpot_mean"].value
+        datum["itl_mean"] = entry.results.lts.kpis["itl_mean"].value
+        datum["ttft_mean"] = entry.results.lts.kpis["ttft_mean"].value
 
-        datum["tpot_mean"] = entry.results.lts.kpis["kserve_llm_load_test_tpot_mean"].value
-        datum["itl_mean"] = entry.results.lts.kpis["kserve_llm_load_test_itl_mean"].value
-        datum["ttft_mean"] = entry.results.lts.kpis["kserve_llm_load_test_ttft_mean"].value
         datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
 
         data.append(datum)

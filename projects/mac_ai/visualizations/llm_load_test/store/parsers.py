@@ -62,6 +62,9 @@ def parse_once(results, dirname):
     results.test_config = helpers_store_parsers.parse_test_config(dirname)
 
     results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
+    capture_state_dir = artifact_paths.LLM_LOAD_TEST_RUN_DIR
+
+    results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
     results.llm_load_test_config = _parse_llm_load_test_config(dirname)
     results.llm_load_test_output = _parse_llm_load_test_output(dirname)

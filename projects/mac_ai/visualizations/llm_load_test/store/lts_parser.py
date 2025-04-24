@@ -15,9 +15,6 @@ def generate_lts_payload(results, import_settings):
     lts_payload.results = generate_lts_results(results)
     # lts_payload.kpis is generated in the helper store
 
-    # skip the LTS validation for the time being
-    lts_payload.is_valid = False
-
     return lts_payload
 
 
@@ -67,16 +64,47 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.kpi_settings_version = models_lts.KPI_SETTINGS_VERSION
 
     lts_settings.model_name = results.test_config.get("test.model.name")
+    lts_settings.platform = results.test_config.get("test.platform")
 
-    if results.llm_load_test_config:
-        lts_settings.virtual_users = results.test_config.get("test.llm_load_test.args.concurrency")
-        lts_settings.test_duration = results.test_config.get("test.llm_load_test.args.duration")
+    if "ramalama" in lts_settings.platform:
+        version_config_key = "prepare.ramalama.repo.version"
+        containerized = True
+    elif "llama_cpp" in lts_settings.platform:
+        version_config_key = "prepare.llama_cpp.repo.version"
+        containerized = "podman" in lts_settings.platform
+    elif "ollama" in lts_settings.platform:
+        version_config_key = "prepare.ollama.repo.version"
+        containerized = False
+    else:
+        logging.error(f"Unknown platform '{lts_settings.platform}', cannot find the version.")
+        version_config_key = None
+        containerized = None
 
-        lts_settings.dataset_name = pathlib.Path(results.llm_load_test_config.get("dataset.file")).name
+    lts_settings.version = results.test_config.get(version_config_key) \
+        if version_config_key else "Unknown"
 
-        lts_settings.streaming = _is_streaming(results)
+    lts_settings.containerized = containerized
 
-    lts_settings.urls = {}
+
+    lts_settings.hardware = ""
+    try: lts_settings.hardware += results.system_state["Hardware"]["Hardware Overview"]["Chip"] + " "
+    except Exception:
+        logging.error("Couldn't find the system chip name")
+
+    try: lts_settings.hardware += results.system_state["Hardware"]["Hardware Overview"]["Memory"] + " "
+    except Exception:
+        logging.error("Couldn't find the system memory")
+
+    lts_settings.hardware = lts_settings.hardware.strip()
+    if not lts_settings.hardware:
+        lts_settings.hardware = "Unknown"
+
+    try: lts_settings.os = results.system_state["Software"]["System Software Overview"]["System Version"].split(" (")[0]
+    except Exception:
+        logging.error("Couldn't find the system OS")
+        lts_settings.os = "Unknown"
+
+    lts_settings.urls = results.from_env.test.urls
 
     return lts_settings
 
