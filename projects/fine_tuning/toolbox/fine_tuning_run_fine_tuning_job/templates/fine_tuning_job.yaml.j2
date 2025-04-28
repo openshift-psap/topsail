@@ -4,6 +4,15 @@ metadata:
   name: {{ job_name_safe }}
   namespace: {{ fine_tuning_run_fine_tuning_job_namespace }}
 spec:
+   affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: failure-domain.beta.kubernetes.io/zone
+            operator: In
+            values:
+            - ca-tor-2
   pytorchReplicaSpecs:
     Master:
       replicas: 1
