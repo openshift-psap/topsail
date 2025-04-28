@@ -4,7 +4,7 @@ metadata:
   name: {{ job_name_safe }}
   namespace: {{ fine_tuning_run_fine_tuning_job_namespace }}
 spec:
-   affinity:
+  affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
