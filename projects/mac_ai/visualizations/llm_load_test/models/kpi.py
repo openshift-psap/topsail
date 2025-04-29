@@ -17,18 +17,18 @@ def throughput(lts_payload):
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="All values of time per output token", unit="List[ms/token]")
 def tpot(lts_payload):
-    return lts_payload.results.time_per_output_token.values
+    return lts_payload.results.time_per_output_token.values if lts_payload.results.time_per_output_token else 0
 
 
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Median time per output token", unit="ms/token")
 def tpot_median(lts_payload):
-    return lts_payload.results.time_per_output_token.median
+    return lts_payload.results.time_per_output_token.median if lts_payload.results.time_per_output_token else 0
 
 @matbench_models.LowerBetter
 @matbench_models.KPIMetadata(help="Mean time per output token", unit="ms/token")
 def tpot_mean(lts_payload):
-    return lts_payload.results.time_per_output_token.mean
+    return lts_payload.results.time_per_output_token.mean if lts_payload.results.time_per_output_token else 0
 
 # Inter token latency
 
