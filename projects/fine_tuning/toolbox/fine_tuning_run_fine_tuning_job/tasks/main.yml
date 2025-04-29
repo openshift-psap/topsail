@@ -98,7 +98,7 @@ elif fine_tuning_run_fine_tuning_job_workload == 'ilab' -%}
   block:
   - name: List the GPU nodes
     shell:
-      set -o pipefail; oc get nodes -l nvidia.com/gpu.present=true -o json | jq -r '.items[] | select(.status.conditions[] | .type == "Ready" and .status == "True") | "node/\(.metadata.name)"'
+      set -o pipefail; oc get nodes -l nvidia.com/gpu.present=true,failure-domain.beta.kubernetes.io/zone=ca-tor-2 -o json | jq -r '.items[] | select(.status.conditions[] | .type == "Ready" and .status == "True") | "node/\(.metadata.name)"'
     register: gpu_node_names_cmd
 
   - name: Prepare the secondary nic list
