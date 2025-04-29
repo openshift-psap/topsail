@@ -8,19 +8,18 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.2"
-# 1.2: add lower_better/higher_better flag
-# 1.1: expose the accelerator count
+KPI_SETTINGS_VERSION = "1.0"
 # 1.0: first version
 
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
 
     model_name: str
-    virtual_users: int
-    test_duration: int
-    dataset_name: str
-    streaming: bool
+    platform: str
+    version: str
+    containerized: bool
+    hardware: str
+    os: str
     urls: Optional[dict[str, str]]
 
 
@@ -59,12 +58,11 @@ class Results(matbench_models.ExclusiveModel):
     failures: int
 
 
-class KServeLLMPerformanceKPI(matbench_models.KPI, Settings): pass
+class KPI(matbench_models.KPI, Settings): pass
 
-KServeLLMPerformanceKPIs = matbench_models.getKPIsModel("KServeLLMPerformanceKPIs", __name__, kpi.KPIs, KServeLLMPerformanceKPI)
-
+KPIs = matbench_models.getKPIsModel("KPIs", __name__, kpi.KPIs, KPI)
 
 class Payload(matbench_models.ExclusiveModel):
     metadata: Metadata
     results: Results
-    kpis: Optional[KServeLLMPerformanceKPIs]
+    kpis: Optional[KPIs]

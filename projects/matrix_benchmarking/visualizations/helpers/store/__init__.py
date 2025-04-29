@@ -200,7 +200,8 @@ class BaseStore():
                 # don't write an error (TOPSAIL detects it and fails
                 # the test) if the LTS has already been marked as
                 # invalid
-                (logging.error if lts_payload.is_valid else logging.warning)(msg)
+                is_valid = getattr(lts_payload, "is_valid", True)
+                (logging.error if is_valid else logging.warning)(msg)
 
                 kpi["value"] = None
 

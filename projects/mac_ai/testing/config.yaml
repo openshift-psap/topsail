@@ -35,6 +35,51 @@ ci_presets:
 
   # ---
 
+  use_intlab_os:
+    matbench.lts.opensearch.index_prefix: "psap-rhoai."
+    matbench.lts.opensearch.instance: intlab
+
+  export_kpis:
+    matbench.lts.generate: true
+    matbench.lts.opensearch.export.enabled: true
+
+  analyze_kpis:
+    matbench.lts.generate: true
+    matbench.lts.regression_analyses.enabled: true
+
+  # -*-
+
+  cpt_all:
+    extends: [cpt_ramalama, cpt_llama_cpp]
+    test.model.name: llama3.2/llama3.2
+    test.platform:
+    - podman/ramalama
+    - macos/llama_cpp/vulkan
+    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/metal
+
+  cpt_ramalama:
+    extends: [use_intlab_os, analyze_kpis, export_kpis]
+    test.platform: [podman/ramalama]
+    test.model.name: llama3.2/llama3.2
+    prepare.ramalama.repo.version: v0.7.5
+    matbench.lts.generate: true
+    test.inference_server.benchmark.enabled: false
+
+  cpt_llama_cpp:
+    extends: [use_intlab_os, analyze_kpis, export_kpis]
+    test.platform:
+    - macos/llama_cpp/vulkan
+    - macos/llama_cpp/metal
+    - podman/llama_cpp/vulkan
+
+    test.model.name: llama3.2/llama3.2
+    prepare.llama_cpp.repo.version: b5076
+    matbench.lts.generate: true
+    test.inference_server.benchmark.enabled: false
+
+  # ---
+
   llama_cpp:
     test.platform:
     - macos/llama_cpp/metal
@@ -60,7 +105,7 @@ ci_presets:
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
-    test.model.name: llama3.2
+    test.model.name: llama3.2/llama3.2
 
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
@@ -134,6 +179,7 @@ secrets:
   hostname: mac_ai__hostname.mac-m4
   username: mac_ai__username.mac-m4
   base_work_dir: mac_ai__base_work_dir.mac-m4
+  opensearch_instances: opensearch.yaml
 
 remote_host:
   run_locally: false
@@ -229,7 +275,7 @@ prepare:
   ramalama:
     repo:
       url: https://github.com/containers/ramalama
-      version: v0.7.2
+      version: v0.7.5 # https://quay.io/repository/ramalama/ramalama
 
   brew:
     install_dependencies: false
@@ -307,7 +353,7 @@ test:
         llama_bench: true
         backend_ops_perf: false
   model:
-    name: llama3.2
+    name: llama3.2/llama3.2
     size: small
     gguf_dir: models
 
@@ -391,6 +437,19 @@ matbench:
   test_directory: null
   lts:
     generate: false
+    opensearch:
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: true
+      instance: smoke
+      index: topsail-mac-ai-cpt
+      index_prefix: ""
+    regression_analyses:
+      enabled: false
+      enabled_on_replot: true
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: true
 
 exec_list:
   _only_: false
