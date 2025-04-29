@@ -49,6 +49,9 @@ is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict, results=None, is_lts=None):
     if is_lts:
+        if settings_dict["model_name"] == "llama3.2":
+            settings_dict["model_name"] = "llama3.2/llama3.2"
+
         return settings_dict
 
     if results is None:
