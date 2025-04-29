@@ -71,13 +71,13 @@ def has_model(base_work_dir, ramalama_path, model_name):
         raise ValueError("Ramalama couldn't list the model :/")
 
     lst = json.loads(ret.stdout)
-    for model_info in lst:
-        current_model_name = model_info["name"].partition("://")[-1]
+    for current_model_info in lst:
+        current_model_name = current_model_info["name"].partition("://")[-1]
         if current_model_name == model_name:
             return True
         if current_model_name == f"{model_name}:latest":
             return True
-        logging.info(f"{model_info['name']} != {model_info}")
+        logging.info(f"{current_model_info['name']} != {model_name}")
 
     return False
 
