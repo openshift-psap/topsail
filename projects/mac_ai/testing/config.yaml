@@ -51,7 +51,7 @@ ci_presets:
 
   cpt_all:
     extends: [cpt_ramalama, cpt_llama_cpp]
-    test.model.name: llama3.2
+    test.model.name: llama3.2/llama3.2
     test.platform:
     - podman/ramalama
     - macos/llama_cpp/vulkan
@@ -61,7 +61,7 @@ ci_presets:
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
     test.platform: [podman/ramalama]
-    test.model.name: llama3.2
+    test.model.name: llama3.2/llama3.2
     prepare.ramalama.repo.version: v0.7.5
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
@@ -73,7 +73,7 @@ ci_presets:
     - macos/llama_cpp/metal
     - podman/llama_cpp/vulkan
 
-    test.model.name: llama3.2
+    test.model.name: llama3.2/llama3.2
     prepare.llama_cpp.repo.version: b5076
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
@@ -105,7 +105,7 @@ ci_presets:
   benchmark:
     test.matbenchmarking.enabled: true
     test.platform: *all_platforms
-    test.model.name: llama3.2
+    test.model.name: llama3.2/llama3.2
 
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
@@ -353,7 +353,7 @@ test:
         llama_bench: true
         backend_ops_perf: false
   model:
-    name: llama3.2
+    name: llama3.2/llama3.2
     size: small
     gguf_dir: models
 
