@@ -406,7 +406,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [35000]
     tests.fine_tuning.test_settings.secondary_nic_prefix: "single-subnet-"
 #    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: 8
+    tests.fine_tuning.test_settings.secondary_nic_count: 4
 
   ilab_l40s_smoke_test:
     extends: [ilab]
