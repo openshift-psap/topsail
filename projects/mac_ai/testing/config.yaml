@@ -74,7 +74,7 @@ ci_presets:
     - podman/llama_cpp/vulkan
 
     test.model.name: llama3.2/llama3.2
-    prepare.llama_cpp.repo.version: b5076
+    prepare.llama_cpp.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 
