@@ -2,6 +2,7 @@ import tempfile
 import os
 import types
 import pathlib
+import requests
 
 from projects.core.library import env, config, run, configure_logging, export
 
@@ -113,3 +114,13 @@ def model_to_fname(model):
     base_work_dir = remote_access.prepare()
     model_gguf_dir = config.project.get_config("test.model.gguf_dir")
     return base_work_dir / model_gguf_dir / pathlib.Path(model).name
+
+def get_latest_release(repo_url):
+    prefix, found, path = repo_url.partition("https://github.com/")
+    if not found:
+        raise ValueError(f"utils.get_latest_release expects a github repo. Got {repo_url} ...")
+
+    url = f"https://api.github.com/repos/{path}/releases/latest"
+    resp = requests.get(url)
+    data = resp.json()
+    return data["name"]

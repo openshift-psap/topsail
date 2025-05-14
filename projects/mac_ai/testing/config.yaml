@@ -62,7 +62,7 @@ ci_presets:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
     test.platform: [podman/ramalama]
     test.model.name: llama3.2/llama3.2
-    prepare.ramalama.repo.version: v0.7.5
+    prepare.ramalama.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 
@@ -74,7 +74,7 @@ ci_presets:
     - podman/llama_cpp/vulkan
 
     test.model.name: llama3.2/llama3.2
-    prepare.llama_cpp.repo.version: b5076
+    prepare.llama_cpp.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 

@@ -11,7 +11,19 @@ import utils
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
+def resolve_latest_version():
+    version = config.project.get_config("prepare.llama_cpp.repo.version", print=False)
+
+    if version != "latest": return
+
+    repo_url = config.project.get_config("prepare.llama_cpp.repo.url")
+    version = utils.get_latest_release(repo_url)
+    config.project.set_config("prepare.llama_cpp.repo.version", version)
+
+
 def prepare_test(base_work_dir, platform):
+    resolve_latest_version()
+
     if not platform.needs_podman: return
 
     local_image_name = get_local_image_name(base_work_dir, platform)
@@ -324,6 +336,8 @@ def prepare_for_macos(base_work_dir, platform):
 
 
 def prepare_binary(base_work_dir, platform):
+    resolve_latest_version()
+
     if platform.system == "macos":
         return prepare_for_macos(base_work_dir, platform)
 

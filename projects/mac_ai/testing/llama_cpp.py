@@ -18,6 +18,9 @@ import utils
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
+def _model_name(model):
+    return model.split("/")[-1]
+
 def start_server(base_work_dir, llama_cpp_path):
     pass # nothing to start
 
@@ -27,27 +30,28 @@ def stop_server(base_work_dir, llama_cpp_path):
 
 
 def has_model(base_work_dir, llama_cpp_path, model):
-    model_fname = utils.model_to_fname(model)
+    model_fname = utils.model_to_fname(_model_name(model))
 
     return remote_access.exists(model_fname)
 
 
 def pull_model(base_work_dir, llama_cpp_path, model):
     llama_cpp_path = llama_cpp_path.parent / 'llama-run'
-    model_fname = utils.model_to_fname(model)
+    model_name = _model_name(model)
+    model_fname = utils.model_to_fname(model_name)
 
     return run.run_toolbox(
         "mac_ai", "remote_llama_cpp_pull_model",
         base_work_dir=base_work_dir,
         path=llama_cpp_path,
-        name=model,
+        name=model_name,
         dest=model_fname,
     )
 
 
 def run_model(base_work_dir, platform, llama_cpp_path, model):
     inference_server_port = config.project.get_config("test.inference_server.port")
-    model_fname = utils.model_to_fname(model)
+    model_fname = utils.model_to_fname(_model_name(model))
 
     # dirty, I know ...
     prefix, _, path = str(llama_cpp_path).rpartition(" ")
@@ -78,7 +82,7 @@ def unload_model(base_work_dir, platform, llama_cpp_path, model):
 
 
 def run_benchmark(base_work_dir, platform, llama_cpp_path, model):
-    model_fname = utils.model_to_fname(model)
+    model_fname = utils.model_to_fname(_model_name(model))
 
     # dirty, I know ...
     prefix, _, path = str(llama_cpp_path).rpartition(" ")

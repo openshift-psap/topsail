@@ -19,6 +19,11 @@ def prepare_test(base_work_dir, platform):
 def _get_binary_path(base_work_dir, platform):
     version = config.project.get_config("prepare.ramalama.repo.version")
 
+    if version == "latest":
+        repo_url = config.project.get_config("prepare.ramalama.repo.url")
+        version = utils.get_latest_release(repo_url)
+        config.project.set_config("prepare.ramalama.repo.version", version)
+
     system_file = f"{version}.zip"
 
     # don't use 'ramalama' in the base_work_dir, otherwise Python
