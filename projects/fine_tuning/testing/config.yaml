@@ -403,7 +403,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_optimizer: true
     tests.fine_tuning.test_settings.hyper_parameters.cpu_offload_params: true
 #    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [35000, 40000, 45000, 50000, 55000, 60000, 65000, 70000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [20000]
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [30000]
 #    tests.fine_tuning.test_settings.secondary_nic_prefix: "single-subnet-"
 #    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
 #    tests.fine_tuning.test_settings.secondary_nic_count: 8
