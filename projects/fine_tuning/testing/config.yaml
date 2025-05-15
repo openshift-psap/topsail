@@ -393,9 +393,9 @@ ci_presets:
 
     tests.fine_tuning.test_settings.model_name: granite-3.1-8b-starter-v1
     tests.fine_tuning.test_settings.dataset_name: [ilab_large_10000samples_skills_data.jsonl]
-    tests.fine_tuning.test_settings.pod_count: 8
+    tests.fine_tuning.test_settings.pod_count: 1
     tests.fine_tuning.test_settings.gpu: 2
-    clusters.sutest.compute.machineset.count: 8
+    clusters.sutest.compute.machineset.count: 1
     tests.fine_tuning.test_settings.hyper_parameters.fsdp_sharding_strategy: SHARD_GRAD_OP # ,HYBRID_SHARD, FULL_SHARD, NO_SHARD, SHARD_GRAD_OP
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
     tests.fine_tuning.matbenchmarking.enabled: true
@@ -405,8 +405,8 @@ ci_presets:
 #    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [35000, 40000, 45000, 50000, 55000, 60000, 65000, 70000]
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [35000]
 #    tests.fine_tuning.test_settings.secondary_nic_prefix: "single-subnet-"
-    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: 8
+#    tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
+#    tests.fine_tuning.test_settings.secondary_nic_count: 8
 
   ilab_l40s_smoke_test:
     extends: [ilab]
@@ -909,9 +909,10 @@ tests:
       enabled: false
 #      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:525ab53de3829cac1a9aabb73194f49e22da8fdcf12a01c56ece961300cdab0d
       # 1.3
-      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
+#      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@sha256:c656c74338e3d59bf265e4b2fa9c01a69c8212992fa6d4511aef52a441506e68
       # 1.4.1-1739870750
-
+      image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.5-1746825300
+      # 1.5-1746825300
 matbench:
   preset: null
   workload: projects.fine_tuning.visualizations.fine_tuning # actual workload must be a symlink to this dir
