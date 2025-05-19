@@ -393,9 +393,9 @@ ci_presets:
 
     tests.fine_tuning.test_settings.model_name: granite-3.1-8b-starter-v1
     tests.fine_tuning.test_settings.dataset_name: [new_skills_10000samples.jsonl]
-    tests.fine_tuning.test_settings.pod_count: 2
+    tests.fine_tuning.test_settings.pod_count: 4
     tests.fine_tuning.test_settings.gpu: 2
-    clusters.sutest.compute.machineset.count: 2
+    clusters.sutest.compute.machineset.count: 4
     tests.fine_tuning.test_settings.hyper_parameters.fsdp_sharding_strategy: SHARD_GRAD_OP # ,HYBRID_SHARD, FULL_SHARD, NO_SHARD, SHARD_GRAD_OP
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
     tests.fine_tuning.matbenchmarking.enabled: true
@@ -406,7 +406,7 @@ ci_presets:
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [20000]
 #    tests.fine_tuning.test_settings.secondary_nic_prefix: "single-subnet-"
     tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: 2
+    tests.fine_tuning.test_settings.secondary_nic_count: 4
 
   ilab_l40s_smoke_test:
     extends: [ilab]
