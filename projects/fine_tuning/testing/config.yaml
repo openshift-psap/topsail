@@ -391,7 +391,7 @@ ci_presets:
   ilab_l40s_shard:
     extends: [ilab]
 
-    tests.fine_tuning.test_settings.model_name: granite-3.1-8b-starter-v1
+    tests.fine_tuning.test_settings.model_name: granite-3.1-8b-starter-v2
     tests.fine_tuning.test_settings.dataset_name: [new_skills_10000samples.jsonl]
     tests.fine_tuning.test_settings.pod_count: 1
     tests.fine_tuning.test_settings.gpu: 2
@@ -858,6 +858,12 @@ fine_tuning:
       type: model
       source_dir: 's3://psap-hf-models/'
       secret_key: secrets.aws_credentials
+
+    granite-3.1-8b-starter-v2:
+      type: model
+      source_dir: 's3://psap-hf-models/'
+      secret_key: secrets.aws_credentials
+
 tests:
   capture_prom: true
   capture_prom_uwm: false
