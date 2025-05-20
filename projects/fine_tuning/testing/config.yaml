@@ -918,7 +918,7 @@ tests:
       # 1.4.1-1739870750
 #      image: registry.stage.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.5-1746825300
       # 1.5-1746825300
-      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9@1.5-1747182923
+      image: registry.redhat.io/rhelai1/instructlab-nvidia-rhel9:1.5-1747182923
       # 1.5-1747182923
 matbench:
   preset: null
