@@ -92,6 +92,7 @@ export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
+export LOCAL_RANK=0
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
