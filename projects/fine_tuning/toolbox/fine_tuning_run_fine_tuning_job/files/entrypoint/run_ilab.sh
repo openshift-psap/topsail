@@ -95,9 +95,6 @@ ret=0
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
-    --nnodes 4 \
-    --nproc_per_node 2 \
-    ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py \
     $(echo "$config_json" | jq -r '. | to_entries | .[] | ("--" + .key + " " + (.value | tostring))' | sed "s/ true//");
 then
     ret=1
