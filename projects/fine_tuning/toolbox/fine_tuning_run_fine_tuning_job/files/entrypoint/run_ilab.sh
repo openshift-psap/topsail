@@ -93,6 +93,7 @@ echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
 sed -i '444a \    print("LOCAL_RANK: ", local_rank)' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
+sed -i '446a \    print("LOCAL_RANK_inside_loop: ", local_rank)' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
