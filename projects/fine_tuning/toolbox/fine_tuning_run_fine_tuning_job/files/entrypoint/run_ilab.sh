@@ -93,10 +93,10 @@ echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
 sed -i '465i\
-                print("[92m"); from datetime import datetime; print({\
+                from datetime import datetime; print({\
                 "samples_seen": samples_seen,\
                 "timestamp": datetime.now().isoformat()\
-            }); print("[0m")' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
+            })' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
@@ -107,9 +107,9 @@ then
 fi
 echo "TORCHRUN FINISHED after $SECONDS seconds | $(date)"
 
-#if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
-#    # NOTE: Write here the code to copy any file you want to export to the test artifacts
-#    cp /mnt/output/model/training_params_and_metrics_global0.jsonl "$RETRIEVE"
-#fi
+if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+    # NOTE: Write here the code to copy any file you want to export to the test artifacts
+    cp /mnt/output/model/training_params_and_metrics_global0.jsonl "$RETRIEVE"
+fi
 
 exit $ret
