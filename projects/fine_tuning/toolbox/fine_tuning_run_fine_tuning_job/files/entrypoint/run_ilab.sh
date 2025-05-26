@@ -93,10 +93,10 @@ echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
 sed -i '465i\
-                from datetime import datetime; print({\
+                print("[92m"); from datetime import datetime; print({\
                 "samples_seen": samples_seen,\
                 "timestamp": datetime.now().isoformat()\
-            })' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
+            }); print("[0m")' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
