@@ -92,7 +92,11 @@ export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
-sed -i '465i\                print("LOCAL_RANK: ", local_rank)' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
+sed -i '465i\
+                from datetime import datetime; print({\
+                "samples_seen": samples_seen,\
+                "timestamp": datetime.now().isoformat()\
+            })' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
