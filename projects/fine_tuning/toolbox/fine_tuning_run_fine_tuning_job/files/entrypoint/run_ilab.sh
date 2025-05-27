@@ -92,13 +92,6 @@ export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
-#if [[ $RANK == 0 ]]; then
-#    sed -i '465i\
-#                    from datetime import datetime; print({\
-#                    "samples_seen": samples_seen,\
-#                    "timestamp": datetime.now().isoformat()\
-#                })' ./opt/app-root/lib/python3.11/site-packages/instructlab/training/main_ds.py
-#fi
 mkdir -p /mnt/output/model/
 if ! torchrun \
     --node_rank "${RANK}" \

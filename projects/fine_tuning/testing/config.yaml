@@ -392,7 +392,7 @@ ci_presets:
     extends: [ilab]
 
     tests.fine_tuning.test_settings.model_name: granite-3.1-8b-starter-v2
-    tests.fine_tuning.test_settings.dataset_name: [new_skills_10000samples.jsonl]
+    tests.fine_tuning.test_settings.dataset_name: [trimmed-samples.jsonl]
     tests.fine_tuning.test_settings.pod_count: 1
     tests.fine_tuning.test_settings.gpu: 2
     clusters.sutest.compute.machineset.count: 1
