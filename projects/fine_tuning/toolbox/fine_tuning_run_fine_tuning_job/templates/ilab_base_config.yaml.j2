@@ -10,15 +10,14 @@ data_path: "/mnt/storage/dataset/{{ fine_tuning_run_fine_tuning_job_dataset_name
 
 output_dir: "/mnt/output/model"
 num_epochs: 1
-effective_batch_size: 90000
+effective_batch_size: 3840
 learning_rate: 1e-4
 num_warmup_steps: 800
 save_samples: 0
 log_level: INFO
-max_batch_len: 20000
+max_batch_len: 35000
 seed: 42
-mock_len: 42000
 distributed_training_framework: fsdp
-use_liger: true
+#use_liger: true
 #use_dolomite: true
 #checkpoint_at_epoch: true
