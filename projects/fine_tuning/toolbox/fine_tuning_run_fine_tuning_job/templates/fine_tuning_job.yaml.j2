@@ -23,6 +23,15 @@ spec:
               ]'
 {% endif %}
         spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: failure-domain.beta.kubernetes.io/zone
+                    operator: In
+                    values:
+                    - ca-tor-2
 {% if fine_tuning_run_fine_tuning_job_use_host_network %}
           hostNetwork: true
           dnsPolicy: ClusterFirstWithHostNet
@@ -42,6 +51,8 @@ spec:
 {% endif %}
             command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
             env:
+            - name: FORCE_COLOR
+              value: "1"
             - name: CONFIG_JSON_PATH
               value: /mnt/config/config.json
             - name: WORKLOAD
