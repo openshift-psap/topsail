@@ -225,7 +225,7 @@ prepare:
     - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b5076
+      version: b5581
       source:
         cmake:
           parallel: 5
