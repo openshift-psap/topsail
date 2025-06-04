@@ -93,11 +93,11 @@ ci_presets:
 
   multi-servers:
     test.matbenchmarking.enabled: true
+    test.model.name: ollama://llama3.1:8b
     test.platform:
     - podman/ramalama
-    - podman/llama_cpp/vulkan
-    - macos/ollama
-    - macos/llama_cpp/upstream_bin
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
     prepare.platforms.to_build: null # use test.platform
 
   # ---
@@ -141,6 +141,8 @@ ci_presets:
     - ollama://llama2:13b
     test.platform:
     - podman/ramalama
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
 
   multi-quant:
     test.model.name:
@@ -223,7 +225,7 @@ prepare:
     - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
       url: https://github.com/ggml-org/llama.cpp
-      version: b5076
+      version: b5581
       source:
         cmake:
           parallel: 5
@@ -275,7 +277,7 @@ prepare:
   ramalama:
     repo:
       url: https://github.com/containers/ramalama
-      version: v0.7.5 # https://quay.io/repository/ramalama/ramalama
+      version: v0.9.0
 
   brew:
     install_dependencies: false
@@ -302,7 +304,7 @@ prepare:
     repo:
       enabled: true
       url: https://github.com/containers/podman
-      version: v5.4.0
+      version: v5.5.0
       darwin:
         file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
         zip: true
