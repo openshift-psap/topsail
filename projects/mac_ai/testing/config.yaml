@@ -93,11 +93,11 @@ ci_presets:
 
   multi-servers:
     test.matbenchmarking.enabled: true
+    test.model.name: ollama://llama3.1:8b
     test.platform:
     - podman/ramalama
-    - podman/llama_cpp/vulkan
-    - macos/ollama
-    - macos/llama_cpp/upstream_bin
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
     prepare.platforms.to_build: null # use test.platform
 
   # ---
@@ -141,6 +141,8 @@ ci_presets:
     - ollama://llama2:13b
     test.platform:
     - podman/ramalama
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
 
   multi-quant:
     test.model.name:
