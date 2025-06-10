@@ -220,7 +220,7 @@ prepare:
     install_requirements: false
 
   llama_cpp:
-    iterable_build_fields:
+    iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary
     - prepare.llama_cpp.repo.version
     - prepare.llama_cpp.repo.source.cmake.parallel
     repo:
@@ -275,6 +275,8 @@ prepare:
         file: ollama-darwin
 
   ramalama:
+    iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary
+    - prepare.ramalama.repo.version
     repo:
       url: https://github.com/containers/ramalama
       version: v0.9.0
@@ -384,11 +386,13 @@ test:
   matbenchmarking:
     enabled: false
     stop_on_error: true
-    fields:
+    iterable_test_fields:
     - test.model.name
     - test.platform
     - test.llm_load_test.args
     - prepare.llama_cpp.repo.version
+    - prepare.ramalama.repo.version
+
   capture_metrics:
     enabled: true
     gpu:
