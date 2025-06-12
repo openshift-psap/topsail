@@ -36,7 +36,7 @@ def has_model(base_work_dir, llama_cpp_path, model):
 
 
 def pull_model(base_work_dir, llama_cpp_path, model):
-    llama_cpp_path = llama_cpp_path.parent / 'llama-run'
+    llama_cpp_path = llama_cpp_path.replace("llama-server", "llama-run")
     model_name = _model_name(model)
     model_fname = utils.model_to_fname(model_name)
 
