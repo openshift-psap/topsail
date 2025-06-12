@@ -94,8 +94,10 @@ def test():
     try:
         do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
 
+        iterable_fields = config.project.get_config("test.matbenchmarking.iterable_test_fields")
+
         if config.project.get_config("test.matbenchmarking.enabled"):
-            matbench_run(config.project.get_config("test.matbenchmarking.fields"))
+            matbench_run(iterable_fields)
         else:
             test_all_platforms()
     except Exception as e:
