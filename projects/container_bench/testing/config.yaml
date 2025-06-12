@@ -1,0 +1,132 @@
+__platforms: &all_platforms
+  - podman/darwin
+  - docker/darwin
+
+ci_presets:
+  to_apply: []
+
+secrets:
+  dir:
+    name: crc-container-bench-secret
+    env_key: CONTAINER_BENCH_SECRET_PATH
+  private_key_path: mac__private_key.mac-m3pro
+  hostname: mac__hostname.mac-m3pro
+  username: mac__username.mac-m3pro
+  base_work_dir: mac__base_work_dir.mac-m3pro
+  opensearch_instances: opensearch.yaml
+
+remote_host:
+  run_locally: false
+  private_key_filename: "@secrets.private_key_path" # in the secret dir
+  hostname: "*$@secrets.hostname"
+  username: "*$@secrets.username"
+  port: 22
+  base_work_dir: "*$@secrets.base_work_dir"
+  ssh_flags:
+    - "-oStrictHostKeyChecking=no"
+    - "-oUserKnownHostsFile=/dev/null"
+    - "-o LogLevel=ERROR"
+    - "-oControlMaster=auto"
+    - "-oControlPath=/tmp/ssh-%r@%h:%p"
+    - "-oControlPersist=60s"
+  system: darwin
+  arch: arm64
+  python_bin: python3
+  podman_bin: podman # only used if not prepare.podman.repo.enabled
+  docker:
+    # To use Docker, you need to have Docker Desktop installed and running.
+    # User must be logged in system to use Docker Desktop.
+    enabled: false
+    docker_bin: docker
+  env:
+    PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+  home_is_base_work_dir: true
+  verbose_ssh_commands: true
+
+
+prepare:
+  # the list of platform environments to prepare
+
+  cleanup_on_exit: false
+
+  brew:
+    install_dependencies: false
+    dependencies:
+      - krunkit
+
+  podman:
+    repo:
+      enabled: false
+      url: https://github.com/containers/podman
+      version: v5.4.0
+      darwin:
+        file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
+        zip: true
+    gvisor:
+      repo:
+        enabled: true
+        url: https://github.com/containers/gvisor-tap-vsock/
+        version: v0.8.3
+        file: "gvproxy-{@remote_host.system}"
+
+    stop_on_exit: true
+
+    machine:
+      enabled: true
+      force_configuration: false
+      set_default: true
+      name: podman-machine-default
+      configuration:
+        cpus: 4 # in cores
+        memory: 5120 # in MiB
+      env:
+        CONTAINERS_MACHINE_PROVIDER: libkrun
+        CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
+
+cleanup:
+  files:
+    podman: true
+    exec_time: true
+    venv: true
+
+  podman_machine:
+    delete: true
+    reset: true
+
+  docker_desktop:
+    stop: true
+
+export_artifacts:
+  enabled: false
+
+helloworld_benchmark:
+  supported_container_engines:
+    - podman
+    - docker
+
+test:
+  platform: *all_platforms
+  platforms_to_skip:
+    - docker/darwin
+  benchmark:
+    - helloworld_benchmark
+  capture_metrics:
+    enabled: true
+    # TODO: make interval configurable
+    power:
+      # needs this in visudo:
+      # $USER ALL = (root) NOPASSWD: /usr/bin/powermetrics *
+      enabled: true
+      sampler: cpu_power
+      rate: 1000
+    virtgpu:
+      enabled: true
+  matbenchmarking:
+    enabled: false
+    stop_on_error: true
+    fields:
+    - test.platform
+    - prepare.podman.repo.version
+
+matbench:
+  enabled: false

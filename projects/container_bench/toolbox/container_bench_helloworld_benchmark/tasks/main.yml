@@ -1,0 +1,24 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Prepare
+  shell: |
+    {{ container_bench_helloworld_benchmark_runtime }} system prune -a -f
+    {{ container_bench_helloworld_benchmark_runtime }} pull quay.io/podman/hello
+
+- name: Run benchmark commands
+  shell: |
+     {{ container_bench_helloworld_benchmark_exec_time_path | dirname }}/.venv/bin/python \
+     {{ container_bench_helloworld_benchmark_exec_time_path }}  \
+     --output "{{ artifact_extra_logs_dir }}/artifacts/output.log"  \
+     --time-log-file "{{ artifact_extra_logs_dir }}/artifacts/time.log"  \
+     --metrics-log-file "{{ artifact_extra_logs_dir }}/artifacts/metrics.json"  \
+     {{ container_bench_helloworld_benchmark_runtime }} run --rm quay.io/podman/hello
+
+- name: Clean up
+  shell: |
+    {{ container_bench_helloworld_benchmark_runtime }} system prune -a -f

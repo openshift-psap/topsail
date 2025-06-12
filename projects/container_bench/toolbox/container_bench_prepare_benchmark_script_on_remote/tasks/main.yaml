@@ -1,0 +1,21 @@
+---
+- name: Ensure that the parent directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ container_bench_prepare_benchmark_script_on_remote_dest | dirname }}"
+    mode: '0755'
+
+- name: Copy a file to the remote host
+  ansible.builtin.copy:
+    src: "{{ container_bench_prepare_benchmark_script_on_remote_source }}"
+    dest: "{{ container_bench_prepare_benchmark_script_on_remote_dest }}"
+    mode: 0644
+
+- name: Create a virtual environment
+  command: python3 -m venv {{ container_bench_prepare_benchmark_script_on_remote_dest | dirname }}/.venv
+
+- name: Ensure psutil is installed in the dedicated venv
+  ansible.builtin.pip:
+    name: psutil
+    virtualenv: "{{ container_bench_prepare_benchmark_script_on_remote_dest | dirname }}/.venv"
+    virtualenv_python: python3

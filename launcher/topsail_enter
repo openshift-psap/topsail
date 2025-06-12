@@ -47,6 +47,7 @@ done <<< "$env"
 exec podman run "${env_args[@]}" \
      --security-opt label=disable --cgroupns host \
      -it --rm  \
+     --network=host \
      -v "$TOPSAIL_HOME:$TOPSAIL_HOME:Z" \
      -v "$HOME:$HOME:rslave" \
      -w "$TOPSAIL_HOME" \
