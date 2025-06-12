@@ -44,6 +44,21 @@ Toolbox Documentation
 * :doc:`get <Configure.get>`	 Gives the value of a given key, in the current configuration file
 * :doc:`name <Configure.name>`	 Gives the name of the current configuration
 
+``container_bench``
+*******************
+
+::
+
+    Commands relating to the performance evaluation
+    
+
+                
+* :doc:`capture_cpu_ram_usage <Container_Bench.capture_cpu_ram_usage>`	 Captures the CPU and RAM usage on Unix-like systems
+* :doc:`capture_power_usage <Container_Bench.capture_power_usage>`	 Captures the power usage on MacOS
+* :doc:`capture_system_state <Container_Bench.capture_system_state>`	 Captures the state of the remote Mac system
+* :doc:`copy_file_to_remote <Container_Bench.copy_file_to_remote>`	 Copies a file from the local machine to the remote machine
+* :doc:`helloworld_benchmark <Container_Bench.helloworld_benchmark>`	 Runs the helloworld benchmark with the given runtime
+
 ``fine_tuning``
 ***************
 

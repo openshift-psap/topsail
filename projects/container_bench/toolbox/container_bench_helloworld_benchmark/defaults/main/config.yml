@@ -1,0 +1,16 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.helloworld_benchmark
+
+# Parameters
+# path to the exec_time.py script
+# Mandatory value
+container_bench_helloworld_benchmark_exec_time_path:
+
+# the working directory for the benchmark
+# Mandatory value
+container_bench_helloworld_benchmark_working_dir:
+
+# the runtime to use for the benchmark (e.g., docker, podman)
+# Mandatory value
+container_bench_helloworld_benchmark_runtime:
