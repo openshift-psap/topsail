@@ -77,7 +77,7 @@ ci_presets:
     - podman/llama_cpp/vulkan
 
     test.model.name: llama3.2/llama3.2
-    prepare.llama_cpp.repo.version: latest
+    prepare.llama_cpp.source.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 
@@ -123,16 +123,9 @@ ci_presets:
     test.llm_load_test.enabled: true
     test.inference_server.benchmark.enabled: false
 
-  compare-pr:
-    test.matbenchmarking.enabled: true
-    prepare.llama_cpp.repo.version:
-    - b4897 # latest - 25-03-17
-    - pr_11525 # SLP: vulkan: use kompute matmul shaders on embedded GPUs #11525
-    prepare.llama_cpp.repo.url: https://github.com/kpouget/llama.cpp
-
   multi-version:
     test.matbenchmarking.enabled: true
-    prepare.llama_cpp.repo.version:
+    prepare.llama_cpp.source.repo.version:
     - b4897 # latest - 25-03-17
     - b5076 # latest - 25-04-08
 
@@ -224,51 +217,47 @@ prepare:
 
   llama_cpp:
     iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary
-    - prepare.llama_cpp.repo.version
-    - prepare.llama_cpp.repo.source.cmake.parallel
-    repo:
-      url: https://github.com/ggml-org/llama.cpp
-      version: b5581
-      source:
-        cmake:
-          parallel: 5
-          openmp:
-            enabled: true
-            flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
-          common: -DGGML_CPU_ARM_ARCH=native
-          flavors:
-            metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
-            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
-      darwin:
-        upstream_bin:
-          file: llama-{@prepare.llama_cpp.repo.version}-bin-macos-{@remote_host.arch}.zip
-          tarball: true
+    - prepare.llama_cpp.source.repo.version
+    - prepare.llama_cpp.source.cmake.parallel
+    release:
+      repo:
+        url: https://github.com/ggml-org/llama.cpp
+        version: b5648
+      file: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
+      tarball: true
+
+    source:
+      repo:
+        url: https://github.com/ggml-org/llama.cpp
+        version: latest
+      cmake: # native builds only
+        parallel: 5
+        openmp:
+          enabled: true
+          flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
+        common: -DGGML_CPU_ARM_ARCH=native -DLLAMA_CURL=OFF
+        flavors:
+          metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
+          vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
+          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON # backend
       podman:
-        build_from: local_container_file # desktop_playground
+        build_from: local_container_file
         command: # will be set in prepare_test
 
         local_container_file:
           path: images/llama_cpp.containerfile
           command: /app/llama.cpp/build/bin/llama-server
           build_args:
-            LLAMA_CPP_VERSION: "@prepare.llama_cpp.repo.version"
-            LLAMA_CPP_REPO: "@prepare.llama_cpp.repo.url"
+            LLAMA_CPP_VERSION: "@prepare.llama_cpp.source.repo.version"
+            LLAMA_CPP_REPO: "@prepare.llama_cpp.source.repo.url"
             LLAMA_CPP_CMAKE_BUILD_FLAGS: # set at runtime with --parallel
             # ..flavors.<name> will be appended to this
-            LLAMA_CPP_CMAKE_FLAGS:
+            LLAMA_CPP_CMAKE_FLAGS: -DLLAMA_CURL=OFF
+            BUILD_FLAVOR: # set at runtime with the name of the flavor (one from below)
           flavors:
             kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
-        desktop_playground:
-          url: https://github.com/slp/podman-desktop-extension-ai-lab-playground-images
-          # url: https://github.com/containers/podman-desktop-extension-ai-lab-playground-images
-          ref: 188866acbdd7efcdd438f21c09139ae378820a00
-          root_directory: chat
-          prepare_script: setup.sh
-          container_file: vulkan/arm64/Containerfile
-          image: llama_cpp
-          tag: # use the commit first chars
-          command: env PYTHONPATH=/locallm python -m llama_cpp.server
+            remoting: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
 
   ollama:
     repo:
@@ -282,7 +271,7 @@ prepare:
     - prepare.ramalama.repo.version
     repo:
       url: https://github.com/containers/ramalama
-      version: v0.9.0
+      version: latest
 
   brew:
     install_dependencies: false
@@ -337,7 +326,7 @@ prepare:
       name: podman-machine-default
       configuration:
         cpus: 4 # in cores
-        memory: 5120 # in MiB
+        memory: 10240 # in MiB
       env:
         CONTAINERS_MACHINE_PROVIDER: libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
@@ -393,7 +382,8 @@ test:
     - test.model.name
     - test.platform
     - test.llm_load_test.args
-    - prepare.llama_cpp.repo.version
+    - prepare.llama_cpp.release.repo.version
+    - prepare.llama_cpp.source.repo.version
     - prepare.ramalama.repo.version
 
   capture_metrics:
@@ -478,4 +468,4 @@ __platform_check:
     no_gpu: no-gpu
 
   flavors:
-    llama_cpp: [metal, vulkan, upstream_bin, kompute]
+    llama_cpp: [metal, vulkan, upstream_bin, kompute, remoting]
