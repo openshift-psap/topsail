@@ -275,3 +275,22 @@ class Mac_Ai:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("mac_ai_remote_build_virglrenderer")
+    @AnsibleMappedParams
+    def remote_build_virglrenderer(
+            self,
+            source_dir,
+            build_dir,
+            build_flags,
+    ):
+        """
+        Builds the Virglrenderer library
+
+        Args:
+          source_dir: the path to the source directory
+          build_dir: the path to the build directory
+          build_flags: the build flags to pass to meson
+        """
+
+        return RunAnsibleRole(locals())

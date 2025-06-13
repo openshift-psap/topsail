@@ -293,6 +293,14 @@ prepare:
     - libomp
     - glslang
 
+  virglrenderer: # only built when using the `remoting` platform
+    enabled: true
+    repo:
+      url: https://gitlab.freedesktop.org/kpouget/virglrenderer
+      branch: main
+    build:
+      flags: -Dvenus=true -Dc_link_args=-L/opt/homebrew/lib/
+
   podman:
     repo:
       enabled: true
@@ -329,6 +337,15 @@ prepare:
       env:
         CONTAINERS_MACHINE_PROVIDER: libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
+      remoting_env:
+        enabled: true
+        apir_lib:
+          name: libggml-remotingbackend.dylib
+        ggml_lib:
+          name: libggml-metal.dylib
+        env:
+          APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
+          APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
 
 test:
   platform: *all_platforms
@@ -409,6 +426,7 @@ cleanup:
     ramalama: true
     llm-load-test: true
     podman: true
+    virglrenderer: true
 
   images:
     llama_cpp: true

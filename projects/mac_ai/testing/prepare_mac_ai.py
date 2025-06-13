@@ -5,7 +5,7 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_llama_cpp,  utils, remote_access, podman_machine, brew, podman
+import prepare_llama_cpp, utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer
 import llama_cpp, ollama, ramalama
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -24,6 +24,9 @@ INFERENCE_SERVERS = dict(
 )
 
 
+REMOTING_FRONTEND_PLATFORM = "podman/llama_cpp/remoting"
+REMOTING_BACKEND_PLATFORM = "macos/llama_cpp/remoting"
+
 def cleanup():
     base_work_dir = remote_access.prepare()
 
@@ -32,8 +35,7 @@ def cleanup():
         if is_running is None:
             logging.warning("Podman machine doesn't exist.")
         elif not is_running:
-
-            if podman_machine.start(base_work_dir):
+            if podman_machine.start(base_work_dir, use_remoting=False):
                 is_running = True
             else:
                 logging.warning(f"Could not start podman machine, cannot check/move the {local_image_name} image ...")
@@ -81,6 +83,10 @@ def cleanup():
     if config.project.get_config("cleanup.files.podman"):
         podman.cleanup(base_work_dir)
 
+    if config.project.get_config("cleanup.files.virglrenderer"):
+        prepare_virglrenderer.cleanup(base_work_dir)
+
+
     return 0
 
 
@@ -93,9 +99,11 @@ def prepare():
 
         brew.install_dependencies(base_work_dir)
 
-        podman_machine.configure_and_start(base_work_dir, force_restart=True)
-
         prepare_llm_load_test(base_work_dir)
+
+        prepare_virglrenderer.prepare(base_work_dir)
+
+        podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
     if not platforms_to_build_str:
@@ -103,6 +111,10 @@ def prepare():
 
     if not isinstance(platforms_to_build_str, list):
         platforms_to_build_str = [platforms_to_build_str]
+
+    if (REMOTING_FRONTEND_PLATFORM in platforms_to_build_str and
+        REMOTING_BACKEND_PLATFORM not in platforms_to_build_str):
+        platforms_to_build_str.append(REMOTING_BACKEND_PLATFORM)
 
     puller_platforms = []
     platforms_to_build = [
@@ -178,7 +190,7 @@ def cleanup_llm_load_test(base_work_dir):
 def prepare_llm_load_test(base_work_dir):
     dest = base_work_dir / "llm-load-test"
 
-    if not  config.project.get_config("test.llm_load_test.enabled"):
+    if not config.project.get_config("test.llm_load_test.enabled"):
         logging.info("llm-load-test not enabled, not preparing it.")
         return
 
