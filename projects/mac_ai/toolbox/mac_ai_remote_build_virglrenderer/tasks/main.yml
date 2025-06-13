@@ -1,0 +1,23 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Prepare the build directory
+  shell:
+    meson setup
+       "{{ mac_ai_remote_build_virglrenderer_build_dir }}"
+       {{ mac_ai_remote_build_virglrenderer_build_flags }}
+       > "{{ artifact_extra_logs_dir }}/artifacts/prepare.log"
+  args:
+    chdir: "{{ mac_ai_remote_build_virglrenderer_source_dir }}"
+
+- name: Compile the library
+  shell:
+    ninja -C "{{ mac_ai_remote_build_virglrenderer_build_dir }}"
+    > "{{ artifact_extra_logs_dir }}/artifacts/compile.log"
+
+  args:
+    chdir: "{{ mac_ai_remote_build_virglrenderer_source_dir }}"
