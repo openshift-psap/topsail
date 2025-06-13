@@ -108,11 +108,11 @@ ci_presets:
     prepare.platforms.to_build: null # use test.platform
 
   # ---
+  micro_bench:
+    test.inference_server.benchmark.llama_cpp.backend_ops_perf: true
 
   benchmark:
     test.matbenchmarking.enabled: true
-    test.platform: *all_platforms
-    test.model.name: ollama://llama3.2
 
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
