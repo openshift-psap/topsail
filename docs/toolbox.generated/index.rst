@@ -152,6 +152,7 @@ Toolbox Documentation
     
 
                 
+* :doc:`remote_build_virglrenderer <Mac_Ai.remote_build_virglrenderer>`	 Builds the Virglrenderer library
 * :doc:`remote_capture_cpu_ram_usage <Mac_Ai.remote_capture_cpu_ram_usage>`	 Captures the CPU and RAM usage on MacOS
 * :doc:`remote_capture_power_usage <Mac_Ai.remote_capture_power_usage>`	 Captures the power usage on MacOS
 * :doc:`remote_capture_system_state <Mac_Ai.remote_capture_system_state>`	 Captures the state of the remote Mac system

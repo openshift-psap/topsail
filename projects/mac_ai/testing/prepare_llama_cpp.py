@@ -358,3 +358,10 @@ def cleanup_image(base_work_dir):
             continue
 
         podman_mod.rm_image(base_work_dir, local_image_name)
+
+
+def get_remoting_build_dir(base_work_dir):
+    import prepare_mac_ai
+    llama_server_path = get_binary_path(base_work_dir, utils.parse_platform(prepare_mac_ai.REMOTING_BACKEND_PLATFORM))
+
+    return pathlib.Path(llama_server_path).parent

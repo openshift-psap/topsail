@@ -160,3 +160,21 @@ def exists(path):
     )
 
     return ret.returncode == 0
+
+
+def symlink_to(link_file, dst):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        link_file.unlink(missing_ok=True)
+        link_file.symlink_to(dst)
+        return True
+
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"ln -sf '{dst}' '{link_file}'",
+        capture_stdout=True,
+        check=False,
+    )
+
+    return ret.returncode == 0

@@ -4,10 +4,10 @@ import logging
 import json, yaml
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access, podman
+import remote_access, podman, prepare_virglrenderer, prepare_llama_cpp
 
 
-def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True, get_command=False):
+def _run(base_work_dir, cmd, env={}, check=True, capture_stdout=False, machine=True, get_command=False, print_cmd=False):
     podman_cmd = podman.get_podman_command()
 
     cmd = f"{podman_cmd} {'machine' if machine else ''} {cmd}"
@@ -17,8 +17,10 @@ def _run(base_work_dir, cmd, check=True, capture_stdout=False, machine=True, get
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         cmd,
+        extra_env=env,
         check=check,
         capture_stdout=capture_stdout,
+        print_cmd=print_cmd,
     )
 
 #
@@ -34,9 +36,33 @@ def stop(base_work_dir):
     return _run(base_work_dir, f"stop {name}")
 
 
-def start(base_work_dir):
+def start(base_work_dir, use_remoting=None):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
-    return _run(base_work_dir, f"start {name}")
+
+    env = {}
+
+    if use_remoting is None:
+        use_remoting = config.project.get_config("prepare.podman.machine.remoting_env.enabled")
+
+    if use_remoting:
+        env["DYLD_LIBRARY_PATH"] = prepare_virglrenderer.get_dyld_library_path(base_work_dir) # not working ... (blocked by MacOS when SSHing ...)
+        llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
+        env["VIRGL_APIR_BACKEND_LIBRARY"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.apir_lib.name")
+        env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_lib.name")
+        env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
+        prepare_virglrenderer.configure(base_work_dir, use_custom=True)
+    else:
+        prepare_virglrenderer.configure(base_work_dir, use_custom=False)
+
+    ret = _run(base_work_dir, f"start {name}", env, print_cmd=True)
+
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+
+        has_virgl = remote_access.run_with_ansible_ssh_conf(base_work_dir, "lsof -c krunkit | grep virglrenderer", check=False, capture_stdout=True)
+        if str(prepare_virglrenderer.get_dyld_library_path(base_work_dir)) not in has_virgl.stdout:
+            raise RuntimeError("The custom virglrenderer library is not loaded in krunkit :/")
+
+    return ret
 
 
 def rm(base_work_dir):
