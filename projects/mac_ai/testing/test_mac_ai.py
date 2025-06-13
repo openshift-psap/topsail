@@ -194,7 +194,6 @@ def test_inference(platform):
         base_work_dir, platform,
     )
 
-
     platform.inference_server_mod.unload_model(base_work_dir, platform, inference_server_path, model_name)
 
     brew.capture_dependencies_version(base_work_dir)
@@ -213,13 +212,16 @@ def test_inference(platform):
 
     inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
+    model_puller_str = config.project.get_config(f"prepare.platforms.model_pullers.{platform.inference_server_name}")
+    pull_platform = utils.parse_platform(model_puller_str)
+    inference_server_pull_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, pull_platform)
     try:
-        platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+        pull_platform.inference_server_mod.start_server(base_work_dir, inference_server_pull_binary)
 
-        if not platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model_name):
-            platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model_name)
+        if not pull_platform.inference_server_mod.has_model(base_work_dir, inference_server_pull_binary, model_name):
+            pull_platform.inference_server_mod.pull_model(base_work_dir, inference_server_pull_binary, model_name)
     finally:
-        platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
+        pull_platform.inference_server_mod.stop_server(base_work_dir, inference_server_pull_binary)
 
     llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
     server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
