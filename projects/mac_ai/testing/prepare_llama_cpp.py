@@ -307,11 +307,11 @@ def _get_binary_path(base_work_dir, platform, for_release=False):
         file_name = config.project.get_config("prepare.llama_cpp.release.file")
 
         dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
-        llama_cpp_path = dest.parent / "build" / "bin" / "llama-server"
+        llama_cpp_path = str(dest.parent / "build" / "bin" / "llama-server")
 
         return llama_cpp_path, dest, file_name, version
     elif platform.system == "macos":
-        llama_cpp_path = base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server"
+        llama_cpp_path = str(base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server")
         return llama_cpp_path, None, None, version
     else:
         pass
