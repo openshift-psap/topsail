@@ -57,7 +57,7 @@ def __get_local_image_name_from_local_container_file(platform):
 
     inference_server_flavor = platform.inference_server_flavor
     version = config.project.get_config("prepare.llama_cpp.source.repo.version")
-    tag = f"{version}-{inference_server_flavor}"
+    tag = f"{version}-{inference_server_flavor}".replace("/", "_")
     return f"localhost/llama_cpp:{tag}"
 
 
