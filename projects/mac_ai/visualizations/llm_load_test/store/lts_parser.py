@@ -70,7 +70,9 @@ def generate_lts_settings(lts_metadata, results, import_settings):
         version_config_key = "prepare.ramalama.repo.version"
         containerized = True
     elif "llama_cpp" in lts_settings.platform:
-        version_config_key = "prepare.llama_cpp.repo.version"
+        version_config_key = "prepare.llama_cpp.release.repo.version" if "upstream_bin" in lts_settings.platform \
+            else "prepare.llama_cpp.source.repo.version"
+
         containerized = "podman" in lts_settings.platform
     elif "ollama" in lts_settings.platform:
         version_config_key = "prepare.ollama.repo.version"

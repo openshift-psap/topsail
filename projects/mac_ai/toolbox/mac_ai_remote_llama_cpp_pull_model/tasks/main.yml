@@ -44,10 +44,6 @@
     when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
 
   rescue:
-  - name: Show the logs of the server
-    command:
-      cat {{ artifact_extra_logs_dir }}/artifacts/llama_cpp.log
-
   - name: Fail
     fail: msg="Failed to load the model"
 
