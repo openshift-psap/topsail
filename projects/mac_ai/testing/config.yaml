@@ -86,7 +86,7 @@ ci_presets:
     - macos/llama_cpp/metal
     - podman/llama_cpp/vulkan
     prepare.llama_cpp.source.repo.url: https://github.com/kpouget/llama.cpp
-    prepare.llama_cpp.source.repo.version: refs/pull/9/merge
+    prepare.llama_cpp.source.repo.version: main
   llama_cpp:
     test.platform:
     - macos/llama_cpp/metal
