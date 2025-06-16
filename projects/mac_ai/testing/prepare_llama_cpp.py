@@ -75,7 +75,7 @@ def prepare_for_podman(base_work_dir, platform):
 def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     local_image_name = __get_local_image_name_from_local_container_file(platform)
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.source.podman.local_container_file.path")
-    build_args = config.project.get_config("prepare.llama_cpp.source.podman.local_container_file.build_args")
+    build_args = config.project.get_config("prepare.llama_cpp.source.podman.local_container_file.build_args").copy()
 
     if podman_mod.has_image(base_work_dir, local_image_name):
         logging.info(f"Image {local_image_name} already exists, not rebuilding it.")
