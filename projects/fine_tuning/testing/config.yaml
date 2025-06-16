@@ -702,7 +702,7 @@ clusters:
     e26-h23-000-r650: cluster_icelake
     cc37-h13-000-r750.rdu3.labs.perfscale.redhat.com: cluster_a30
     fmaas-devstage-backen-9cjgj-worker-a100-il-rdma-3-nc7c8: cluster_ibm_dgx
-    psap-ilab-training-h65rv-master-0: cluster_instructlab
+    mini-scale-cjzbq-master-0: cluster_instructlab
     intel-perf-27.perf.eng.bos2.dc.redhat.com: cluster_kubecon_roce
     # tosokin-ilab-cluster-556dc-master-0: cluster_h100
     psap-gpu-xhnvx-master-0: cluster_h100
