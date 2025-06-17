@@ -18,7 +18,7 @@ Requirements
 sudo dnf install toolbox
 ```
 
-* You need to have TOPSAIL cloned locally
+* You need to have TOPSAIL cloned locally (optional on MacOS)
 ```
 git clone https://github.com/openshift-psap/topsail.git
 cd topsail
@@ -36,8 +36,8 @@ vi topsail_host_config.custom
 
 * Duplicate and customize `topsail_container_env.default` if you need
 ```
-cp topsail_host_config{.default,.custom}
-vi topsail_host_config.custom
+cp topsail_container_env{.default,.custom}
+vi topsail_container_env.custom
 ```
 
 Usage

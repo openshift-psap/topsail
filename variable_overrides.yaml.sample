@@ -1,7 +1,7 @@
 # Sample file to help the configuration of TOPSAIL, when running locally
 # Rename it into variable_overrides.yaml for it to be taken into account
 
-ci_presets.to_apply: # put here the list of presets to apply on top of the configuration
+ci_presets.to_apply: [] # put here the list of presets to apply on top of the configuration
 
 # put below the list of configuration variables to update
 # path.to.my.var: true
