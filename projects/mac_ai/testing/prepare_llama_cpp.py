@@ -105,7 +105,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_REPO"] = config.project.resolve_reference(build_args["LLAMA_CPP_REPO"])
     version = build_args["LLAMA_CPP_VERSION"] = config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
 
-    if version.startswith("pr-"):
+    if str(version).startswith("pr-"):
         pr_number = version.removeprefix("pr-")
         build_args["LLAMA_CPP_VERSION"] = f"refs/pull/{pr_number}/head"
 
