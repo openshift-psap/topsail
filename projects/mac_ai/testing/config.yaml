@@ -49,6 +49,9 @@ ci_presets:
 
   # -*-
 
+  cpt_nightly:
+    extends: [cpt_all, mac5]
+
   cpt_all:
     extends: [cpt_ramalama, cpt_llama_cpp]
     test.model.name: llama3.2/llama3.2
