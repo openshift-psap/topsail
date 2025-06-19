@@ -49,6 +49,8 @@
       {% else %}
          -f "{{ remote_build_image_container_file }}" \
       {% endif %}
+         --squash \
+         --no-cache \
       {% for k, v in remote_build_image_build_args.items() -%}
          --build-arg "{{ k }}={{ v }}" \
       {% endfor -%}
