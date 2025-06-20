@@ -92,6 +92,26 @@ def prepare_binary(base_work_dir, platform):
     else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
 
+    if config.project.get_config("prepare.ramalama.build_image.enabled"):
+        image_name = config.project.get_config("prepare.ramalama.build_image.name")
+        chdir = ramalama_path.parent.parent
+
+        with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
+            cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
+            cmd += f" time ./container_build.sh build {image_name}"
+            cmd += f" 2>&1"
+
+            ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
+                                                          chdir=chdir, check=False, capture_stdout=True)
+            build_log = env.ARTIFACT_DIR / "build.log"
+            build_log.write_text(ret.stdout)
+            if ret.returncode != 0:
+                raise RuntimeError("Compilation of the ramalama image failed ...")
+
+            logging.info(f"ramalama image build logs saved into {build_log}")
+    else:
+        logging.info(f"ramalama image build not requested.")
+
     return ramalama_path
 
 
@@ -180,7 +200,10 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     device = config.project.get_config("prepare.podman.container.device") \
         if want_gpu else "/dev/null"
 
-    if version := config.project.get_config("prepare.ramalama.repo.version"):
+    if config.project.get_config("prepare.ramalama.build_image.enabled"):
+        image_name = config.project.get_config("prepare.ramalama.build_image.name")
+        image = f"quay.io/ramalama/{image_name}:latest"
+    elif version := config.project.get_config("prepare.ramalama.repo.version"):
         version = version.removeprefix("v")
         image = f"quay.io/ramalama/ramalama:{version}"
     else:

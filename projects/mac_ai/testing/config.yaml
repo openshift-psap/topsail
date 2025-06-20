@@ -282,6 +282,9 @@ prepare:
       url: https://github.com/containers/ramalama
       version: latest
       git_ref:
+    build_image:
+      enabled: false
+      name: ramalama
 
   brew:
     install_dependencies: false
