@@ -63,9 +63,12 @@ ci_presets:
 
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
+    prepare.ramalama.repo.version: null
+    prepare.ramalama.repo.git_ref: main
+    prepare.ramalama.build_image.enabled: true
+
     test.platform: [podman/ramalama]
     test.model.name: ollama://llama3.2
-    prepare.ramalama.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 
