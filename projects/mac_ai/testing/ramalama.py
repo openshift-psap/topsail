@@ -83,7 +83,7 @@ def download_ramalama(base_work_dir, dest, version, git_ref):
             artifact_dir_suffix="_llama_cpp",
         )
 
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
                                                 chdir=dest)
 
 
