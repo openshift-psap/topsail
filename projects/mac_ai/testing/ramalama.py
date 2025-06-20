@@ -106,6 +106,7 @@ def prepare_binary(base_work_dir, platform):
             cmd += f" 2>&1"
 
             ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
+                                                          extra_env=dict(REGISTRY_PATH="localhost"),
                                                           chdir=chdir, check=False, capture_stdout=True)
             build_log = env.ARTIFACT_DIR / "build.log"
             build_log.write_text(ret.stdout)
@@ -214,7 +215,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
 
     if config.project.get_config("prepare.ramalama.build_image.enabled"):
         image_name = config.project.get_config("prepare.ramalama.build_image.name")
-        image = f"quay.io/ramalama/{image_name}:latest"
+        image = f"localhost/{image_name}:latest"
     elif version := config.project.get_config("prepare.ramalama.repo.version"):
         version = version.removeprefix("v")
         image = f"quay.io/ramalama/ramalama:{version}"
