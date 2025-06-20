@@ -30,6 +30,7 @@ prepare:
   job_name_to_preset:
     pull-ci-openshift-psap-topsail-main-cont_bench-jump-ci: cont_bench
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci: mac_ai
+    periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai
     pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
 
 ssh_tunnel:
