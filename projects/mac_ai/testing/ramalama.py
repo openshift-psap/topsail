@@ -17,7 +17,11 @@ def prepare_test(base_work_dir, platform):
 
 
 def _get_binary_path(base_work_dir, platform):
+    git_ref = config.project.get_config("prepare.ramalama.repo.git_ref")
     version = config.project.get_config("prepare.ramalama.repo.version")
+
+    if git_ref and version:
+        raise ValueError(f"Cannot have Ramalama git_ref={git_ref} and version={version} set together.")
 
     if version == "latest":
         repo_url = config.project.get_config("prepare.ramalama.repo.url")
@@ -26,13 +30,17 @@ def _get_binary_path(base_work_dir, platform):
 
     system_file = f"{version}.zip"
 
-    # don't use 'ramalama' in the base_work_dir, otherwise Python
-    # takes it (invalidly) for the package `ramalama` package
-    dest = base_work_dir / "ramalama-ai" / system_file
+    dest_base = base_work_dir / "ramalama-ai"
+    if version:
+        # don't use 'ramalama' in the base_work_dir, otherwise Python
+        # takes it (invalidly) for the package `ramalama` package
+        dest = dest_base / system_file
+        dest_dir = dest.parent / f"ramalama-{version.removeprefix('v')}"
+    else:
+        dest = dest_dir = dest_base / f"ramalama-{git_ref}"
 
-    ramalama_path = dest.parent / f"ramalama-{version.removeprefix('v')}" / "bin" / "ramalama"
-
-    return ramalama_path, dest, version
+    ramalama_path =  dest_dir / "bin" / "ramalama"
+    return ramalama_path, dest, (version, git_ref)
 
 
 def get_binary_path(base_work_dir, platform):
@@ -44,26 +52,45 @@ def get_binary_path(base_work_dir, platform):
 
     return ramalama_path
 
+def download_ramalama(base_work_dir, dest, version, git_ref):
+    repo_url = config.project.get_config("prepare.ramalama.repo.url")
+
+    if version:
+        source = "/".join([
+            repo_url,
+            "archive/refs/tags",
+            f"{version}.zip",
+        ])
+        run.run_toolbox(
+            "remote", "download",
+            source=source, dest=dest,
+            tarball=True,
+        )
+    else:
+        kwargs = dict(
+            repo_url=repo_url,
+            dest=dest,
+        )
+        if git_ref.startswith("pr-"):
+            pr_number = git_ref.removeprefix("pr-")
+            kwargs["refspec"] = f"refs/pull/{pr_number}/head"
+        else:
+            kwargs["refspec"] = git_ref
+
+        run.run_toolbox(
+            "remote", "clone",
+            **kwargs,
+            artifact_dir_suffix="_llama_cpp",
+        )
 
 def prepare_binary(base_work_dir, platform):
-    ramalama_path, dest, version = _get_binary_path(base_work_dir, platform)
+    ramalama_path, dest, (version, git_ref) = _get_binary_path(base_work_dir, platform)
     system_file = dest.name
 
-    if remote_access.exists(ramalama_path):
+    if not remote_access.exists(ramalama_path):
+        download_ramalama(base_work_dir, dest, version, git_ref)
+    else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
-        return ramalama_path
-
-    source = "/".join([
-        config.project.get_config("prepare.ramalama.repo.url"),
-        "archive/refs/tags",
-        f"{version}.zip",
-    ])
-
-    run.run_toolbox(
-        "remote", "download",
-        source=source, dest=dest,
-        tarball=True,
-    )
 
     return ramalama_path
 
@@ -153,8 +180,11 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     device = config.project.get_config("prepare.podman.container.device") \
         if want_gpu else "/dev/null"
 
-    version = config.project.get_config("prepare.ramalama.repo.version").removeprefix("v")
-    image = f"quay.io/ramalama/ramalama:{version}"
+    if version := config.project.get_config("prepare.ramalama.repo.version"):
+        version = version.removeprefix("v")
+        image = f"quay.io/ramalama/ramalama:{version}"
+    else:
+        image = None
 
     run.run_toolbox(
         "mac_ai", f"remote_ramalama_{ramalama_cmd}",
