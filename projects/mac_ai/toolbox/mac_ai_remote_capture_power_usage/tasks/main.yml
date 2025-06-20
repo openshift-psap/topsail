@@ -12,7 +12,6 @@
 - name: Ensure that there is no other sampler running
   shell: |
     touch {{ exit_file }}
-    sudo pkill powermetrics
   failed_when: false
 
 - name: Stop here if only stopping
