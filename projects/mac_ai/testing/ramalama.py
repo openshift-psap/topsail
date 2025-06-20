@@ -83,6 +83,9 @@ def download_ramalama(base_work_dir, dest, version, git_ref):
             artifact_dir_suffix="_llama_cpp",
         )
 
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info", cwd=dest)
+
+
 def prepare_binary(base_work_dir, platform):
     ramalama_path, dest, (version, git_ref) = _get_binary_path(base_work_dir, platform)
     system_file = dest.name
@@ -148,6 +151,14 @@ def stop_server(base_work_dir, ramalama_path):
 
 def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
     inference_server_port = config.project.get_config("test.inference_server.port")
+
+    if config.project.get_config("prepare.ramalama.repo.git_ref"):
+        commit_date_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat ramalama-commit.info", chdir=ramalama_path.parent.parent, check=False, capture_stdout=True)
+        if commit_date_cmd.returncode != 0:
+            logging.warning("Couldn't find the Ramalama commit info file ...")
+        else:
+            logging.warning(f"Ramalama commit info: {commit_date_cmd.stdout}")
+            (env.ARTIFACT_DIR / "ramalama-commit.info").write_text(commit_date_cmd.stdout)
 
     artifact_dir_suffix=None
     if unload:
