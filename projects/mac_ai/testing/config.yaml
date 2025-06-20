@@ -63,9 +63,12 @@ ci_presets:
 
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
+    prepare.ramalama.repo.version: null
+    prepare.ramalama.repo.git_ref: main
+    prepare.ramalama.build_image.enabled: true
+
     test.platform: [podman/ramalama]
     test.model.name: ollama://llama3.2
-    prepare.ramalama.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: false
 
@@ -90,6 +93,8 @@ ci_presets:
     - podman/llama_cpp/vulkan
     prepare.llama_cpp.source.repo.url: https://github.com/kpouget/llama.cpp
     prepare.llama_cpp.source.repo.version: main
+    prepare.podman.machine.remoting_env.enabled: true
+    prepare.virglrenderer.enabled: true
 
   llama_cpp:
     test.platform:
@@ -281,6 +286,10 @@ prepare:
     repo:
       url: https://github.com/containers/ramalama
       version: latest
+      git_ref:
+    build_image:
+      enabled: false
+      name: ramalama
 
   brew:
     install_dependencies: false
@@ -304,7 +313,7 @@ prepare:
     - glslang
 
   virglrenderer: # only built when using the `remoting` platform
-    enabled: true
+    enabled: false
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
@@ -348,7 +357,7 @@ prepare:
         CONTAINERS_MACHINE_PROVIDER: libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
       remoting_env:
-        enabled: true
+        enabled: false
         apir_lib:
           name: libggml-remotingbackend.dylib
         ggml_lib:

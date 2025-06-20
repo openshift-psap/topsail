@@ -17,7 +17,11 @@ def prepare_test(base_work_dir, platform):
 
 
 def _get_binary_path(base_work_dir, platform):
+    git_ref = config.project.get_config("prepare.ramalama.repo.git_ref")
     version = config.project.get_config("prepare.ramalama.repo.version")
+
+    if git_ref and version:
+        raise ValueError(f"Cannot have Ramalama git_ref={git_ref} and version={version} set together.")
 
     if version == "latest":
         repo_url = config.project.get_config("prepare.ramalama.repo.url")
@@ -26,13 +30,17 @@ def _get_binary_path(base_work_dir, platform):
 
     system_file = f"{version}.zip"
 
-    # don't use 'ramalama' in the base_work_dir, otherwise Python
-    # takes it (invalidly) for the package `ramalama` package
-    dest = base_work_dir / "ramalama-ai" / system_file
+    dest_base = base_work_dir / "ramalama-ai"
+    if version:
+        # don't use 'ramalama' in the base_work_dir, otherwise Python
+        # takes it (invalidly) for the package `ramalama` package
+        dest = dest_base / system_file
+        dest_dir = dest.parent / f"ramalama-{version.removeprefix('v')}"
+    else:
+        dest = dest_dir = dest_base / f"ramalama-{git_ref}"
 
-    ramalama_path = dest.parent / f"ramalama-{version.removeprefix('v')}" / "bin" / "ramalama"
-
-    return ramalama_path, dest, version
+    ramalama_path =  dest_dir / "bin" / "ramalama"
+    return ramalama_path, dest, (version, git_ref)
 
 
 def get_binary_path(base_work_dir, platform):
@@ -44,26 +52,68 @@ def get_binary_path(base_work_dir, platform):
 
     return ramalama_path
 
+def download_ramalama(base_work_dir, dest, version, git_ref):
+    repo_url = config.project.get_config("prepare.ramalama.repo.url")
+
+    if version:
+        source = "/".join([
+            repo_url,
+            "archive/refs/tags",
+            f"{version}.zip",
+        ])
+        run.run_toolbox(
+            "remote", "download",
+            source=source, dest=dest,
+            tarball=True,
+        )
+    else:
+        kwargs = dict(
+            repo_url=repo_url,
+            dest=dest,
+        )
+        if git_ref.startswith("pr-"):
+            pr_number = git_ref.removeprefix("pr-")
+            kwargs["refspec"] = f"refs/pull/{pr_number}/head"
+        else:
+            kwargs["refspec"] = git_ref
+
+        run.run_toolbox(
+            "remote", "clone",
+            **kwargs,
+            artifact_dir_suffix="_llama_cpp",
+        )
+
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info", cwd=dest)
+
 
 def prepare_binary(base_work_dir, platform):
-    ramalama_path, dest, version = _get_binary_path(base_work_dir, platform)
+    ramalama_path, dest, (version, git_ref) = _get_binary_path(base_work_dir, platform)
     system_file = dest.name
 
-    if remote_access.exists(ramalama_path):
+    if not remote_access.exists(ramalama_path):
+        download_ramalama(base_work_dir, dest, version, git_ref)
+    else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
-        return ramalama_path
 
-    source = "/".join([
-        config.project.get_config("prepare.ramalama.repo.url"),
-        "archive/refs/tags",
-        f"{version}.zip",
-    ])
+    if config.project.get_config("prepare.ramalama.build_image.enabled"):
+        image_name = config.project.get_config("prepare.ramalama.build_image.name")
+        chdir = ramalama_path.parent.parent
 
-    run.run_toolbox(
-        "remote", "download",
-        source=source, dest=dest,
-        tarball=True,
-    )
+        with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
+            cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
+            cmd += f" time ./container_build.sh build {image_name}"
+            cmd += f" 2>&1"
+
+            ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
+                                                          chdir=chdir, check=False, capture_stdout=True)
+            build_log = env.ARTIFACT_DIR / "build.log"
+            build_log.write_text(ret.stdout)
+            if ret.returncode != 0:
+                raise RuntimeError("Compilation of the ramalama image failed ...")
+
+            logging.info(f"ramalama image build logs saved into {build_log}")
+    else:
+        logging.info(f"ramalama image build not requested.")
 
     return ramalama_path
 
@@ -101,6 +151,14 @@ def stop_server(base_work_dir, ramalama_path):
 
 def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
     inference_server_port = config.project.get_config("test.inference_server.port")
+
+    if config.project.get_config("prepare.ramalama.repo.git_ref"):
+        commit_date_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat ramalama-commit.info", chdir=ramalama_path.parent.parent, check=False, capture_stdout=True)
+        if commit_date_cmd.returncode != 0:
+            logging.warning("Couldn't find the Ramalama commit info file ...")
+        else:
+            logging.warning(f"Ramalama commit info: {commit_date_cmd.stdout}")
+            (env.ARTIFACT_DIR / "ramalama-commit.info").write_text(commit_date_cmd.stdout)
 
     artifact_dir_suffix=None
     if unload:
@@ -153,8 +211,14 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     device = config.project.get_config("prepare.podman.container.device") \
         if want_gpu else "/dev/null"
 
-    version = config.project.get_config("prepare.ramalama.repo.version").removeprefix("v")
-    image = f"quay.io/ramalama/ramalama:{version}"
+    if config.project.get_config("prepare.ramalama.build_image.enabled"):
+        image_name = config.project.get_config("prepare.ramalama.build_image.name")
+        image = f"quay.io/ramalama/{image_name}:latest"
+    elif version := config.project.get_config("prepare.ramalama.repo.version"):
+        version = version.removeprefix("v")
+        image = f"quay.io/ramalama/ramalama:{version}"
+    else:
+        image = None
 
     run.run_toolbox(
         "mac_ai", f"remote_ramalama_{ramalama_cmd}",

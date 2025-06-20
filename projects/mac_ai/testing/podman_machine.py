@@ -57,6 +57,8 @@ def start(base_work_dir, use_remoting=None):
     ret = _run(base_work_dir, f"start {name}", env, print_cmd=True)
 
     if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+        if not config.project.get_config("prepare.virglrenderer.enabled"):
+            logging.warning("The custom virglrenderer isn't enabled ...")
 
         has_virgl = remote_access.run_with_ansible_ssh_conf(base_work_dir, "lsof -c krunkit | grep virglrenderer", check=False, capture_stdout=True)
         if str(prepare_virglrenderer.get_dyld_library_path(base_work_dir)) not in has_virgl.stdout:

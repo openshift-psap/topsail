@@ -35,6 +35,8 @@ IMPORTANT_FILES = [
     "config.yaml",
     ".uuid",
 
+    "ramalama-commit.info",
+
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/output/output.json",
     f"{artifact_dirnames.LLM_LOAD_TEST_RUN_DIR}/src/llm_load_test.config.yaml",
 
@@ -79,6 +81,8 @@ def parse_once(results, dirname):
     results.test_start_end = _parse_test_start_end(dirname, results.llm_load_test_output)
 
     results.system_state = _parse_system_state(dirname)
+
+    results.ramalama_commit_info = _parse_ramalama_commit_info(dirname)
 
 
 def _parse_file_links(dirname):
@@ -410,3 +414,14 @@ def _parse_system_state(dirname):
         system_state = yaml.safe_load(f)
 
     return system_state
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_ramalama_commit_info(dirname):
+    info_text = (dirname / "ramalama-commit.info").read_text().split("\n")
+
+    ramalama_commit_info = types.SimpleNamespace()
+    ramalama_commit_info.date_id = info_text[0]
+    ramalama_commit_info.commit_title = info_text[1]
+    ramalama_commit_info.commit_hash = info_text[2]
+
+    return ramalama_commit_info

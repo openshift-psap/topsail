@@ -55,7 +55,15 @@
     shell: |
       export {{ mac_ai_remote_ramalama_run_model_env }}
 
-      $RAMALAMA_CONTAINER_ENGINE logs {{ container_name }} > {{ artifact_extra_logs_dir }}/artifacts/ramalama.log
+      $RAMALAMA_CONTAINER_ENGINE logs {{ container_name }} &> {{ artifact_extra_logs_dir }}/artifacts/ramalama.log
+    failed_when: false
+  - name: Capture the container image info
+    shell: |
+      export {{ mac_ai_remote_ramalama_run_model_env }}
+
+      $RAMALAMA_CONTAINER_ENGINE image inspect {{ mac_ai_remote_ramalama_run_model_image }} > {{ artifact_extra_logs_dir }}/artifacts/ramalama-image.json
+    failed_when: false
+
   - name: Retrieve the artifact files locally
     include_role:
       name: remote_retrieve

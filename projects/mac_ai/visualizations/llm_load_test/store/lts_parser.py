@@ -85,8 +85,11 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.version = results.test_config.get(version_config_key) \
         if version_config_key else "Unknown"
 
-    lts_settings.containerized = containerized
+    if "ramalama" in lts_settings.platform and not lts_settings.version and results.ramalama_commit_info:
+        git_ref = results.test_config.get("prepare.ramalama.repo.git_ref")
+        lts_settings.version = f"{git_ref}-{results.ramalama_commit_info.date_id}"
 
+    lts_settings.containerized = containerized
 
     lts_settings.hardware = ""
     try: lts_settings.hardware += results.system_state["Hardware"]["Hardware Overview"]["Chip"] + " "
