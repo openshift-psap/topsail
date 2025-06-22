@@ -71,9 +71,13 @@ def get_tmp_fd():
 
 def get_lock_owner():
     if os.environ.get("OPENSHIFT_CI") == "true":
-        pr = os.environ["PULL_NUMBER"]
         build_id = os.environ["BUILD_ID"]
-        return f"openshift_ci__pr{pr}__build{build_id}"
+        if "PULL_NUMBER" in os.environ:
+            pr = os.environ["PULL_NUMBER"]
+            return f"openshift_ci__pr{pr}__build{build_id}"
+        else:
+
+            return f"openshift_ci__periodic__build{build_id}"
     else:
         logging.warning("Not running in a known CI. Using the username as lock owner.")
         return os.environ["USER"]
