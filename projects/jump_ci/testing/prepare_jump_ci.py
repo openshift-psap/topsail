@@ -97,8 +97,8 @@ def prepare(
         prepare_topsail_args |= dict(
             repo_owner=os.environ["REPO_OWNER"],
             repo_name=os.environ["REPO_NAME"],
-            pr_number=os.environ.get("PULL_NUMBER")
-            git_ref=os.environ["PULL_PULL_SHA"]
+            pr_number=os.environ.get("PULL_NUMBER"),
+            git_ref=os.environ["PULL_PULL_SHA"],
         )
     elif any([pr_number, git_ref]):
         if not all([repo_owner, repo_name, pr_number]):
