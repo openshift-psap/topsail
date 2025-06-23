@@ -192,6 +192,7 @@ secrets:
   username: mac_ai__username.mac-m4
   base_work_dir: mac_ai__base_work_dir.mac-m4
   opensearch_instances: opensearch.yaml
+  image_registry: quay-push.yaml
 
 remote_host:
   run_locally: false
@@ -290,7 +291,10 @@ prepare:
     build_image:
       enabled: false
       name: ramalama
-
+      registry_path: localhost
+      publish:
+        enabled: false
+        credentials: "*$@secrets.image_registry"
   brew:
     install_dependencies: false
     capture_dependencies: false
@@ -365,6 +369,9 @@ prepare:
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
+
+  remoting:
+    publish: false
 
 test:
   platform: *all_platforms
@@ -505,3 +512,4 @@ __platform_check:
 
   flavors:
     llama_cpp: [metal, vulkan, upstream_bin, kompute, remoting]
+    ramalama: [remoting, null]
