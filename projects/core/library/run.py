@@ -102,7 +102,7 @@ def run_toolbox(group, command, artifact_dir_suffix=None, run_kwargs=None, mute_
     return run(f'{cmd_env} ./run_toolbox.py {group} {command} {_dict_to_run_toolbox_args(kwargs)}', **run_kwargs)
 
 
-def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True):
+def run(command, capture_stdout=False, capture_stderr=False, check=True, protect_shell=True, cwd=None, stdin_file=None, log_command=True, decode_stdout=True, decode_stderr=True):
     if log_command:
         logging.info(f"run: {command}")
 
@@ -124,8 +124,8 @@ def run(command, capture_stdout=False, capture_stderr=False, check=True, protect
 
     proc = subprocess.run(command, **args)
 
-    if capture_stdout: proc.stdout = proc.stdout.decode("utf8")
-    if capture_stderr: proc.stderr = proc.stderr.decode("utf8")
+    if capture_stdout and decode_stdout: proc.stdout = proc.stdout.decode("utf8")
+    if capture_stderr and decode_stderr: proc.stderr = proc.stderr.decode("utf8")
 
     return proc
 
