@@ -89,12 +89,16 @@ def run_with_ansible_ssh_conf(
         chdir=None,
         print_cmd=False,
         handled_secretly=True,
+        decode_stdout=True,
+        decode_stderr=True,
 ):
     run_kwargs = dict(
         log_command=False,
         check=check,
         capture_stdout=capture_stdout,
         capture_stderr=capture_stderr,
+        decode_stdout=decode_stdout,
+        decode_stderr=decode_stderr,
     )
 
     if config.project.get_config("remote_host.run_locally", print=False):
