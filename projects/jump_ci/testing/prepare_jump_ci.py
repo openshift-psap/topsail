@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 
 from projects.core.library import env, config, run
 from projects.jump_ci.testing import utils, tunnelling
@@ -86,10 +87,17 @@ def prepare(
     )
 
     if os.environ.get("OPENSHIFT_CI") == "true":
+        if os.environ["JOB_NAME"].startswith("periodic"):
+            # periodic jobs don't have these env vars ...
+            job_spec = job_spec = json.loads(os.environ["JOB_SPEC"])
+            os.environ["REPO_OWNER"] = job_spec["extra_refs"][0]["org"]
+            os.environ["REPO_NAME"] = job_spec["extra_refs"][0]["repo"]
+            os.environ["PULL_PULL_SHA"] = job_spec["extra_refs"][0]["base_ref"]
+
         prepare_topsail_args |= dict(
             repo_owner=os.environ["REPO_OWNER"],
             repo_name=os.environ["REPO_NAME"],
-            pr_number=os.environ["PULL_NUMBER"],
+            pr_number=os.environ.get("PULL_NUMBER")
             git_ref=os.environ["PULL_PULL_SHA"]
         )
     elif any([pr_number, git_ref]):
