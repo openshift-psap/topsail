@@ -1,6 +1,7 @@
 import os
 import pathlib
 import logging
+import tarfile
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -26,6 +27,7 @@ INFERENCE_SERVERS = dict(
 
 REMOTING_FRONTEND_PLATFORM = "podman/llama_cpp/remoting"
 REMOTING_BACKEND_PLATFORM = "macos/llama_cpp/remoting"
+RAMALAMA_REMOTING_PLATFORM = "podman/ramalama/remoting"
 
 def cleanup():
     base_work_dir = remote_access.prepare()
@@ -173,7 +175,132 @@ def prepare():
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
 
+    if config.project.get_config("prepare.remoting.publish"):
+        #if not config.project.get_config("exec_list.pre_cleanup_ci"):
+        #    raise ValueError("Cannot publish the remoting libraries if not preparing from a clean environment")
+        if not config.project.get_config("prepare.virglrenderer.enabled"):
+            raise ValueError("Cannot publish the remoting libraries if building virglrenderer isn't enabled")
+        if "podman/llama_cpp/remoting" not in platforms_to_build_str:
+            raise ValueError("Cannot publish the remoting libraries if podman/llama_cpp/remoting isn't built")
+
+        prepare_remoting_tarball(base_work_dir)
+
     return 0
+
+
+def prepare_remoting_tarball(base_work_dir):
+    virglrenderer_lib = prepare_virglrenderer.get_dyld_library_path(base_work_dir, with_lib=True)
+
+    if not remote_access.exists(virglrenderer_lib):
+        raise ValueError(f"Cannot publish the remoting libraries, {virglrenderer_lib} does not exist")
+
+    llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
+    apir_backend_lib = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.apir_lib.name")
+    if not remote_access.exists(apir_backend_lib):
+        raise ValueError(f"Cannot publish the remoting libraries, {apir_backend_lib} does not exist")
+
+    llama_cpp_backend_lib = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_lib.name")
+    if not remote_access.exists(llama_cpp_backend_lib):
+        raise ValueError(f"Cannot publish the remoting libraries, {llama_cpp_backend_lib} does not exist")
+
+    virglrenderer_branch = config.project.get_config("prepare.virglrenderer.repo.branch")
+    if not virglrenderer_branch.startswith("v"):
+        raise ValueError("Cannot publish the remoting libraries, virglrenderer not built from a released version")
+
+    with env.NextArtifactDir("build_remoting_tarball"):
+        return build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_lib, apir_backend_lib)
+
+
+def build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_lib, apir_backend_lib):
+    llama_cpp_version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+    llama_cpp_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
+
+    virglrenderer_version = config.project.get_config("prepare.virglrenderer.repo.branch")
+    virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")
+
+    logging.info(f"Preparing the API remoting data into {env.ARTIFACT_DIR} ...")
+    tarball_dir = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}"
+    tarball_dir.mkdir()
+
+    virglrenderer_dest = tarball_dir / "virglrenderer" / virglrenderer_lib.name
+    virglrenderer_dest.parent.mkdir()
+
+    logging.info(f"Preparing {virglrenderer_dest.name} ...")
+    virglrenderer = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat '{virglrenderer_lib}'", capture_stdout=True, decode_stdout=False)
+    virglrenderer_dest.write_bytes(virglrenderer.stdout)
+
+    virglrenderer_src_dir = prepare_virglrenderer.get_build_dir(base_work_dir) / ".." / "src"
+    virglrenderer_git_show_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{virglrenderer_src_dir}' show", capture_stdout=True)
+    virglrenderer_git_revparse_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{virglrenderer_src_dir}' rev-parse HEAD", capture_stdout=True)
+    virglrenderer_git_show_file = virglrenderer_dest.parent / "git-commit.txt"
+    virglrenderer_git_show_file.write_text(virglrenderer_git_show_cmd.stdout)
+
+    virglrenderer_version_file = virglrenderer_dest.parent / "version.txt"
+    virglrenderer_version_file.write_text(f"{virglrenderer_url}/-/tree/{virglrenderer_git_revparse_cmd.stdout.strip()} ({virglrenderer_version})")
+
+    llama_cpp_backend_dest = tarball_dir / "llama.cpp" / llama_cpp_backend_lib.name
+    llama_cpp_backend_dest.parent.mkdir()
+
+    llama_cpp_src_dir = prepare_llama_cpp.get_source_dir(base_work_dir)
+    llama_cpp_git_show_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{llama_cpp_src_dir}' show", capture_stdout=True)
+    llama_cpp_git_revparse_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{llama_cpp_src_dir}' rev-parse HEAD", capture_stdout=True)
+    llama_cpp_git_show_file = llama_cpp_backend_dest.parent / "git-commit.txt"
+    llama_cpp_git_show_file.write_text(llama_cpp_git_show_cmd.stdout)
+
+    llama_cpp_version_file = llama_cpp_backend_dest.parent / "version.txt"
+    llama_cpp_version_file.write_text(f"{llama_cpp_url}/commit/{llama_cpp_git_revparse_cmd.stdout.strip()} ({llama_cpp_version})")
+
+    logging.info(f"Preparing {virglrenderer_dest.name} ...")
+    llama_cpp_backend = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat '{llama_cpp_backend_lib}'", capture_stdout=True, decode_stdout=False)
+    llama_cpp_backend_dest.write_bytes(llama_cpp_backend.stdout)
+
+    apir_backend_dest = llama_cpp_backend_dest.parent / apir_backend_lib.name
+    logging.info(f"Preparing {apir_backend_dest.name} ...")
+    apir_backend = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat '{apir_backend_lib}'", capture_stdout=True, decode_stdout=False)
+    apir_backend_dest.write_bytes(apir_backend.stdout)
+
+    script_file = pathlib.Path("projects/mac_ai/testing/scripts/podman_start_machine.api_remoting.sh")
+    script_file_dest = tarball_dir / script_file.name
+    script_file_dest.write_text(script_file.read_text())
+
+    if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
+        ramalama_cmd_dest = tarball_dir / "ramalama-info.txt"
+        registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+        image_name = config.project.get_config("prepare.ramalama.build_image.name")
+        ramalama_image = f"{registry_path}/{image_name}:{llama_cpp_version}"
+
+        _, ramalama_src_dir, _ = ramalama._get_binary_path(base_work_dir, RAMALAMA_REMOTING_PLATFORM)
+
+        ramalama_git_show_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{ramalama_src_dir}' show", capture_stdout=True)
+        ramalama_git_revparse_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"git -C '{ramalama_src_dir}' rev-parse HEAD", capture_stdout=True)
+
+        ramalama_repo_url = config.project.get_config("prepare.ramalama.repo.url")
+
+        ramalama_cmd_dest.write_text(f"""\
+RamaLama image  : {ramalama_image}
+RamaLama command: ramalama --image {ramalama_image} ...
+RamaLama commit : {ramalama_repo_url}/commit/{ramalama_git_revparse_cmd.stdout.strip()}
+
+{ramalama_git_show_cmd.stdout.strip()}
+""")
+
+    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}.tar.gz"
+    with tarfile.open(tarball_file, "w:gz") as tar:
+        tar.add(virglrenderer_dest, virglrenderer_dest.relative_to(env.ARTIFACT_DIR))
+        tar.add(llama_cpp_backend_dest, llama_cpp_backend_dest.relative_to(env.ARTIFACT_DIR))
+        tar.add(apir_backend_dest, apir_backend_dest.relative_to(env.ARTIFACT_DIR))
+
+        tar.add(script_file, script_file_dest.relative_to(env.ARTIFACT_DIR))
+        tar.add(virglrenderer_git_show_file, virglrenderer_git_show_file.relative_to(env.ARTIFACT_DIR))
+        tar.add(llama_cpp_git_show_file, llama_cpp_git_show_file.relative_to(env.ARTIFACT_DIR))
+
+        tar.add(virglrenderer_version_file, virglrenderer_version_file.relative_to(env.ARTIFACT_DIR))
+        tar.add(llama_cpp_version_file, llama_cpp_version_file.relative_to(env.ARTIFACT_DIR))
+
+        if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
+            tar.add(ramalama_cmd_dest, ramalama_cmd_dest.relative_to(env.ARTIFACT_DIR))
+
+    logging.info(f"Saved {tarball_file} !")
 
 
 def cleanup_llm_load_test(base_work_dir):
