@@ -96,8 +96,12 @@ def jump_ci(command):
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
+        if test_args is None:
+            logging.info("No --test_args received. Trying the config file ...")
+            test_args = config.project.set_config("project.args", None)
+
         if test_args is None and not variable_overrides_file.exists():
-            logging.fatal(f"File '{variable_overrides_file}' does not exist, and --test_args not passed. Please specify one of them :/")
+            logging.fatal(f"File '{variable_overrides_file}' does not exist, neither --test_args nor project.args have been passed. Please specify one of them :/")
             raise SystemExit(1)
 
         if test_args is not None and not project:

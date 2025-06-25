@@ -8,6 +8,10 @@ ci_presets:
     cluster.name: mac
     project.name: mac_ai
 
+  mac_ai_nightly:
+    extends: [mac_ai]
+    project.args: [cpt_nightly]
+
   cont_bench:
     secrets.dir.name: cont-bench-secret # key/value never actually used
     secrets.dir.env_key: CONTAINER_BENCH_SECRET_PATH
@@ -30,7 +34,7 @@ prepare:
   job_name_to_preset:
     pull-ci-openshift-psap-topsail-main-cont_bench-jump-ci: cont_bench
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci: mac_ai
-    periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai
+    periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai_nightly
     pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
 
 ssh_tunnel:
@@ -42,6 +46,7 @@ cluster:
   name: null
 project:
   name: null
+  args: null
 ssh:
   flags:
   - -oStrictHostKeyChecking=no
