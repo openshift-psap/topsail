@@ -109,7 +109,8 @@ ci_presets:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
-    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/vulkan
+    # - podman/llama_cpp/vulkan # not working today
 
   remoting_testing:
     extends: [remoting]
