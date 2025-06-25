@@ -42,6 +42,7 @@ cluster:
   name: null
 project:
   name: null
+  args: null
 ssh:
   flags:
   - -oStrictHostKeyChecking=no
