@@ -20,7 +20,7 @@ echo "Setting VIRGL_APIR_BACKEND_LIBRARY=$VIRGL_APIR_BACKEND_LIBRARY"
 echo
 
 # for llama.cpp remotingbackend to load the ggml-metal backend
-export APIR_LLAMA_CPP_GGML_LIBRARY_PATH="$SCRIPT_DIR/libggml-metal.dylib"
+export APIR_LLAMA_CPP_GGML_LIBRARY_PATH="$SCRIPT_DIR/llama.cpp/libggml-metal.dylib"
 echo "# for llama.cpp remotingbackend to load the ggml-metal backend"
 echo "Setting APIR_LLAMA_CPP_GGML_LIBRARY_PATH=$APIR_LLAMA_CPP_GGML_LIBRARY_PATH"
 echo
