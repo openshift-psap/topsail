@@ -65,7 +65,7 @@ def prepare(
         remote_host_port = LOCAL_HOST_PORT
     else:
         logging.info("ssh_tunnel.enabled is disabled, connecting directly to the bastion")
-        remote_host = bastion_host
+        remote_hostname = bastion_host
         remote_host_port = 22
         # probe_ssh_endpoint(
         #     bastion_user,
