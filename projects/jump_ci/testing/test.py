@@ -96,11 +96,10 @@ def jump_ci(command):
 
         variable_overrides_file = pathlib.Path(os.environ.get("ARTIFACT_DIR")) / "variable_overrides.yaml"
 
-        if test_args is None:
-            logging.info("No --test_args received. Trying the config file ...")
-            test_args = config.project.get_config("project.args", None)
+        config_test_args = config.project.get_config("project.args", None) \
+            if test_args is None else None
 
-        if test_args is None and not variable_overrides_file.exists():
+        if test_args is None and not variable_overrides_file.exists() and not config_test_args:
             logging.fatal(f"File '{variable_overrides_file}' does not exist, neither --test_args nor project.args have been passed. Please specify one of them :/")
             raise SystemExit(1)
 
@@ -111,8 +110,11 @@ def jump_ci(command):
         run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
         cluster_lock_dir = f" /tmp/topsail_{cluster}"
+        config_test_args
+        if test_args is not None or config_test_args is not None:
+            if test_args is None:
+                test_args = " ".join(config_test_args)
 
-        if test_args is not None:
             variables_overrides_dict = dict(
                 PR_POSITIONAL_ARGS=test_args,
                 PR_POSITIONAL_ARG_0="jump-ci",
