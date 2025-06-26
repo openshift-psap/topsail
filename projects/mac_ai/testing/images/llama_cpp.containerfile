@@ -2,7 +2,7 @@ FROM quay.io/centos/centos:10 AS builder
 USER 0
 
 ARG BUILD_FLAVOR="default"
-ARG MESA_VERSION=24.2.8-103
+ARG MESA_VERSION=24.2.8-104
 
 RUN if [[ ${BUILD_FLAVOR} != remoting ]]; then \
     dnf install -y python3-dnf-plugin-versionlock && \
