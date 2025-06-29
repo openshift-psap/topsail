@@ -9,18 +9,21 @@ def get_build_dir(base_work_dir):
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
     return base_work_dir / "virglrenderer" / version / "build"
 
-def get_dyld_library_path(base_work_dir):
-    return get_build_dir(base_work_dir) / "src"
+
+def get_dyld_library_path(base_work_dir, with_lib=False):
+    path = get_build_dir(base_work_dir) / "src"
+    if with_lib:
+        path /= "libvirglrenderer.1.dylib"
+
+    return path
+
 
 def prepare(base_work_dir):
     if not config.project.get_config("prepare.virglrenderer.enabled"):
         logging.info("Custom virglrenderer not enabled, not preparing it.")
         return
 
-    virglrender_lib = get_dyld_library_path(base_work_dir) / "libvirglrenderer.dylib"
-    if remote_access.exists(virglrender_lib):
-        logging.info("Custom virglrenderer already exists, not building it again.")
-        return
+    # don't check if already exists, always build it
 
     repo_url = config.project.get_config("prepare.virglrenderer.repo.url")
     build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
@@ -34,6 +37,7 @@ def prepare(base_work_dir):
         dest=src_dir,
         version=version,
         artifact_dir_suffix="__virglrenderer",
+        force=True,
     )
 
     run.run_toolbox(
@@ -42,6 +46,7 @@ def prepare(base_work_dir):
         build_dir=build_dir,
         build_flags=build_flags,
     )
+
 
 def configure(base_work_dir, use_custom):
     BREW_CUSTOM_DIR = pathlib.Path("/opt/homebrew/Cellar/virglrenderer/0.10.4d/lib/custom")
@@ -59,6 +64,7 @@ def configure(base_work_dir, use_custom):
         library_path = BREW_LIBRARY_PATH
 
     remote_access.symlink_to(BREW_CUSTOM_LIB, library_path)
+
 
 def cleanup(base_work_dir):
     configure(base_work_dir, use_custom=False)

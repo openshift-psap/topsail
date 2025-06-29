@@ -88,16 +88,22 @@ def run_with_ansible_ssh_conf(
         capture_stderr=False,
         chdir=None,
         print_cmd=False,
+        handled_secretly=True,
+        decode_stdout=True,
+        decode_stderr=True,
 ):
     run_kwargs = dict(
         log_command=False,
         check=check,
         capture_stdout=capture_stdout,
         capture_stderr=capture_stderr,
+        decode_stdout=decode_stdout,
+        decode_stderr=decode_stderr,
     )
 
     if config.project.get_config("remote_host.run_locally", print=False):
-        logging.info(f"Running on the local host: {cmd}")
+        if not handled_secretly:
+            logging.info(f"Running on the local host: {cmd}")
 
         return run.run(cmd, **run_kwargs)
 
@@ -132,10 +138,11 @@ set -o errtrace
 exec {cmd}
     """
 
-    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
+    if config.project.get_config("remote_host.verbose_ssh_commands", print=False) and not handled_secretly:
         entrypoint_script = f"set -x\n{entrypoint_script}"
 
-    logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
+    if not handled_secretly:
+        logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
 
     with open(tmp_file_path, "w") as f:
         print(entrypoint_script, file=f)

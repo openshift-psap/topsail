@@ -156,40 +156,47 @@ def prepare_from_release(base_work_dir, platform):
     return llama_cpp_path
 
 
-def prepare_from_source(base_work_dir, platform):
-    version = config.project.get_config("prepare.llama_cpp.source.repo.version")
-
+def get_source_dir(base_work_dir):
+    version = config.project.get_config("prepare.llama_cpp.source.repo.version", print=False)
     dirname = "llama.cpp-"
     if version.startswith("pr-"):
         dirname += version
     else:
         dirname += f"tag-{version}"
 
-    dest = base_work_dir / "llama_cpp" / dirname
+    return base_work_dir / "llama_cpp" / dirname
 
-    if not remote_access.exists(dest):
-        repo_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
-        kwargs = dict(
-            repo_url=repo_url,
-            dest=dest,
-        )
+def prepare_from_source(base_work_dir, platform):
+    version = config.project.get_config("prepare.llama_cpp.source.repo.version")
 
-        if version.startswith("pr-"):
-            pr_number = version.removeprefix("pr-")
-            kwargs["refspec"] = f"refs/pull/{pr_number}/head"
-        else:
-            kwargs["version"] = version
+    dest = get_source_dir(base_work_dir)
 
-        run.run_toolbox(
-            "remote", "clone",
-            **kwargs,
-            artifact_dir_suffix="_llama_cpp",
-        )
+    # don't check if already exists, always build it
 
-        # for the Kompute build
-        cmd = f"sed -i.bu s/-Werror//g {dest}/ggml/src/ggml-kompute/kompute/CMakeLists.txt"
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
+    repo_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
+
+    kwargs = dict(
+        repo_url=repo_url,
+        dest=dest,
+    )
+
+    if version.startswith("pr-"):
+        pr_number = version.removeprefix("pr-")
+        kwargs["refspec"] = f"refs/pull/{pr_number}/head"
+    else:
+        kwargs["version"] = version
+
+    run.run_toolbox(
+        "remote", "clone",
+        **kwargs,
+        force=True,
+        artifact_dir_suffix="_llama_cpp",
+    )
+
+    # for the Kompute build
+    cmd = f"sed -i.bu s/-Werror//g {dest}/ggml/src/ggml-kompute/kompute/CMakeLists.txt"
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
 
     src_dir = dest
     cmake_parallel = config.project.get_config("prepare.llama_cpp.source.cmake.parallel")

@@ -2,13 +2,14 @@ FROM quay.io/centos/centos:10 AS builder
 USER 0
 
 ARG BUILD_FLAVOR="default"
+ARG MESA_VERSION=24.2.8-104
 
 RUN if [[ ${BUILD_FLAVOR} != remoting ]]; then \
     dnf install -y python3-dnf-plugin-versionlock && \
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf copr enable -y slp/mesa-krunkit epel-9-aarch64 && \
-    dnf install -y mesa-vulkan-drivers-24.1.2-101.el9.aarch64 && \
-    dnf versionlock  mesa-vulkan-drivers-24.1.2-101.el9.aarch64 && \
+    dnf install -y mesa-vulkan-drivers-${MESA_VERSION}.el9.aarch64 && \
+    dnf versionlock  mesa-vulkan-drivers-${MESA_VERSION}.el9.aarch64 && \
     dnf install -y git cmake gcc gcc-c++ vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
     dnf install -y glslc && \
