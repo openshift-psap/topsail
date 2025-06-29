@@ -159,7 +159,10 @@ def build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_l
         ci_build_link = ci_link + "/" + os.environ["TOPSAIL_OPENSHIFT_CI_STEP_DIR"]
         ci_perf_link = ci_link + "/005-test/artifacts/test-artifacts/reports_index.html"
 
-    add_string_file(tarball_dir / "README.txt", f"""\
+    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}.tar"
+
+    tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
+    add_string_file(tarball_dir / "README.md", f"""\
 llama.cpp API remoting GPU acceleration for MacOS
 =================================================
 
@@ -210,15 +213,15 @@ Ramalama image
 
 CI build
 --------
-{ci_build_link or '(Not running in a CI environment)'}
+* tarball: {ci_build_link / tarball_path if ci_build_link else '(Not running in a CI environment)'}
+* build logs: {ci_build_link or '(Not running in a CI environment)'}
 
 CI performance test
 --------
 {ci_perf_link or '(Not running in a CI environment)'}
 """)
 
-    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}.tar.gz"
-    with tarfile.open(tarball_file, "w:gz") as tar:
+    with tarfile.open(tarball_file, "w") as tar:
         tar.add(tarball_dir, tarball_dir.relative_to(env.ARTIFACT_DIR))
 
     logging.info(f"Saved {tarball_file} !")
