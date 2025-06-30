@@ -5,8 +5,8 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_llama_cpp, utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer
-import llama_cpp, ollama, ramalama
+import utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer, prepare_release
+import prepare_llama_cpp, llama_cpp, ollama, ramalama
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
@@ -26,6 +26,7 @@ INFERENCE_SERVERS = dict(
 
 REMOTING_FRONTEND_PLATFORM = "podman/llama_cpp/remoting"
 REMOTING_BACKEND_PLATFORM = "macos/llama_cpp/remoting"
+RAMALAMA_REMOTING_PLATFORM = "podman/ramalama/remoting"
 
 def cleanup():
     base_work_dir = remote_access.prepare()
@@ -92,7 +93,10 @@ def cleanup():
 
 def prepare():
     base_work_dir = remote_access.prepare()
+
     if not config.project.get_config("prepare.prepare_only_inference_server"):
+        run.run_toolbox("mac_ai", "remote_capture_system_state")
+
         if config.project.get_config("prepare.podman.repo.enabled"):
             podman.prepare_from_gh_binary(base_work_dir)
             podman.prepare_gv_from_gh_binary(base_work_dir)
@@ -172,6 +176,16 @@ def prepare():
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
+
+    if config.project.get_config("prepare.remoting.publish"):
+        if config.project.get_config("exec_list.pre_cleanup_ci") is False:
+            raise ValueError("Cannot publish the remoting libraries if not preparing from a clean environment")
+        if not config.project.get_config("prepare.virglrenderer.enabled"):
+            raise ValueError("Cannot publish the remoting libraries if building virglrenderer isn't enabled")
+        if "podman/llama_cpp/remoting" not in platforms_to_build_str:
+            raise ValueError("Cannot publish the remoting libraries if podman/llama_cpp/remoting isn't built")
+
+        prepare_release.create_remoting_tarball(base_work_dir)
 
     return 0
 

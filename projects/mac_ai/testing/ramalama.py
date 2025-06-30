@@ -81,39 +81,71 @@ def download_ramalama(base_work_dir, dest, version, git_ref):
             "remote", "clone",
             **kwargs,
             artifact_dir_suffix="_llama_cpp",
+            force=True,
         )
 
         remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
                                                 chdir=dest)
 
 
+def build_container_image(base_work_dir, ramalama_path):
+    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+    image_name = config.project.get_config("prepare.ramalama.build_image.name")
+
+    image_fullname = f"{registry_path}/{image_name}:latest"
+
+    if podman_mod.has_image(base_work_dir, image_fullname):
+        logging.info(f"Image {image_fullname} already exist, not rebuilding it.")
+        return image_fullname
+
+    chdir = ramalama_path.parent.parent
+
+    with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
+        cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
+        cmd += f" time ./container_build.sh build {image_name}"
+        cmd += " 2>&1"
+
+        extra_env = dict(
+            REGISTRY_PATH=registry_path,
+            LLAMA_CPP_PULL_REF=config.project.get_config("prepare.llama_cpp.source.repo.version"),
+            LLAMA_CPP_REPO=config.project.get_config("prepare.llama_cpp.source.repo.url"),
+        )
+
+        ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
+                                                      extra_env=extra_env,
+                                                      chdir=chdir, check=False, capture_stdout=True)
+        build_log = env.ARTIFACT_DIR / "build.log"
+        build_log.write_text(ret.stdout)
+        if ret.returncode != 0:
+            raise RuntimeError(f"Compilation of the ramalama image failed ... (see {build_log})")
+
+        logging.info(f"ramalama image build logs saved into {build_log}")
+
+    return image_fullname
+
+
 def prepare_binary(base_work_dir, platform):
     ramalama_path, dest, (version, git_ref) = _get_binary_path(base_work_dir, platform)
     system_file = dest.name
 
-    if not remote_access.exists(ramalama_path):
+    if git_ref or not remote_access.exists(ramalama_path):
         download_ramalama(base_work_dir, dest, version, git_ref)
     else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
 
-    if config.project.get_config("prepare.ramalama.build_image.enabled"):
-        image_name = config.project.get_config("prepare.ramalama.build_image.name")
-        chdir = ramalama_path.parent.parent
+    build_image_enabled = config.project.get_config("prepare.ramalama.build_image.enabled")
+    if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:
+        image_name = build_container_image(base_work_dir, ramalama_path)
 
-        with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
-            cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
-            cmd += f" time ./container_build.sh build {image_name}"
-            cmd += f" 2>&1"
+        if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
+            version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
+            dest_image_name = image_name.partition(":")[0] + f":{version}"
+            dest_image_latest = image_name.partition(":")[0] + f":latest"
+            logging.info(f"Pushing the image to {dest_image_name} and latest")
 
-            ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
-                                                          extra_env=dict(REGISTRY_PATH="localhost"),
-                                                          chdir=chdir, check=False, capture_stdout=True)
-            build_log = env.ARTIFACT_DIR / "build.log"
-            build_log.write_text(ret.stdout)
-            if ret.returncode != 0:
-                raise RuntimeError("Compilation of the ramalama image failed ...")
-
-            logging.info(f"ramalama image build logs saved into {build_log}")
+            podman_mod.push_image(base_work_dir, image_name, dest_image_name)
+            podman_mod.push_image(base_work_dir, image_name, dest_image_latest)
     else:
         logging.info(f"ramalama image build not requested.")
 
@@ -215,7 +247,8 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
 
     if config.project.get_config("prepare.ramalama.build_image.enabled"):
         image_name = config.project.get_config("prepare.ramalama.build_image.name")
-        image = f"localhost/{image_name}:latest"
+        registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+        image = f"{registry_path}/{image_name}:latest"
     elif version := config.project.get_config("prepare.ramalama.repo.version"):
         version = version.removeprefix("v")
         image = f"quay.io/ramalama/ramalama:{version}"

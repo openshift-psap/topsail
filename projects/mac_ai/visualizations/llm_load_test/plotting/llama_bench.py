@@ -161,7 +161,7 @@ def generateLlamaMicroBenchData(entries, _variables, _ordered_vars, group):
         datum["test_name"] = entry.get_name(variables)
 
         if not entry.results.llama_micro_bench_results:
-            return
+            continue
 
         for micro_bench_result in entry.results.llama_micro_bench_results.__dict__[group]:
             test_datum = datum.copy() | micro_bench_result.__dict__
@@ -300,7 +300,7 @@ class LlamaMicroBenchComparisonPlot():
             key=y_key,
         )
 
-        if not df or df.empty:
+        if df is None or len(df) == 0:
             return None, "Not data available ..."
 
         fig = px.line(df, x='name', y="comparison", color=ordered_vars[0],

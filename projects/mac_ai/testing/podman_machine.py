@@ -56,7 +56,7 @@ def start(base_work_dir, use_remoting=None):
 
     ret = _run(base_work_dir, f"start {name}", env, print_cmd=True)
 
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+    if use_remoting and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         if not config.project.get_config("prepare.virglrenderer.enabled"):
             logging.warning("The custom virglrenderer isn't enabled ...")
 

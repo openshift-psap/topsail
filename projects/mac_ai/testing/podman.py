@@ -1,6 +1,7 @@
 import os
 import pathlib
 import logging
+import yaml
 
 from projects.core.library import env, config, run, configure_logging, export
 import remote_access, utils
@@ -214,3 +215,19 @@ def get_exec_command_prefix():
     podman_cmd = get_podman_command()
 
     return f"{podman_cmd} exec -it {container_name}"
+
+
+def login(base_work_dir, credentials_key):
+    creds_str = config.project.get_config(credentials_key, handled_secretly=True)
+    creds = yaml.safe_load(creds_str)
+    podman_bin = get_podman_binary(base_work_dir)
+
+    cmd = f"{podman_bin} login --username '{creds['login']}' --password '{creds['password']}' '{creds['server']}'"
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd, handled_secretly=True)
+
+
+def push_image(base_work_dir, local_name, remote_name):
+    podman_bin = get_podman_binary(base_work_dir)
+    cmd = f"{podman_bin} push {local_name} {remote_name}"
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
