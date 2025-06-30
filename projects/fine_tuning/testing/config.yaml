@@ -609,7 +609,7 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 1
 
 #    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [20000, 60000, 70000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 70000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 60000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_l40s_scale:
