@@ -135,8 +135,11 @@ class Jump_Ci:
           secrets_path_env_key: If provided, the env key will be used to locate the secret directories to upload to the jump host
         """
 
-        if not cluster: # don't accept the empty string value
+        if not cluster: # don't accept the empty string value/None
             raise ValueError("--cluster must be set")
+
+        if not project: # don't accept the empty string value/None
+            raise ValueError("--project must be set")
 
         return RunAnsibleRole(locals())
 
