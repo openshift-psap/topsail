@@ -271,7 +271,11 @@ def send_job_completion_notification_to_slack(
 
 def get_pr_number():
     if os.environ.get("OPENSHIFT_CI") == "true":
-        return os.environ["PULL_NUMBER"]
+        if os.environ.get("PULL_NUMBER"):
+            return os.environ["PULL_NUMBER"]
+
+        # periodic job, not PR. Give the job name instead
+        return f"Periodic job #{os.environ['JOB_NAME_SAFE']}"
 
     elif os.environ.get("PERFLAB_CI") == "true":
         git_ref = os.environ["PERFLAB_GIT_REF"]
