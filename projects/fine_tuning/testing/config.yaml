@@ -492,10 +492,10 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 2
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "network-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
+    tests.fine_tuning.test_settings.secondary_nic_count: 8
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_pod_network:
@@ -510,7 +510,7 @@ ci_presets:
     tests.fine_tuning.test_settings.gpu: 8
     tests.fine_tuning.test_settings.pod_count: 2
 
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_sriov:
@@ -526,10 +526,10 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 2
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
+    tests.fine_tuning.test_settings.secondary_nic_count: 8
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_sriov_rdma:
@@ -545,10 +545,10 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 2
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: [8, 6, 4, 2, 1]
+    tests.fine_tuning.test_settings.secondary_nic_count: 8
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 45000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_sriov_rdma_shard:
@@ -569,7 +569,7 @@ ci_presets:
     tests.fine_tuning.test_settings.secondary_nic_count: [8]
 
 #    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [85000, 90000, 95000, 100000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_sriov_rdma_25000:
@@ -593,7 +593,7 @@ ci_presets:
     tests.fine_tuning.test_settings.secondary_nic_count: [1]
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 85000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 4
 
   ilab_1x8xh100_single_node:
