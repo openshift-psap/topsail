@@ -93,6 +93,7 @@ echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
 mkdir -p /mnt/output/model/
+mkdir -p /mnt/storage/
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \

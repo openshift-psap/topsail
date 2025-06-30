@@ -548,7 +548,7 @@ ci_presets:
     tests.fine_tuning.test_settings.secondary_nic_count: 8
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
-    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 45000
+    tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
     tests.fine_tuning.test_settings.hyper_parameters.num_epochs: 1
 
   ilab_2x8xh100_sriov_rdma_shard:
