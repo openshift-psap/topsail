@@ -110,7 +110,10 @@ def jump_ci(command):
         run.run_toolbox("jump_ci", "ensure_lock", cluster=cluster, owner=utils.get_lock_owner())
 
         cluster_lock_dir = f" /tmp/topsail_{cluster}"
-        config_test_args
+
+        if not project:
+            project = config.project.get_config("project.name")
+
         if test_args is not None or config_test_args is not None:
             if test_args is None:
                 test_args = " ".join(config_test_args)
@@ -134,7 +137,6 @@ def jump_ci(command):
             if config.project.get_config("rewrite_variables_overrides.cluster_found_in_pr_args"):
                 nb_args_to_eat = 1
 
-            project = config.project.get_config("project.name")
             if not project:
                 project = config.project.get_config(f"overrides.PR_POSITIONAL_ARG_{1+nb_args_to_eat}", None)
                 if not project:
