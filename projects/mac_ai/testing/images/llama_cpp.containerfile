@@ -5,6 +5,7 @@ ARG BUILD_FLAVOR="default"
 ARG MESA_VERSION=24.2.8-104
 
 RUN if [[ ${BUILD_FLAVOR} != remoting ]]; then \
+    dnf update && \
     dnf install -y python3-dnf-plugin-versionlock && \
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf copr enable -y slp/mesa-krunkit epel-9-aarch64 && \
@@ -19,6 +20,7 @@ RUN if [[ ${BUILD_FLAVOR} != remoting ]]; then \
 # for API Remoting
 
 RUN if [[ ${BUILD_FLAVOR} == remoting ]]; then \
+      dnf update && \
       dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
       dnf install -y git cmake gcc gcc-c++ libdrm-devel; \
     fi
