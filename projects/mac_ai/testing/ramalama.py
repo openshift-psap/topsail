@@ -100,6 +100,7 @@ def build_container_image(base_work_dir, ramalama_path):
 
     chdir = ramalama_path.parent.parent
 
+    logging.info("Building the ramalama image ...")
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
         cmd += f" time ./container_build.sh build {image_name}"
@@ -110,6 +111,10 @@ def build_container_image(base_work_dir, ramalama_path):
             LLAMA_CPP_PULL_REF=config.project.get_config("prepare.llama_cpp.source.repo.version"),
             LLAMA_CPP_REPO=config.project.get_config("prepare.llama_cpp.source.repo.url"),
         )
+
+        if config.project.get_config("prepare.ramalama.build_image.debug"):
+            extra_env["RAMALAMA_IMAGE_BUILD_DEBUG"] = "y"
+            extra_env["RAMALAMA_IMAGE_INCLUDE_DEBUG"] = "y"
 
         ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
                                                       extra_env=extra_env,
@@ -138,11 +143,17 @@ def prepare_binary(base_work_dir, platform):
         image_name = build_container_image(base_work_dir, ramalama_path)
 
         if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
-            version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            version_tag = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            if version_tag.startswith("refs/pull/"):
+                version_tag = version_tag.replace("refs/pull/", "pr_").replace("/head", "").replace("/merge", "")
             podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
             dest_image_name = image_name.partition(":")[0] + f":{version}"
-            dest_image_latest = image_name.partition(":")[0] + f":latest"
-            logging.info(f"Pushing the image to {dest_image_name} and latest")
+            dest_image_latest = image_name.partition(":")[0] + ":latest"
+            if config.project.get_config("prepare.ramalama.build_image.debug"):
+                dest_image_latest.removesuffix(":latest") + ":debug"
+                dest_image_name += "-debug"
+
+            logging.info(f"Pushing the image to {dest_image_name} and {dest_image_name}")
 
             podman_mod.push_image(base_work_dir, image_name, dest_image_name)
             podman_mod.push_image(base_work_dir, image_name, dest_image_latest)

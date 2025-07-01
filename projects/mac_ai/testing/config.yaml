@@ -315,6 +315,7 @@ prepare:
       enabled: false
       name: ramalama
       registry_path: localhost
+      debug: false
       publish:
         enabled: false
         credentials: "*$@secrets.image_registry"
