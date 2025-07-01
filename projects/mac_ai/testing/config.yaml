@@ -63,8 +63,7 @@ ci_presets:
 
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
-    prepare.ramalama.repo.version: null
-    prepare.ramalama.repo.git_ref: main
+    prepare.ramalama.repo.version: main
     prepare.ramalama.build_image.enabled: true
 
     test.platform: [podman/ramalama]
@@ -310,7 +309,6 @@ prepare:
     repo:
       url: https://github.com/containers/ramalama
       version: latest
-      git_ref:
     build_image:
       enabled: false
       name: ramalama

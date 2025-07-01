@@ -79,7 +79,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
     llama_cpp_version = config.project.get_config("prepare.llama_cpp.source.repo.version")
     llama_cpp_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
-    ramalama_version = config.project.get_config("prepare.ramalama.repo.git_ref")
+    ramalama_version = config.project.get_config("prepare.ramalama.repo.version")
 
     virglrenderer_version = config.project.get_config("prepare.virglrenderer.repo.branch")
     virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")

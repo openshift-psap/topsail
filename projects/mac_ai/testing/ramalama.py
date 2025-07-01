@@ -17,30 +17,23 @@ def prepare_test(base_work_dir, platform):
 
 
 def _get_binary_path(base_work_dir, platform):
-    git_ref = config.project.get_config("prepare.ramalama.repo.git_ref")
     version = config.project.get_config("prepare.ramalama.repo.version")
-
-    if git_ref and version:
-        raise ValueError(f"Cannot have Ramalama git_ref={git_ref} and version={version} set together.")
 
     if version == "latest":
         repo_url = config.project.get_config("prepare.ramalama.repo.url")
         version = utils.get_latest_release(repo_url)
         config.project.set_config("prepare.ramalama.repo.version", version)
 
-    system_file = f"{version}.zip"
-
     dest_base = base_work_dir / "ramalama-ai"
-    if version:
-        # don't use 'ramalama' in the base_work_dir, otherwise Python
-        # takes it (invalidly) for the package `ramalama` package
-        dest = dest_base / system_file
-        dest_dir = dest.parent / f"ramalama-{version.removeprefix('v')}"
-    else:
-        dest = dest_dir = dest_base / f"ramalama-{git_ref}"
 
-    ramalama_path =  dest_dir / "bin" / "ramalama"
-    return ramalama_path, dest, (version, git_ref)
+    # don't use 'ramalama' in the base_work_dir, otherwise Python
+    # takes it (invalidly) for the package `ramalama` package
+
+    dest_dir = dest_base / f"ramalama-{version.removeprefix('v')}"
+
+    ramalama_path = dest_dir / "bin" / "ramalama"
+
+    return ramalama_path, dest_dir, version
 
 
 def get_binary_path(base_work_dir, platform):
@@ -52,40 +45,28 @@ def get_binary_path(base_work_dir, platform):
 
     return ramalama_path
 
-def download_ramalama(base_work_dir, dest, version, git_ref):
+def download_ramalama(base_work_dir, dest, version):
     repo_url = config.project.get_config("prepare.ramalama.repo.url")
 
-    if version:
-        source = "/".join([
-            repo_url,
-            "archive/refs/tags",
-            f"{version}.zip",
-        ])
-        run.run_toolbox(
-            "remote", "download",
-            source=source, dest=dest,
-            tarball=True,
-        )
+    kwargs = dict(
+        repo_url=repo_url,
+        dest=dest,
+    )
+    if version.startswith("pr-"):
+        pr_number = version.removeprefix("pr-")
+        kwargs["refspec"] = f"refs/pull/{pr_number}/head"
     else:
-        kwargs = dict(
-            repo_url=repo_url,
-            dest=dest,
-        )
-        if git_ref.startswith("pr-"):
-            pr_number = git_ref.removeprefix("pr-")
-            kwargs["refspec"] = f"refs/pull/{pr_number}/head"
-        else:
-            kwargs["refspec"] = git_ref
+        kwargs["version"] = version
 
-        run.run_toolbox(
-            "remote", "clone",
-            **kwargs,
-            artifact_dir_suffix="_llama_cpp",
-            force=True,
-        )
+    run.run_toolbox(
+        "remote", "clone",
+        **kwargs,
+        artifact_dir_suffix="_llama_cpp",
+        force=True,
+    )
 
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
-                                                chdir=dest)
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
+                                            chdir=dest)
 
 
 def build_container_image(base_work_dir, ramalama_path):
@@ -130,11 +111,10 @@ def build_container_image(base_work_dir, ramalama_path):
 
 
 def prepare_binary(base_work_dir, platform):
-    ramalama_path, dest, (version, git_ref) = _get_binary_path(base_work_dir, platform)
-    system_file = dest.name
+    ramalama_path, dest, version = _get_binary_path(base_work_dir, platform)
 
-    if git_ref or not remote_access.exists(ramalama_path):
-        download_ramalama(base_work_dir, dest, version, git_ref)
+    if version.startswith("pr-") or not remote_access.exists(ramalama_path):
+        download_ramalama(base_work_dir, dest, version)
     else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
 
@@ -143,17 +123,17 @@ def prepare_binary(base_work_dir, platform):
         image_name = build_container_image(base_work_dir, ramalama_path)
 
         if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
-            version_tag = config.project.get_config("prepare.llama_cpp.source.repo.version")
-            if version_tag.startswith("refs/pull/"):
-                version_tag = version_tag.replace("refs/pull/", "pr_").replace("/head", "").replace("/merge", "")
             podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
+
+            version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+
             dest_image_name = image_name.partition(":")[0] + f":{version}"
             dest_image_latest = image_name.partition(":")[0] + ":latest"
             if config.project.get_config("prepare.ramalama.build_image.debug"):
-                dest_image_latest.removesuffix(":latest") + ":debug"
+                dest_image_latest = dest_image_latest.removesuffix(":latest") + ":debug"
                 dest_image_name += "-debug"
 
-            logging.info(f"Pushing the image to {dest_image_name} and {dest_image_name}")
+            logging.info(f"Pushing the image to {dest_image_name} and {dest_image_latest}")
 
             podman_mod.push_image(base_work_dir, image_name, dest_image_name)
             podman_mod.push_image(base_work_dir, image_name, dest_image_latest)
@@ -197,13 +177,12 @@ def stop_server(base_work_dir, ramalama_path):
 def run_model(base_work_dir, platform, ramalama_path, model, unload=False):
     inference_server_port = config.project.get_config("test.inference_server.port")
 
-    if config.project.get_config("prepare.ramalama.repo.git_ref"):
-        commit_date_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat ramalama-commit.info", chdir=ramalama_path.parent.parent, check=False, capture_stdout=True)
-        if commit_date_cmd.returncode != 0:
-            logging.warning("Couldn't find the Ramalama commit info file ...")
-        else:
-            logging.warning(f"Ramalama commit info: {commit_date_cmd.stdout}")
-            (env.ARTIFACT_DIR / "ramalama-commit.info").write_text(commit_date_cmd.stdout)
+    commit_date_cmd = remote_access.run_with_ansible_ssh_conf(base_work_dir, f"cat ramalama-commit.info", chdir=ramalama_path.parent.parent, check=False, capture_stdout=True)
+    if commit_date_cmd.returncode != 0:
+        logging.warning("Couldn't find the Ramalama commit info file ...")
+    else:
+        logging.warning(f"Ramalama commit info: {commit_date_cmd.stdout}")
+        (env.ARTIFACT_DIR / "ramalama-commit.info").write_text(commit_date_cmd.stdout)
 
     artifact_dir_suffix=None
     if unload:
