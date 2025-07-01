@@ -94,22 +94,20 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-v250627
-    prepare.virglrenderer.repo.branch: v25-06-18
-    prepare.ramalama.build_image.enabled: "remoting"
+    prepare.llama_cpp.source.repo.version: b5709-v250701.0
+    prepare.virglrenderer.repo.branch: v25-07-01
+    prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.git_ref: v0.9.3-remoting-rc5
-    prepare.ramalama.repo.version: null
+    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.0
 
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
-    - macos/llama_cpp/vulkan
-    # - podman/llama_cpp/vulkan # not working today
+    - podman/llama_cpp/vulkan
 
   remoting_testing:
     extends: [remoting]
