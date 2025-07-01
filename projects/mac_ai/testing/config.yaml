@@ -387,9 +387,11 @@ prepare:
       remoting_env:
         enabled: false
         apir_lib:
-          name: libggml-remotingbackend.dylib
-        ggml_lib:
-          name: libggml-metal.dylib
+          name:
+        ggml_libs:
+        - libggml-remotingbackend.dylib
+        - libggml-metal.dylib
+        - libggml-base.dylib
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init

@@ -46,7 +46,7 @@ update_from_podman() {
     echo "INFO: copying krunkit and libkrun locally ..."
     cp -v "$krunkit_path" "$libkrun_current_path" .
 
-    echo "INFO: updading the library references ..."
+    echo "INFO: updading the krunkit/libkrun library references ..."
     # krunkit -> libkrun
     install_name_tool -change "@rpath/libkrun-efi.dylib" "@executable_path/libkrun-efi.dylib" ./krunkit \
         2>&1 | (grep -v "invalidate the code signature" || true)
@@ -54,7 +54,7 @@ update_from_podman() {
     # libkrun -> libvirglrenderer
     install_name_tool -change "@rpath/libvirglrenderer.1.dylib" "@executable_path/libvirglrenderer.1.dylib" ./libkrun-efi.dylib
 
-    # libkrun -> self (?)
+    # libkrun -> self
     install_name_tool -id $PWD/libkrun-efi.dylib ./libkrun-efi.dylib
 
     # virglrenderer -> libMoltenVK
@@ -64,6 +64,25 @@ update_from_podman() {
     install_name_tool -change "/opt/homebrew/opt/libepoxy/lib/libepoxy.0.dylib" "/opt/podman/lib/libepoxy.0.dylib" ./libvirglrenderer.1.dylib
 }
 
+update_llama_cpp_libs() {
+    echo "INFO: updading the ggml library references ..."
+
+    cd bin
+    # libggml-metal -> self
+    install_name_tool -id "$PWD/libggml-metal.dylib" ./libggml-metal.dylib
+
+    # libggml-metal -> libggml-base
+    install_name_tool -change "@rpath/libggml-base.dylib" "$PWD/libggml-base.dylib" ./libggml-metal.dylib
+
+    # libggml-remotingbackend -> self
+    install_name_tool -id "$PWD/libggml-remotingbackend.dylib" ./libggml-remotingbackend.dylib
+
+    # libggml-remotingbackend -> libggml-base
+    install_name_tool -change "@rpath/libggml-base.dylib" "$PWD/libggml-base.dylib" ./libggml-remotingbackend.dylib
+
+    # libggml-base ->self
+    install_name_tool -id "$PWD/libggml-base.dylib" ./libggml-base.dylib
+}
 
 main() {
     if [[ ! -f podman_start_machine.api_remoting.sh ]]; then
@@ -112,6 +131,10 @@ main() {
     echo "INFO: Regenerating krunkit and libkrun code signatures ..."
     codesign --force -s - ./bin/krunkit ./bin/libkrun-efi.dylib --entitlements ./entitlement/krunkit.entitlements
 
+    pushd $PWD
+    update_llama_cpp_libs
+    popd >/dev/null
+
     # ensure that krunkit loads
     echo "INFO Checking that krunkit loads ..."
     if ! ./bin/krunkit --version; then
@@ -121,7 +144,7 @@ main() {
 
     echo "INFO: All done!"
 
-    echo "INFO: Run ./podman_start_machine.api_remoting.sh to restart the PodMan machine with the API Remoting libraries."
+    echo "INFO: Run 'bash ./podman_start_machine.api_remoting.sh' to restart the PodMan machine with the API Remoting libraries."
 }
 
 main
