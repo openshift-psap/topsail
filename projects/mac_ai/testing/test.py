@@ -100,6 +100,7 @@ class Entrypoint:
 
     def __init__(self):
         self.pre_cleanup_ci = cleanup_ci
+        self.post_cleanup_ci = cleanup_ci
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 
