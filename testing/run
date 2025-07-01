@@ -44,8 +44,8 @@ ci_banner() {
             git show --quiet --oneline ${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-} 2>/dev/null \
                 || echo "WARNING: Could not access git history (${PULL_BASE_SHA:-}..${PULL_PULL_SHA:-}) ..."
         else
-            echo "WARNING: PULL_BASE_SHA=${PULL_BASE_SHA:-} and/or PULL_PULL_SHA=${PULL_PULL_SHA:-} not set. Showing the commits from main."
-            git show --quiet --oneline main.. \
+            echo "WARNING: PULL_BASE_SHA=${PULL_BASE_SHA:-} and/or PULL_PULL_SHA=${PULL_PULL_SHA:-} not set. Showing the last commits from main."
+            git show --quiet --oneline main.. | head 10\
                 || echo "WARNING: Could not access git history (main..) ..."
         fi
     fi
