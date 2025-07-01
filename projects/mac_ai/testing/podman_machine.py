@@ -47,8 +47,8 @@ def start(base_work_dir, use_remoting=None):
     if use_remoting:
         env["DYLD_LIBRARY_PATH"] = prepare_virglrenderer.get_dyld_library_path(base_work_dir) # not working ... (blocked by MacOS when SSHing ...)
         llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
-        env["VIRGL_APIR_BACKEND_LIBRARY"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.apir_lib.name")
-        env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_lib.name")
+        env["VIRGL_APIR_BACKEND_LIBRARY"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[0]")
+        env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]")
         env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
         prepare_virglrenderer.configure(base_work_dir, use_custom=True)
     else:

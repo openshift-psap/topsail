@@ -382,11 +382,9 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
       remoting_env:
         enabled: false
-        apir_lib:
-          name:
         ggml_libs:
-        - libggml-remotingbackend.dylib
-        - libggml-metal.dylib
+        - libggml-remotingbackend.dylib # keep the APIR backend first
+        - libggml-metal.dylib # keep the GGML backend second
         - libggml-base.dylib
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
