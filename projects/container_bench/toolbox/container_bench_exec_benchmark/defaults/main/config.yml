@@ -1,0 +1,12 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.exec_benchmark
+
+# Parameters
+# path to the exec_time.py script
+# Mandatory value
+container_bench_exec_benchmark_exec_time_path:
+
+# the runtime to use for the benchmark (e.g., docker, podman)
+# Mandatory value
+container_bench_exec_benchmark_runtime:

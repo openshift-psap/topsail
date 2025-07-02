@@ -100,9 +100,17 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
+  runs: 10
   supported_container_engines:
     - podman
     - docker
+
+exec_benchmark:
+  runs: 10
+  supported_container_engines:
+    - podman
+    - docker
+
 
 test:
   platform: *all_platforms
@@ -110,6 +118,7 @@ test:
     - docker/darwin
   benchmark:
     - helloworld_benchmark
+    - exec_benchmark
   capture_metrics:
     enabled: true
 
@@ -121,4 +130,15 @@ test:
     - prepare.podman.repo.version
 
 matbench:
-  enabled: false
+  enabled: true
+  workload: projects.container_bench.visualizations.benchmark
+  preset: null
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
+  test_directory: null

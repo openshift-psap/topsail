@@ -24,6 +24,21 @@ class Container_Bench:
         """
         return RunAnsibleRole(locals())
 
+    @AnsibleRole("container_bench_exec_benchmark")
+    @AnsibleMappedParams
+    def exec_benchmark(
+            self,
+            exec_time_path,
+            runtime,
+    ):
+        """
+        Runs the exec benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          runtime: the runtime to use for the benchmark (e.g., docker, podman)
+        """
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("container_bench_capture_system_state")
     @AnsibleMappedParams
     def capture_system_state(

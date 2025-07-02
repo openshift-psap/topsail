@@ -134,6 +134,17 @@ def parse_benchmark(benchmark_name):
     if isinstance(supported_container_engines, str):
         supported_container_engines = [supported_container_engines]
     b.supported_container_engines = supported_container_engines
+
+    raw_runs = config.project.get_config(
+        f"{benchmark_name}.runs",
+        print=False)
+    try:
+        runs = int(raw_runs)
+    except (TypeError, ValueError):
+        raise ValueError(f"Benchmark '{benchmark_name}' has an invalid 'runs' value: {raw_runs!r}.")
+    if runs < 1:
+        raise ValueError(f"Benchmark '{benchmark_name}' must have runs >= 1 (got {runs}).")
+    b.runs = runs
     return b
 
 
