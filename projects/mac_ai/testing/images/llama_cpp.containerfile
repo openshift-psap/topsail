@@ -1,29 +1,31 @@
-FROM quay.io/centos/centos:10 AS builder
+FROM quay.io/fedora/fedora:42
 USER 0
 
 ARG BUILD_FLAVOR="default"
-ARG MESA_VERSION=24.2.8-104
+ARG MESA_VERSION=25.0.7-100.fc42
 
-RUN if [[ ${BUILD_FLAVOR} != remoting ]]; then \
+RUN echo "BUILD_FLAVOR: $BUILD_FLAVOR"
+
+RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
     dnf update && \
-    dnf install -y python3-dnf-plugin-versionlock && \
-    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    dnf copr enable -y slp/mesa-krunkit epel-9-aarch64 && \
-    dnf install -y mesa-vulkan-drivers-${MESA_VERSION}.el9.aarch64 && \
-    dnf versionlock  mesa-vulkan-drivers-${MESA_VERSION}.el9.aarch64 && \
-    dnf install -y git cmake gcc gcc-c++ vulkan-loader-devel vulkan-tools fmt-devel && \
+    dnf install -y --quiet python3-dnf-plugin-versionlock && \
+    dnf copr enable -y slp/mesa-libkrun-vulkan && \
+    dnf install -y --quiet mesa-vulkan-drivers-${MESA_VERSION} && \
+    dnf versionlock add mesa-vulkan-drivers-${MESA_VERSION} && \
+    dnf install -y --quiet vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
-    dnf install -y glslc && \
-    dnf clean all; \
+    dnf install -y --quiet glslc; \
  fi
 
 # for API Remoting
 
-RUN if [[ ${BUILD_FLAVOR} == remoting ]]; then \
+RUN if [[ "${BUILD_FLAVOR}" == remoting ]]; then \
       dnf update && \
-      dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-      dnf install -y git cmake gcc gcc-c++ libdrm-devel; \
+      dnf install --quiet -y libdrm-devel; \
     fi
+
+RUN dnf install --quiet -y git cmake gcc gcc-c++ && \
+    dnf clean all
 
 # --- LLAMA.CPP --- #
 
