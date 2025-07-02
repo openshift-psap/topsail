@@ -24,16 +24,16 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
         github = False
 
     # currently hardcoded, because there's no configuration file at this level
-    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH")
+    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH", "CONTAINER_BENCH_SECRET_PATH")
 
     secret_env_key = None
     warn = []
     for secret_env_key in SECRET_ENV_KEYS:
         if os.environ.get(secret_env_key): break
-        warn.append("{} not defined, cannot access the Github secrets")
+        warn.append(f"{secret_env_key} not defined, cannot access the Github secrets")
     else:
         for warning in warn:
-            logging.warning(warn)
+            logging.warning(warning)
         return True
 
     secret_dir = pathlib.Path(os.environ[secret_env_key])
