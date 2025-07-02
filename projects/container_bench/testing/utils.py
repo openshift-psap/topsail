@@ -134,6 +134,13 @@ def parse_benchmark(benchmark_name):
     if isinstance(supported_container_engines, str):
         supported_container_engines = [supported_container_engines]
     b.supported_container_engines = supported_container_engines
+
+    runs = config.project.get_config(
+        f"{benchmark_name}.runs",
+        print=False)
+    if not runs:
+        raise ValueError(f"Benchmark '{benchmark_name}' is not supported or has no runs.")
+    b.runs = runs
     return b
 
 

@@ -1,0 +1,10 @@
+visualize:
+- id: benchmark
+  generate:
+  # - "report: Error report"
+  - "report: Network Usage"
+  - "report: Disk Usage"
+  - "report: CPU Usage"
+  - "report: Power Usage"
+   # TODO: Docker VS. PODMAN - "report: Execution time Result"
+  - "report: Execution Time"
