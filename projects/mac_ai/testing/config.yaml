@@ -94,7 +94,7 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-v250701.0
+    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.0
     prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
