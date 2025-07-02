@@ -1,0 +1,8 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.capture_container_engine_info
+
+# Parameters
+# the container engine to capture information from (e.g., podman, docker)
+# Mandatory value
+container_bench_capture_container_engine_info_runtime:

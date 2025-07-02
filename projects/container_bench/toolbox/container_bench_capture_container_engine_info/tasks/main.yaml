@@ -1,0 +1,12 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Capture the container engine information
+  shell: |
+    {{ container_bench_capture_container_engine_info_runtime }} info \
+    > "{{ artifact_extra_logs_dir }}/artifacts/container_engine_info.txt"
+  changed_when: false
