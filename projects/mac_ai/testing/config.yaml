@@ -95,7 +95,7 @@ ci_presets:
     extends: [remoting]
     prepare.remoting.publish: true
     prepare.llama_cpp.source.repo.version: b5709-v250701.0
-    prepare.virglrenderer.repo.branch: v25-07-01
+    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
@@ -342,7 +342,7 @@ prepare:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
     build:
-      flags: -Dvenus=true -Dc_link_args=-L/opt/homebrew/lib/
+      flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
 
   podman:
     repo:
