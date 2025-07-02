@@ -24,7 +24,7 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
         github = False
 
     # currently hardcoded, because there's no configuration file at this level
-    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH")
+    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH", "CONTAINER_BENCH_SECRET_PATH")
 
     secret_env_key = None
     warn = []
