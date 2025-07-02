@@ -1,41 +1,18 @@
 from dash import html, dcc
-from . import styles_css as css
 import json
 import logging
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
-from math import log
 import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
+import projects.matrix_benchmarking.visualizations.helpers.plotting.styles_css as css
+import projects.matrix_benchmarking.visualizations.helpers.plotting.html as html_elements
+import projects.matrix_benchmarking.visualizations.helpers.plotting.units as units
 
 logging.basicConfig(level=logging.INFO)
 
 
 def register():
     BenchmarkReport()
-
-
-def human_readable_size(value):
-    suffix = [" kB", " MB", " GB", " TB", " PB", " EB", " ZB", " YB", " RB", " QB"]
-    base = 1000
-    bytes_ = float(value)
-    abs_bytes = abs(bytes_)
-    if abs_bytes == 1:
-        return f"{int(bytes_)} Byte"
-    elif abs_bytes < base:
-        return f"{int(bytes_)} Bytes"
-    exp = int(min(log(abs_bytes, base), len(suffix)))
-    return f"{(bytes_ / (base**exp)):.1f}{suffix[exp - 1]}"
-
-
-def format_duration(seconds):
-    if seconds < 1e-6:
-        return f"{seconds * 1e9:.2f} ns"
-    if seconds < 1e-3:
-        return f"{seconds * 1e6:.2f} µs"
-    if seconds < 1:
-        return f"{seconds * 1e3:.2f} ms"
-
-    return f"{seconds:.2f} s"
 
 
 def getInfo(settings, setting_lists, benchmark_name):
@@ -96,39 +73,6 @@ class BenchmarkReport():
 
         table_stats.TableStats._register_stat(self)
 
-    def _create_info_card(self, title, items):
-        """Create an information card with a list of key-value items."""
-        item_elements = []
-        for key, value, is_last, is_highlight in items:
-            value_element = value
-            if is_highlight and isinstance(value, str) and "seconds" in value:
-                value_element = html.Span(value, style=css.STYLE_INFO_VALUE_HIGHLIGHT)
-
-            item_style = css.STYLE_INFO_ITEM_LAST if is_last else css.STYLE_INFO_ITEM
-            item_elements.append(
-                html.Div([
-                    html.Div(f"{key}:", style=css.STYLE_INFO_KEY),
-                    html.Div(value_element, style=css.STYLE_INFO_VALUE)
-                ], style=item_style)
-            )
-
-        return html.Div([
-            html.Div(title, style=css.STYLE_INFO_CARD_HEADER),
-            html.Div(item_elements, style=css.STYLE_INFO_CARD_BODY)
-        ], style=css.STYLE_INFO_CARD)
-
-    def _create_plot_card(self, plot_name, config):
-        """Create a plot card with proper HTML structure."""
-        return html.Div([
-            html.Div(
-                html.Div(
-                    report.Plot_and_Text(plot_name, config),
-                    className='plot-container'
-                ),
-                style=css.STYLE_PLOT_CONTENT
-            )
-        ], style=css.STYLE_PLOT_CARD)
-
     def do_plot(self, *args):
         """Generate the complete benchmark report using improved HTML components."""
         ordered_vars, settings, setting_lists, variables, cfg = args
@@ -152,7 +96,7 @@ class BenchmarkReport():
                 ("Timestamp", info.get('timestamp', 'N/A'), False, False),
                 ("Execution Time", [
                     html.Span(
-                        f"{format_duration(info.get('exec_time', 0))}",
+                        f"{units.format_duration(info.get('exec_time', 0))}",
                         style=css.STYLE_INFO_VALUE_HIGHLIGHT
                     ),
                     html.Br(),
@@ -174,7 +118,7 @@ class BenchmarkReport():
 
             mem_val = container_engine_info.get('Host_memory')
             try:
-                mem_display = human_readable_size(int(mem_val))
+                mem_display = units.human_readable_size(int(mem_val))
             except (TypeError, ValueError):
                 mem_display = "N/A"
 
@@ -189,12 +133,12 @@ class BenchmarkReport():
 
             # Create info cards in rows for better readability
             summary_row = html.Div([
-                self._create_info_card("Benchmark Summary", summary_items)
+                html_elements.info_card("Benchmark Summary", summary_items)
             ], style=css.STYLE_INFO_ROW)
 
             system_row = html.Div([
-                self._create_info_card("Host System Information", host_items),
-                self._create_info_card("Container Engine Information", engine_items)
+                html_elements.info_card("Host System Information", host_items),
+                html_elements.info_card("Container Engine Information", engine_items)
             ], style=css.STYLE_INFO_ROW)
 
             info_section = html.Div([
@@ -210,7 +154,7 @@ class BenchmarkReport():
             ]
 
             plot_cards = [
-                self._create_plot_card(name, report.set_config(dict(benchmark=benchmark), args))
+                html_elements.plot_card(name, report.set_config(dict(benchmark=benchmark), args))
                 for name in plot_names
             ]
 
