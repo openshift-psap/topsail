@@ -30,10 +30,10 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
     warn = []
     for secret_env_key in SECRET_ENV_KEYS:
         if os.environ.get(secret_env_key): break
-        warn.append("{} not defined, cannot access the Github secrets")
+        warn.append(f"{secret_env_key} not defined, cannot access the Github secrets")
     else:
         for warning in warn:
-            logging.warning(warn)
+            logging.warning(warning)
         return True
 
     secret_dir = pathlib.Path(os.environ[secret_env_key])
