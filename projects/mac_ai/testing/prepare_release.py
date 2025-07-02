@@ -10,26 +10,24 @@ import prepare_llama_cpp, utils, remote_access, podman_machine, brew, podman, pr
 import llama_cpp, ollama, ramalama
 
 def create_remoting_tarball(base_work_dir):
+    package_libs = []
     virglrenderer_lib = prepare_virglrenderer.get_dyld_library_path(base_work_dir, with_lib=True)
 
     if not remote_access.exists(virglrenderer_lib):
         raise ValueError(f"Cannot publish the remoting libraries, {virglrenderer_lib} does not exist")
+    package_libs.append(virglrenderer_lib)
 
     llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
-    apir_backend_lib = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.apir_lib.name")
-    if not remote_access.exists(apir_backend_lib):
-        raise ValueError(f"Cannot publish the remoting libraries, {apir_backend_lib} does not exist")
 
-    llama_cpp_backend_lib = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_lib.name")
-    if not remote_access.exists(llama_cpp_backend_lib):
-        raise ValueError(f"Cannot publish the remoting libraries, {llama_cpp_backend_lib} does not exist")
-
-    virglrenderer_branch = config.project.get_config("prepare.virglrenderer.repo.branch")
-    if not virglrenderer_branch.startswith("v"):
-        raise ValueError("Cannot publish the remoting libraries, virglrenderer not built from a released version")
+    ggml_backend_libs = config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs")
+    for libname in ggml_backend_libs:
+        backend_lib = llama_remoting_backend_build_dir / libname
+        if not remote_access.exists(backend_lib):
+            raise ValueError(f"Cannot publish the remoting libraries, {backend_lib} does not exist")
+        package_libs.append(backend_lib)
 
     with env.NextArtifactDir("build_remoting_tarball"):
-        return build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_lib, apir_backend_lib)
+        return build_remoting_tarball(base_work_dir, package_libs)
 
 
 def add_string_file(dest, content):
@@ -68,7 +66,7 @@ def add_remote_git_status(base_work_dir, src_dir, dest):
 
 
 def get_version_link(repo_url, version, git_rev, github=False, gitlab=False):
-    url = f"{repo_url}/-/commit/{git_rev} ({version})" if gitlab \
+    url = f"{repo_url}/-/commit/{git_rev}" if gitlab \
         else f"{repo_url}/commit/{git_rev}"
 
     if version:
@@ -77,11 +75,11 @@ def get_version_link(repo_url, version, git_rev, github=False, gitlab=False):
     return url
 
 
-def build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_lib, apir_backend_lib):
+def build_remoting_tarball(base_work_dir, package_libs):
     llama_cpp_version = config.project.get_config("prepare.llama_cpp.source.repo.version")
     llama_cpp_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
-    ramalama_version = config.project.get_config("prepare.ramalama.repo.git_ref")
+    ramalama_version = config.project.get_config("prepare.ramalama.repo.version")
 
     virglrenderer_version = config.project.get_config("prepare.virglrenderer.repo.branch")
     virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")
@@ -96,8 +94,6 @@ def build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_l
     src_info_dir = tarball_dir / "src_info"
     src_info_dir.mkdir()
 
-    add_remote_file(base_work_dir, virglrenderer_lib, bin_dir / virglrenderer_lib.name)
-
     virglrenderer_src_dir = prepare_virglrenderer.get_build_dir(base_work_dir) / ".." / "src"
     virglrenderer_git_rev = add_remote_git_status(base_work_dir, virglrenderer_src_dir,
                                                   src_info_dir / "virglrenderer.git-commit.txt")
@@ -110,9 +106,8 @@ def build_remoting_tarball(base_work_dir, virglrenderer_lib, llama_cpp_backend_l
 
     llama_cpp_version_link = get_version_link(llama_cpp_url, llama_cpp_version, llama_cpp_git_rev, github=True)
 
-    add_remote_file(base_work_dir, llama_cpp_backend_lib, bin_dir / llama_cpp_backend_lib.name)
-
-    add_remote_file(base_work_dir, apir_backend_lib, bin_dir / apir_backend_lib.name)
+    for backend_lib in package_libs:
+        add_remote_file(base_work_dir, backend_lib, bin_dir / backend_lib.name)
 
     machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/podman_start_machine.api_remoting.sh")
     add_local_file(machine_script_file, tarball_dir / machine_script_file.name)

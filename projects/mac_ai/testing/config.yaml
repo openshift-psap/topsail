@@ -63,8 +63,7 @@ ci_presets:
 
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
-    prepare.ramalama.repo.version: null
-    prepare.ramalama.repo.git_ref: main
+    prepare.ramalama.repo.version: main
     prepare.ramalama.build_image.enabled: true
 
     test.platform: [podman/ramalama]
@@ -95,22 +94,20 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-v250627
-    prepare.virglrenderer.repo.branch: v25-06-18
-    prepare.ramalama.build_image.enabled: "remoting"
+    prepare.llama_cpp.source.repo.version: b5709-v250701.0
+    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1
+    prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.git_ref: v0.9.3-remoting-rc5
-    prepare.ramalama.repo.version: null
+    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.0
 
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
-    - macos/llama_cpp/vulkan
-    # - podman/llama_cpp/vulkan # not working today
+    - podman/llama_cpp/vulkan
 
   remoting_testing:
     extends: [remoting]
@@ -310,11 +307,11 @@ prepare:
     repo:
       url: https://github.com/containers/ramalama
       version: latest
-      git_ref:
     build_image:
       enabled: false
       name: ramalama
       registry_path: localhost
+      debug: false
       publish:
         enabled: false
         credentials: "*$@secrets.image_registry"
@@ -345,7 +342,7 @@ prepare:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
     build:
-      flags: -Dvenus=true -Dc_link_args=-L/opt/homebrew/lib/
+      flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
 
   podman:
     repo:
@@ -385,10 +382,10 @@ prepare:
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
       remoting_env:
         enabled: false
-        apir_lib:
-          name: libggml-remotingbackend.dylib
-        ggml_lib:
-          name: libggml-metal.dylib
+        ggml_libs:
+        - libggml-remotingbackend.dylib # keep the APIR backend first
+        - libggml-metal.dylib # keep the GGML backend second
+        - libggml-base.dylib
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init

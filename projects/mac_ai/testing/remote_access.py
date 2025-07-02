@@ -82,7 +82,7 @@ ansible_ssh_common_args: "{' '.join(ssh_flags)}"
 
 def run_with_ansible_ssh_conf(
         base_work_dir, cmd,
-        extra_env={},
+        extra_env=None,
         check=True,
         capture_stdout=False,
         capture_stderr=False,
@@ -92,6 +92,9 @@ def run_with_ansible_ssh_conf(
         decode_stdout=True,
         decode_stderr=True,
 ):
+    if extra_env is None:
+        extra_env = {}
+
     run_kwargs = dict(
         log_command=False,
         check=check,

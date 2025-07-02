@@ -85,9 +85,8 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.version = results.test_config.get(version_config_key) \
         if version_config_key else "Unknown"
 
-    if "ramalama" in lts_settings.platform and not lts_settings.version and results.ramalama_commit_info:
-        git_ref = results.test_config.get("prepare.ramalama.repo.git_ref")
-        lts_settings.version = f"{git_ref}-{results.ramalama_commit_info.date_id}"
+    if "ramalama" in lts_settings.platform and results.ramalama_commit_info:
+        lts_settings.version = f"{lts_settings.version}-{results.ramalama_commit_info.date_id}"
 
     lts_settings.containerized = containerized
 

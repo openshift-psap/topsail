@@ -7,6 +7,7 @@ import remote_access
 
 def get_build_dir(base_work_dir):
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
+
     return base_work_dir / "virglrenderer" / version / "build"
 
 
@@ -28,6 +29,12 @@ def prepare(base_work_dir):
     repo_url = config.project.get_config("prepare.virglrenderer.repo.url")
     build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
+    refspec = None
+    if version.startswith("pr-"):
+        pr_number = version.removeprefix("pr-")
+        refspec = f"refs/merge-requests/{pr_number}/head"
+        version = None
+
     build_dir = get_build_dir(base_work_dir)
     src_dir = build_dir.parent / "src"
 
@@ -36,6 +43,7 @@ def prepare(base_work_dir):
         repo_url=repo_url,
         dest=src_dir,
         version=version,
+        refspec=refspec,
         artifact_dir_suffix="__virglrenderer",
         force=True,
     )
