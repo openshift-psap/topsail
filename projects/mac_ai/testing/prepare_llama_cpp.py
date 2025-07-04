@@ -194,10 +194,6 @@ def prepare_from_source(base_work_dir, platform):
         artifact_dir_suffix="_llama_cpp",
     )
 
-    # for the Kompute build
-    cmd = f"sed -i.bu s/-Werror//g {dest}/ggml/src/ggml-kompute/kompute/CMakeLists.txt"
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
-
     src_dir = dest
     cmake_parallel = config.project.get_config("prepare.llama_cpp.source.cmake.parallel")
 

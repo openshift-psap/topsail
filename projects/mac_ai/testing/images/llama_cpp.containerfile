@@ -38,8 +38,7 @@ ARG LLAMA_CPP_CMAKE_BUILD_FLAGS="--parallel 4"
 
 RUN git clone "${LLAMA_CPP_REPO}" src \
  && git -C src fetch origin ${LLAMA_CPP_VERSION} \
- && git -C src reset --hard FETCH_HEAD \
- && git -C src submodule update --init ggml/src/ggml-kompute/kompute
+ && git -C src reset --hard FETCH_HEAD
 
 RUN mkdir -p build \
  && echo "Version: ${LLAMA_CPP_VERSION}" > build/build.flags.log \

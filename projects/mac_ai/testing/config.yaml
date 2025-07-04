@@ -290,7 +290,6 @@ prepare:
             LLAMA_CPP_CMAKE_FLAGS: -DLLAMA_CURL=OFF
             BUILD_FLAVOR: # set at runtime with the name of the flavor (one from below)
           flavors:
-            kompute: -DGGML_KOMPUTE=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             remoting: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
 
@@ -396,9 +395,7 @@ prepare:
 test:
   platform: *all_platforms
 
-  platforms_to_skip:
-  # - macos/llama_cpp/upstream_bin # always built, but no need to test it every time
-  - podman/llama_cpp/no-gpu/kompute # slow, not interesting atm
+  platforms_to_skip: []
 
   inference_server:
     port: 11434
@@ -531,5 +528,5 @@ __platform_check:
     no_gpu: no-gpu
 
   flavors:
-    llama_cpp: [metal, vulkan, upstream_bin, kompute, remoting]
+    llama_cpp: [metal, vulkan, upstream_bin, remoting]
     ramalama: [remoting, null]
