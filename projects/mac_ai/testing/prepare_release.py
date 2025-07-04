@@ -70,7 +70,7 @@ def get_version_link(repo_url, version, git_rev, github=False, gitlab=False):
         else f"{repo_url}/commit/{git_rev}"
 
     if version:
-        url += f" (release {version})"
+        url += f" (release `{version}`)"
 
     return url
 
@@ -139,7 +139,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     # ---
 
-    ci_build_link = None
+    ci_build_link = pathlib.Path("/not/running/in/ci")
     ci_perf_link = None
     if os.environ.get("OPENSHIFT_CI") == "true":
         ci_link = "/".join([
@@ -155,11 +155,15 @@ def build_remoting_tarball(base_work_dir, package_libs):
         ci_perf_link = ci_link + "/005-test/artifacts/test-artifacts/reports_index.html"
 
     tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}.tar"
+    readme_path = pathlib.Path("README.md")
 
     tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
-    add_string_file(tarball_dir / "README.md", f"""\
+    add_string_file(tarball_dir / readme_path, f"""\
 llama.cpp API remoting GPU acceleration for MacOS
 =================================================
+
+Prerequisites
+-------------
 
 * Make sure that the following dependencies are installed
 
@@ -167,7 +171,7 @@ llama.cpp API remoting GPU acceleration for MacOS
 brew tap slp/krunkit
 brew install krunkit
 
-brew install podman ramalama
+brew install podman ramalama molten-vk
 ```
 
 * Make sure that a libkrun Podman machine exists
@@ -180,6 +184,15 @@ podman machine ls
 podman machine init
 ```
 
+Setup
+-----
+
+* download and extract the tarball and enter its directory
+```
+curl -Ssf "{ci_build_link / tarball_path}" | tar xv -
+cd "{tarball_dir.name}"
+```
+
 * from inside the tarball directory, run this command once to create a copy of krunkit/libkrun that will be allowed to run our virglrenderer/llama.cpp libraries
 ```
 bash ./{krunkit_script_file.name}
@@ -187,8 +200,11 @@ bash ./{krunkit_script_file.name}
 
 * run this command to restart the libkrun podman machine with our libraries
 ```
-bash ./{machine_script_file}
+bash ./{machine_script_file.name}
 ```
+
+Try it
+------
 
 * run ramalama with our custom image.
 ```
@@ -196,24 +212,109 @@ export CONTAINERS_MACHINE_PROVIDER=libkrun
 ramalama --image {ramalama_image} run llama3.2
 ```
 
+""")
+
+    add_string_file(tarball_dir / "RELEASE.md", f"""\
+CI build
+--------
+* [tarball]({ci_build_link / tarball_path})
+* [build logs]({ci_build_link})
+* [README]({ci_build_link / readme_path})
+
 Sources
 -------
-virglrenderer source: {virglrenderer_version_link}
-llama.cpp source    : {llama_cpp_version_link}
-ramalama source     : {ramalama_version_link}
+* virglrenderer source: {virglrenderer_version_link}
+* llama.cpp source    : {llama_cpp_version_link}
+* ramalama source     : {ramalama_version_link}
 
 Ramalama image
 --------------
-{ramalama_image}
-
-CI build
---------
-* tarball: {ci_build_link / tarball_path if ci_build_link else '(Not running in a CI environment)'}
-* build logs: {ci_build_link or '(Not running in a CI environment)'}
+`{ramalama_image}`
 
 CI performance test
 --------
-{ci_perf_link or '(Not running in a CI environment)'}
+* [release performance test]({ci_perf_link or '(Not running in a CI environment)'})
+""")
+
+    add_string_file(tarball_dir / "TROUBLESHOOTING.md", f"""\
+Troubleshooting
+===============
+
+Running without RamaLama
+------------------------
+
+```
+podman run -it --rm --device /dev/dri {ramalama_image} llama-run --verbose llama3.2:1b
+```
+
+Reviewing the container logs
+----------------------------
+
+When ramalama is launched, check the container logs with this command:
+```
+podman logs -f $(podman ps --filter label=ai.ramalama -n1  --format="{{{{.ID}}}}")
+```
+
+Look for these line to confirm that the API Remoting is active (or look for errors in the first lines of the logs)
+```
+load_tensors: offloading 28 repeating layers to GPU
+load_tensors: offloading output layer to GPU
+load_tensors: offloaded 29/29 layers to GPU
+load_tensors:   CPU_Mapped model buffer size =   308.23 MiB
+load_tensors:        Metal model buffer size =  1918.35 MiB
+```
+
+Reviewing the host-side logs
+----------------------------
+
+```
+cat /tmp/apir_virglrenderer.log
+cat /tmp/apir_llama_cpp.log
+```
+
+Reporting an issue
+------------------
+
+Open issues in {llama_cpp_url}/issues
+
+Please share:
+- the content of the logs mentioned above
+- the name of the tarball (`{tarball_file.name}`)
+- the name of the contaienr image (`{ramalama_image}`)
+- the output of this command:
+```
+system_profiler SPSoftwareDataType SPHardwareDataType
+```
+""")
+
+    add_string_file(tarball_dir / "BENCHMARKING.md", f"""\
+Benchmarking
+============
+
+* API Remoting Performance
+```
+ramalama --image {ramalama_image} bench  llama3.2 # benchmarking mode
+```
+
+* Native Performance
+```
+brew install llama.cpp
+ramalama --nocontainer bench llama3.2 # native metal execution
+```
+
+* Vulkan/Venus Performance
+```
+ramalama bench llama3.2 # Venus/Vulkan execution
+```
+
+If you want to share your performance, please also include:
+Please share:
+- the name of the tarball (`{tarball_file.name}`)
+- the name of the contaienr image (`{ramalama_image}`)
+- the output of this command:
+```
+system_profiler SPSoftwareDataType SPHardwareDataType
+```
 """)
 
     with tarfile.open(tarball_file, "w") as tar:
