@@ -166,7 +166,7 @@ def generate_visualization(test_artifact_dir):
 
     with env.NextArtifactDir("plots"):
         exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
-
+        logging.error(f"Test visualization failed :/ {exc}")
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
     return exc
