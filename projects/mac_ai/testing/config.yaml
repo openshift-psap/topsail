@@ -276,6 +276,9 @@ prepare:
           enabled: true
           flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
         common: -DGGML_CPU_ARM_ARCH=native -DLLAMA_CURL=OFF
+        debug:
+          enabled: false
+          flags: -DCMAKE_BUILD_TYPE=Debug
         flavors:
           metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
           vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
@@ -347,7 +350,9 @@ prepare:
       branch: main
     build:
       flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
-
+    debug:
+      enabled: false
+      flags: --buildtype=debug
   podman:
     repo:
       enabled: true
