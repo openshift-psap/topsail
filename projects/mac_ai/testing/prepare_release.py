@@ -115,11 +115,9 @@ def build_remoting_tarball(base_work_dir, package_libs):
     krunkit_script_file = pathlib.Path("projects/mac_ai/testing/scripts/update_krunkit.sh")
     add_local_file(krunkit_script_file, tarball_dir / krunkit_script_file.name)
 
-    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
-    image_name = config.project.get_config("prepare.ramalama.build_image.name")
-    ramalama_image = f"{registry_path}/{image_name}:{llama_cpp_version}"
-
     import prepare_mac_ai
+    ramalama_image = ramalama.get_release_image_name(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
+
     _, ramalama_src_dir, _ = ramalama._get_binary_path(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
 
     ramalama_git_revparse = add_remote_git_status(base_work_dir, ramalama_src_dir,
