@@ -110,6 +110,20 @@ def build_container_image(base_work_dir, ramalama_path):
     return image_fullname
 
 
+def get_release_image_name(base_work_dir, platform):
+    _, _, version = _get_binary_path(base_work_dir, platform)
+
+    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+    image_name = config.project.get_config("prepare.ramalama.build_image.name")
+
+    dest_image_name = registry_path + "/" + image_name.partition(":")[0] + f":{version}"
+
+    if config.project.get_config("prepare.ramalama.build_image.debug"):
+        dest_image_name += "-debug"
+
+    return dest_image_name
+
+
 def prepare_binary(base_work_dir, platform):
     ramalama_path, dest, version = _get_binary_path(base_work_dir, platform)
 
@@ -125,18 +139,16 @@ def prepare_binary(base_work_dir, platform):
         if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
             podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
 
-            version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            release_image_name = get_release_image_name(base_work_dir, platform)
 
-            dest_image_name = image_name.partition(":")[0] + f":{version}"
-            dest_image_latest = image_name.partition(":")[0] + ":latest"
-            if config.project.get_config("prepare.ramalama.build_image.debug"):
-                dest_image_latest = dest_image_latest.removesuffix(":latest") + ":debug"
-                dest_image_name += "-debug"
+            latest_suffix = ":debug" if config.project.get_config("prepare.ramalama.build_image.debug") \
+                else ":latest"
+            release_image_latest = release_image_name.partition(":")[0] + ":latest"
 
-            logging.info(f"Pushing the image to {dest_image_name} and {dest_image_latest}")
+            logging.info(f"Pushing the image to {release_image_name} and {release_image_latest}")
 
-            podman_mod.push_image(base_work_dir, image_name, dest_image_name)
-            podman_mod.push_image(base_work_dir, image_name, dest_image_latest)
+            podman_mod.push_image(base_work_dir, image_name, release_image_name)
+            podman_mod.push_image(base_work_dir, image_name, release_image_latest)
     else:
         logging.info(f"ramalama image build not requested.")
 
