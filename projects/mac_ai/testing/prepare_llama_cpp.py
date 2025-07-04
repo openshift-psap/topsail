@@ -220,6 +220,9 @@ def prepare_from_source(base_work_dir, platform):
     if config.project.get_config("prepare.llama_cpp.source.cmake.openmp.enabled"):
         cmake_flags += " " + config.project.get_config("prepare.llama_cpp.source.cmake.openmp.flags")
 
+    if config.project.get_config("prepare.llama_cpp.source.cmake.debug.enabled"):
+        cmake_flags += " " + config.project.get_config("prepare.llama_cpp.source.cmake.debug.flags")
+
     with env.NextArtifactDir(f"build_llama_cpp_{inference_server_flavor}"):
         prepare_cmd = f"cmake -B {build_dir} {cmake_flags} 2>&1 | tee {build_dir}/build.prepare.log"
         build_cmd = f"cmake --build {build_dir} --config Release --parallel {cmake_parallel} 2>&1 | tee {build_dir}/build.compile.log"
