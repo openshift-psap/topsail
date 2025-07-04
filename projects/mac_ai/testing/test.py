@@ -27,8 +27,17 @@ def prepare_ci():
     """
     Prepares the cluster and the namespace for running the tests
     """
-
-    return prepare_mac_ai.prepare()
+    try:
+        return prepare_mac_ai.prepare()
+    except Exception as exc:
+        if not config.project.get_config("remote_host.run_locally"):
+            # retrieve all the files that have been saved remotely
+            exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
+                                    path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
+                                    mute_stdout=True, mute_stderr=True)
+            if exc:
+                logging.error(f"Remote retrieve failed :/ --> {exc}")
+        raise exc
 
 
 @entrypoint()
