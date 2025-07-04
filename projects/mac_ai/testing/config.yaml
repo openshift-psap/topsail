@@ -109,6 +109,11 @@ ci_presets:
     - macos/llama_cpp/metal
     - podman/llama_cpp/vulkan
 
+  debug:
+    prepare.llama_cpp.source.cmake.debug.enabled: true
+    prepare.virglrenderer.debug.enabled: true
+    prepare.ramalama.build_image.debug: true
+
   remoting_testing:
     extends: [remoting]
     test.platform:
