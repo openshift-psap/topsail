@@ -91,17 +91,5 @@ INFO: Try the API Remoting GPU acceleration with RamaLama:
 \$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
 \$ ramalama --image $ramalama_image run llama3.2
 
-INFO: When ramalama is launched, check the container logs with this command:
-\$ podman logs -f \$(podman ps --filter label=ai.ramalama -n1  --format="{{.ID}}")
-
-INFO: Add check for this line: 'Metal model buffer size = ... MiB' to confirm that the API Remoting is active
-INFO: (or look for errors in the first lines of the log)
-
-INFO: To report an issue, please share the content of these log files
-- $VIRGL_APIR_LOG_TO_FILE
-- $APIR_LLAMA_CPP_LOG_TO_FILE
-INFO: And the output of this command:
-\$ system_profiler SPSoftwareDataType SPHardwareDataType
-
 INFO: All done!
 EOF

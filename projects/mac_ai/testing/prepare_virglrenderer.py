@@ -28,6 +28,10 @@ def prepare(base_work_dir):
 
     repo_url = config.project.get_config("prepare.virglrenderer.repo.url")
     build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
+
+    if config.project.get_config("prepare.virglrenderer.debug.enabled"):
+        build_flags += " " + config.project.get_config("prepare.virglrenderer.debug.flags")
+
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
     refspec = None
     if version.startswith("pr-"):

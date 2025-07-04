@@ -22,6 +22,13 @@ update_from_brew() {
         exit 1
     fi
 
+    MOLTEN_VK_LIB=/opt/homebrew/lib/libMoltenVK.dylib
+
+    if [[ ! -f "$MOLTEN_VK_LIB" ]]; then
+        echo "ERROR: $MOLTEN_VK_LIB does not exist. Please install it with 'brew install molten-vk-krunkit'"
+        exit 1
+    fi
+
     libkrun_current_path=$(otool -L "$krunkit_path" | grep libkrun | awk '{print $1;}')
     libvirglrenderer_current_path=$(otool -L "$libkrun_current_path" | grep libvirglrenderer.1.dylib | awk '{print $1;}')
 
@@ -35,6 +42,9 @@ update_from_brew() {
 
     # libkrun -> libvirglrenderer
     install_name_tool -change "$libvirglrenderer_current_path" @executable_path/libvirglrenderer.1.dylib ./libkrun-efi.dylib
+
+    # virglrenderer -> libMoltenVK
+    install_name_tool -change "/opt/homebrew/opt/molten-vk-krunkit/lib/libMoltenVK.dylib" "/opt/homebrew/lib/libMoltenVK.dylib" ./libvirglrenderer.1.dylib
 }
 
 update_from_podman() {
