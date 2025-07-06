@@ -545,7 +545,7 @@ ci_presets:
     tests.fine_tuning.test_settings.pod_count: 2
 
     tests.fine_tuning.test_settings.secondary_nic_prefix: "subnet-rdma-port-"
-    tests.fine_tuning.test_settings.secondary_nic_count: 8
+    tests.fine_tuning.test_settings.secondary_nic_count: [1, 2, 4]
 
     # tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: [60000, 70000, 80000, 85000, 90000, 95000]
     tests.fine_tuning.test_settings.hyper_parameters.max_batch_len: 50000
