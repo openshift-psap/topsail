@@ -96,12 +96,6 @@ def parse_env(dirname, test_config, capture_state_dir):
         job_spec = json.loads(ansible_env["JOB_SPEC"])
         entrypoint_options = json.loads(ansible_env["ENTRYPOINT_OPTIONS"])
 
-        #
-
-        pull_number = job_spec["refs"]["pulls"][0]["number"]
-        github_org = job_spec["refs"]["org"]
-        github_repo = job_spec["refs"]["repo"]
-
         job = job_spec["job"]
         build_id = job_spec["buildid"]
 
@@ -110,14 +104,29 @@ def parse_env(dirname, test_config, capture_state_dir):
 
         # ---
         # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
+        if job_spec["type"] == "periodic":
+            github_org = job_spec["extra_refs"][0]["org"]
+            github_repo = job_spec["extra_refs"][0]["repo"]
+            path = "logs"
 
-        from_env.test.run_id = f"{pull_number}/{job}/{build_id}/{test_name}"
+            from_env.test.run_id = f"{job}/{build_id}/{test_name}"
 
-        # ---
-        from_env.test.urls |= dict(
-            PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/",
-            PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_dir}/{from_env.test.test_path}",
-        )
+            from_env.test.urls |= dict(
+                PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/{path}/{job}/{build_id}/",
+                PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/{path}/{job}/{build_id}/artifacts/{test_name}/{step_dir}/{from_env.test.test_path}",
+            )
+        else:
+            pull_number = job_spec["refs"]["pulls"]["number"]
+            github_org = job_spec["refs"]["org"]
+            github_repo = job_spec["refs"]["repo"]
+            path = "pr-logs/pull"
+            from_env.test.run_id = f"{pull_number}/{job}/{build_id}/{test_name}"
+
+            # ---
+            from_env.test.urls |= dict(
+                PROW_JOB=f"https://prow.ci.openshift.org/view/gs/test-platform-results/{path}/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/",
+                PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/{path}/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}/artifacts/{test_name}/{step_dir}/{from_env.test.test_path}",
+            )
 
     if ansible_env.get("PERFLAB_CI") == "true":
         from_env.test.ci_engine = "PERFLAB_CI"
