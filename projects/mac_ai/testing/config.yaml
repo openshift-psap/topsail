@@ -101,7 +101,7 @@ ci_presets:
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.0
+    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.1
 
     test.platform:
     - podman/ramalama/remoting
