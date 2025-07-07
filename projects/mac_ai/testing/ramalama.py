@@ -143,7 +143,7 @@ def prepare_binary(base_work_dir, platform):
 
             latest_suffix = ":debug" if config.project.get_config("prepare.ramalama.build_image.debug") \
                 else ":latest"
-            release_image_latest = release_image_name.partition(":")[0] + ":latest"
+            release_image_latest = release_image_name.partition(":")[0] + latest_suffix
 
             logging.info(f"Pushing the image to {release_image_name} and {release_image_latest}")
 
