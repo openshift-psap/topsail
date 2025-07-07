@@ -35,7 +35,8 @@ update_from_brew() {
 
     cd bin
     echo "INFO: copying krunkit and libkrun locally ..."
-    cp "$krunkit_path" "$libkrun_current_path" .
+    cp "$krunkit_path" .
+    cp "$libkrun_current_path" ./libkrun-efi.dylib # force the name, to avoid naming it libkrun-efi.1.dylib
 
     echo "INFO: updading the library references ..."
     # krunkit -> libkrun
