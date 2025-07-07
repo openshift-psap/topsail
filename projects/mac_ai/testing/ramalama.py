@@ -61,7 +61,7 @@ def download_ramalama(base_work_dir, dest, version):
     run.run_toolbox(
         "remote", "clone",
         **kwargs,
-        artifact_dir_suffix="_llama_cpp",
+        artifact_dir_suffix="_ramalama",
         force=True,
     )
 
