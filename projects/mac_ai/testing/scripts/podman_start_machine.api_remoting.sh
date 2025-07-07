@@ -83,6 +83,20 @@ fi
 
 if [[ -z "$(which ramalama)" ]]; then
     echo "WARNING: ramalama isn't available ..."
+    echo "WARNING: Please install a recent version (>= v0.10.0)"
+else
+    ramalama_version=$(ramalama version | cut -d" " -f3) # ramalama version 0.10.0
+
+    major=$(echo "$ramalama_version" | cut -d. -f1)
+    minor=$(echo "$ramalama_version" | cut -d. -f2)
+
+    if [[ "$major" -ge 1 ]]; then
+        echo "UNEXPECTED: RamaLama 1.x ($ramalama_version) not released yet."
+    elif [[ "$minor" -ge 10 ]]; then
+        echo "INFO: RamaLama v$ramalama_version is recent enough ✔"
+    else
+        echo "ERROR: RamaLama version $ramalama_version will not work."
+    fi
 fi
 
 cat <<EOF
