@@ -13,6 +13,7 @@ trap 'err_report $LINENO' ERR
 
 BREW_KRUNKIT_PATH=/opt/homebrew/bin/krunkit
 PODMAN_KRUNKIT_PATH=/opt/podman/bin/krunkit
+SUPPORTED_MAC_OS_VERSION=15
 
 update_from_brew() {
     # krunkit installed_from brew
@@ -98,6 +99,11 @@ main() {
     if [[ ! -f podman_start_machine.api_remoting.sh ]]; then
         echo "ERROR: podman_start_machine.api_remoting.sh not found in the current directory. Please run this in the llama.cpp API remoting release directory."
         exit 1
+    fi
+
+    macos_version_major=$(sw_vers --productVersion | cut -d. -f1)
+    if [[ "$macos_version_major" != "$SUPPORTED_MAC_OS_VERSION" ]]; then
+        echo "WARNING: this tarball only supports MAC OS $SUPPORTED_MAC_OS_VERSION"
     fi
 
     krunkit_path=$(which krunkit)
