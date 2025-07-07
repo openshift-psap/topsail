@@ -11,6 +11,7 @@ ci_presets:
   mac_ai_nightly:
     extends: [mac_ai]
     project.args: [cpt_nightly]
+    cluster.name: mac5
 
   cont_bench:
     secrets.dir.name: cont-bench-secret # key/value never actually used
