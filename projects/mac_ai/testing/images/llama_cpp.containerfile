@@ -7,7 +7,7 @@ ARG MESA_VERSION=25.0.7-100.fc42
 RUN echo "BUILD_FLAVOR: $BUILD_FLAVOR"
 
 RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
-    dnf update && \
+    dnf update -y && \
     dnf install -y --quiet python3-dnf-plugin-versionlock && \
     dnf copr enable -y slp/mesa-libkrun-vulkan && \
     dnf install -y --quiet mesa-vulkan-drivers-${MESA_VERSION} && \
@@ -20,7 +20,7 @@ RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
 # for API Remoting
 
 RUN if [[ "${BUILD_FLAVOR}" == remoting ]]; then \
-      dnf update && \
+      dnf update -y && \
       dnf install --quiet -y libdrm-devel; \
     fi
 
