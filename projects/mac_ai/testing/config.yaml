@@ -282,7 +282,7 @@ prepare:
         flavors:
           metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
           vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
-          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON # backend
+          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
       podman:
         build_from: local_container_file
         command: # will be set in prepare_test
