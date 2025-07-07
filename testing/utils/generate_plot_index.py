@@ -17,19 +17,33 @@ def report_index_to_html(report_index):
 
     dirname = report_index.relative_to(ARTIFACT_DIR).parent
 
-    print()
-    print(f"<h1><a  style='text-decoration:none; color: inherit' href='{dirname}'>{dirname}</a></h1>")
+    def print_header():
+        print()
+        print(f"<h1><a  style='text-decoration:none; color: inherit' href='{dirname}'>{dirname}</a></h1>")
+        print("<ul>")
 
-    print("<ul>")
+    def print_separator():
+        print("<br>")
+
+    def print_footer():
+        print("</ul>")
+
+
+    first = True
     for glob in ("*.html", "*.json"):
         for report_file in sorted(report_dir.glob(glob)):
             if report_file.name in IGNORED_FILES: continue
+            if first:
+                print_header()
+                first = False
 
             add_entry(report_file)
 
+        if not first:
+            print_separator()
 
-        print("<br>")
-    print("</ul>")
+    if not first:
+        print_footer()
 
 
 def main():
