@@ -242,7 +242,7 @@ Running without RamaLama
 ------------------------
 
 ```
-podman run -it --rm --device /dev/dri {ramalama_image} llama-run --verbose llama3.2:1b
+podman run -it --rm --device /dev/dri {ramalama_image} llama-run --verbose --ngl 99 ollama://smollm:135m
 ```
 
 Reviewing the container logs
