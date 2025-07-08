@@ -95,7 +95,9 @@ prechecks() {
 
     if [[ "${OPENSHIFT_CI:-}" == true && "${TOPSAIL_LOCAL_CI_MULTI:-}" != true && "${TOPSAIL_JUMP_CI_INSIDE_JUMP_HOST:-}" != true ]]; then
         DEST="${ARTIFACT_DIR}/variable_overrides.yaml"
-        "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST" || true
+        if [[ "${JOB_TYPE}" == "presubmit" ]]; then
+            "$THIS_DIR/utils/openshift_ci/pr_args.sh" "$DEST"
+        fi
         if [[ -f "$DEST" ]]; then
             echo "Variables overridden from PR:"
             cat "$DEST"
