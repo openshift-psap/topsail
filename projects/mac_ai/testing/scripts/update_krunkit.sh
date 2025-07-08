@@ -102,9 +102,17 @@ main() {
         exit 1
     fi
 
+    if ! podman machine info >/dev/null; then
+        echo "WARNING: podman not available ..."
+        echo
+        sleep 2
+    fi
+
     macos_version_major=$(sw_vers --productVersion | cut -d. -f1)
     if [[ "$macos_version_major" != "$SUPPORTED_MAC_OS_VERSION" ]]; then
         echo "WARNING: this tarball only supports MAC OS $SUPPORTED_MAC_OS_VERSION"
+        echo
+        sleep 2
     fi
 
     krunkit_path=$(which krunkit)

@@ -13,8 +13,14 @@ echo "INFO: # for podman to load krunkit/libkrun and not vfkit"
 echo "INFO: Setting CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER"
 echo
 
+if ! podman machine info >/dev/null; then
+    echo "ERROR: podman not available ..."
+    exit 1
+fi
+
 if ! podman machine inspect 2>/dev/null >/dev/null; then
     echo "ERROR: podman machine inspect not working. Did you run 'CONTAINERS_MACHINE_PROVIDER=libkrun podman machine init'?"
+    exit 1
 fi
 
 if [[ ! -f "$SCRIPT_DIR/src_info/ramalama.image-info.txt" ]]; then
@@ -104,6 +110,11 @@ cat <<EOF
 INFO: Try the API Remoting GPU acceleration with RamaLama:
 \$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
 \$ ramalama --image $ramalama_image run llama3.2
+
+INFO: To stop the virtual machine
+\$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
+\$ podman machine stop
+\$ podman machine rm # to cleanup its files and disks
 
 INFO: All done!
 EOF
