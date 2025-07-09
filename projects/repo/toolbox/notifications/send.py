@@ -296,13 +296,27 @@ def get_pr_number():
 # returns a tuple (base_link, link_suffix)
 def get_ci_base_link(is_raw_file=False, is_dir=False):
     if os.environ.get("OPENSHIFT_CI") == "true":
+        job_spec = json.loads(os.environ["JOB_SPEC"])
+
+        test_name = os.environ['JOB_NAME_SAFE']
         test_path = os.environ["TOPSAIL_OPENSHIFT_CI_STEP_DIR"]
+        job = job_spec["job"]
+        build_id = job_spec["buildid"]
 
-        return ((f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/" +
-                 f"pull/{os.environ['REPO_OWNER']}_{os.environ['REPO_NAME']}/{os.environ['PULL_NUMBER']}" +
-                 f"/{os.environ['JOB_NAME']}/{os.environ['BUILD_ID']}/artifacts/{os.environ['JOB_NAME_SAFE']}/{test_path}"),
-                "")
+        if job_spec["type"] == "periodic":
+            link_path = f"logs/{job}/{build_id}"
 
+        else:
+            pull_number = job_spec["refs"]["pulls"][0]["number"]
+            github_org = job_spec["refs"]["org"]
+            github_repo = job_spec["refs"]["repo"]
+
+            link_path = f"pr-logs/pull/{github_org}_{github_repo}/{pull_number}/{job}/{build_id}"
+
+        return ((f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/"
+                 + link_path
+                 + f"/artifacts/{test_name}/{test_path}",
+                 "")
 
     elif os.environ.get("PERFLAB_CI") == "true":
         artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts")
