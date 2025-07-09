@@ -13,6 +13,7 @@ trap 'err_report $LINENO' ERR
 
 BREW_KRUNKIT_PATH=/opt/homebrew/bin/krunkit
 PODMAN_KRUNKIT_PATH=/opt/podman/bin/krunkit
+SUPPORTED_MAC_OS_VERSION=15
 
 update_from_brew() {
     # krunkit installed_from brew
@@ -22,12 +23,20 @@ update_from_brew() {
         exit 1
     fi
 
+    MOLTEN_VK_LIB=/opt/homebrew/lib/libMoltenVK.dylib
+
+    if [[ ! -f "$MOLTEN_VK_LIB" ]]; then
+        echo "ERROR: $MOLTEN_VK_LIB does not exist. Please install it with 'brew install molten-vk-krunkit'"
+        exit 1
+    fi
+
     libkrun_current_path=$(otool -L "$krunkit_path" | grep libkrun | awk '{print $1;}')
     libvirglrenderer_current_path=$(otool -L "$libkrun_current_path" | grep libvirglrenderer.1.dylib | awk '{print $1;}')
 
     cd bin
     echo "INFO: copying krunkit and libkrun locally ..."
-    cp "$krunkit_path" "$libkrun_current_path" .
+    cp "$krunkit_path" .
+    cp "$libkrun_current_path" ./libkrun-efi.dylib # force the name, to avoid naming it libkrun-efi.1.dylib
 
     echo "INFO: updading the library references ..."
     # krunkit -> libkrun
@@ -35,6 +44,9 @@ update_from_brew() {
 
     # libkrun -> libvirglrenderer
     install_name_tool -change "$libvirglrenderer_current_path" @executable_path/libvirglrenderer.1.dylib ./libkrun-efi.dylib
+
+    # virglrenderer -> libMoltenVK
+    install_name_tool -change "/opt/homebrew/opt/molten-vk-krunkit/lib/libMoltenVK.dylib" "/opt/homebrew/lib/libMoltenVK.dylib" ./libvirglrenderer.1.dylib
 }
 
 update_from_podman() {
@@ -88,6 +100,19 @@ main() {
     if [[ ! -f podman_start_machine.api_remoting.sh ]]; then
         echo "ERROR: podman_start_machine.api_remoting.sh not found in the current directory. Please run this in the llama.cpp API remoting release directory."
         exit 1
+    fi
+
+    if ! podman machine info >/dev/null; then
+        echo "WARNING: podman not available ..."
+        echo
+        sleep 2
+    fi
+
+    macos_version_major=$(sw_vers --productVersion | cut -d. -f1)
+    if [[ "$macos_version_major" != "$SUPPORTED_MAC_OS_VERSION" ]]; then
+        echo "WARNING: this tarball only supports MAC OS $SUPPORTED_MAC_OS_VERSION"
+        echo
+        sleep 2
     fi
 
     krunkit_path=$(which krunkit)

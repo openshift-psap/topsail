@@ -13,8 +13,14 @@ echo "INFO: # for podman to load krunkit/libkrun and not vfkit"
 echo "INFO: Setting CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER"
 echo
 
+if ! podman machine info >/dev/null; then
+    echo "ERROR: podman not available ..."
+    exit 1
+fi
+
 if ! podman machine inspect 2>/dev/null >/dev/null; then
     echo "ERROR: podman machine inspect not working. Did you run 'CONTAINERS_MACHINE_PROVIDER=libkrun podman machine init'?"
+    exit 1
 fi
 
 if [[ ! -f "$SCRIPT_DIR/src_info/ramalama.image-info.txt" ]]; then
@@ -83,6 +89,20 @@ fi
 
 if [[ -z "$(which ramalama)" ]]; then
     echo "WARNING: ramalama isn't available ..."
+    echo "WARNING: Please install a recent version (>= v0.10.0)"
+else
+    ramalama_version=$(ramalama version | cut -d" " -f3) # ramalama version 0.10.0
+
+    major=$(echo "$ramalama_version" | cut -d. -f1)
+    minor=$(echo "$ramalama_version" | cut -d. -f2)
+
+    if [[ "$major" -ge 1 ]]; then
+        echo "UNEXPECTED: RamaLama 1.x ($ramalama_version) not released yet."
+    elif [[ "$minor" -ge 10 ]]; then
+        echo "INFO: RamaLama v$ramalama_version is recent enough ✔"
+    else
+        echo "ERROR: RamaLama version $ramalama_version will not work."
+    fi
 fi
 
 cat <<EOF
@@ -91,17 +111,10 @@ INFO: Try the API Remoting GPU acceleration with RamaLama:
 \$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
 \$ ramalama --image $ramalama_image run llama3.2
 
-INFO: When ramalama is launched, check the container logs with this command:
-\$ podman logs -f \$(podman ps --filter label=ai.ramalama -n1  --format="{{.ID}}")
-
-INFO: Add check for this line: 'Metal model buffer size = ... MiB' to confirm that the API Remoting is active
-INFO: (or look for errors in the first lines of the log)
-
-INFO: To report an issue, please share the content of these log files
-- $VIRGL_APIR_LOG_TO_FILE
-- $APIR_LLAMA_CPP_LOG_TO_FILE
-INFO: And the output of this command:
-\$ system_profiler SPSoftwareDataType SPHardwareDataType
+INFO: To stop the virtual machine
+\$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
+\$ podman machine stop
+\$ podman machine rm # to cleanup its files and disks
 
 INFO: All done!
 EOF

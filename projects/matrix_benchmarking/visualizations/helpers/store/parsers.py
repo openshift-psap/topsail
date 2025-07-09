@@ -116,7 +116,7 @@ def parse_env(dirname, test_config, capture_state_dir):
                 PROW_ARTIFACTS=f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/{path}/{job}/{build_id}/artifacts/{test_name}/{step_dir}/{from_env.test.test_path}",
             )
         else:
-            pull_number = job_spec["refs"]["pulls"]["number"]
+            pull_number = job_spec["refs"]["pulls"][0]["number"]
             github_org = job_spec["refs"]["org"]
             github_repo = job_spec["refs"]["repo"]
             path = "pr-logs/pull"

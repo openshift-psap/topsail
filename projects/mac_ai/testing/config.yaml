@@ -86,7 +86,7 @@ ci_presets:
   # ---
 
   remoting:
-    prepare.llama_cpp.source.repo.url: https://github.com/kpouget/llama.cpp
+    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
     prepare.llama_cpp.source.repo.version: main
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
@@ -94,20 +94,25 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-v250701.0
-    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1
+    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.4
+    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.3
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.0
+    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.1
 
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
     - podman/llama_cpp/vulkan
+
+  debug:
+    prepare.llama_cpp.source.cmake.debug.enabled: true
+    prepare.virglrenderer.debug.enabled: true
+    prepare.ramalama.build_image.debug: true
 
   remoting_testing:
     extends: [remoting]
@@ -271,10 +276,13 @@ prepare:
           enabled: true
           flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
         common: -DGGML_CPU_ARM_ARCH=native -DLLAMA_CURL=OFF
+        debug:
+          enabled: false
+          flags: -DCMAKE_BUILD_TYPE=Debug
         flavors:
           metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
           vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
-          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON # backend
+          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
       podman:
         build_from: local_container_file
         command: # will be set in prepare_test
@@ -323,8 +331,8 @@ prepare:
     dependencies:
     # brew tap slp/krunkit
     - krunkit
-    # brew link --overwrite molten-vk-krunkit
-    - molten-vk-krunkit
+
+    - molten-vk
 
     - vulkan-headers
     - libkrun-efi
@@ -342,7 +350,9 @@ prepare:
       branch: main
     build:
       flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
-
+    debug:
+      enabled: false
+      flags: --buildtype=debug
   podman:
     repo:
       enabled: true
