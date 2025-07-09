@@ -1,9 +1,9 @@
 __platforms: &all_platforms
   - macos/llama_cpp/metal
   - macos/llama_cpp/vulkan
-  - macos/llama_cpp/upstream_bin
+  # - macos/llama_cpp/upstream_bin
   - podman/llama_cpp/vulkan
-  - macos/ollama
+  # - macos/ollama
   - podman/ramalama
 
 ci_presets:
