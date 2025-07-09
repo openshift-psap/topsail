@@ -18,10 +18,10 @@ def apply_preset_by_jobname():
     presets = config.project.get_config("prepare.job_name_to_preset")
     preset_name = presets.get(job_name)
     if not preset_name:
-        logging.info("apply_preset_by_jobname: not preset to apply")
+        logging.info(f"apply_preset_by_jobname: no preset to apply to apply for '{job_name}'")
         return
 
-    logging.info(f"apply_preset_by_jobname: applying the '{preset_name}' preset ...")
+    logging.info(f"apply_preset_by_jobname: applying the '{preset_name}' preset for job name '{job_name}' ...")
     config.project.apply_preset(preset_name)
 
 

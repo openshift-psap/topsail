@@ -105,8 +105,6 @@ def parse_env(dirname, test_config, capture_state_dir):
         # ---
         # eg: pull/openshift-psap_topsail/181/pull-ci-openshift-psap-topsail-main-rhoai-light/1749833488137195520
         if job_spec["type"] == "periodic":
-            github_org = job_spec["extra_refs"][0]["org"]
-            github_repo = job_spec["extra_refs"][0]["repo"]
             path = "logs"
 
             from_env.test.run_id = f"{job}/{build_id}/{test_name}"
