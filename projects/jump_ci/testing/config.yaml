@@ -19,6 +19,12 @@ ci_presets:
     cluster.name: mac.jrodak
     project.name: container_bench
 
+  llama_cpp_presubmit:
+    secrets.dir.name: crc-mac-ai-secret # key/value never actually used
+    secrets.dir.env_key: CRC_MAC_AI_SECRET_PATH
+    cluster.name: mac
+    project.name: mac_ai
+
   plot_cluster:
     cluster.name: plot
 
@@ -37,7 +43,7 @@ prepare:
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci: mac_ai
     periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai_nightly
     pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
-
+    pull-ci-crc-org-llama.cpp-main-topsail: llama_cpp_presubmit
 ssh_tunnel:
   # creates a tunnel to the bastion via the jump host, if enabled
   enabled: false
