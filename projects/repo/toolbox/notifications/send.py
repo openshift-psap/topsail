@@ -316,7 +316,7 @@ def get_ci_base_link(is_raw_file=False, is_dir=False):
         return ((f"https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/"
                  + link_path
                  + f"/artifacts/{test_name}/{test_path}",
-                 "")
+                 ""))
 
     elif os.environ.get("PERFLAB_CI") == "true":
         artifact_dir = os.environ['ARTIFACT_DIR'].removeprefix("/logs/artifacts")
