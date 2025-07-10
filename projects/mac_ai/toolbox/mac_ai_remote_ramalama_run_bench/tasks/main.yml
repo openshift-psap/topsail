@@ -10,8 +10,8 @@
     export {{ mac_ai_remote_ramalama_run_bench_env }}
 
     {{ mac_ai_remote_ramalama_run_bench_path }} \
-       --image {{ mac_ai_remote_ramalama_run_bench_image }} \
        bench \
+       --image {{ mac_ai_remote_ramalama_run_bench_image }} \
         {{ mac_ai_remote_ramalama_run_bench_model_name }} \
         --ngl {{ mac_ai_remote_ramalama_run_bench_ngl }} \
     {% if mac_ai_remote_ramalama_run_bench_device -%}

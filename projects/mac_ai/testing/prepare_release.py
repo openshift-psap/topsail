@@ -207,7 +207,7 @@ Try it
 * run ramalama with our custom image.
 ```
 export CONTAINERS_MACHINE_PROVIDER=libkrun
-ramalama --image {ramalama_image} run llama3.2
+ramalama run --image {ramalama_image} llama3.2
 ```
 
 """)
@@ -291,7 +291,7 @@ Benchmarking
 
 * API Remoting Performance
 ```
-ramalama --image {ramalama_image} bench  llama3.2 # benchmarking mode
+ramalama bench --image {ramalama_image} llama3.2 # benchmarking mode
 ```
 
 * Native Performance
