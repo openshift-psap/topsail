@@ -102,6 +102,8 @@ ci_presets:
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
     prepare.ramalama.repo.version: v0.10.0-remoting-0.2.1
+    prepare.remoting.podman_desktop_extension.enabled: true
+    prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
     test.platform:
     - podman/ramalama/remoting
@@ -402,6 +404,18 @@ prepare:
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
 
   remoting:
+    podman_desktop_extension:
+      enabled: false
+      repo:
+        url: https://github.com/crc-org/podman-desktop-remoting-ext
+        version: main
+      image:
+        containerfile: Containerfile
+        dest: quay.io/crcont/podman-desktop-remoting-ext
+        publish:
+          enabled: false
+          credentials: "*$@secrets.image_registry"
+
     publish: false
 
 test:

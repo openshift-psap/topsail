@@ -94,7 +94,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
     src_info_dir = tarball_dir / "src_info"
     src_info_dir.mkdir()
 
-    add_string_file(src_info_dir / "version.txt", llama_cpp_url + "\n")
+    add_string_file(src_info_dir / "version.txt", llama_cpp_version + "\n")
 
     virglrenderer_src_dir = prepare_virglrenderer.get_build_dir(base_work_dir) / ".." / "src"
     virglrenderer_git_rev = add_remote_git_status(base_work_dir, virglrenderer_src_dir,
@@ -324,3 +324,63 @@ system_profiler SPSoftwareDataType SPHardwareDataType
         tar.add(tarball_dir, tarball_dir.relative_to(env.ARTIFACT_DIR))
 
     logging.info(f"Saved {tarball_file} !")
+
+    if config.project.get_config("prepare.remoting.podman_desktop_extension.enabled"):
+        prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version)
+
+
+def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version):
+    # git clone the repo
+    ext_repo_dest = base_work_dir / "podman_desktop_extension"
+    kwargs = dict(
+        repo_url=config.project.get_config("prepare.remoting.podman_desktop_extension.repo.url"),
+        version=config.project.get_config("prepare.remoting.podman_desktop_extension.repo.version"),
+        dest=ext_repo_dest,
+    )
+
+    run.run_toolbox(
+        "remote", "clone",
+        **kwargs,
+        force=True,
+        artifact_dir_suffix="_podman_desktop_extension",
+    )
+
+    # build image
+    image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
+    image_fullname = f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
+    containerfile = config.project.get_config("prepare.remoting.podman_desktop_extension.image.containerfile")
+
+    run.run_toolbox(
+        "remote", "build_image",
+        podman_cmd=podman.get_podman_binary(base_work_dir),
+        base_directory=ext_repo_dest,
+        prepare_script=None,
+        container_file=containerfile,
+        container_file_is_local=False,
+        image=image_fullname,
+        build_args={},
+        artifact_dir_suffix="_podman_desktop_extension",
+    )
+
+    # copy the build directory to the remote system
+
+    run.run_toolbox("remote", "retrieve",
+                    path=tarball_dir, dest=tarball_dir,
+                    push_mode=True)
+
+
+    # add tarball_directory
+    podman_command = f"""{podman.get_podman_binary(base_work_dir)} build --tag {image_fullname} --file - << EOF
+FROM {image_fullname}
+COPY . extension/build
+EOF
+"""
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, podman_command, chdir=tarball_dir)
+
+    # push the image
+    if config.project.get_config("prepare.remoting.podman_desktop_extension.image.publish.enabled"):
+        podman.login(base_work_dir, "prepare.remoting.podman_desktop_extension.image.publish.credentials")
+        podman.push_image(base_work_dir, image_fullname, image_fullname)
+        image_latest = f"{image_name}:latest"
+        podman.push_image(base_work_dir, image_fullname, image_latest)

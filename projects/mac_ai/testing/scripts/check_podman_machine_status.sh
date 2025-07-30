@@ -15,7 +15,7 @@ if [[ -z "$version" ]]; then
 fi
 
 # don't fail on this one ;-)
-LSOF_VIRGL=$((lsof -c krunkit || true) | (grep virglrenderer || true))
+LSOF_VIRGL=$(lsof -c krunkit || true | grep virglrenderer || true)
 
 if [[ "$LSOF_VIRGL" == *"$version"* ]]; then
   echo "krunkit running with API Remoting support"
