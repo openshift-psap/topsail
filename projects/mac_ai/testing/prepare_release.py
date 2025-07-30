@@ -94,6 +94,8 @@ def build_remoting_tarball(base_work_dir, package_libs):
     src_info_dir = tarball_dir / "src_info"
     src_info_dir.mkdir()
 
+    add_string_file(src_info_dir / "version.txt", llama_cpp_url + "\n")
+
     virglrenderer_src_dir = prepare_virglrenderer.get_build_dir(base_work_dir) / ".." / "src"
     virglrenderer_git_rev = add_remote_git_status(base_work_dir, virglrenderer_src_dir,
                                                   src_info_dir / "virglrenderer.git-commit.txt")
