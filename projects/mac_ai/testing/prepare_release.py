@@ -117,6 +117,9 @@ def build_remoting_tarball(base_work_dir, package_libs):
     krunkit_script_file = pathlib.Path("projects/mac_ai/testing/scripts/update_krunkit.sh")
     add_local_file(krunkit_script_file, tarball_dir / krunkit_script_file.name)
 
+    check_podman_machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/check_podman_machine_status.sh")
+    add_local_file(check_podman_machine_script_file, tarball_dir / check_podman_machine_script_file.name)
+
     import prepare_mac_ai
     ramalama_image = ramalama.get_release_image_name(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
 
