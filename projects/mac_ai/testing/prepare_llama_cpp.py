@@ -19,8 +19,14 @@ def resolve_latest_version():
             return
 
         repo_url = config.project.get_config(f"{prefix}.repo.url")
-        version = utils.get_latest_release(repo_url)
+        version = config.project.get_config(f"{prefix}.repo.latest")
+        if version is None:
+            # fetch the latest version ONLY if not cached
+            # this avoids a race condition if the version is updated between the prepare and test steps
+            # Updating `repo.version` doesn't solves this, because the preset reset the value to latest ...
+            version = utils.get_latest_release(repo_url)
         config.project.set_config(f"{prefix}.repo.version", version)
+        config.project.set_config(f"{prefix}.repo.latest", version)
 
     resolve("prepare.llama_cpp.source")
     resolve("prepare.llama_cpp.release")

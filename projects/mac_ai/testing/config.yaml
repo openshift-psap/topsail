@@ -263,6 +263,7 @@ prepare:
       repo:
         url: https://github.com/ggml-org/llama.cpp
         version: b5648
+        latest: null # resolved at runtime
       file: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
       tarball: true
 
@@ -270,6 +271,7 @@ prepare:
       repo:
         url: https://github.com/ggml-org/llama.cpp
         version: latest
+        latest: null # resolved at runtime
       cmake: # native builds only
         parallel: 5
         openmp:
