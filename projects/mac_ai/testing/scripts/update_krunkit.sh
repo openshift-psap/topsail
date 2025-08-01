@@ -108,14 +108,19 @@ main() {
         sleep 2
     fi
 
-    macos_version_major=$(sw_vers --productVersion | cut -d. -f1)
-    if [[ "$macos_version_major" != "$SUPPORTED_MAC_OS_VERSION" ]]; then
-        echo "WARNING: this tarball only supports MAC OS $SUPPORTED_MAC_OS_VERSION"
-        echo
-        sleep 2
+    if ! command -v sw_vers >/dev/null 2>&1; then
+        echo "WARNING: API Remoting only supported on MacOS. 'sw_vers' command missing ..."
+
+    else
+        macos_version_major=$(sw_vers --productVersion | cut -d. -f1)
+        if [[ "$macos_version_major" != "$SUPPORTED_MAC_OS_VERSION" ]]; then
+            echo "WARNING: this tarball only supports MacOS $SUPPORTED_MAC_OS_VERSION"
+            echo
+            sleep 2
+        fi
     fi
 
-    krunkit_path=$(which krunkit)
+    krunkit_path=$(command -v krunkit 2>/dev/null || true)
 
     if [[ -z "$krunkit_path" ]]; then
         echo "ERROR: krunkit not available ..."

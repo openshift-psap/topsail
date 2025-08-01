@@ -138,7 +138,7 @@ set -o errtrace
 
 {chdir_cmd}
 
-exec {cmd}
+{cmd}
     """
 
     if config.project.get_config("remote_host.verbose_ssh_commands", print=False) and not handled_secretly:

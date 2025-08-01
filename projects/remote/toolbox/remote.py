@@ -68,6 +68,7 @@ class Remote:
             self,
             path,
             dest,
+            push_mode=False,
     ):
         """
         Retrieves remote files locally
@@ -75,6 +76,7 @@ class Remote:
         Args:
           path: the location of the files in the remote system
           dest: the location where to save the files
+          push_mode: if enabled, push to the remote system instead of pulling
         """
 
         return RunAnsibleRole(locals())

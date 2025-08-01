@@ -27,3 +27,8 @@ Parameters
 
 * The location where to save the files
 
+
+``push_mode``  
+
+* If enabled, push to the remote system instead of pulling
+
