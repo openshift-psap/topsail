@@ -687,10 +687,10 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment@sha256
-    tag: 55010c0ecab0feb87cb37f4f6a473481dd6cd0f6ec0dc0a96c96375845cda03e
+    tag: 8b57509b399e6960387e007d07fbc121b59f9b2f6285a8314c618d4175efb1c8
     channel: fast
-    version: 2.19.0
-    version_name: rc2
+    version: 2.23.0
+    version_name: rc1
     opendatahub: false
     managed_rhoi: true
   operator:
@@ -834,7 +834,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: quay.io/modh/fms-hf-tuning:v2.7.1
+      image: quay.io/modh/fms-hf-tuning:v3.0.0
     ray:
       enabled: false
       workload: ray-benchmark
