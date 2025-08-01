@@ -2,6 +2,7 @@ import os
 import pathlib
 import logging
 import tarfile
+import json
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -330,6 +331,14 @@ system_profiler SPSoftwareDataType SPHardwareDataType
 
 
 def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version):
+    image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
+    image_fullname = f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
+
+    # copy the build directory to the remote system
+    run.run_toolbox("remote", "retrieve",
+                    path=tarball_dir, dest=tarball_dir,
+                    push_mode=True)
+
     # git clone the repo
     ext_repo_dest = base_work_dir / "podman_desktop_extension"
     kwargs = dict(
@@ -345,9 +354,22 @@ def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp
         artifact_dir_suffix="_podman_desktop_extension",
     )
 
+    # update the version number
+    package_content = remote_access.run_with_ansible_ssh_conf(base_work_dir, "cat package.json", chdir=ext_repo_dest, capture_stdout=True)
+    package_json_content = json.loads(package_content.stdout)
+    ext_version = package_json_content["version"]
+    package_json_content["version"] = f"{ext_version}+{llama_cpp_version}"
+    write_package_json_cmd = f"""cat > package.json <<EOF
+{json.dumps(package_json_content, indent=4)}
+EOF
+"""
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, write_package_json_cmd, chdir=ext_repo_dest)
+
+    # ensure that the image does not exist (building is cheap)
+    podman_image_rm_command = f"{podman.get_podman_binary(base_work_dir)} image rm --force {image_fullname}"
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, podman_image_rm_command, chdir=tarball_dir)
+
     # build image
-    image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
-    image_fullname = f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
     containerfile = config.project.get_config("prepare.remoting.podman_desktop_extension.image.containerfile")
 
     run.run_toolbox(
@@ -357,21 +379,14 @@ def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp
         prepare_script=None,
         container_file=containerfile,
         container_file_is_local=False,
-        image=image_fullname,
+        image=f"{image_fullname}-no-build",
         build_args={},
         artifact_dir_suffix="_podman_desktop_extension",
     )
 
-    # copy the build directory to the remote system
-
-    run.run_toolbox("remote", "retrieve",
-                    path=tarball_dir, dest=tarball_dir,
-                    push_mode=True)
-
-
     # add tarball_directory
-    podman_command = f"""{podman.get_podman_binary(base_work_dir)} build --tag {image_fullname} --file - << EOF
-FROM {image_fullname}
+    podman_command = f"""{podman.get_podman_binary(base_work_dir)} build --tag {image_fullname} --file - . << EOF
+FROM {image_fullname}-no-build
 COPY . extension/build
 EOF
 """
