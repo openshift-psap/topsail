@@ -109,7 +109,7 @@ ci_presets:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
-    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/vulkan
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
