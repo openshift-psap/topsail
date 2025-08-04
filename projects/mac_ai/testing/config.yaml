@@ -94,8 +94,8 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.4
-    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.3
+    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.5
+    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
