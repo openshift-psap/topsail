@@ -10,3 +10,6 @@ remote_retrieve_path:
 # the location where to save the files
 # Mandatory value
 remote_retrieve_dest:
+
+# if enabled, push to the remote system instead of pulling
+remote_retrieve_push_mode: false

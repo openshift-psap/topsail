@@ -94,20 +94,22 @@ ci_presets:
   remoting_publish:
     extends: [remoting]
     prepare.remoting.publish: true
-    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.4
-    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.3
+    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.5
+    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.10.0-remoting-0.2.1
+    prepare.ramalama.repo.version: v0.11.2-remoting-0.2.1
+    prepare.remoting.podman_desktop_extension.enabled: true
+    prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
-    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/vulkan
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
@@ -402,6 +404,18 @@ prepare:
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
 
   remoting:
+    podman_desktop_extension:
+      enabled: false
+      repo:
+        url: https://github.com/crc-org/podman-desktop-remoting-ext
+        version: main
+      image:
+        containerfile: Containerfile
+        dest: quay.io/crcont/podman-desktop-remoting-ext
+        publish:
+          enabled: false
+          credentials: "*$@secrets.image_registry"
+
     publish: false
 
 test:
