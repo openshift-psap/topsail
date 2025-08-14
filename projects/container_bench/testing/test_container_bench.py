@@ -4,6 +4,7 @@ import logging
 import yaml
 import remote_access
 import utils
+import uuid
 
 from projects.core.library import env, config, run
 from projects.matrix_benchmarking.library import visualize
@@ -76,10 +77,8 @@ def test_all_benchmark():
             config.project.set_config("test.platform", platform_str)  # for the post-processing
             config.project.set_config("test.benchmark", benchmark.name)  # for the post-processing
             with env.NextArtifactDir(f"{platform_str}_{benchmark.name}_run_dir".replace("/", "_")):
-                with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
-                    yaml.dump(dict(platform=platform_str), f)
-                with open(env.ARTIFACT_DIR / "settings.benchmarks.yaml", "w") as f:
-                    yaml.dump(dict(benchmark=benchmarks), f)
+                with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+                    yaml.dump(dict(platform=platform_str, benchmark=benchmark.name), f)
                 logging.info(f"Run benchmark: {benchmark.name} on {platform_str}")
                 run_benchmark(platform, benchmark)
 
@@ -132,10 +131,36 @@ def prepare_benchmark_args(platform, benchmark, base_work_dir):
     return {k: config.project.resolve_reference(v) for k, v in benchmark_kwargs.items()}
 
 
+def prepare_matbench_test_files():
+    settings_file = env.ARTIFACT_DIR / "settings.yaml"
+    if settings_file.exists():
+        with open(settings_file) as f:
+            settings_base = yaml.safe_load(f)
+    else:
+        settings_base = {}
+
+    # ensure that there's no skip file here
+    (env.ARTIFACT_DIR / "skip").unlink(missing_ok=True)
+
+    settings = settings_base | dict(
+        test_mac_ai=True,
+    )
+
+    with open(settings_file, "w") as f:
+        yaml.dump(settings, f, indent=4)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.project.config, f, indent=4)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+
 def run_benchmark(platform, benchmark):
     base_work_dir = remote_access.prepare()
 
     capture_metrics(platform)
+    prepare_matbench_test_files()
     exit_code = 1
     try:
         run.run_toolbox(
@@ -166,7 +191,7 @@ def generate_visualization(test_artifact_dir):
 
     with env.NextArtifactDir("plots"):
         exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
-
+        logging.error(f"Test visualization failed :/ {exc}")
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
     return exc

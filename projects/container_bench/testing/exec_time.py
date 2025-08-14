@@ -23,8 +23,10 @@ def monitor_resources(stop_event, overall_cpu_usage, network_usage, disk_usage, 
         interval (float): The sampling interval in seconds.
     """
     overall_cpu_list = []
-    net_list = []
-    disk_list = []
+    net_send_list = []
+    net_recv_list = []
+    disk_write_list = []
+    disk_read_list = []
 
     # Get initial network and disk counters
     last_net_io = psutil.net_io_counters()
@@ -38,20 +40,24 @@ def monitor_resources(stop_event, overall_cpu_usage, network_usage, disk_usage, 
         current_net_io = psutil.net_io_counters()
         bytes_sent = current_net_io.bytes_sent - last_net_io.bytes_sent
         bytes_recv = current_net_io.bytes_recv - last_net_io.bytes_recv
-        net_list.append((bytes_sent, bytes_recv))
+        net_send_list.append(bytes_sent)
+        net_recv_list.append(bytes_recv)
         last_net_io = current_net_io
 
         # --- Disk I/O ---
         current_disk_io = psutil.disk_io_counters()
         read_bytes = current_disk_io.read_bytes - last_disk_io.read_bytes
         write_bytes = current_disk_io.write_bytes - last_disk_io.write_bytes
-        disk_list.append((read_bytes, write_bytes))
+        disk_read_list.append(read_bytes)
+        disk_write_list.append(write_bytes)
         last_disk_io = current_disk_io
 
     # Extend the lists with the collected data
     overall_cpu_usage.extend(overall_cpu_list)
-    network_usage.extend(net_list)
-    disk_usage.extend(disk_list)
+    network_usage["send"] = net_send_list
+    network_usage["recv"] = net_recv_list
+    disk_usage["read"] = disk_read_list
+    disk_usage["write"] = disk_write_list
 
 
 def execute_command(command_list, stop_event, monitor_thread):
@@ -129,8 +135,8 @@ def main():
         sys.exit(1)
 
     overall_cpu_usage = []
-    network_usage = []
-    disk_usage = []
+    network_usage = {}
+    disk_usage = {}
     stop_event = threading.Event()
     monitoring_interval = 0.5
 
