@@ -9,22 +9,49 @@ import json
 DEFAULT_OUTPUT_FILE = "output.txt"
 DEFAULT_TIME_LOG_FILE = "time.log"
 DEFAULT_METRICS_LOG_FILE = "metrics.log"
+DEFAULT_INTERVAL = 0.5
 
 
-def monitor_resources(stop_event, overall_cpu_usage, network_usage, disk_usage, interval=0.5):
+class Measurements:
+    def __init__(self, interval=DEFAULT_INTERVAL):
+        self.cpu_usage = []
+        self.network_usage = {"send": [], "recv": []}
+        self.disk_usage = {"read": [], "write": []}
+        self.memory_usage = []
+        self.interval = interval
+        self.execution_time = 0.0
+        self.return_code = 0
+
+    def to_dict(self):
+        return {
+            "cpu_usage": self.cpu_usage,
+            "network_usage": self.network_usage,
+            "disk_usage": self.disk_usage,
+            "memory_usage": self.memory_usage,
+            "interval": self.interval,
+            "execution_time": self.execution_time,
+            "return_code": self.return_code,
+        }
+
+    def set_execution_time(self, exec_time):
+        self.execution_time = exec_time
+
+    def set_return_code(self, return_code):
+        self.return_code = return_code
+
+
+def monitor_resources(stop_event, measurements):
     """
-    Monitors system-wide CPU, network, and disk usage in a separate thread.
+    Monitors system-wide CPU, network, disk, and memory usage in a separate thread.
 
     Args:
         stop_event (threading.Event): Signals when to stop monitoring.
-        overall_cpu_usage (list): A list to store CPU usage data.
-        network_usage (list): A list to store network usage data.
-        disk_usage (list): A list to store disk I/O data.
-        interval (float): The sampling interval in seconds.
+        metrics (Metrics): An instance of the Metrics class to store the collected data.
     """
-    overall_cpu_list = []
-    net_list = []
-    disk_list = []
+    net_send_list = []
+    net_recv_list = []
+    disk_write_list = []
+    disk_read_list = []
 
     # Get initial network and disk counters
     last_net_io = psutil.net_io_counters()
@@ -32,26 +59,32 @@ def monitor_resources(stop_event, overall_cpu_usage, network_usage, disk_usage, 
 
     while not stop_event.is_set():
         # Overall System CPU Usage
-        overall_cpu_list.append(psutil.cpu_percent(interval=interval))
+        measurements.cpu_usage.append(psutil.cpu_percent(interval=measurements.interval))
 
         # --- Network Usage ---
         current_net_io = psutil.net_io_counters()
         bytes_sent = current_net_io.bytes_sent - last_net_io.bytes_sent
         bytes_recv = current_net_io.bytes_recv - last_net_io.bytes_recv
-        net_list.append((bytes_sent, bytes_recv))
+        net_send_list.append(bytes_sent)
+        net_recv_list.append(bytes_recv)
         last_net_io = current_net_io
 
         # --- Disk I/O ---
         current_disk_io = psutil.disk_io_counters()
         read_bytes = current_disk_io.read_bytes - last_disk_io.read_bytes
         write_bytes = current_disk_io.write_bytes - last_disk_io.write_bytes
-        disk_list.append((read_bytes, write_bytes))
+        disk_read_list.append(read_bytes)
+        disk_write_list.append(write_bytes)
         last_disk_io = current_disk_io
 
+        # --- Memory Usage ---
+        measurements.memory_usage.append(psutil.virtual_memory().percent)
+
     # Extend the lists with the collected data
-    overall_cpu_usage.extend(overall_cpu_list)
-    network_usage.extend(net_list)
-    disk_usage.extend(disk_list)
+    measurements.network_usage["send"] = net_send_list
+    measurements.network_usage["recv"] = net_recv_list
+    measurements.disk_usage["read"] = disk_read_list
+    measurements.disk_usage["write"] = disk_write_list
 
 
 def execute_command(command_list, stop_event, monitor_thread):
@@ -128,20 +161,19 @@ def main():
         print("\nError: No command provided.", file=sys.stderr)
         sys.exit(1)
 
-    overall_cpu_usage = []
-    network_usage = []
-    disk_usage = []
+    measurements = Measurements(interval=DEFAULT_INTERVAL)
     stop_event = threading.Event()
-    monitoring_interval = 0.5
 
     command_to_run = args.command
 
     monitor_thread = threading.Thread(
         target=monitor_resources,
-        args=(stop_event, overall_cpu_usage, network_usage, disk_usage, monitoring_interval)
+        args=(stop_event, measurements)
     )
 
     stdout, stderr, return_code, exec_time = execute_command(command_to_run, stop_event, monitor_thread)
+    measurements.set_execution_time(exec_time)
+    measurements.set_return_code(return_code)
 
     output_content = f"--- Command: {' '.join(command_to_run)} ---\n"
     output_content += f"Return Code: {return_code}\n\n"
@@ -162,17 +194,7 @@ def main():
     time_log_content += f"ReturnCode: {return_code}\n"
 
     write_to_file(args.time_log_file, time_log_content)
-
-    metrics = {
-        "overall_cpu_usage": overall_cpu_usage,
-        "network_usage": network_usage,
-        "disk_usage": disk_usage,
-        "interval": monitoring_interval,
-        "execution_time": exec_time,
-        "return_code": return_code
-    }
-
-    write_to_file(args.metrics_log_file, json.dumps(metrics, indent=4))
+    write_to_file(args.metrics_log_file, json.dumps(measurements.to_dict(), separators=(',', ':')) + "\n")
 
     if return_code != 0:
         print(f"\nWarning: Command exited with return code {return_code}", file=sys.stderr)
