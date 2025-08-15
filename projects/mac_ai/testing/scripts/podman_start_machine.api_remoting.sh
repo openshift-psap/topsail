@@ -90,6 +90,8 @@ fi
 if [[ -z "$(which ramalama)" ]]; then
     echo "WARNING: ramalama isn't available ..."
     echo "WARNING: Please install a recent version (>= v0.10.0)"
+elif ! ramalama version >/dev/null 2>/dev/null; then
+    echo "WARNING: ramalama version not working ..."
 else
     ramalama_version=$(ramalama version | cut -d" " -f3) # ramalama version 0.10.0
 
