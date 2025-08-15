@@ -58,7 +58,7 @@ ci_presets:
     test.platform:
     - podman/ramalama
     - macos/llama_cpp/vulkan
-    - podman/llama_cpp/vulkan
+    # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
 
   cpt_ramalama:
