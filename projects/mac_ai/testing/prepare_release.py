@@ -143,6 +143,10 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     # ---
 
+    _, pde_image_fullname = get_podman_desktop_extension_image_name(llama_cpp_version)
+
+    # ---
+
     ci_build_link = pathlib.Path("/not/running/in/ci")
     ci_perf_link = None
     if os.environ.get("OPENSHIFT_CI") == "true":
@@ -221,12 +225,14 @@ ramalama run --image {ramalama_image} llama3.2
     add_string_file(tarball_dir / "RELEASE.md", f"""\
 CI build
 --------
+
+* [README]({ci_build_link / tarball_dir.name / readme_path})
 * [tarball]({ci_build_link / tarball_path})
 * [build logs]({ci_build_link})
-* [README]({ci_build_link / readme_path})
 
 Sources
 -------
+
 * virglrenderer source: {virglrenderer_version_link}
 * llama.cpp source    : {llama_cpp_version_link}
 * ramalama source     : {ramalama_version_link}
@@ -235,8 +241,13 @@ Ramalama image
 --------------
 `{ramalama_image}`
 
+Podman Desktop extension
+------------------------
+`{pde_image_fullname}`
+
 CI performance test
 --------
+
 * [release performance test]({ci_perf_link or '(Not running in a CI environment)'})
 """)
 
@@ -297,24 +308,24 @@ Benchmarking
 
 * API Remoting Performance
 ```
-ramalama bench --image {ramalama_image} llama3.2 # benchmarking mode
+ramalama bench --image {ramalama_image} llama3.2 # API Remoting performance
 ```
 
 * Native Performance
 ```
 brew install llama.cpp
-ramalama --nocontainer bench llama3.2 # native metal execution
+ramalama --nocontainer bench llama3.2 # native Metal performance
 ```
 
 * Vulkan/Venus Performance
 ```
-ramalama bench llama3.2 # Venus/Vulkan execution
+ramalama bench llama3.2 # Venus/Vulkan performance
 ```
 
 If you want to share your performance, please also include:
 Please share:
 - the name of the tarball (`{tarball_file.name}`)
-- the name of the contaienr image (`{ramalama_image}`)
+- the name of the container image (`{ramalama_image}`)
 - the output of this command:
 ```
 system_profiler SPSoftwareDataType SPHardwareDataType
@@ -330,9 +341,13 @@ system_profiler SPSoftwareDataType SPHardwareDataType
         prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version)
 
 
-def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version):
+def get_podman_desktop_extension_image_name(llama_cpp_version):
     image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
-    image_fullname = f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
+    return image_name, f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
+
+
+def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version):
+    image_name, image_fullname = get_podman_desktop_extension_image_name(llama_cpp_version)
 
     # copy the build directory to the remote system
     run.run_toolbox("remote", "retrieve",
