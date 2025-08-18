@@ -167,7 +167,7 @@ def call_generate_lts_schema(step_idx, common_args):
     return errors
 
 
-def generate_opensearch_config_yaml_env(dest):
+def generate_opensearch_config_yaml_env(dest=None):
     instance = config.project.get_config("matbench.lts.opensearch.instance")
 
     _index = config.project.get_config("matbench.lts.opensearch.index")
@@ -187,6 +187,9 @@ def generate_opensearch_config_yaml_env(dest):
         opensearch_host=instances_file_doc[instance]["host"],
         opensearch_index=index,
     )
+
+    if dest is None:
+        return env_doc
 
     with open(dest, "w") as f:
         yaml.dump(env_doc, f, indent=4)
