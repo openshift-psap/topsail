@@ -132,7 +132,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
                                                          prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM,
                                                          build_version)
     else:
-        ramalama_image = None
+        ramalama_image = ramalama.get_local_image_name()
 
     _, ramalama_src_dir, _ = ramalama._get_binary_path(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
 
@@ -143,7 +143,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     ramalama_version_link = get_version_link(ramalama_repo_url, ramalama_version, ramalama_git_revparse, github=True)
 
-    add_string_file(src_info_dir / "ramalama.image-info.txt", (ramalama_image or "<image not build>") + "\n")
+    add_string_file(src_info_dir / "ramalama.image-info.txt", ramalama_image + "\n")
 
     entitlement_dir = tarball_dir / "entitlement"
     entitlement_dir.mkdir()
@@ -153,12 +153,10 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     # ---
 
-    _, pde_image_fullname = get_podman_desktop_extension_image_name(llama_cpp_version)
+    _, pde_image_fullname = get_podman_desktop_extension_image_name(build_version)
 
     # ---
 
-    ci_build_link = pathlib.Path("/not/running/in/ci")
-    ci_perf_link = None
     if os.environ.get("OPENSHIFT_CI") == "true":
         ci_link = "/".join([
             "https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull",
@@ -171,6 +169,9 @@ def build_remoting_tarball(base_work_dir, package_libs):
         ])
         ci_build_link = ci_link + "/" + os.environ["TOPSAIL_OPENSHIFT_CI_STEP_DIR"]
         ci_perf_link = ci_link + "/005-test/artifacts/test-artifacts/reports_index.html"
+    else:
+        ci_build_link = "/not/running/in/ci"
+        ci_perf_link = None
 
     tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}.tar"
     readme_path = pathlib.Path("README.md")
@@ -207,7 +208,7 @@ Setup
 
 * download and extract the tarball and enter its directory
 ```
-curl -Ssf "{ci_build_link / tarball_path}" | tar xv -
+curl -Ssf "{ci_build_link}/{tarball_path}" | tar xv -
 cd "{tarball_dir.name}"
 ```
 
@@ -237,8 +238,8 @@ CI build
 --------
 
 * Build version: `{build_version}`
-* [README]({ci_build_link / tarball_dir.name / readme_path})
-* [tarball]({ci_build_link / tarball_path})
+* [README]({ci_build_link}/{tarball_dir.name}/{readme_path})
+* [tarball]({ci_build_link}/{tarball_path})
 * [build logs]({ci_build_link})
 
 Sources
