@@ -188,3 +188,40 @@ def symlink_to(link_file, dst):
     )
 
     return ret.returncode == 0
+
+
+def read(path):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.read_text()
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"cat '{path}'",
+        capture_stdout=True,
+    )
+
+    return ret.stdout
+
+
+def mkdir(path):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.mkdir(parents=True, exist_ok=True)
+    base_work_dir = prepare()
+
+    return run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"mkdir -p '{path}'",
+    )
+
+
+def write(path, content):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.write_text(content)
+    base_work_dir = prepare()
+
+    EOL = "\n" # f-string expression part cannot include a backslash
+    return run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"cat > '{path}' <<EOF\n{content.removesuffix(EOL)}\nEOF",
+    )

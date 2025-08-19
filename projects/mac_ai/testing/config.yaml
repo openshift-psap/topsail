@@ -266,7 +266,7 @@ prepare:
       repo:
         url: https://github.com/ggml-org/llama.cpp
         version: b5648
-        latest: null # resolved at runtime
+
       file: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
       tarball: true
 

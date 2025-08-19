@@ -5,34 +5,58 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import remote_access
 import podman as podman_mod
-import utils
+import utils, remote_access
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
-def resolve_latest_version():
-    def resolve(prefix):
+def fetch_latest_version(base_work_dir):
+    def fetch(prefix):
         version = config.project.get_config(f"{prefix}.repo.version", print=False)
 
         if version != "latest":
             return
 
-        repo_url = config.project.get_config(f"{prefix}.repo.url")
-        version = config.project.get_config(f"{prefix}.repo.latest")
-        if version is None:
-            # fetch the latest version ONLY if not cached
-            # this avoids a race condition if the version is updated between the prepare and test steps
-            # Updating `repo.version` doesn't solves this, because the preset reset the value to latest ...
-            version = utils.get_latest_release(repo_url)
-        config.project.set_config(f"{prefix}.repo.version", version)
-        config.project.set_config(f"{prefix}.repo.latest", version)
+        llama_base_dir = get_source_dir(base_work_dir).parent
+        llama_latest_file = llama_base_dir / "llama_cpp.latest"
 
-    resolve("prepare.llama_cpp.source")
-    resolve("prepare.llama_cpp.release")
+        repo_url = config.project.get_config(f"{prefix}.repo.url")
+        version = utils.get_latest_release(repo_url)
+
+        remote_access.mkdir(llama_latest_file.parent)
+        remote_access.write(llama_latest_file, version + "\n")
+
+        config.project.set_config(f"{prefix}.repo.version", version)
+
+    fetch("prepare.llama_cpp.source")
+    fetch("prepare.llama_cpp.release")
+
+
+def retrieve_latest_version(base_work_dir):
+    def retrieve(prefix):
+        version = config.project.get_config(f"{prefix}.repo.version", print=False)
+
+        if version != "latest":
+            return
+
+        llama_base_dir = get_source_dir(base_work_dir).parent
+        llama_latest_file = llama_base_dir / "llama_cpp.latest"
+
+        try:
+            version = remote_access.read(llama_latest_file).strip()
+        except Exception:
+            msg = "Couldn't fetch the llama.cpp latest version identifier from the system under test. Prepare it first"
+            logging.error(msg)
+            raise RuntimeError(msg)
+
+        config.project.set_config(f"{prefix}.repo.version", version)
+
+    retrieve("prepare.llama_cpp.source")
+    retrieve("prepare.llama_cpp.release")
+
 
 def prepare_test(base_work_dir, platform):
-    resolve_latest_version()
+    retrieve_latest_version(base_work_dir)
 
     if not platform.needs_podman: return
 
@@ -294,7 +318,7 @@ def prepare_for_macos(base_work_dir, platform):
 
 
 def prepare_binary(base_work_dir, platform):
-    resolve_latest_version()
+    fetch_latest_version(base_work_dir)
 
     if platform.system == "macos":
         return prepare_for_macos(base_work_dir, platform)
