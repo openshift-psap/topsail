@@ -69,7 +69,7 @@ ci_presets:
     test.platform: [podman/ramalama]
     test.model.name: ollama://llama3.2
     matbench.lts.generate: true
-    test.inference_server.benchmark.enabled: false
+    test.inference_server.benchmark.enabled: true
 
   cpt_llama_cpp:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
@@ -81,7 +81,7 @@ ci_presets:
     test.model.name: ollama://llama3.2
     prepare.llama_cpp.source.repo.version: latest
     matbench.lts.generate: true
-    test.inference_server.benchmark.enabled: false
+    test.inference_server.benchmark.enabled: true
 
   # ---
 
