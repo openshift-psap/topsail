@@ -21,6 +21,7 @@ class Settings(matbench_models.ExclusiveModel):
     containerized: bool
     hardware: str
     os: str
+    load_test_tool: str
     urls: Optional[dict[str, str]]
 
 
