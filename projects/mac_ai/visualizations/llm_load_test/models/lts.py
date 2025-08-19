@@ -8,8 +8,9 @@ from enum import Enum
 import matrix_benchmarking.models as matbench_models
 from . import kpi
 
-KPI_SETTINGS_VERSION = "1.0"
+KPI_SETTINGS_VERSION = "1.1"
 # 1.0: first version
+# 1.1: switching from llm-load-test to llama-bench results
 
 class Settings(matbench_models.ExclusiveModel):
     kpi_settings_version: str
@@ -34,8 +35,14 @@ class LlmLoadTestStats(matbench_models.ExclusiveModel):
     percentile_95: float
     percentile_99: float
 
+class LlamaBenchStats(matbench_models.ExclusiveModel):
+    throughput: float
+    err: float
 
-LTS_SCHEMA_VERSION = "1.0"
+LTS_SCHEMA_VERSION = "1.1"
+# 1.0: first version
+# 1.1: switching from llm-load-test to llama-bench results
+
 class Metadata(matbench_models.Metadata):
     lts_schema_version: str
 
@@ -56,6 +63,9 @@ class Results(matbench_models.ExclusiveModel):
     time_to_first_token: Optional[LlmLoadTestStats]
     model_load_duration: Optional[float]
     failures: int
+
+    prompt_processing: LlamaBenchStats
+    token_generation: LlamaBenchStats
 
 
 class KPI(matbench_models.KPI, Settings): pass
