@@ -48,9 +48,9 @@ def generateThroughputData(entries, variables, ordered_vars, model_name=None):
 
         datum["throughput"] = entry.results.lts.results.throughput
 
-        datum["tpot_mean"] = entry.results.lts.kpis["tpot_mean"].value
-        datum["itl_mean"] = entry.results.lts.kpis["itl_mean"].value
-        datum["ttft_mean"] = entry.results.lts.kpis["ttft_mean"].value
+        datum["tpot_mean"] = entry.results.lts.results.time_per_output_token.mean
+        datum["itl_mean"] = entry.results.lts.results.inter_token_latency.mean
+        datum["ttft_mean"] = entry.results.lts.results.time_to_first_token.mean
 
         datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
 
