@@ -153,6 +153,7 @@ ci_presets:
     test.inference_server.benchmark.llama_cpp.backend_ops_perf: true
 
   benchmark:
+    extends: [bench_only]
     test.matbenchmarking.enabled: true
 
     test.llm_load_test.args.concurrency: 1
