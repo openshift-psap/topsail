@@ -159,7 +159,7 @@ def call_generate_lts_schema(step_idx, common_args):
     errors = []
     if run.run(cmd, check=False).returncode != 0:
         logging.warning("An error happened while generating the LTS payload schema...")
-        errors.apprend(log_file.name)
+        errors.append(log_file.name)
 
     if log_has_errors(log_file):
         errors.append(log_file.name)
