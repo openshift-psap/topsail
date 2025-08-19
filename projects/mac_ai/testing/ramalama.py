@@ -70,10 +70,9 @@ def download_ramalama(base_work_dir, dest, version):
 
 
 def build_container_image(base_work_dir, ramalama_path):
-    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
-
-    image_fullname = f"{registry_path}/{image_name}:latest"
+    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+    image_fullname = get_local_image_name()
 
     if podman_mod.has_image(base_work_dir, image_fullname):
         logging.info(f"Image {image_fullname} already exist, not rebuilding it.")
@@ -84,7 +83,7 @@ def build_container_image(base_work_dir, ramalama_path):
     logging.info("Building the ramalama image ...")
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
-        cmd += f" time ./container_build.sh build {image_name}"
+        cmd += f" time ./container_build.sh -s build {image_name}"
         cmd += " 2>&1"
 
         extra_env = dict(
@@ -110,18 +109,44 @@ def build_container_image(base_work_dir, ramalama_path):
     return image_fullname
 
 
-def get_release_image_name(base_work_dir, platform):
+def get_local_image_name():
+    registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
+    image_name = config.project.get_config("prepare.ramalama.build_image.name")
+
+    return f"{registry_path}/{image_name}:latest"
+
+
+def get_release_image_name(base_work_dir, platform, build_version):
     _, _, version = _get_binary_path(base_work_dir, platform)
 
     registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
 
-    dest_image_name = registry_path + "/" + image_name.partition(":")[0] + f":{version}"
+    dest_image_name = registry_path + "/" + image_name + f":{version}_apir.{build_version}"
 
     if config.project.get_config("prepare.ramalama.build_image.debug"):
         dest_image_name += "-debug"
 
     return dest_image_name
+
+
+def publish_ramalama_image(base_work_dir, platform, build_version):
+    image_name = get_local_image_name()
+
+    podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
+
+    release_image_name = get_release_image_name(base_work_dir, platform, build_version)
+
+    latest_suffix = ":debug" if config.project.get_config("prepare.ramalama.build_image.debug") \
+        else ":latest"
+    release_image_latest = release_image_name.rpartition(":")[0] + latest_suffix
+
+    logging.info(f"Pushing the image to {release_image_name} and {release_image_latest}")
+
+    podman_mod.push_image(base_work_dir, image_name, release_image_name)
+    podman_mod.push_image(base_work_dir, image_name, release_image_latest)
+
+    return release_image_name
 
 
 def prepare_binary(base_work_dir, platform):
@@ -134,21 +159,7 @@ def prepare_binary(base_work_dir, platform):
 
     build_image_enabled = config.project.get_config("prepare.ramalama.build_image.enabled")
     if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:
-        image_name = build_container_image(base_work_dir, ramalama_path)
-
-        if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
-            podman_mod.login(base_work_dir, "prepare.ramalama.build_image.publish.credentials")
-
-            release_image_name = get_release_image_name(base_work_dir, platform)
-
-            latest_suffix = ":debug" if config.project.get_config("prepare.ramalama.build_image.debug") \
-                else ":latest"
-            release_image_latest = release_image_name.partition(":")[0] + latest_suffix
-
-            logging.info(f"Pushing the image to {release_image_name} and {release_image_latest}")
-
-            podman_mod.push_image(base_work_dir, image_name, release_image_name)
-            podman_mod.push_image(base_work_dir, image_name, release_image_latest)
+        build_container_image(base_work_dir, ramalama_path)
     else:
         logging.info(f"ramalama image build not requested.")
 

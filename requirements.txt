@@ -13,3 +13,4 @@ pyjwt
 slack_sdk==3.35.0
 setuptools
 pandas
+opensearchpy

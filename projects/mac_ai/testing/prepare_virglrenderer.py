@@ -70,6 +70,7 @@ def configure(base_work_dir, use_custom):
         library_path = get_dyld_library_path(base_work_dir) / "libvirglrenderer.1.dylib"
 
         if not remote_access.exists(library_path):
+            # restore the default before aborting
             remote_access.symlink_to(BREW_CUSTOM_LIB, BREW_CUSTOM_LIB)
             raise RuntimeError(f"Library at '{library_path}' does not exists ...")
     else:

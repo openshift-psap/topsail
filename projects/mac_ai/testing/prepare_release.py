@@ -78,6 +78,10 @@ def get_version_link(repo_url, version, git_rev, github=False, gitlab=False):
 
 def build_remoting_tarball(base_work_dir, package_libs):
     llama_cpp_version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+    build_id = visualize.get_next_build_index(llama_cpp_version)
+
+    build_version = f"{llama_cpp_version}_b{build_id}"
+
     llama_cpp_url = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
     ramalama_version = config.project.get_config("prepare.ramalama.repo.version")
@@ -86,7 +90,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
     virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")
 
     logging.info(f"Preparing the API remoting data into {env.ARTIFACT_DIR} ...")
-    tarball_dir = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}"
+    tarball_dir = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}"
     tarball_dir.mkdir()
 
     bin_dir = tarball_dir / "bin"
@@ -95,7 +99,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
     src_info_dir = tarball_dir / "src_info"
     src_info_dir.mkdir()
 
-    add_string_file(src_info_dir / "version.txt", llama_cpp_version + "\n")
+    add_string_file(src_info_dir / "version.txt", build_version + "\n")
 
     virglrenderer_src_dir = prepare_virglrenderer.get_build_dir(base_work_dir) / ".." / "src"
     virglrenderer_git_rev = add_remote_git_status(base_work_dir, virglrenderer_src_dir,
@@ -122,7 +126,13 @@ def build_remoting_tarball(base_work_dir, package_libs):
     add_local_file(check_podman_machine_script_file, tarball_dir / check_podman_machine_script_file.name)
 
     import prepare_mac_ai
-    ramalama_image = ramalama.get_release_image_name(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
+    if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
+
+        ramalama_image = ramalama.publish_ramalama_image(base_work_dir,
+                                                         prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM,
+                                                         build_version)
+    else:
+        ramalama_image = ramalama.get_local_image_name()
 
     _, ramalama_src_dir, _ = ramalama._get_binary_path(base_work_dir, prepare_mac_ai.RAMALAMA_REMOTING_PLATFORM)
 
@@ -143,12 +153,10 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     # ---
 
-    _, pde_image_fullname = get_podman_desktop_extension_image_name(llama_cpp_version)
+    _, pde_image_fullname = get_podman_desktop_extension_image_name(build_version)
 
     # ---
 
-    ci_build_link = pathlib.Path("/not/running/in/ci")
-    ci_perf_link = None
     if os.environ.get("OPENSHIFT_CI") == "true":
         ci_link = "/".join([
             "https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/pr-logs/pull",
@@ -161,8 +169,11 @@ def build_remoting_tarball(base_work_dir, package_libs):
         ])
         ci_build_link = ci_link + "/" + os.environ["TOPSAIL_OPENSHIFT_CI_STEP_DIR"]
         ci_perf_link = ci_link + "/005-test/artifacts/test-artifacts/reports_index.html"
+    else:
+        ci_build_link = "/not/running/in/ci"
+        ci_perf_link = None
 
-    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{llama_cpp_version}.tar"
+    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}.tar"
     readme_path = pathlib.Path("README.md")
 
     tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
@@ -197,7 +208,7 @@ Setup
 
 * download and extract the tarball and enter its directory
 ```
-curl -Ssf "{ci_build_link / tarball_path}" | tar xv -
+curl -Ssf "{ci_build_link}/{tarball_path}" | tar xv -
 cd "{tarball_dir.name}"
 ```
 
@@ -226,8 +237,9 @@ ramalama run --image {ramalama_image} llama3.2
 CI build
 --------
 
-* [README]({ci_build_link / tarball_dir.name / readme_path})
-* [tarball]({ci_build_link / tarball_path})
+* Build version: `{build_version}`
+* [README]({ci_build_link}/{tarball_dir.name}/{readme_path})
+* [tarball]({ci_build_link}/{tarball_path})
 * [build logs]({ci_build_link})
 
 Sources
@@ -295,7 +307,7 @@ Open issues in {llama_cpp_url}/issues
 Please share:
 - the content of the logs mentioned above
 - the name of the tarball (`{tarball_file.name}`)
-- the name of the contaienr image (`{ramalama_image}`)
+- the name of the container image (`{ramalama_image}`)
 - the output of this command:
 ```
 system_profiler SPSoftwareDataType SPHardwareDataType
@@ -338,16 +350,16 @@ system_profiler SPSoftwareDataType SPHardwareDataType
     logging.info(f"Saved {tarball_file} !")
 
     if config.project.get_config("prepare.remoting.podman_desktop_extension.enabled"):
-        prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version)
+        prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, build_version)
 
 
-def get_podman_desktop_extension_image_name(llama_cpp_version):
+def get_podman_desktop_extension_image_name(build_version):
     image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
-    return image_name, f"{image_name}:{llama_cpp_version}" # will add the ext release tag here when relevant
+    return image_name, f"{image_name}:{build_version}" # will add the ext release tag here when relevant
 
 
-def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp_version):
-    image_name, image_fullname = get_podman_desktop_extension_image_name(llama_cpp_version)
+def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, build_version):
+    image_name, image_fullname = get_podman_desktop_extension_image_name(build_version)
 
     # copy the build directory to the remote system
     run.run_toolbox("remote", "retrieve",
@@ -373,7 +385,7 @@ def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, llama_cpp
     package_content = remote_access.run_with_ansible_ssh_conf(base_work_dir, "cat package.json", chdir=ext_repo_dest, capture_stdout=True)
     package_json_content = json.loads(package_content.stdout)
     ext_version = package_json_content["version"]
-    package_json_content["version"] = f"{ext_version}+{llama_cpp_version}"
+    package_json_content["version"] = f"{ext_version}+{build_version}"
     write_package_json_cmd = f"""cat > package.json <<EOF
 {json.dumps(package_json_content, indent=4)}
 EOF

@@ -92,7 +92,7 @@ ci_presets:
     prepare.virglrenderer.enabled: true
 
   remoting_publish:
-    extends: [remoting]
+    extends: [remoting, use_intlab_os]
     prepare.remoting.publish: true
     prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.5
     prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
@@ -101,7 +101,7 @@ ci_presets:
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.11.2-remoting-0.2.1
+    prepare.ramalama.repo.version: v0.12.0-apir.rc3
     prepare.remoting.podman_desktop_extension.enabled: true
     prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
@@ -530,6 +530,7 @@ matbench:
       instance: smoke
       index: topsail-mac-ai-cpt
       index_prefix: ""
+      build_counter_index: "topsail-mac-ai-builds" # use the generate a unique ID for each build
     regression_analyses:
       enabled: false
       enabled_on_replot: true
