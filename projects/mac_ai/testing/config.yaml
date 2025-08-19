@@ -86,24 +86,15 @@ ci_presets:
   # ---
 
   remoting:
-    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: main
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
-
-  remoting_publish:
-    extends: [remoting, use_intlab_os]
-    prepare.remoting.publish: true
+    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
     prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.5
     prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
     prepare.ramalama.build_image.enabled: true
-    prepare.ramalama.build_image.publish.enabled: true
-    prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
     prepare.ramalama.repo.version: v0.12.0-apir.rc3
-    prepare.remoting.podman_desktop_extension.enabled: true
-    prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
     test.platform:
     - podman/ramalama/remoting
@@ -111,6 +102,19 @@ ci_presets:
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
+
+  remoting_wip:
+    extends: [remoting]
+    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
+    prepare.llama_cpp.source.repo.version: main
+
+  remoting_publish:
+    extends: [remoting, use_intlab_os]
+    prepare.remoting.publish: true
+    prepare.ramalama.build_image.publish.enabled: true
+    prepare.ramalama.build_image.registry_path: quay.io/crcont
+    prepare.remoting.podman_desktop_extension.enabled: true
+    prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
