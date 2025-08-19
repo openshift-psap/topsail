@@ -79,6 +79,12 @@ def configure(base_work_dir, use_custom):
     remote_access.symlink_to(BREW_CUSTOM_LIB, library_path)
 
 
+def has_custom_virglrenderer(base_work_dir):
+    virglrenderer_path = remote_access.run_with_ansible_ssh_conf(base_work_dir, "lsof -c krunkit | grep virglrenderer", check=False, capture_stdout=True).stdout.strip()
+
+    return str(get_dyld_library_path(base_work_dir)) in virglrenderer_path
+
+
 def cleanup(base_work_dir):
     configure(base_work_dir, use_custom=False)
 

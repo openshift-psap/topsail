@@ -58,6 +58,21 @@ def _is_streaming(results):
     return results.test_config.get("test.llm_load_test.args.streaming")
 
 
+def _generate_llama_bench(results, test_name):
+    llama_bench = types.SimpleNamespace()
+    for llama_bench_result in (results.llama_bench_results or []):
+        if llama_bench_result["test"] == test_name:
+            break
+    else:
+        logging.warning(f"Couldn't find the llama-bench test named '{test_name}' ...")
+        return None
+
+    llama_bench.throughput = llama_bench_result["t/s"]
+    llama_bench.err = llama_bench_result["t/s err"]
+
+    return llama_bench
+
+
 def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings = types.SimpleNamespace()
 
@@ -166,6 +181,9 @@ def generate_lts_results(results):
 
     # Number of failures
     results_lts.failures = _generate_failures(results)
+
+    results_lts.prompt_processing = _generate_llama_bench(results, "pp512")
+    results_lts.token_generation = _generate_llama_bench(results, "tg128")
 
     return results_lts
 

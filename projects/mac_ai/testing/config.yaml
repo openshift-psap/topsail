@@ -69,7 +69,7 @@ ci_presets:
     test.platform: [podman/ramalama]
     test.model.name: ollama://llama3.2
     matbench.lts.generate: true
-    test.inference_server.benchmark.enabled: false
+    test.inference_server.benchmark.enabled: true
 
   cpt_llama_cpp:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
@@ -81,7 +81,7 @@ ci_presets:
     test.model.name: ollama://llama3.2
     prepare.llama_cpp.source.repo.version: latest
     matbench.lts.generate: true
-    test.inference_server.benchmark.enabled: false
+    test.inference_server.benchmark.enabled: true
 
   # ---
 
@@ -108,6 +108,7 @@ ci_presets:
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
 
@@ -265,7 +266,7 @@ prepare:
       repo:
         url: https://github.com/ggml-org/llama.cpp
         version: b5648
-        latest: null # resolved at runtime
+
       file: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
       tarball: true
 

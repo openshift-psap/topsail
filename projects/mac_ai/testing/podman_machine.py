@@ -60,8 +60,7 @@ def start(base_work_dir, use_remoting=None):
         if not config.project.get_config("prepare.virglrenderer.enabled"):
             logging.warning("The custom virglrenderer isn't enabled ...")
 
-        has_virgl = remote_access.run_with_ansible_ssh_conf(base_work_dir, "lsof -c krunkit | grep virglrenderer", check=False, capture_stdout=True)
-        if str(prepare_virglrenderer.get_dyld_library_path(base_work_dir)) not in has_virgl.stdout:
+        if not prepare_virglrenderer.has_custom_virglrenderer(base_work_dir):
             raise RuntimeError("The custom virglrenderer library is not loaded in krunkit :/")
 
     return ret
@@ -70,6 +69,7 @@ def start(base_work_dir, use_remoting=None):
 def rm(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     return _run(base_work_dir, f"rm {name} --force")
+
 
 def reset(base_work_dir):
     return _run(base_work_dir, f"reset --force")
@@ -130,10 +130,17 @@ def configure_and_start(base_work_dir, force_restart=True):
         machine_state = init(base_work_dir)
     was_stopped = machine_state[0]["State"] == "stopped"
 
-    if force_restart and not was_stopped:
-        if config.project.get_config("prepare.podman.machine.force_configuration"):
-            stop(base_work_dir)
-            was_stopped = True
+    use_remoting = config.project.get_config("prepare.podman.machine.remoting_env.enabled")
+
+    if (not was_stopped) and use_remoting and not prepare_virglrenderer.has_custom_virglrenderer(base_work_dir):
+        logging.info("podman machine running with the wrong virglrenderer library. Stopping it.")
+        force_restart = True
+
+    force_restart = force_restart or config.project.get_config("prepare.podman.machine.force_configuration")
+
+    if not was_stopped and force_restart:
+        stop(base_work_dir)
+        was_stopped = True
 
     if not was_stopped:
         logging.info("podman machine already running. Skipping the configuration part.")
