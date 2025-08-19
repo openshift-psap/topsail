@@ -208,7 +208,7 @@ Setup
 
 * download and extract the tarball and enter its directory
 ```
-curl -Ssf "{ci_build_link}/{tarball_path}" | tar xv -
+curl -Ssf "{ci_build_link}/{tarball_path}" | tar xv
 cd "{tarball_dir.name}"
 ```
 
