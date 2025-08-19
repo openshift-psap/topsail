@@ -108,6 +108,7 @@ ci_presets:
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
 
