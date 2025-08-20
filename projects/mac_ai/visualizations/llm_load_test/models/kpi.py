@@ -14,6 +14,6 @@ def pp_throughput(lts_payload):
 
 
 @matbench_models.HigherBetter
-@matbench_models.KPIMetadata(help="Token generation throughput", unit="token/ms")
+@matbench_models.KPIMetadata(help="Token generation throughput", unit="token/s")
 def tg_throughput(lts_payload):
     return lts_payload.results.token_generation.throughput
