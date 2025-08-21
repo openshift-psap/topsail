@@ -356,8 +356,9 @@ system_profiler SPSoftwareDataType SPHardwareDataType
 
 
 def get_podman_desktop_extension_image_name(build_version):
+    ext_version = config.project.get_config("prepare.remoting.podman_desktop_extension.repo.version")
     image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
-    return image_name, f"{image_name}:{build_version}" # will add the ext release tag here when relevant
+    return image_name, f"{image_name}:{ext_version}_{build_version}" # will add the ext release tag here when relevant
 
 
 def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, build_version):
