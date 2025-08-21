@@ -88,9 +88,11 @@ def build_container_image(base_work_dir, ramalama_path):
 
         extra_env = dict(
             REGISTRY_PATH=registry_path,
-            LLAMA_CPP_PULL_REF=config.project.get_config("prepare.llama_cpp.source.repo.version"),
-            LLAMA_CPP_REPO=config.project.get_config("prepare.llama_cpp.source.repo.url"),
         )
+
+        if config.project.get_config("prepare.ramalama.build_image.name") == "remoting":
+            extra_env["LLAMA_CPP_PULL_REF"] = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            extra_env["LLAMA_CPP_REPO"] = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
         if config.project.get_config("prepare.ramalama.build_image.debug"):
             extra_env["RAMALAMA_IMAGE_BUILD_DEBUG"] = "y"
