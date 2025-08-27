@@ -21,7 +21,6 @@ def cleanup(base_work_dir):
 
 
 def prepare_gv_from_gh_binary(base_work_dir):
-
     podman_path, version = _get_repo_podman_path(base_work_dir)
     gvisor_path = podman_path.parent.parent / "libexec" / "podman" / "gvproxy"
 
@@ -43,6 +42,7 @@ def prepare_gv_from_gh_binary(base_work_dir):
         source=source,
         dest=gvisor_path,
         executable=True,
+        artifact_dir_suffix="__gvproxy",
     )
 
 def prepare_from_gh_binary(base_work_dir):
@@ -71,6 +71,7 @@ def prepare_from_gh_binary(base_work_dir):
         source=source,
         dest=dest,
         zip=True,
+        artifact_dir_suffix="__podman",
     )
 
     return podman_path
