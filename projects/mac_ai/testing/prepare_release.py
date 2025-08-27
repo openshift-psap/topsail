@@ -387,7 +387,7 @@ def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, build_ver
     # update the version number
     package_content = remote_access.run_with_ansible_ssh_conf(base_work_dir, "cat package.json", chdir=ext_repo_dest, capture_stdout=True)
     package_json_content = json.loads(package_content.stdout)
-    ext_version = package_json_content["version"]
+    ext_version = config.project.get_config("prepare.remoting.podman_desktop_extension.repo.version")
     package_json_content["version"] = f"{ext_version}+{build_version}"
     write_package_json_cmd = f"""cat > package.json <<EOF
 {json.dumps(package_json_content, indent=4)}

@@ -95,6 +95,7 @@ ci_presets:
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
     prepare.ramalama.repo.version: v0.12.0-apir.rc3
+    prepare.remoting.podman_desktop_extension.repo.version: v0.1.2
 
     test.platform:
     - podman/ramalama/remoting
@@ -176,15 +177,18 @@ ci_presets:
     - b5076 # latest - 25-04-08
 
   multi-models:
+    test.matbenchmarking.enabled: true
     test.model.name:
-    - hf://ibm-granite/granite-8b-code-base-4k-GGUF/granite-8b-code-base.Q4_K_M.gguf
-    - hf://ggml-org/gemma-3-4b-it-GGUF
-    - hf://instructlab/merlinite-7b-lab-GGUF/merlinite-7b-lab-Q4_K_M.gguf
-    - hf://MaziyarPanahi/Mistral-7B-Instruct-v0.3-GGUF/Mistral-7B-Instruct-v0.3.Q4_K_M.gguf
-    - hf://ggml-org/Qwen2.5-VL-7B-Instruct-GGUF
-    - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_M
+    - granite3.3
+    - qwen
+    - phi
+    - llama3.2
+    - mistral
+    - gemma3
+    - gpt-oss
 
   multi-model-sizes:
+    test.matbenchmarking.enabled: true
     test.model.name:
     - ollama://llama3.2:1b
     - ollama://llama3.2:3b
@@ -192,6 +196,7 @@ ci_presets:
     - ollama://llama2:13b
 
   multi-quant:
+    test.matbenchmarking.enabled: true
     test.model.name:
     - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_S
     - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_0
@@ -414,7 +419,7 @@ prepare:
       enabled: false
       repo:
         url: https://github.com/crc-org/podman-desktop-remoting-ext
-        version: v0.1.1
+        version: v0.1.2
       image:
         containerfile: Containerfile
         dest: quay.io/crcont/podman-desktop-remoting-ext
