@@ -383,6 +383,8 @@ def cleanup_image(base_work_dir):
 
     for platform_str in platforms_to_build_str:
         platform = utils.parse_platform(platform_str)
+        if platform.inference_server_name != "llama_cpp": continue
+
         if not platform.needs_podman: continue
 
         prepare_test(base_work_dir, platform)
