@@ -5,6 +5,8 @@ set -o errexit
 set -o nounset
 set -o errtrace
 
+MACHINE_NAME="${1:-}"
+
 SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
 export CONTAINERS_MACHINE_PROVIDER=libkrun
@@ -77,8 +79,9 @@ export CONTAINERS_HELPER_BINARY_DIR="$SCRIPT_DIR/bin/"
 
 echo ""
 echo "INFO: Restarting podman machine ..."
-podman machine stop
-podman machine start --no-info
+# $MACHINE_NAME might be empty, podman doesn't mind and takes the default one
+podman machine stop "$MACHINE_NAME"
+podman machine start "$MACHINE_NAME" --no-info
 
 echo "INFO: Verifying that krunkit has the API Remoting library ..."
 virglrenderer_path=$(lsof -c krunkit | grep "$USER" | grep libvirglrenderer | awk '{print $9;}')

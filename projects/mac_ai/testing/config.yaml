@@ -414,7 +414,7 @@ prepare:
       enabled: false
       repo:
         url: https://github.com/crc-org/podman-desktop-remoting-ext
-        version: v0.1.0
+        version: v0.1.1
       image:
         containerfile: Containerfile
         dest: quay.io/crcont/podman-desktop-remoting-ext
