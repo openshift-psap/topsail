@@ -146,6 +146,16 @@ def has_image(base_work_dir, image):
     return ret.returncode == 0
 
 
+def pull_image(base_work_dir, image):
+    podman_cmd = get_podman_command()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} image pull {image}",
+    )
+
+    return ret.returncode == 0
+
 def rm_image(base_work_dir, image):
     podman_cmd = get_podman_command()
 
@@ -158,6 +168,19 @@ def rm_image(base_work_dir, image):
     )
 
     return ret.returncode == 0
+
+
+def run_container(base_work_dir, image, volumes=None, user=":", command=""):
+    podman_cmd = get_podman_command()
+
+    volumes_str = ''
+    if volumes:
+        volumes_str = " ".join([f"-v '{key}:{value}:Z'" for key, value in volumes.items()])
+
+    remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} run --user '{user}' --pull=never --rm {volumes_str} '{image}' {command}",
+    )
 
 
 def start(base_work_dir, port):
