@@ -52,6 +52,9 @@ ci_presets:
   cpt_nightly:
     extends: [cpt_all, mac5]
 
+  cpt_nightly_lightspeed:
+    extends: [cpt_lightspeed, mac5]
+
   cpt_all:
     extends: [cpt_ramalama, cpt_llama_cpp]
     test.model.name: ollama://llama3.2
@@ -82,6 +85,11 @@ ci_presets:
     prepare.llama_cpp.source.repo.version: latest
     matbench.lts.generate: true
     test.inference_server.benchmark.enabled: true
+
+  cpt_lightspeed:
+    extends: [lightspeed, use_intlab_os, analyze_kpis, export_kpis]
+    test.llm_load_test.args.concurrency: 1
+    test.llm_load_test.args.duration: 300
 
   # ---
 
@@ -128,6 +136,16 @@ ci_presets:
     - podman/llama_cpp/remoting
     - macos/llama_cpp/metal
     - podman/llama_cpp/vulkan
+
+  # ---
+
+  lightspeed:
+    test.platform: podman/lightspeed
+    test.model.name: /models/Phi-4-mini-instruct-Q4_K_M.gguf
+    test.inference_server.port: 8888
+    test.inference_server.benchmark.enabled: true
+    test.matbenchmarking.enabled: false
+    test.llm_load_test.enabled: true
 
   llama_cpp:
     test.platform:
@@ -261,12 +279,18 @@ prepare:
       llama_cpp: macos/llama_cpp/upstream_bin
       ollama: macos/ollama
       ramalama: podman/ramalama
+      lightspeed: podman/lightspeed
 
   cleanup_on_exit: false
   prepare_only_inference_server: false
 
   llm_load_test:
     install_requirements: false
+
+  lightspeed:
+    installer:
+      image: quay.io/redhat-user-workloads/rhel-lightspeed-tenant/installer
+      version: latest
 
   llama_cpp:
     iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary
@@ -507,9 +531,11 @@ cleanup:
     llm-load-test: true
     podman: true
     virglrenderer: true
+    lightspeed: true
 
   images:
     llama_cpp: true
+    lightspeed: true
 
   podman_machine:
     delete: true
@@ -560,7 +586,7 @@ exec_list:
 
 __platform_check:
   system: [macos, podman]
-  inference_server: [llama_cpp, ollama, ramalama]
+  inference_server: [llama_cpp, ollama, ramalama, lightspeed]
 
   options:
     no_gpu: no-gpu

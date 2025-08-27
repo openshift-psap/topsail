@@ -3,6 +3,7 @@ import logging
 import pytz
 import pathlib
 import yaml
+import datetime
 
 from .. import models
 from ..models import lts as models_lts
@@ -92,13 +93,28 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     elif "ollama" in lts_settings.platform:
         version_config_key = "prepare.ollama.repo.version"
         containerized = False
+    elif "lightspeed" in lts_settings.platform:
+        # version is derived later from image metadata
+        version_config_key = None
+        containerized = True
     else:
         logging.error(f"Unknown platform '{lts_settings.platform}', cannot find the version.")
         version_config_key = None
         containerized = None
 
-    lts_settings.version = results.test_config.get(version_config_key) \
-        if version_config_key else "Unknown"
+    if "lightspeed" in lts_settings.platform:
+        lts_settings.model_name = pathlib.Path(lts_settings.model_name).stem # remove the dirname and .gguf ext
+
+        # use the image creation date as version for the time being
+        if results.lightspeed_info and results.lightspeed_info.image_date:
+            lts_settings.version = results.lightspeed_info.image_date.strftime("%y.%-m.%-d%H%S")
+        else:
+            logging.error(f"Lightspeed info missing, cannot find the version.")
+            lts_settings.version = "not available"
+
+    else:
+        lts_settings.version = results.test_config.get(version_config_key) \
+            if version_config_key else "Unknown"
 
     if "ramalama" in lts_settings.platform and results.ramalama_commit_info:
         lts_settings.version = f"{lts_settings.version}-{results.ramalama_commit_info.date_id}"

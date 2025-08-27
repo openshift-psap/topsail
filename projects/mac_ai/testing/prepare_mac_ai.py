@@ -6,7 +6,7 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer, prepare_release
-import prepare_llama_cpp, llama_cpp, ollama, ramalama
+import prepare_llama_cpp, llama_cpp, ollama, ramalama, lightspeed
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
@@ -15,12 +15,14 @@ PREPARE_INFERENCE_SERVERS = dict(
     llama_cpp=prepare_llama_cpp,
     ollama=ollama,
     ramalama=ramalama,
+    lightspeed=lightspeed,
 )
 
 INFERENCE_SERVERS = dict(
     llama_cpp=llama_cpp,
     ollama=ollama,
     ramalama=ramalama,
+    lightspeed=lightspeed,
 )
 
 
@@ -69,6 +71,12 @@ def cleanup():
 
     if config.project.get_config("cleanup.files.ramalama"):
         ramalama.cleanup_files(base_work_dir)
+
+    if config.project.get_config("cleanup.files.lightspeed"):
+        lightspeed.cleanup_files(base_work_dir)
+
+    if config.project.get_config("cleanup.images.lightspeed"):
+        lightspeed.cleanup_images(base_work_dir)
 
     # ***
 

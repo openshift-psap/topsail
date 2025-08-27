@@ -2,6 +2,7 @@ import os
 import pathlib
 import logging
 import yaml
+import json
 
 from projects.core.library import env, config, run, configure_logging, export
 import remote_access, utils
@@ -155,6 +156,21 @@ def pull_image(base_work_dir, image):
     )
 
     return ret.returncode == 0
+
+
+def inspect_image(base_work_dir, image):
+    podman_cmd = get_podman_command()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} image inspect {image}",
+        check=True,
+        capture_stdout=True,
+        capture_stderr=True,
+    )
+
+    return json.loads(ret.stdout)
+
 
 def rm_image(base_work_dir, image):
     podman_cmd = get_podman_command()

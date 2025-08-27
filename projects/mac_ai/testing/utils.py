@@ -43,7 +43,7 @@ def parse_platform(platform_str):
         raise ValueError(f"Invalid platform inference server '{platform.inference_server_name}' in {platform_str}. Expected one of {expected_servers}")
 
     # too complex to put in the configuration file!
-    if platform.inference_server_name == "ramalama":
+    if platform.inference_server_name in ("ramalama", "lightspeed"):
         platform.needs_podman_machine = True
         platform.needs_podman= False
     else:
