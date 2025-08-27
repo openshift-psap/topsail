@@ -250,7 +250,7 @@ remote_host:
   env:
     PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
   home_is_base_work_dir: true
-  verbose_ssh_commands: true
+  verbose_ssh_commands: false
 
 prepare:
   # the list of platform environments to prepare
