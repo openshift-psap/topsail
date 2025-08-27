@@ -176,6 +176,7 @@ ci_presets:
     - b5076 # latest - 25-04-08
 
   multi-models:
+    test.matbenchmarking.enabled: true
     test.model.name:
     - granite3.3
     - qwen
@@ -186,6 +187,7 @@ ci_presets:
     - gpt-oss
 
   multi-model-sizes:
+    test.matbenchmarking.enabled: true
     test.model.name:
     - ollama://llama3.2:1b
     - ollama://llama3.2:3b
@@ -193,6 +195,7 @@ ci_presets:
     - ollama://llama2:13b
 
   multi-quant:
+    test.matbenchmarking.enabled: true
     test.model.name:
     - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_K_S
     - hf://TheBloke/Llama-2-7B-Chat-GGUF:Q4_0
