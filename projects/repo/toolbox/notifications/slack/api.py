@@ -10,7 +10,7 @@ CHANNEL_ID = "C07NS5TAKPA"
 MAX_CALLS = 10
 
 
-def search_channel_message(client, message_anchor: str, not_before):
+def search_channel_message(client, message_anchor: str, not_before=None):
     """Searches for a message matching the pattern.
     Returns thread ts if successful."""
     has_more = True

@@ -2,6 +2,7 @@ import os
 import logging
 import pathlib
 import json
+import yaml
 
 import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
@@ -9,6 +10,28 @@ import projects.repo.toolbox.notifications.slack.api as slack_api
 GITHUB_APP_PEM_FILE = "topsail-bot.2024-09-18.private-key.pem"
 GITHUB_APP_CLIENT_ID_FILE = "topsail-bot.clientid"
 SLACK_TOKEN_FILE = "topsail-bot.slack-token"
+
+def get_secrets():
+    # currently hardcoded, because there's no configuration file at this level
+    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH", "CONTAINER_BENCH_SECRET_PATH")
+
+    secret_env_key = None
+    warn = []
+    for secret_env_key in SECRET_ENV_KEYS:
+        if os.environ.get(secret_env_key): break
+        warn.append(f"{secret_env_key} not defined, cannot access the Github secrets")
+    else:
+        for warning in warn:
+            logging.warning(warning)
+        return None, None
+
+    secret_dir = pathlib.Path(os.environ[secret_env_key])
+    if not secret_dir.exists():
+        logging.fatal(f"{secret_env_key} points to a non-existing directory ...")
+        return None, None
+
+    return secret_dir, secret_env_key
+
 
 def send_job_completion_notification(reason, status, github=True, slack=False, dry_run=False):
     if os.environ.get("TOPSAIL_LOCAL_CI_MULTI") == "true":
@@ -28,22 +51,8 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
         logging.info("Running from a Periodic job, don't send notification to github")
         github = False
 
-    # currently hardcoded, because there's no configuration file at this level
-    SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH", "CONTAINER_BENCH_SECRET_PATH")
-
-    secret_env_key = None
-    warn = []
-    for secret_env_key in SECRET_ENV_KEYS:
-        if os.environ.get(secret_env_key): break
-        warn.append(f"{secret_env_key} not defined, cannot access the Github secrets")
-    else:
-        for warning in warn:
-            logging.warning(warning)
-        return True
-
-    secret_dir = pathlib.Path(os.environ[secret_env_key])
-    if not secret_dir.exists():
-        logging.fatal(f"{secret_env_key} points to a non-existing directory ...")
+    secret_dir, secret_env_key = get_secrets()
+    if secret_dir is None:
         return True
 
     failed = False
@@ -255,7 +264,9 @@ def send_job_completion_notification_to_slack(
         if dry_run:
             logging.info(f"Posting Slack channel notification ...")
         else:
-            channel_msg_ts = slack_api.send_message(client, message=channel_message)
+            channel_msg_ts, ok = slack_api.send_message(client, message=channel_message)
+            if not ok:
+                return True
 
 
     if dry_run:
@@ -396,3 +407,102 @@ def get_perflab_ci_extra_footer_message(get_link):
     return f"""
 • Link to the {get_link("Rebuild page", link, base=base)}.
 """
+
+
+""" # example of a regression_summary file:
+entries_count: 3
+failures: 0
+kpis_count: 2
+message: Performed 6 KPI regression analyses over 3 entries x 2 KPIs. 0 KPIs didn't
+  pass.
+no_history: 0
+not_analyzed: 0
+significant_performance_increase: 0
+total_points: 6
+"""
+
+def send_cpt_notification(
+        regression_summary_path, title, slack, dry_run
+):
+    summary_path = pathlib.Path(regression_summary_path)
+    if not summary_path.exists():
+        logging.fatal(f"Regression summary doesn't exist :/ ({regression_summary_path})")
+        return True
+
+    try:
+        with open(summary_path) as f:
+            summary = yaml.safe_load(f)
+    except Exception as e:
+        logging.fatal(f"Failed to load regression summary: {e}")
+        return True
+
+    secret_dir, secret_env_key = get_secrets()
+    if secret_dir is None:
+        return True
+
+    failed = False
+    if slack:
+        failed = send_cpt_notification_to_slack(secret_dir, secret_env_key, title, summary, dry_run)
+
+    return failed
+
+
+def send_cpt_notification_to_slack(secret_dir, secret_env_key, title, summary, dry_run):
+    token = get_slack_secrets(secret_dir, secret_env_key)
+    if not token:
+        return True
+
+    client = slack_api.init_client(token)
+    if not client:
+        logging.fatal("Couldn't get the slack client ...")
+        return True
+
+    channel_msg_ts, channel_message = slack_api.search_channel_message(client, title)
+
+    if not channel_msg_ts:
+        channel_message = f"🧵 Thread for `{title}` continuous performance testing"
+        if dry_run:
+            logging.info(f"Posting Slack channel notification ...\n{channel_message}")
+        else:
+            channel_msg_ts = slack_api.send_message(client, message=channel_message)
+
+    try:
+        thread_message = get_slack_cpt_message(summary)
+    except Exception as e:
+        logging.fatal(f"Failed to generate the slack notification message: {e}")
+        return True
+
+    if dry_run:
+        logging.info(f"Posting Slack thread notification ...\n{thread_message}")
+        ok = True
+    else:
+        _, ok = slack_api.send_message(client, message=thread_message, main_ts=channel_msg_ts)
+
+    return not ok
+
+
+def get_slack_cpt_message(summary):
+    def get_link(name, path, is_raw_file=False, base=None, is_dir=False):
+        return f"<{get_ci_link(path, is_raw_file, base, is_dir)}|{name}>"
+
+    def get_italics(text):
+        return f"_{text}_"
+
+    def get_bold(text):
+        return f"*{text}*"
+
+    status_icon = ":no-red-circle:" if summary.get("failures") \
+        else ":done-circle-check:"
+
+    return f"""{status_icon} {get_bold(summary['message'])}
+
+• Link to the {get_link("test results", "", is_dir=True)}.
+• Link to the {get_link("reports index", "reports_index.html")}.
+
+- `{summary['entries_count']}` entries were tested against `{summary['kpis_count']}` KPIs
+- `{summary['failures']}` failed
+- `{summary['no_history']}` had no history
+- `{summary['not_analyzed']}` were not analyzed
+- `{summary['significant_performance_increase']}` had a significant performance degradation
+- `{summary['total_points']}` points were checked for regression.
+    """
