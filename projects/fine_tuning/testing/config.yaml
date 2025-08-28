@@ -85,6 +85,7 @@ ci_presets:
   gating_dgx40gb_full:
     extends: [fms, gating]
 
+    matbench.lts.regression_analyses.notification.title: "Fine-tuning: FULL"
     fine_tuning.pvc.size: 2000Gi
     fine_tuning.model_registry: hf
 
@@ -131,6 +132,7 @@ ci_presets:
 
   gating_dgx40gb_lora:
     extends: [fms, gating_dgx40gb_full]
+    matbench.lts.regression_analyses.notification.title: "Fine-tuning: LORA"
 
     tests.fine_tuning.test_settings.hyper_parameters.peft_method: "lora"
     tests.fine_tuning.test_settings.hyper_parameters.r: 4
@@ -180,6 +182,7 @@ ci_presets:
 
   gating_dgx40gb_qlora:
     extends: [fms, gating]
+    matbench.lts.regression_analyses.notification.title: "Fine-tuning: QLORA"
     fine_tuning.pvc.size: 2000Gi
     tests.fine_tuning.matbenchmarking.enabled: true
     tests.fine_tuning.matbenchmarking.stop_on_error: false
@@ -267,6 +270,7 @@ ci_presets:
 
   gating_smoke:
     extends: [gpu, use_smoke_os]
+    matbench.lts.regression_analyses.notification.title: "Fine-tuning: SMOKE test"
     matbench.lts.opensearch.export.enabled: true
     matbench.lts.regression_analyses.enabled: true
     'ci_presets.light["tests.fine_tuning.test_settings.gpu"]': 1
@@ -874,6 +878,9 @@ matbench:
       enabled_on_replot: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
+      notification:
+        enabled: true
+        title: "Fine-tuning CPT"
 export_artifacts:
   enabled: false
   bucket: rhoai-cpt-artifacts
