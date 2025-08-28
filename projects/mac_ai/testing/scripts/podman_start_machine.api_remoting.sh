@@ -7,6 +7,11 @@ set -o errtrace
 
 MACHINE_NAME="${1:-}"
 
+machine_args=()
+[[ "$MACHINE_NAME" ]] && machine_args=("$MACHINE_NAME")
+# using "${machine_args[@]}" passes no argument to podman if there's
+# no machine name
+
 SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
 export CONTAINERS_MACHINE_PROVIDER=libkrun
@@ -20,7 +25,7 @@ if ! podman machine info >/dev/null; then
     exit 1
 fi
 
-if ! podman machine inspect 2>/dev/null >/dev/null; then
+if ! podman machine inspect "${machine_args[@]}" 2>/dev/null >/dev/null; then
     echo "ERROR: podman machine inspect not working. Did you run 'CONTAINERS_MACHINE_PROVIDER=libkrun podman machine init'?"
     exit 1
 fi
@@ -79,9 +84,9 @@ export CONTAINERS_HELPER_BINARY_DIR="$SCRIPT_DIR/bin/"
 
 echo ""
 echo "INFO: Restarting podman machine ..."
-# $MACHINE_NAME might be empty, podman doesn't mind and takes the default one
-podman machine stop "$MACHINE_NAME"
-podman machine start "$MACHINE_NAME" --no-info
+
+podman machine stop "${machine_args[@]}"
+podman machine start "${machine_args[@]}" --no-info
 
 echo "INFO: Verifying that krunkit has the API Remoting library ..."
 virglrenderer_path=$(lsof -c krunkit | grep "$USER" | grep libvirglrenderer | awk '{print $9;}')
