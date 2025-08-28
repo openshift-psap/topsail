@@ -24,6 +24,10 @@ def send_job_completion_notification(reason, status, github=True, slack=False, d
     if os.environ.get("PERFLAB_CI") == "true" and not pr_number:
         github = False
 
+    if os.environ.get("JOB_TYPE") == "periodic":
+        logging.info("Running from a Periodic job, don't send notification to github")
+        github = False
+
     # currently hardcoded, because there's no configuration file at this level
     SECRET_ENV_KEYS = ("PSAP_ODS_SECRET_PATH", "CRC_MAC_AI_SECRET_PATH", "CONTAINER_BENCH_SECRET_PATH")
 
