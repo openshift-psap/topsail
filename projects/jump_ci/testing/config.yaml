@@ -8,10 +8,17 @@ ci_presets:
     cluster.name: mac
     project.name: mac_ai
 
-  mac_ai_nightly:
+  mac_ai_mac5:
     extends: [mac_ai]
-    project.args: [cpt_nightly]
     cluster.name: mac5
+
+  mac_ai_nightly:
+    extends: [mac_ai_mac5]
+    project.args: [cpt_nightly]
+
+  mac_ai_nightly_lightspeed:
+    extends: [mac_ai_mac5]
+    project.args: [cpt_nightly_lightspeed]
 
   cont_bench:
     secrets.dir.name: cont-bench-secret # key/value never actually used
@@ -41,7 +48,9 @@ prepare:
   job_name_to_preset:
     pull-ci-openshift-psap-topsail-main-cont_bench-jump-ci: cont_bench
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci: mac_ai
+    pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci-mac5: mac_ai_mac5
     periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai_nightly
+    periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt-lightspeed: mac_ai_nightly_lightspeed
     pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
     pull-ci-crc-org-llama.cpp-main-topsail: llama_cpp_presubmit
 ssh_tunnel:
