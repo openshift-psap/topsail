@@ -183,7 +183,7 @@ def get_common_message(reason, status, get_link, get_italics, get_bold):
 # Slack API messages format is different from the GUI
 # https://api.slack.com/reference/surfaces/formatting
 
-def get_slack_thread_message(reason, status, pr_data):
+def get_slack_thread_message(reason, status):
     def get_link(name, path, is_raw_file=False, base=None, is_dir=False):
         return f"<{get_ci_link(path, is_raw_file, base, is_dir)}|{name}>"
 
@@ -197,13 +197,6 @@ def get_slack_thread_message(reason, status, pr_data):
         else ":done-circle-check:"
 
     return get_common_message(reason, f"{status_icon} {status}", get_link, get_italics, get_bold)
-
-
-def get_slack_channel_message_anchor(pr_number):
-    if pr_number:
-        return f"Thread for PR #{pr_number}"
-    else:
-        return "Thread for tests without PRs"
 
 
 def get_slack_channel_message(anchor: str, pr_data: dict):
@@ -238,15 +231,26 @@ def send_job_completion_notification_to_slack(
         return False
 
     org, repo = get_org_repo()
-
-    pr_created_at, pr_data = github_api.fetch_pr_data(org, repo, pr_number)
-
-    anchor = get_slack_channel_message_anchor(pr_number)
+    is_periodic = False
+    if pr_number:
+        pr_created_at, pr_data = github_api.fetch_pr_data(org, repo, pr_number)
+        anchor = f"Thread for PR #{pr_number}"
+    elif os.environ.get("JOB_TYPE") == "periodic":
+        pr_created_at = None
+        periodic_name = os.environ["JOB_NAME_SAFE"]
+        anchor = f"Thread for Periodic job `{periodic_name}`"
+        is_periodic = True
+    else:
+        pr_created_at = None
+        anchor = "Thread for tests without PRs"
 
     channel_msg_ts, channel_message = slack_api.search_channel_message(client, anchor, not_before=pr_created_at)
 
     if not channel_msg_ts:
-        channel_message = get_slack_channel_message(anchor, pr_data)
+        if is_periodic:
+            channel_message = anchor
+        else:
+            channel_message = get_slack_channel_message(anchor, pr_data)
 
         if dry_run:
             logging.info(f"Posting Slack channel notification ...")
@@ -257,7 +261,7 @@ def send_job_completion_notification_to_slack(
     if dry_run:
         logging.info(f"Slack channel notification:\n{channel_message}")
 
-    thread_message = get_slack_thread_message(reason, status, pr_data)
+    thread_message = get_slack_thread_message(reason, status)
 
     if dry_run:
         logging.info(f"Slack thread notification:\n{thread_message}")
@@ -276,11 +280,7 @@ def send_job_completion_notification_to_slack(
 
 def get_pr_number():
     if os.environ.get("OPENSHIFT_CI") == "true":
-        if os.environ.get("PULL_NUMBER"):
-            return os.environ["PULL_NUMBER"]
-
-        # periodic job, not PR. Give the job name instead
-        return f"Periodic job #{os.environ['JOB_NAME_SAFE']}"
+        return os.environ.get("PULL_NUMBER")
 
     elif os.environ.get("PERFLAB_CI") == "true":
         git_ref = os.environ["PERFLAB_GIT_REF"]
@@ -343,10 +343,7 @@ def get_ci_base_link(is_raw_file=False, is_dir=False):
 
 
 def get_org_repo():
-    if os.environ.get("OPENSHIFT_CI") == "true":
-        return os.environ['REPO_OWNER'], os.environ['REPO_NAME']
-    else:
-        return "openshift-psap", "topsail"
+    return os.environ.get('REPO_OWNER', "openshift-psap"), os.environ.get('REPO_NAME', "topsail")
 
 
 def get_github_secrets(secret_dir, secret_env_key):
