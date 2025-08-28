@@ -88,7 +88,7 @@ def run_with_ansible_ssh_conf(
         capture_stderr=False,
         chdir=None,
         print_cmd=False,
-        handled_secretly=True,
+        handled_secretly=False,
         decode_stdout=True,
         decode_stderr=True,
 ):
@@ -149,6 +149,7 @@ set -o errtrace
 
     with open(tmp_file_path, "w") as f:
         print(entrypoint_script, file=f)
+
     if print_cmd:
         print(entrypoint_script)
 

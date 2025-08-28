@@ -2,6 +2,7 @@ import os
 import pathlib
 import logging
 import yaml
+import json
 
 from projects.core.library import env, config, run, configure_logging, export
 import remote_access, utils
@@ -21,7 +22,6 @@ def cleanup(base_work_dir):
 
 
 def prepare_gv_from_gh_binary(base_work_dir):
-
     podman_path, version = _get_repo_podman_path(base_work_dir)
     gvisor_path = podman_path.parent.parent / "libexec" / "podman" / "gvproxy"
 
@@ -43,6 +43,7 @@ def prepare_gv_from_gh_binary(base_work_dir):
         source=source,
         dest=gvisor_path,
         executable=True,
+        artifact_dir_suffix="__gvproxy",
     )
 
 def prepare_from_gh_binary(base_work_dir):
@@ -71,6 +72,7 @@ def prepare_from_gh_binary(base_work_dir):
         source=source,
         dest=dest,
         zip=True,
+        artifact_dir_suffix="__podman",
     )
 
     return podman_path
@@ -145,6 +147,31 @@ def has_image(base_work_dir, image):
     return ret.returncode == 0
 
 
+def pull_image(base_work_dir, image):
+    podman_cmd = get_podman_command()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} image pull {image}",
+    )
+
+    return ret.returncode == 0
+
+
+def inspect_image(base_work_dir, image):
+    podman_cmd = get_podman_command()
+
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} image inspect {image}",
+        check=True,
+        capture_stdout=True,
+        capture_stderr=True,
+    )
+
+    return json.loads(ret.stdout)
+
+
 def rm_image(base_work_dir, image):
     podman_cmd = get_podman_command()
 
@@ -157,6 +184,19 @@ def rm_image(base_work_dir, image):
     )
 
     return ret.returncode == 0
+
+
+def run_container(base_work_dir, image, volumes=None, user=":", command=""):
+    podman_cmd = get_podman_command()
+
+    volumes_str = ''
+    if volumes:
+        volumes_str = " ".join([f"-v '{key}:{value}:Z'" for key, value in volumes.items()])
+
+    remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"{podman_cmd} run --user '{user}' --pull=never --rm {volumes_str} '{image}' {command}",
+    )
 
 
 def start(base_work_dir, port):

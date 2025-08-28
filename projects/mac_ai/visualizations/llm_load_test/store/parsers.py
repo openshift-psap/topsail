@@ -27,6 +27,8 @@ artifact_dirnames.MAC_AI_VIRTGPU_MEMORY = "*__mac_ai__remote_capture_virtgpu_mem
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL = "*__mac_ai__remote_llama_cpp_run_model"
 artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH = "*__mac_ai__remote_llama_cpp_run_bench"
 artifact_dirnames.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH = "*__mac_ai__remote_ramalama_run_bench"
+artifact_dirnames.LIGHTSPEED_RUN_BENCH = "*__lightspeed_run_bench"
+artifact_dirnames.LIGHTSPEED_START_SERVER = "*__lightspeed_start_server"
 artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE = "*__mac_ai__remote_capture_system_state"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
@@ -49,8 +51,10 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/llama-bench.log",
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/test-backend-ops_perf.log",
 
-    f"{artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
+    f"{artifact_dirnames.LIGHTSPEED_RUN_BENCH}/artifacts/llama-bench.log",
+    f"{artifact_dirnames.LIGHTSPEED_START_SERVER}/inspect-image.json",
 
+    f"{artifact_dirnames.MAC_AI_REMOTE_CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
 ]
 
 
@@ -83,6 +87,8 @@ def parse_once(results, dirname):
     results.system_state = _parse_system_state(dirname)
 
     results.ramalama_commit_info = _parse_ramalama_commit_info(dirname)
+
+    results.lightspeed_info = _parse_lightspeed_info(dirname)
 
 
 def _parse_file_links(dirname):
@@ -287,7 +293,7 @@ def _parse_test_start_end(dirname, llm_load_test_output):
 
 @helpers_store_parsers.ignore_file_not_found
 def _parse_llama_bench_results(dirname):
-    bench_dir = (artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH or artifact_paths.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH)
+    bench_dir = (artifact_paths.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH or artifact_paths.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH or artifact_paths.LIGHTSPEED_RUN_BENCH)
     if not bench_dir:
         return None
 
@@ -425,3 +431,16 @@ def _parse_ramalama_commit_info(dirname):
     ramalama_commit_info.commit_hash = info_text[2]
 
     return ramalama_commit_info
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_lightspeed_info(dirname):
+    lightspeed_info = types.SimpleNamespace()
+
+    if artifact_paths.LIGHTSPEED_START_SERVER:
+        with open(register_important_file(dirname, artifact_paths.LIGHTSPEED_START_SERVER / "inspect-image.json")) as f:
+            inspect_image = json.load(f)
+
+        lightspeed_info.image_date = datetime.datetime.fromisoformat(inspect_image[0]["Created"].rpartition(".")[0])
+        lightspeed_info.image_sha = inspect_image[0]["Digest"]
+
+    return lightspeed_info
