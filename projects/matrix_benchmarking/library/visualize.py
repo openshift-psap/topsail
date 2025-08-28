@@ -281,6 +281,12 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
 
     env_file.unlink()
 
+    run.run_toolbox(
+        "repo", "send_cpt_notification",
+        regression_summary_path=(env.ARTIFACT_DIR / "regression_summary.yaml"),
+        title=config.project.get_config("matbench.lts.regression_analyses.notification.title"),
+    )
+
     return errors, regression_detected
 
 
