@@ -248,6 +248,7 @@ Toolbox Documentation
 * :doc:`generate_middleware_ci_secret_boilerplate <Repo.generate_middleware_ci_secret_boilerplate>`	 Generate the boilerplace code to include a new secret in the Middleware CI configuration
 * :doc:`generate_toolbox_related_files <Repo.generate_toolbox_related_files>`	 Generate the rst document and Ansible default settings, based on the Toolbox Python definition.
 * :doc:`generate_toolbox_rst_documentation <Repo.generate_toolbox_rst_documentation>`	 Generate the `doc/toolbox.generated/*.rst` file, based on the Toolbox Python definition.
+* :doc:`send_cpt_notification <Repo.send_cpt_notification>`	 Send a *CPT* notification to slack about the completion of a CPT job.
 * :doc:`send_job_completion_notification <Repo.send_job_completion_notification>`	 Send a *job completion* notification to github and/or slack about the completion of a test job.
 * :doc:`validate_no_broken_link <Repo.validate_no_broken_link>`	 Ensure that all the symlinks point to a file
 * :doc:`validate_no_wip <Repo.validate_no_wip>`	 Ensures that none of the commits have the WIP flag in their message title.
