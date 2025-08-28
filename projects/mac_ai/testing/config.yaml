@@ -51,12 +51,15 @@ ci_presets:
 
   cpt_nightly:
     extends: [cpt_all, mac5]
+    matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp on Mac5"
 
   cpt_nightly_lightspeed:
     extends: [cpt_lightspeed, mac5]
+    matbench.lts.regression_analyses.notification.title: "Mac-AI: Lightspeed on Mac5"
 
   cpt_all:
     extends: [cpt_ramalama, cpt_llama_cpp]
+    matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp"
     test.model.name: ollama://llama3.2
     test.platform:
     - podman/ramalama
@@ -572,6 +575,9 @@ matbench:
       enabled_on_replot: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
+      notification:
+        enabled: true
+        title: "Mac-AI CPT"
 
 exec_list:
   _only_: false
