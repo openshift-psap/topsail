@@ -100,6 +100,7 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
+  runs: 10
   supported_container_engines:
     - podman
     - docker
@@ -112,15 +113,7 @@ test:
     - helloworld_benchmark
   capture_metrics:
     enabled: true
-    # TODO: make interval configurable
-    power:
-      # needs this in visudo:
-      # $USER ALL = (root) NOPASSWD: /usr/bin/powermetrics *
-      enabled: true
-      sampler: cpu_power
-      rate: 1000
-    virtgpu:
-      enabled: true
+
   matbenchmarking:
     enabled: false
     stop_on_error: true
@@ -129,4 +122,15 @@ test:
     - prepare.podman.repo.version
 
 matbench:
-  enabled: false
+  enabled: true
+  workload: projects.container_bench.visualizations.benchmark
+  preset: null
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
+  test_directory: null

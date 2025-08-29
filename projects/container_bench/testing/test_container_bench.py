@@ -4,6 +4,7 @@ import logging
 import yaml
 import remote_access
 import utils
+import uuid
 
 from projects.core.library import env, config, run
 from projects.matrix_benchmarking.library import visualize
@@ -14,7 +15,8 @@ TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 # not using `os.getcwd()` anymore because of
 # https://stackoverflow.com/questions/1542803/is-there-a-version-of-os-getcwd-that-doesnt-dereference-symlinks
-RUN_DIR = pathlib.Path(os.getenv('PWD'))  # for run_one_matbench
+_pwd = os.getenv('PWD')
+RUN_DIR = pathlib.Path(_pwd if _pwd else os.getcwd())  # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
 
@@ -76,49 +78,23 @@ def test_all_benchmark():
             config.project.set_config("test.platform", platform_str)  # for the post-processing
             config.project.set_config("test.benchmark", benchmark.name)  # for the post-processing
             with env.NextArtifactDir(f"{platform_str}_{benchmark.name}_run_dir".replace("/", "_")):
-                with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
-                    yaml.dump(dict(platform=platform_str), f)
-                with open(env.ARTIFACT_DIR / "settings.benchmarks.yaml", "w") as f:
-                    yaml.dump(dict(benchmark=benchmarks), f)
+                with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+                    yaml.dump(dict(platform=platform_str, benchmark=benchmark.name), f)
                 logging.info(f"Run benchmark: {benchmark.name} on {platform_str}")
                 run_benchmark(platform, benchmark)
 
 
-def darwin_capture_metrics(stop=False):
-    if not config.project.get_config("test.capture_metrics.enabled"):
+def capture_metrics(platform):
+    if not config.project.get_config("test.capture_metrics.enabled", print=False):
         logging.info("capture_metrics: Metrics capture not enabled.")
         return
-
-    if config.project.get_config("test.capture_metrics.power.enabled"):
-        sampler = config.project.get_config("test.capture_metrics.power.sampler")
-
-        artifact_dir_suffix = f"_{sampler}"
-        if stop:
-            artifact_dir_suffix += "_stop"
-        run.run_toolbox(
-            "container_bench", "capture_power_usage",
-            samplers=sampler,
-            sample_rate=config.project.get_config("test.capture_metrics.power.rate"),
-            stop=stop,
-            mute_stdout=stop,
-            artifact_dir_suffix=artifact_dir_suffix,
-        )
-
-    if not stop:
-        run.run_toolbox(
-            "container_bench", "capture_system_state",
-        )
-
-
-def capture_metrics(platform, stop=False):
-    if not stop:
-        c = ContainerEngine(platform.container_engine)
-        run.run_toolbox(
-            "container_bench", "capture_container_engine_info",
-            runtime=c.engine,
-        )
+    c = ContainerEngine(platform.container_engine)
+    run.run_toolbox(
+        "container_bench", "capture_container_engine_info",
+        runtime=c.engine_binary,
+    )
     if platform.platform == "darwin":
-        darwin_capture_metrics(stop=stop)
+        run.run_toolbox("container_bench", "capture_system_state")
 
 
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
@@ -132,17 +108,44 @@ def prepare_benchmark_args(platform, benchmark, base_work_dir):
     return {k: config.project.resolve_reference(v) for k, v in benchmark_kwargs.items()}
 
 
+def prepare_matbench_test_files():
+    settings_file = env.ARTIFACT_DIR / "settings.yaml"
+    if settings_file.exists():
+        with open(settings_file) as f:
+            settings_base = yaml.safe_load(f)
+    else:
+        settings_base = {}
+
+    # ensure that there's no skip file here
+    (env.ARTIFACT_DIR / "skip").unlink(missing_ok=True)
+
+    settings = settings_base | dict(
+        test_mac_ai=True,
+    )
+
+    with open(settings_file, "w") as f:
+        yaml.dump(settings, f, indent=4)
+
+    with open(env.ARTIFACT_DIR / "config.yaml", "w") as f:
+        yaml.dump(config.project.config, f, indent=4)
+
+    with open(env.ARTIFACT_DIR / ".uuid", "w") as f:
+        print(str(uuid.uuid4()), file=f)
+
+
 def run_benchmark(platform, benchmark):
     base_work_dir = remote_access.prepare()
 
     capture_metrics(platform)
+    prepare_matbench_test_files()
     exit_code = 1
     try:
-        run.run_toolbox(
+        for _ in range(benchmark.runs):
+            run.run_toolbox(
                 "container_bench",
                 benchmark.name,
                 **prepare_benchmark_args(platform, benchmark, base_work_dir)
-        )
+            )
         exit_code = 0
     finally:
         exc = None
@@ -155,8 +158,6 @@ def run_benchmark(platform, benchmark):
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
             print(exit_code, file=f)
 
-        exc = run.run_and_catch(exc, capture_metrics, platform=platform, stop=True)
-
         if exc:
             logging.exception(f"Test tear-down crashed ({exc})")
 
@@ -166,7 +167,7 @@ def generate_visualization(test_artifact_dir):
 
     with env.NextArtifactDir("plots"):
         exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
-
+        logging.error(f"Test visualization failed :/ {exc}")
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
     return exc
