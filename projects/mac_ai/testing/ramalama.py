@@ -100,8 +100,7 @@ def build_container_image(base_work_dir, ramalama_path):
             extra_env["LLAMA_CPP_REPO"] = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
         if config.project.get_config("prepare.ramalama.build_image.debug"):
-            extra_env["RAMALAMA_IMAGE_BUILD_DEBUG"] = "y"
-            extra_env["RAMALAMA_IMAGE_INCLUDE_DEBUG"] = "y"
+            extra_env["RAMALAMA_IMAGE_BUILD_DEBUG_MODE"] = "y"
 
         ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
                                                       extra_env=extra_env,
