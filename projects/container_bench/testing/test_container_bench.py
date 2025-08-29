@@ -14,7 +14,8 @@ TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
 # not using `os.getcwd()` anymore because of
 # https://stackoverflow.com/questions/1542803/is-there-a-version-of-os-getcwd-that-doesnt-dereference-symlinks
-RUN_DIR = pathlib.Path(os.getenv('PWD'))  # for run_one_matbench
+_pwd = os.getenv('PWD')
+RUN_DIR = pathlib.Path(_pwd if _pwd else os.getcwd())  # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
 
@@ -42,7 +43,7 @@ def test():
         raise
     finally:
         exc = None
-        if config.project.get_config("matbench.enabled"):
+        if config.project.get_config("matbench.enabled", print=False):
             # TODO implement visualization for matbench and matchbench
             exc = generate_visualization(env.ARTIFACT_DIR)
             if exc:
@@ -84,41 +85,17 @@ def test_all_benchmark():
                 run_benchmark(platform, benchmark)
 
 
-def darwin_capture_metrics(stop=False):
-    if not config.project.get_config("test.capture_metrics.enabled"):
+def capture_metrics(platform):
+    if not config.project.get_config("test.capture_metrics.enabled", print=False):
         logging.info("capture_metrics: Metrics capture not enabled.")
         return
-
-    if config.project.get_config("test.capture_metrics.power.enabled"):
-        sampler = config.project.get_config("test.capture_metrics.power.sampler")
-
-        artifact_dir_suffix = f"_{sampler}"
-        if stop:
-            artifact_dir_suffix += "_stop"
-        run.run_toolbox(
-            "container_bench", "capture_power_usage",
-            samplers=sampler,
-            sample_rate=config.project.get_config("test.capture_metrics.power.rate"),
-            stop=stop,
-            mute_stdout=stop,
-            artifact_dir_suffix=artifact_dir_suffix,
-        )
-
-    if not stop:
-        run.run_toolbox(
-            "container_bench", "capture_system_state",
-        )
-
-
-def capture_metrics(platform, stop=False):
-    if not stop:
-        c = ContainerEngine(platform.container_engine)
-        run.run_toolbox(
-            "container_bench", "capture_container_engine_info",
-            runtime=c.engine,
-        )
+    c = ContainerEngine(platform.container_engine)
+    run.run_toolbox(
+        "container_bench", "capture_container_engine_info",
+        runtime=c.engine_binary,
+    )
     if platform.platform == "darwin":
-        darwin_capture_metrics(stop=stop)
+        run.run_toolbox("container_bench", "capture_system_state")
 
 
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
@@ -154,8 +131,6 @@ def run_benchmark(platform, benchmark):
 
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
             print(exit_code, file=f)
-
-        exc = run.run_and_catch(exc, capture_metrics, platform=platform, stop=True)
 
         if exc:
             logging.exception(f"Test tear-down crashed ({exc})")

@@ -112,15 +112,7 @@ test:
     - helloworld_benchmark
   capture_metrics:
     enabled: true
-    # TODO: make interval configurable
-    power:
-      # needs this in visudo:
-      # $USER ALL = (root) NOPASSWD: /usr/bin/powermetrics *
-      enabled: true
-      sampler: cpu_power
-      rate: 1000
-    virtgpu:
-      enabled: true
+
   matbenchmarking:
     enabled: false
     stop_on_error: true
