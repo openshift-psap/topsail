@@ -451,7 +451,8 @@ prepare:
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
-
+          VIRGL_APIR_LOG_TO_FILE: /tmp/topsail_apir_virglrenderer.log
+          APIR_LLAMA_CPP_LOG_TO_FILE: /tmp/topsail_apir_llama_cpp.log
   remoting:
     podman_desktop_extension:
       enabled: false
