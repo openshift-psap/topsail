@@ -33,7 +33,7 @@ if [[ "${TEST_NAME:-}" ]]; then
     test_name="$TEST_NAME"
 
 elif [[ "${OPENSHIFT_CI:-}" == true ]]; then
-    JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-${PULL_BASE_REF}
+    JOB_NAME_PREFIX=pull-ci-${REPO_OWNER}-${REPO_NAME}-main
     test_name=$(echo "$JOB_NAME" | sed "s/$JOB_NAME_PREFIX-//")
 
     if [[ "${TOPSAIL_LOCAL_CI:-}" == true ]]; then
