@@ -24,25 +24,6 @@ class Container_Bench:
         """
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("container_bench_capture_power_usage")
-    @AnsibleMappedParams
-    def capture_power_usage(
-            self,
-            samplers="gpu_power",
-            sample_rate=1000,
-            stop=False,
-    ):
-        """
-        Captures the power usage on MacOS
-
-        Args:
-          samplers: name(s) of the source sample to capture
-          sample_rate: rate at which the metrics should be captured, in ms
-          stop: if true, only stop the capture
-        """
-
-        return RunAnsibleRole(locals())
-
     @AnsibleRole("container_bench_capture_system_state")
     @AnsibleMappedParams
     def capture_system_state(
