@@ -91,12 +91,16 @@ def build_container_image(base_work_dir, ramalama_path):
         )
 
         if config.project.get_config("prepare.ramalama.build_image.name") == "remoting":
-            extra_env["LLAMA_CPP_PULL_REF"] = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+            if version.startswith("pr-"):
+                pr_number = version.removeprefix("pr-")
+                version = f"refs/pull/{pr_number}/head"
+            extra_env["LLAMA_CPP_PULL_REF"] = version
+
             extra_env["LLAMA_CPP_REPO"] = config.project.get_config("prepare.llama_cpp.source.repo.url")
 
         if config.project.get_config("prepare.ramalama.build_image.debug"):
-            extra_env["RAMALAMA_IMAGE_BUILD_DEBUG"] = "y"
-            extra_env["RAMALAMA_IMAGE_INCLUDE_DEBUG"] = "y"
+            extra_env["RAMALAMA_IMAGE_BUILD_DEBUG_MODE"] = "y"
 
         ret = remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd,
                                                       extra_env=extra_env,
