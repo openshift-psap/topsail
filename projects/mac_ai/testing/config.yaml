@@ -115,7 +115,9 @@ ci_presets:
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
-    # - macos/llama_cpp/vulkan
+
+    test.platforms_to_skip:
+    - podman/llama_cpp/remoting # build it but don't test it
 
   remoting_wip:
     extends: [remoting]
