@@ -87,18 +87,24 @@ def prepare(
     )
 
     if os.environ.get("OPENSHIFT_CI") == "true":
-        if os.environ["JOB_NAME"].startswith("periodic"):
+        if os.environ.get("OPENSHIFT_CI_TOPSAIL_FOREIGN_TESTING"):
+            logging.info("Not running from TOPSAIL repository. Using TOPSAIL foreign configuration.")
+            repo_owner = config.project.get_config("foreign_testing.topsail.repo.owner")
+            repo_name = config.project.get_config("foreign_testing.topsail.repo.name")
+            git_ref  = config.project.get_config("foreign_testing.topsail.repo.branch")
+
+        elif os.environ["JOB_NAME"].startswith("periodic"):
             # periodic jobs don't have these env vars ...
             job_spec = job_spec = json.loads(os.environ["JOB_SPEC"])
-            os.environ["REPO_OWNER"] = job_spec["extra_refs"][0]["org"]
-            os.environ["REPO_NAME"] = job_spec["extra_refs"][0]["repo"]
-            os.environ["PULL_PULL_SHA"] = job_spec["extra_refs"][0]["base_ref"]
+            repo_owner = os.environ["REPO_OWNER"] = job_spec["extra_refs"][0]["org"]
+            repo_name = os.environ["REPO_NAME"] = job_spec["extra_refs"][0]["repo"]
+            git_ref = os.environ["PULL_PULL_SHA"] = job_spec["extra_refs"][0]["base_ref"]
 
         prepare_topsail_args |= dict(
-            repo_owner=os.environ["REPO_OWNER"],
-            repo_name=os.environ["REPO_NAME"],
+            repo_owner=repo_owner,
+            repo_name=repo_name,
+            git_ref=git_ref,
             pr_number=os.environ.get("PULL_NUMBER"),
-            git_ref=os.environ["PULL_PULL_SHA"],
         )
     elif any([pr_number, git_ref]):
         if not all([repo_owner, repo_name, pr_number]):
