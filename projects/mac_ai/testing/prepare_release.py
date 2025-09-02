@@ -269,11 +269,23 @@ CI performance test
 Troubleshooting
 ===============
 
+Before anything, double check that your `podman` is using the `libkrun` VM provider:
+```
+> export CONTAINERS_MACHINE_PROVIDER=libkrun
+```
+and to validate it:
+```
+> podman machine info -format json | jq -r .Host.VMType
+libkrun
+```
+
+Without this, `podman` tries to communicate with `vfkit` VMs, which is not supported.
+
 Running without RamaLama
 ------------------------
 
 ```
-podman run -it --rm --device /dev/dri {ramalama_image} llama-run --verbose --ngl 99 ollama://smollm:135m
+podman run -it --rm --device /dev/dri "{ramalama_image}" llama-run --verbose --ngl 99 ollama://smollm:135m
 ```
 
 Reviewing the container logs
