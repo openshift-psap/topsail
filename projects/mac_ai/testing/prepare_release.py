@@ -177,7 +177,7 @@ def build_remoting_tarball(base_work_dir, package_libs):
     tarball_content_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_dir.name
 
     tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
-    add_string_file(tarball_dir / "README.md", f"""\
+    add_string_file(tarball_dir / "INSTALL.md", f"""\
 llama.cpp API remoting GPU acceleration for MacOS
 =================================================
 
@@ -238,7 +238,7 @@ CI build
 --------
 
 * Build version: `{build_version}`
-* [README]({ci_build_link}/{tarball_content_path}/README.md)
+* [INSTALL]({ci_build_link}/{tarball_content_path}/INSTALL.md)
 * [BENCHMARKING]({ci_build_link}/{tarball_content_path}/BENCHMARKING.md)
 * [TROUBLESHOOTING]({ci_build_link}/{tarball_content_path}/TROUBLESHOOTING.md)
 * [tarball]({ci_build_link}/{tarball_path})
