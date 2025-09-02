@@ -7,11 +7,6 @@ set -o errtrace
 
 MACHINE_NAME="${1:-}"
 
-machine_args=()
-[[ "$MACHINE_NAME" ]] && machine_args=("$MACHINE_NAME")
-# using "${machine_args[@]}" passes no argument to podman if there's
-# no machine name
-
 SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
 export CONTAINERS_MACHINE_PROVIDER=libkrun
@@ -25,7 +20,19 @@ if ! podman machine info >/dev/null; then
     exit 1
 fi
 
-if ! podman machine inspect "${machine_args[@]}" 2>/dev/null >/dev/null; then
+_podman_machine() {
+    # machine_args=()
+    # [[ "$MACHINE_NAME" ]] && machine_args=("$MACHINE_NAME")
+    # using "${machine_args[@]}" passes no argument to podman if there's no machine name
+    # ^ this trick doesn't work on MacOS old Bash (3.2), so using a simpler construct:
+    if [[ "$MACHINE_NAME" ]]; then
+        podman machine "$@" "$MACHINE_NAME"
+    else
+        podman machine "$@"
+    fi
+}
+
+if ! _podman_machine inspect 2>/dev/null >&1; then
     echo "ERROR: podman machine inspect not working. Did you run 'CONTAINERS_MACHINE_PROVIDER=libkrun podman machine init'?"
     exit 1
 fi
@@ -51,9 +58,9 @@ echo "INFO: # for krunkit to load the custom virglrenderer library"
 echo "INFO: Setting DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
 echo
 
-# for Virglrendrerer to load the ggml-remotingbackend library
+# for Virglrenderer to load the ggml-remotingbackend library
 echo ""
-echo "INFO: # for Virglrendrerer to load the ggml-remotingbackend library"
+echo "INFO: # for Virglrenderer to load the ggml-remotingbackend library"
 export VIRGL_APIR_BACKEND_LIBRARY="$SCRIPT_DIR/bin/libggml-remotingbackend.dylib"
 echo "INFO: Setting VIRGL_APIR_BACKEND_LIBRARY=$VIRGL_APIR_BACKEND_LIBRARY"
 echo
@@ -85,8 +92,8 @@ export CONTAINERS_HELPER_BINARY_DIR="$SCRIPT_DIR/bin/"
 echo ""
 echo "INFO: Restarting podman machine ..."
 
-podman machine stop "${machine_args[@]}"
-podman machine start "${machine_args[@]}" --no-info
+_podman_machine stop || true
+_podman_machine start --no-info
 
 echo "INFO: Verifying that krunkit has the API Remoting library ..."
 virglrenderer_path=$(lsof -c krunkit | grep "$USER" | grep libvirglrenderer | awk '{print $9;}')
