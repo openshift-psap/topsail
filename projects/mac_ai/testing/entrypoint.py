@@ -35,7 +35,7 @@ def apply_preset_from_kubeconfig():
         logging.info(f"Kubeconfig description: {content['description']}")
 
     if "preset_name" in content:
-        if content['preset_name']:
+        if not content['preset_name']:
             logging.info("Kubeconfig preset to apply: none")
         else:
             logging.info(f"Kubeconfig preset to apply: {content['preset_name']}")

@@ -153,14 +153,8 @@ def generate_lts_metadata(results, import_settings):
     start_time = None
     end_time = None
 
-    if results.test_start_end:
-        start_time = results.test_start_end.start
-        end_time = results.test_start_end.end
-
-        if start_time.tzinfo is None:
-            start_time = start_time.replace(tzinfo=pytz.UTC)
-        if end_time.tzinfo is None:
-            end_time = end_time.replace(tzinfo=pytz.UTC)
+    start_time = datetime.datetime.now().replace(tzinfo=pytz.UTC)
+    end_time = start_time
 
     lts_metadata.start = start_time
     lts_metadata.end = end_time
@@ -178,27 +172,6 @@ def generate_lts_metadata(results, import_settings):
 
 def generate_lts_results(results):
     results_lts = types.SimpleNamespace()
-
-    # Throughout value (scalar, in token/ms)
-    results_lts.throughput = _generate_throughput(results)
-
-    # Time Per Output Token value
-    results_lts.time_per_output_token = _generate_time_per_output_token(results)
-
-    results_lts.streaming = _is_streaming(results)
-
-    if results_lts.streaming:
-        # Inter Token Latency (ms)
-        results_lts.inter_token_latency = _generate_inter_token_latency(results)
-
-        # Time To First Token values for all of the calls (vector)
-        results_lts.time_to_first_token = _generate_time_to_first_token(results)
-    else:
-        results_lts.inter_token_latency = None
-        results_lts.time_to_first_token = None
-
-    # Number of failures
-    results_lts.failures = _generate_failures(results)
 
     results_lts.prompt_processing = _generate_llama_bench(results, "pp512")
     results_lts.token_generation = _generate_llama_bench(results, "tg128")
