@@ -3,11 +3,44 @@ import pathlib
 import os, sys
 import logging
 import datetime
+import yaml
 
 from projects.core.library import env, config, run, export, common
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))
+
+
+def apply_preset_from_kubeconfig():
+    kubeconfig_file = os.environ.get("KUBECONFIG")
+    if not kubeconfig_file:
+        logging.info("No KUBECONFIG defined, no preset to apply")
+        return
+
+    try:
+        with open(kubeconfig_file) as f:
+            content = yaml.safe_load(f)
+    except Exception as e:
+        logging.error(f"Kubeconfig {kubeconfig_file} isn't a valid yaml file: {e}")
+        return
+
+    if not isinstance(content, dict):
+        logging.info(f"Kubeconfig {kubeconfig_file} is empty or not a mapping; no preset to apply")
+        return
+
+    if content.get("clusters"):
+        logging.info(f"Kubeconfig {kubeconfig_file} is a K8s kubeconfig.")
+
+    if content.get("description"):
+        logging.info(f"Kubeconfig description: {content['description']}")
+
+    if "preset_name" in content:
+        if content['preset_name']:
+            logging.info("Kubeconfig preset to apply: none")
+        else:
+            logging.info(f"Kubeconfig preset to apply: {content['preset_name']}")
+            config.project.apply_preset(content['preset_name'])
+
 
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -21,6 +54,8 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
 
     env.init()
     config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
+
+    apply_preset_from_kubeconfig()
 
     if not ignore_secret_path:
         if not CRC_MAC_AI_SECRET_PATH.exists():

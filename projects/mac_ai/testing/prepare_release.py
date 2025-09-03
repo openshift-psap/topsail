@@ -3,6 +3,7 @@ import pathlib
 import logging
 import tarfile
 import json
+import datetime
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -173,11 +174,14 @@ def build_remoting_tarball(base_work_dir, package_libs):
         ci_build_link = "/not/running/in/ci"
         ci_perf_link = None
 
+    build_system_description = config.project.get_config("remote_host.description") or "<not available>"
+    build_date = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+
     tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}.tar"
     tarball_content_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_dir.name
 
     tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
-    add_string_file(tarball_dir / "README.md", f"""\
+    add_string_file(tarball_dir / "INSTALL.md", f"""\
 llama.cpp API remoting GPU acceleration for MacOS
 =================================================
 
@@ -237,8 +241,11 @@ ramalama run --image {ramalama_image} llama3.2
 CI build
 --------
 
+* Build system:  `{build_system_description}`
+* Build date:    `{build_date}`
 * Build version: `{build_version}`
-* [README]({ci_build_link}/{tarball_content_path}/README.md)
+
+* [INSTALL]({ci_build_link}/{tarball_content_path}/INSTALL.md)
 * [BENCHMARKING]({ci_build_link}/{tarball_content_path}/BENCHMARKING.md)
 * [TROUBLESHOOTING]({ci_build_link}/{tarball_content_path}/TROUBLESHOOTING.md)
 * [tarball]({ci_build_link}/{tarball_path})
@@ -269,11 +276,23 @@ CI performance test
 Troubleshooting
 ===============
 
+Before anything, double check that your `podman` is using the `libkrun` VM provider:
+```
+> export CONTAINERS_MACHINE_PROVIDER=libkrun
+```
+and to validate it:
+```
+> podman machine info -format json | jq -r .Host.VMType
+libkrun
+```
+
+Without this, `podman` tries to communicate with `vfkit` VMs, which is not supported.
+
 Running without RamaLama
 ------------------------
 
 ```
-podman run -it --rm --device /dev/dri {ramalama_image} llama-run --verbose --ngl 99 ollama://smollm:135m
+podman run -it --rm --device /dev/dri "{ramalama_image}" llama-run --verbose --ngl 99 ollama://smollm:135m
 ```
 
 Reviewing the container logs

@@ -22,16 +22,19 @@ ci_presets:
     secrets.hostname: mac_ai__hostname.mac4
     secrets.username: mac_ai__username.mac4
     secrets.base_work_dir: mac_ai__base_work_dir.mac4
+    remote_host.description: "crc-lab-mac4"
 
   mac5:
     secrets.hostname: mac_ai__hostname.mac5
     secrets.username: mac_ai__username.mac5
     secrets.base_work_dir: mac_ai__base_work_dir.mac5
+    remote_host.description: "crc-lab-mac5"
 
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
+    remote_host.description: "kpouget's MacBook M4 Pro"
 
   # ---
 
@@ -100,25 +103,33 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b5709-remoting-0.1.6
+    prepare.llama_cpp.source.repo.version: b6298-remoting-0.1.6
     prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.12.0-apir.rc3
+    prepare.ramalama.repo.version: v0.12.1-apir.rc1
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
+
+  remoting_bench:
+    extends: [remoting, benchmark]
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
-    - macos/llama_cpp/vulkan
+
+    test.platforms_to_skip:
+    - podman/llama_cpp/remoting # build it but don't test it
 
   remoting_wip:
     extends: [remoting]
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
     prepare.llama_cpp.source.repo.version: main
+    test.platform:
+    - podman/llama_cpp/remoting
+    - macos/llama_cpp/vulkan
 
   remoting_publish:
     extends: [remoting, use_intlab_os]
@@ -127,6 +138,13 @@ ci_presets:
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.remoting.podman_desktop_extension.enabled: true
     prepare.remoting.podman_desktop_extension.image.publish.enabled: true
+
+    test.platform:
+    - podman/ramalama/remoting
+    - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
@@ -271,6 +289,7 @@ remote_host:
     PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
   home_is_base_work_dir: true
   verbose_ssh_commands: false
+  description: null
 
 prepare:
   # the list of platform environments to prepare
@@ -398,7 +417,7 @@ prepare:
     repo:
       enabled: true
       url: https://github.com/containers/podman
-      version: v5.5.0
+      version: v5.6.0
       darwin:
         file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
         zip: true
@@ -439,7 +458,8 @@ prepare:
         env:
           APIR_LLAMA_CPP_GGML_LIBRARY_REG: ggml_backend_metal_reg
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
-
+          VIRGL_APIR_LOG_TO_FILE: /tmp/topsail_apir_virglrenderer.log
+          APIR_LLAMA_CPP_LOG_TO_FILE: /tmp/topsail_apir_llama_cpp.log
   remoting:
     podman_desktop_extension:
       enabled: false
