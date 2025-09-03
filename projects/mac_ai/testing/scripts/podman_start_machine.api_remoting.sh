@@ -126,7 +126,7 @@ cat <<EOF
 
 INFO: Try the API Remoting GPU acceleration with RamaLama:
 \$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
-\$ ramalama --image $ramalama_image run llama3.2
+\$ ramalama run --image "$ramalama_image" llama3.2
 
 INFO: To stop the virtual machine
 \$ export CONTAINERS_MACHINE_PROVIDER=$CONTAINERS_MACHINE_PROVIDER
