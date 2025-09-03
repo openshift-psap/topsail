@@ -47,6 +47,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.MAC_AI_VIRTGPU_MEMORY}/artifacts/memory.txt",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_MODEL}/artifacts/build.*.log",
+    f"{artifact_dirnames.MAC_AI_REMOTE_RAMALAMA_RUN_BENCH}/artifacts/llama-bench.log",
 
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/llama-bench.log",
     f"{artifact_dirnames.MAC_AI_REMOTE_LLAMA_CPP_RUN_BENCH}/artifacts/test-backend-ops_perf.log",
