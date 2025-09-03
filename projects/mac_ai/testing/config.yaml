@@ -113,6 +113,7 @@ ci_presets:
 
 
   remoting_bench:
+    extends: [remoting, benchmark]
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
