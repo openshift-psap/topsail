@@ -129,7 +129,7 @@ ci_presets:
     prepare.llama_cpp.source.repo.version: main
     test.platform:
     - podman/llama_cpp/remoting
-    - macos/llama_cpp/vulkan
+    - macos/llama_cpp/metal
 
   remoting_publish:
     extends: [remoting, use_intlab_os]
