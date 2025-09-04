@@ -8,6 +8,8 @@ import copy
 import statistics as stats
 
 import plotly.subplots
+import types
+
 import plotly.graph_objs as go
 import pandas as pd
 import plotly.express as px
@@ -20,6 +22,46 @@ from . import error_report, report
 
 def register():
     Throughput()
+
+def _generate_throughput(results):
+    if not results.llm_load_test_output: return None
+
+    return results.llm_load_test_output["summary"]["throughput"]
+
+
+def _generate_time_per_output_token(results):
+    if not results.llm_load_test_output: return None
+
+    tpot = dict(results.llm_load_test_output["summary"]["tpot"])
+    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
+    return types.SimpleNamespace(**tpot)
+
+
+def _generate_inter_token_latency(results):
+    if not results.llm_load_test_output: return None
+
+    itl = dict(results.llm_load_test_output["summary"]["itl"])
+    itl["values"] = [x["itl"] for x in results.llm_load_test_output["results"] if x["itl"]]
+    return types.SimpleNamespace(**itl)
+
+
+def _generate_time_to_first_token(results):
+    if not results.llm_load_test_output: return None
+
+    ttft = dict(results.llm_load_test_output["summary"]["ttft"])
+    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
+    return types.SimpleNamespace(**ttft)
+
+
+def _generate_failures(results):
+    if not results.llm_load_test_output: return None
+
+    return results.llm_load_test_output["summary"]["total_failures"]
+
+
+def _is_streaming(results):
+    return results.test_config.get("test.llm_load_test.args.streaming")
+
 
 def generateThroughputData(entries, variables, ordered_vars, model_name=None):
     data = []
@@ -46,11 +88,11 @@ def generateThroughputData(entries, variables, ordered_vars, model_name=None):
 
         if not entry.results.llm_load_test_output: continue
 
-        datum["throughput"] = entry.results.lts.results.throughput
+        datum["throughput"] = _generate_throughput(entry.results)
 
-        datum["tpot_mean"] = entry.results.lts.results.time_per_output_token.mean
-        datum["itl_mean"] = entry.results.lts.results.inter_token_latency.mean
-        datum["ttft_mean"] = entry.results.lts.results.time_to_first_token.mean
+        datum["tpot_mean"] = _generate_time_per_output_token(entry.results).mean
+        datum["itl_mean"] = _generate_inter_token_latency(entry.results).mean
+        datum["ttft_mean"] = _generate_time_to_first_token(entry.results).mean
 
         datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
 

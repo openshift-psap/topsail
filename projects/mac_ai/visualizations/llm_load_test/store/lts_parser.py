@@ -19,46 +19,6 @@ def generate_lts_payload(results, import_settings):
     return lts_payload
 
 
-def _generate_throughput(results):
-    if not results.llm_load_test_output: return None
-
-    return results.llm_load_test_output["summary"]["throughput"]
-
-
-def _generate_time_per_output_token(results):
-    if not results.llm_load_test_output: return None
-
-    tpot = dict(results.llm_load_test_output["summary"]["tpot"])
-    tpot["values"] = [x["tpot"] for x in results.llm_load_test_output["results"] if x["tpot"]]
-    return types.SimpleNamespace(**tpot)
-
-
-def _generate_inter_token_latency(results):
-    if not results.llm_load_test_output: return None
-
-    itl = dict(results.llm_load_test_output["summary"]["itl"])
-    itl["values"] = [x["itl"] for x in results.llm_load_test_output["results"] if x["itl"]]
-    return types.SimpleNamespace(**itl)
-
-
-def _generate_time_to_first_token(results):
-    if not results.llm_load_test_output: return None
-
-    ttft = dict(results.llm_load_test_output["summary"]["ttft"])
-    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
-    return types.SimpleNamespace(**ttft)
-
-
-def _generate_failures(results):
-    if not results.llm_load_test_output: return None
-
-    return results.llm_load_test_output["summary"]["total_failures"]
-
-
-def _is_streaming(results):
-    return results.test_config.get("test.llm_load_test.args.streaming")
-
-
 def _generate_llama_bench(results, test_name):
     llama_bench = types.SimpleNamespace()
     for llama_bench_result in (results.llama_bench_results or []):
