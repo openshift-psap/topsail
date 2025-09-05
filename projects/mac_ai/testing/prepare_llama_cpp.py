@@ -55,8 +55,15 @@ def retrieve_latest_version(base_work_dir):
     retrieve("prepare.llama_cpp.release")
 
 
-def prepare_test(base_work_dir, platform):
-    retrieve_latest_version(base_work_dir)
+def prepare_test(base_work_dir, platform, cleanup=True):
+    try:
+        retrieve_latest_version(base_work_dir)
+    except Exception as e:
+        if not cleanup:
+            raise e
+        else:
+            # expected during cleanup
+            logging.info(f"Failed to retrieve the latest llama.cpp latest version: {e}", e)
 
     if not platform.needs_podman: return
 
@@ -135,7 +142,10 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     build_args["LLAMA_CPP_REPO"] = config.project.resolve_reference(build_args["LLAMA_CPP_REPO"])
     version = build_args["LLAMA_CPP_VERSION"] = config.project.resolve_reference(build_args["LLAMA_CPP_VERSION"])
 
-    if str(version).startswith("pr-"):
+    if str(version).startswith("sha-"):
+        sha = version.removeprefix("sha-")
+        build_args["LLAMA_CPP_VERSION"] = sha
+    elif str(version).startswith("pr-"):
         pr_number = version.removeprefix("pr-")
         build_args["LLAMA_CPP_VERSION"] = f"refs/pull/{pr_number}/head"
 
@@ -189,7 +199,9 @@ def prepare_from_release(base_work_dir, platform):
 def get_source_dir(base_work_dir):
     version = config.project.get_config("prepare.llama_cpp.source.repo.version", print=False)
     dirname = "llama.cpp-"
-    if version.startswith("pr-"):
+    if version.startswith("sha-"):
+        dirname += version[:4+9]
+    elif version.startswith("pr-"):
         dirname += version
     else:
         dirname += f"tag-{version}"
@@ -211,7 +223,10 @@ def prepare_from_source(base_work_dir, platform):
         dest=dest,
     )
 
-    if version.startswith("pr-"):
+    if version.startswith("sha-"):
+        sha = version.removeprefix("sha-")
+        kwargs["refspec"] = sha
+    elif version.startswith("pr-"):
         pr_number = version.removeprefix("pr-")
         kwargs["refspec"] = f"refs/pull/{pr_number}/head"
     else:
@@ -387,7 +402,7 @@ def cleanup_image(base_work_dir):
 
         if not platform.needs_podman: continue
 
-        prepare_test(base_work_dir, platform)
+        prepare_test(base_work_dir, platform, cleanup=True)
 
         local_image_name = __get_local_image_name_from_local_container_file(platform)
 

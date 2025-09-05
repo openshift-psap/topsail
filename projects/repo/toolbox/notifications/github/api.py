@@ -24,7 +24,12 @@ def get_user_token(pem_file, client_id, org, repo):
 
     installation_resp = requests.get(f"{BASE_URL}/repos/{org}/{repo}/installation", headers=headers)
 
-    installation_id = installation_resp.json()["id"]
+    try:
+        installation_id = installation_resp.json()["id"]
+    except Exception as e:
+        msg = f"Failed to get the user token: {e}"
+        logging.error(msg)
+        raise e
 
     # Get the user token
 

@@ -42,6 +42,28 @@ def apply_preset_from_kubeconfig():
             config.project.apply_preset(content['preset_name'])
 
 
+def apply_foreign_config():
+    name = os.environ.get("OPENSHIFT_CI_TOPSAIL_FOREIGN_TESTING")
+    if not name:
+        logging.info("Not running a TOPSAIL foreign test.")
+        return
+
+    valid_foreign = config.project.get_config("foreign_testing")
+    if name not in valid_foreign:
+        msg = f"Invalid TOPSAIL foreign testing project {name}. Expected one of {' '.join(valid_foreign.keys())}"
+        logging.fatal(msg)
+        raise ValueError(f"Invalid TOPSAIL foreign testing project {name}. Expected one of {' '.join(valid_foreign.keys())}")
+
+    repo = f"https://github.com/{os.environ['REPO_OWNER']}/{os.environ['REPO_NAME']}"
+    version = "sha-" + os.environ["PULL_PULL_SHA"]
+
+    for preset in valid_foreign[name]["presets"]:
+        config.project.apply_preset(preset)
+
+    config.project.set_config(valid_foreign[name]["repo"], repo)
+    config.project.set_config(valid_foreign[name]["version"], version)
+
+
 initialized = False
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     global initialized
@@ -56,6 +78,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
 
     apply_preset_from_kubeconfig()
+    apply_foreign_config()
 
     if not ignore_secret_path:
         if not CRC_MAC_AI_SECRET_PATH.exists():
