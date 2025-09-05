@@ -159,7 +159,7 @@
     ENTRYPOINT []
     CMD []
 
-    RUN git fetch --quiet origin {{ git_ref }}
+    RUN git fetch --quiet origin "{{ git_commit_cmd.stdout }}"
     RUN git reset --hard FETCH_HEAD
     RUN git submodule --quiet update --init --recursive --force
     RUN git submodule
