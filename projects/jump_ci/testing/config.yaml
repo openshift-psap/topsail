@@ -29,7 +29,7 @@ ci_presets:
   llama_cpp_presubmit:
     secrets.dir.name: crc-mac-ai-secret # key/value never actually used
     secrets.dir.env_key: CRC_MAC_AI_SECRET_PATH
-    cluster.name: mac
+    cluster.name: mac5
     project.name: mac_ai
 
   plot_cluster:
