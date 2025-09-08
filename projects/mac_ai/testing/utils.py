@@ -61,10 +61,13 @@ def parse_platform(platform_str):
         if platform.inference_server_flavor not in inference_server_has_flavors:
             raise ValueError(f"Invalid platform inference server flavor ({platform.inference_server_flavor}) in {platform_str}. Expected one of {inference_server_has_flavors}")
 
+
     no_gpu_option_name = config.project.get_config("__platform_check.options.no_gpu", print=False)
     if no_gpu_option_name in platform_parts:
         platform.want_gpu = False
         platform_parts.remove(no_gpu_option_name)
+    elif platform.inference_server_flavor == no_gpu_option_name:
+        platform.want_gpu = False
     else:
         platform.want_gpu = True
 

@@ -628,4 +628,4 @@ __platform_check:
 
   flavors:
     llama_cpp: [metal, vulkan, upstream_bin, remoting]
-    ramalama: [remoting, null]
+    ramalama: [remoting, no-gpu, null]
