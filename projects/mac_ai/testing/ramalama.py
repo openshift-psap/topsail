@@ -262,7 +262,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
 
     want_gpu = platform.want_gpu
     device = config.project.get_config("prepare.podman.container.device") \
-        if want_gpu else "/dev/null"
+        if want_gpu else "none"
 
     if config.project.get_config("prepare.ramalama.build_image.enabled"):
         image_name = config.project.get_config("prepare.ramalama.build_image.name")
