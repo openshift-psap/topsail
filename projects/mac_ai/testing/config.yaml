@@ -100,7 +100,7 @@ ci_presets:
     extends: [lightspeed, use_intlab_os, analyze_kpis, export_kpis]
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
-
+    secrets.image_registry: lightspeed-authfile.json
   # ---
 
   remoting:
@@ -326,6 +326,7 @@ prepare:
     installer:
       image: quay.io/redhat-user-workloads/rhel-lightspeed-tenant/installer
       version: latest
+      credentials: "*$@secrets.image_registry"
 
   llama_cpp:
     iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary

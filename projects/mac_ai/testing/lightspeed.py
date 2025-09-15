@@ -43,6 +43,9 @@ def installer_image(base_work_dir, pull=False, rm=False):
     image_name = get_image_name()
     if not podman_mod.has_image(base_work_dir, image_name):
         if pull:
+            creds = config.project.get_config("prepare.lightspeed.installer.credentials", handled_secretly=True)
+            podman_mod.write_authfile(base_work_dir, creds)
+
             podman_mod.pull_image(base_work_dir, image_name)
             return True
         return False
@@ -87,6 +90,9 @@ def pull_model(base_work_dir, lightspeed_path, model_name):
 
 def start_server(base_work_dir, lightspeed_path):
     with env.NextArtifactDir("lightspeed_start_server"):
+        creds = config.project.get_config("prepare.lightspeed.installer.credentials", handled_secretly=True)
+        podman_mod.write_authfile(base_work_dir, creds)
+
         inspect = podman_mod.inspect_image(base_work_dir, get_image_name())
         with open(env.ARTIFACT_DIR / "inspect-image.json", "w") as f:
             json.dump(inspect, indent=4, fp=f)
