@@ -80,3 +80,18 @@ class Container_Bench:
           dest: the destination path on the remote machine
         """
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_copy_file")
+    @AnsibleMappedParams
+    def copy_file(
+            self,
+            source,
+            dest,
+    ):
+        """
+        Copies a file to the remote machine
+        Args:
+          source: the source file to copy
+          dest: the destination path on the remote machine
+        """
+        return RunAnsibleRole(locals())
