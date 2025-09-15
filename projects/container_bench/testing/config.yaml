@@ -36,7 +36,7 @@ remote_host:
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: false
+    enabled: true
     docker_bin: docker
   env:
     PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
@@ -124,10 +124,10 @@ image_build_large_build_context_benchmark:
     - docker
 
 test:
-  platform: # *all_platforms
-    - podman/darwin
+  platform: *all_platforms
   platforms_to_skip:
-    - docker/darwin
+    # - docker/darwin
+    - podman/darwin
   benchmark:
     # - helloworld_benchmark
     # - exec_benchmark

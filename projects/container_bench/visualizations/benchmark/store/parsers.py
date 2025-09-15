@@ -133,8 +133,10 @@ def _parse_container_engine_info(dirname):
     with open(
         register_important_file(
             dirname,
-            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.txt"
+            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.json"
         )
     ) as f:
-        container_engine_info = yaml.safe_load(f)
+        content = f.read()
+        container_engine_info = json.loads(content)
+
     return container_engine_info

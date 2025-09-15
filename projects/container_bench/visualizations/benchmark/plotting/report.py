@@ -60,10 +60,11 @@ def getInfo(settings, setting_lists, benchmark_name):
             data["system"] = sys_info
 
         container_engine_info = entry.results.__dict__.get("container_engine_info")
-        if container_engine_info:
+        platform = entry.settings.__dict__.get("container_engine", "")
+        if container_engine_info and platform == "podman":
             engine_info = dict()
             client = container_engine_info.get("Client", {})
-            engine_info["Container_engine_platform"] = entry.settings.__dict__.get("container_engine", "")
+            engine_info["Container_engine_platform"] = platform
             engine_info["Client_version"] = client.get("Version", "")
             host = container_engine_info.get("host", {})
             engine_info["Mode"] = host.get("security", {}).get("rootless", "")
@@ -71,6 +72,19 @@ def getInfo(settings, setting_lists, benchmark_name):
             engine_info["Host_cpu"] = host.get("cpus", "")
             engine_info["Host_memory"] = host.get("memTotal", "")
             engine_info["Host_kernel"] = host.get("kernel", "")
+            data["container_engine_full"] = container_engine_info
+            data["container_engine_info"] = engine_info
+        elif container_engine_info and platform == "docker":
+            data["container_engine_provider"] = "Not specified"
+            engine_info = dict()
+            client = container_engine_info.get("ClientInfo", {})
+            engine_info["Container_engine_platform"] = platform
+            engine_info["Client_version"] = client.get("Version", "")
+            server = container_engine_info
+            engine_info["Host_version"] = server.get("ServerVersion", "")
+            engine_info["Host_cpu"] = server.get("NCPU", "")
+            engine_info["Host_memory"] = server.get("MemTotal", "")
+            engine_info["Host_kernel"] = host.get("KernelVersion", "")
             data["container_engine_full"] = container_engine_info
             data["container_engine_info"] = engine_info
 
