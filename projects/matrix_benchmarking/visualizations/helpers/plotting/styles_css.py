@@ -284,3 +284,143 @@ STYLE_SMALL_TEXT = {
 STYLE_H4 = {
     'margin-top': '1rem'
 }
+
+# Comparison report styles
+COMPARISON_CSS = """
+/* Comparison table styles */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: top;
+}
+
+.comparison-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #343a40;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.comparison-table td {
+    background: white;
+}
+
+.comparison-table tr:hover {
+    background: #f8f9fa;
+}
+
+.comparison-table-highlight {
+    background: #e3f2fd !important;
+    font-weight: 600;
+}
+
+/* Responsive table styling */
+@media (max-width: 768px) {
+    .comparison-table {
+        font-size: 0.85rem;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Comparison section styling */
+.comparison-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Error message styling */
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+    text-align: center;
+    margin: 1rem 0;
+}
+"""
+
+STYLE_COMPARISON_TABLE = {
+    'width': '100%',
+    'border-collapse': 'collapse',
+    'margin-bottom': '1rem',
+    'background': 'white',
+    'border-radius': '8px',
+    'overflow': 'hidden',
+    'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.08)'
+}
+
+STYLE_TABLE_HEADER = {
+    'padding': '0.75rem 1rem',
+    'text-align': 'left',
+    'border-bottom': '1px solid #dee2e6',
+    'background': '#f8f9fa',
+    'font-weight': '600',
+    'color': '#343a40',
+    'position': 'sticky',
+    'top': '0',
+    'z-index': '10'
+}
+
+STYLE_TABLE_CELL = {
+    'padding': '0.75rem 1rem',
+    'text-align': 'left',
+    'border-bottom': '1px solid #dee2e6',
+    'background': 'white',
+    'vertical-align': 'top'
+}
+
+STYLE_TABLE_CELL_HIGHLIGHT = {
+    'padding': '0.75rem 1rem',
+    'text-align': 'left',
+    'border-bottom': '1px solid #dee2e6',
+    'background': '#e3f2fd',
+    'font-weight': '600',
+    'vertical-align': 'top'
+}
+
+STYLE_COMPARISON_SECTION = {
+    'background': 'white',
+    'border-radius': '8px',
+    'padding': '1.5rem',
+    'margin-bottom': '2rem',
+    'box-shadow': '0 2px 8px rgba(0, 0, 0, 0.08)'
+}
+
+STYLE_H3 = {
+    'font-size': '1.5rem',
+    'color': '#343a40',
+    'margin': '1.5rem 0 1rem 0',
+    'font-weight': '500'
+}
+
+STYLE_ERROR_MESSAGE = {
+    'background': '#f8d7da',
+    'color': '#721c24',
+    'padding': '1rem',
+    'border-radius': '8px',
+    'border': '1px solid #f5c6cb',
+    'text-align': 'center',
+    'margin': '1rem 0'
+}

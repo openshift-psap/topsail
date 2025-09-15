@@ -55,6 +55,11 @@ prepare:
       - krunkit
 
   podman:
+    custom_binary:
+      enabled: false
+      path: "/Users/jrodak/projects/containers/podman/bin/"
+      server_file: "podman"
+      client_file: "podman-remote-{@remote_host.system}"
     repo:
       enabled: false
       url: https://github.com/containers/podman
@@ -76,11 +81,13 @@ prepare:
       force_configuration: false
       set_default: true
       name: podman-machine-default
+      use_configuration: true
       configuration:
         cpus: 4 # in cores
         memory: 5120 # in MiB
+        rootful: true
       env:
-        CONTAINERS_MACHINE_PROVIDER: libkrun
+        CONTAINERS_MACHINE_PROVIDER: applehv # libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 cleanup:
@@ -91,7 +98,6 @@ cleanup:
 
   podman_machine:
     delete: true
-    reset: true
 
   docker_desktop:
     stop: true
@@ -113,21 +119,40 @@ exec_benchmark:
 
 
 test:
-  platform: *all_platforms
+  platform: # *all_platforms
+    - podman/darwin
   platforms_to_skip:
     - docker/darwin
   benchmark:
     - helloworld_benchmark
     - exec_benchmark
+  podman:
+    machine_provider:
+    - libkrun
+    - applehv
+    rootful:
+    - true
+    - false
+    repo_version:
+    - v5.4.0
+    # - v5.3.1
+    - custom
   capture_metrics:
     enabled: true
 
   matbenchmarking:
     enabled: false
     stop_on_error: true
-    fields:
+    iterable_test_fields:
     - test.platform
-    - prepare.podman.repo.version
+    - test.podman.repo_version
+    # - test.podman.rootful
+    # - test.podman.machine_provider
+    map_iterable_test_fields:
+      test.platform: test.platform
+      test.podman.repo_version: prepare.podman.repo.version
+      test.podman.rootful: prepare.podman.machine.configuration.rootful
+      test.podman.machine_provider: prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER
 
 matbench:
   enabled: true
