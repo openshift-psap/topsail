@@ -1,0 +1,12 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.copy_file
+
+# Parameters
+# the source file to copy
+# Mandatory value
+container_bench_copy_file_source:
+
+# the destination path on the remote machine
+# Mandatory value
+container_bench_copy_file_dest:

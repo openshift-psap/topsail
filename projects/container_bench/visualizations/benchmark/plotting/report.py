@@ -25,11 +25,22 @@ def getInfo(settings, setting_lists, benchmark_name):
         metrics = entry.results.__dict__.get("metrics")
         if not metrics:
             continue
+        test_config = entry.results.__dict__.get("test_config", {})
+        container_engine_provider = ""
+        if not test_config:
+            logging.warning("Missing test_config in entry results.")
+        else:
+            container_engine_provider = test_config.yaml_file.get(
+                "prepare", {}).get(
+                    "podman", {}).get(
+                        "machine", {}).get(
+                            "env", {}).get("CONTAINERS_MACHINE_PROVIDER", "")
+
         data["exec_time"] = metrics.execution_time
         data["command"] = metrics.command
         data["timestamp"] = metrics.timestamp
 
-        data["container_engine_provider"] = entry.settings.__dict__.get("container_engine_provider", "")
+        data["container_engine_provider"] = container_engine_provider
         data["runs"] = entry.settings.__dict__.get("benchmark_runs", 1)
 
         system_state = entry.results.__dict__.get("system_state")
@@ -55,9 +66,11 @@ def getInfo(settings, setting_lists, benchmark_name):
             engine_info["Container_engine_platform"] = entry.settings.__dict__.get("container_engine", "")
             engine_info["Client_version"] = client.get("Version", "")
             host = container_engine_info.get("host", {})
+            engine_info["Mode"] = host.get("security", {}).get("rootless", "")
             engine_info["Host_version"] = container_engine_info.get("version", {}).get("Version", "")
             engine_info["Host_cpu"] = host.get("cpus", "")
             engine_info["Host_memory"] = host.get("memTotal", "")
+            engine_info["Host_kernel"] = host.get("kernel", "")
             data["container_engine_full"] = container_engine_info
             data["container_engine_info"] = engine_info
 
@@ -126,9 +139,11 @@ class BenchmarkReport():
                 ("Engine", container_engine_info.get('Container_engine_platform', 'N/A'), False, False),
                 ("Client Version", container_engine_info.get('Client_version', 'N/A'), False, False),
                 ("Provider", info.get('container_engine_provider', 'N/A'), False, False),
+                ("Rootless", container_engine_info.get('Mode', 'N/A'), False, False),
                 ("Host Version", container_engine_info.get('Host_version', 'N/A'), False, False),
                 ("Host CPU", container_engine_info.get('Host_cpu', 'N/A'), False, False),
-                ("Host Memory", mem_display, True, False),
+                ("Host Memory", mem_display, False, False),
+                ("Host Kernel", container_engine_info.get('Host_kernel', 'N/A'), True, False),
             ]
 
             # Create info cards in rows for better readability
@@ -149,6 +164,7 @@ class BenchmarkReport():
             plot_names = [
                 "System CPU Usage",
                 "System Power Usage",
+                "System Memory Usage",
                 "System Network Usage",
                 "System Disk Usage"
             ]

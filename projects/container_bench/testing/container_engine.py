@@ -12,6 +12,12 @@ def get_podman_binary(base_work_dir):
     else:
         podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
 
+    if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
+        podman_file = config.project.get_config("prepare.podman.custom_binary.client_file", print=False)
+        podman_bin = base_work_dir / "podman-custom" / podman_file
+        if not remote_access.exists(podman_bin):
+            podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
+
     return podman_bin
 
 
@@ -122,6 +128,17 @@ class PodmanMachine:
             logging.info("podman machine already running. Skipping the configuration part.")
             return
 
+        if config.project.get_config("prepare.podman.machine.set_default"):
+            name = config.project.get_config("prepare.podman.machine.name", print=False)
+            rootless = ""
+            if config.project.get_config("prepare.podman.machine.configuration.rootful", print=False):
+                rootless = "-root"
+            remote_access.run_with_ansible_ssh_conf(
+                self.base_work_dir,
+                f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} system connection default"
+                f" {name}{rootless}"
+            )
+
         if configure:
             self.configure()
 
@@ -133,12 +150,14 @@ class PodmanMachine:
             logging.error(msg)
             raise RuntimeError(msg)
 
-        if config.project.get_config("prepare.podman.machine.set_default"):
-            name = config.project.get_config("prepare.podman.machine.name", print=False)
-            remote_access.run_with_ansible_ssh_conf(
-                self.base_work_dir,
-                f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} system connection default {name}"
-            )
+        if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
+            podman_file = config.project.get_config("prepare.podman.custom_binary.server_file", print=False)
+            podman_bin = self.base_work_dir / "podman-custom" / podman_file
+            self.cp(podman_bin, "~/podman")
+            self.ssh("chmod +x ./podman")
+            x = self.ssh("./podman system service -t 0 >/dev/null 2>&1 &")
+            if x.returncode != 0:
+                raise RuntimeError("Failed to start custom podman server")
 
     def configure(self):
         name = config.project.get_config("prepare.podman.machine.name", print=False)
@@ -151,7 +170,7 @@ class PodmanMachine:
         )
 
     def init(self):
-        cmd = f"{get_podman_binary(self.base_work_dir)} machine init {self.machine_name} --rootful"
+        cmd = f"{get_podman_binary(self.base_work_dir)} machine init {self.machine_name}"
         cmd = f"{self.get_cmd_env()} {cmd}"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
@@ -189,6 +208,22 @@ class PodmanMachine:
             return None
 
         return json.loads(inspect_cmd.stdout)
+
+    def cp(self, source, dest):
+        cmd = f"{get_podman_binary(self.base_work_dir)} machine cp {source} {self.machine_name}:{dest}"
+        cmd = f"{self.get_cmd_env()} {cmd}"
+        remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
+
+    def ssh(self, command):
+        cmd = f"{get_podman_binary(self.base_work_dir)} machine ssh {self.machine_name} '{command}'"
+        cmd = f"{self.get_cmd_env()} {cmd}"
+        return remote_access.run_with_ansible_ssh_conf(
+            self.base_work_dir,
+            cmd,
+            check=False,
+            capture_stdout=True,
+            capture_stderr=True,
+        )
 
 
 class DockerDesktopMachine:
