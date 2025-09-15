@@ -8,10 +8,10 @@ import json
 import platform
 import re
 import logging
+import datetime
 
-DEFAULT_OUTPUT_FILE = "output.txt"
-DEFAULT_TIME_LOG_FILE = "time.log"
-DEFAULT_METRICS_LOG_FILE = "metrics.log"
+DEFAULT_OUTPUT_FILE = "output.log"
+DEFAULT_METRICS_LOG_FILE = "metrics.json"
 DEFAULT_INTERVAL = 0.1
 
 
@@ -71,7 +71,7 @@ class PowerMetrics:
             )
             self.is_running = True
             # Verify the process didn't exit immediately (e.g., permission error)
-            time.sleep(0.2)
+            time.sleep(2)
             if self.process.poll() is not None:
                 err = ""
                 try:
@@ -132,6 +132,8 @@ class Measurements:
         self.execution_time = 0.0
         self.return_code = 0
         self.power_usage = []
+        self.command = ""
+        self.timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def to_dict(self):
         return {
@@ -143,6 +145,8 @@ class Measurements:
             "execution_time": self.execution_time,
             "return_code": self.return_code,
             "power_usage": self.power_usage,
+            "command": self.command,
+            "timestamp": self.timestamp,
         }
 
     def set_execution_time(self, exec_time):
@@ -150,6 +154,9 @@ class Measurements:
 
     def set_return_code(self, return_code):
         self.return_code = return_code
+
+    def set_command(self, command):
+        self.command = command
 
 
 def parse_power_line(line):
@@ -331,11 +338,6 @@ def main():
         help=f"File to store the command's stdout and stderr (default: {DEFAULT_OUTPUT_FILE})"
     )
     parser.add_argument(
-        "--time-log-file",
-        default=DEFAULT_TIME_LOG_FILE,
-        help=f"File to log the command's execution time (default: {DEFAULT_TIME_LOG_FILE})"
-    )
-    parser.add_argument(
         "--metrics-log-file",
         default=DEFAULT_METRICS_LOG_FILE,
         help=f"File to log the metrics during run of command (default: {DEFAULT_METRICS_LOG_FILE})"
@@ -380,11 +382,12 @@ def main():
         read_power_event,
         monitor_thread
     )
-    measurements.set_execution_time(exec_time)
-    measurements.set_return_code(return_code)
-
     power_metrics.stop_monitoring()
     power_usage_thread.join()
+
+    measurements.set_execution_time(exec_time)
+    measurements.set_return_code(return_code)
+    measurements.set_command(' '.join(command_to_run))
 
     output_content = f"--- Command: {' '.join(command_to_run)} ---\n"
     output_content += f"Return Code: {return_code}\n\n"
@@ -400,11 +403,6 @@ def main():
 
     write_to_file(args.output_file, output_content)
 
-    time_log_content = f"Command: \"{' '.join(command_to_run)}\"\n"
-    time_log_content += f"ExecutionTime: {exec_time:.4f}s\n"
-    time_log_content += f"ReturnCode: {return_code}\n"
-
-    write_to_file(args.time_log_file, time_log_content)
     write_to_file(args.metrics_log_file, json.dumps(measurements.to_dict(), separators=(',', ':')) + "\n")
 
     if return_code != 0:
