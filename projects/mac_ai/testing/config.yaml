@@ -327,6 +327,9 @@ prepare:
       image: quay.io/redhat-user-workloads/rhel-lightspeed-tenant/installer
       version: latest
       credentials: "*$@secrets.image_registry"
+    runtime:
+      container_names:
+        model: rhel-cla-llamacpp-model
 
   llama_cpp:
     iterable_build_fields: # sync with test.matbenchmarking.iterable_test_fields if necessary
