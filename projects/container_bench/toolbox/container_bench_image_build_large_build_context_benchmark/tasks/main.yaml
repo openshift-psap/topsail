@@ -1,0 +1,35 @@
+---
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Prepare
+  shell: |
+    {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f
+    mkdir ${HOME}/large-build-context
+    cd ${HOME}/large-build-context
+    cat <<'EOF' > Dockerfile
+      FROM scratch
+      WORKDIR /app
+      COPY . .
+    EOF
+    for i in {1..10}; do
+        dd if=/dev/urandom of=random-$i bs=1G count=1
+    done
+    ls
+
+- name: Run benchmark commands
+  shell: |
+     {{ container_bench_image_build_large_build_context_benchmark_exec_time_path | dirname }}/.venv/bin/python \
+     {{ container_bench_image_build_large_build_context_benchmark_exec_time_path }}  \
+     --output "{{ artifact_extra_logs_dir }}/artifacts/output.log"  \
+     --metrics-log-file "{{ artifact_extra_logs_dir }}/artifacts/metrics.json"  \
+     {{ container_bench_image_build_large_build_context_benchmark_runtime }} build -t large-build-context-benchmark ${HOME}/large-build-context
+
+- name: Clean up
+  shell: |
+    {{ container_bench_image_build_large_build_context_benchmark_runtime }} rmi -f large-build-context-benchmark
+    rm -rf ${HOME}/large-build-context/
+    {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f

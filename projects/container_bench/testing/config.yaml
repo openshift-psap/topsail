@@ -117,6 +117,11 @@ exec_benchmark:
     - podman
     - docker
 
+image_build_large_build_context_benchmark:
+  runs: 5
+  supported_container_engines:
+    - podman
+    - docker
 
 test:
   platform: # *all_platforms
@@ -124,8 +129,9 @@ test:
   platforms_to_skip:
     - docker/darwin
   benchmark:
-    - helloworld_benchmark
-    - exec_benchmark
+    # - helloworld_benchmark
+    # - exec_benchmark
+    - image_build_large_build_context_benchmark
   podman:
     machine_provider:
     - libkrun
