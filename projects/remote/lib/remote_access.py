@@ -7,7 +7,6 @@ from projects.core.library import env, config, run, configure_logging, export
 import utils
 
 def prepare():
-    from prepare_mac_ai import CRC_MAC_AI_SECRET_PATH
     base_work_dir = pathlib.Path(config.project.get_config("remote_host.base_work_dir", handled_secretly=True))
 
     #
@@ -58,8 +57,12 @@ def prepare():
     os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"] = extra_env_fd_path
 
     #
+    secret_env_key = config.project.get_config("secrets.dir.env_key")
+    secret_env_path = os.environ.get(secret_env_key)
+    if not secret_env_path:
+        raise ValueError(f"Secret dir env key {secret_env_key} not set :/")
 
-    private_key_path = CRC_MAC_AI_SECRET_PATH / config.project.get_config("remote_host.private_key_filename")
+    private_key_path = pathlib.Path(secret_env_path) / config.project.get_config("remote_host.private_key_filename")
 
     remote_hostport = config.project.get_config("remote_host.port")
 
@@ -205,7 +208,7 @@ def read(path):
     return ret.stdout
 
 
-def mkdir(path):
+def mkdir(path, handled_secretly=False):
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.mkdir(parents=True, exist_ok=True)
     base_work_dir = prepare()
@@ -213,10 +216,11 @@ def mkdir(path):
     return run_with_ansible_ssh_conf(
         base_work_dir,
         f"mkdir -p '{path}'",
+        handled_secretly=handled_secretly,
     )
 
 
-def write(path, content):
+def write(path, content, handled_secretly=False):
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.write_text(content)
     base_work_dir = prepare()
@@ -225,4 +229,5 @@ def write(path, content):
     return run_with_ansible_ssh_conf(
         base_work_dir,
         f"cat > '{path}' <<EOF\n{content.removesuffix(EOL)}\nEOF",
+        handled_secretly=handled_secretly,
     )
