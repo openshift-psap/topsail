@@ -271,3 +271,13 @@ def push_image(base_work_dir, local_name, remote_name):
     cmd = f"{podman_bin} push {local_name} {remote_name}"
 
     remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
+
+def write_authfile(base_work_dir, content):
+    authfile = base_work_dir / ".config/containers/auth.json"
+    remote_access.mkdir(authfile.parent)
+    remote_access.write(authfile, content, handled_secretly=True)
+    remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"chmod 600 '{base_work_dir}/.config/containers/auth.json'",
+        handled_secretly=True,
+    )
