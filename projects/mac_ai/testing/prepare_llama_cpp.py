@@ -6,7 +6,9 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import utils, remote_access
+import utils
+from projects.remote.lib import remote_access
+
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 

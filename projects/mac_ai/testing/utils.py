@@ -6,7 +6,7 @@ import requests
 
 from projects.core.library import env, config, run, configure_logging, export
 
-import remote_access
+from projects.remote.lib import remote_access
 
 __keep_open = []
 def get_tmp_fd():

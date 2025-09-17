@@ -5,8 +5,9 @@ import logging
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer, prepare_release
+import utils, podman_machine, brew, podman, prepare_virglrenderer, prepare_release
 import prepare_llama_cpp, llama_cpp, ollama, ramalama, lightspeed
+from projects.remote.lib import remote_access
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "/env/CRC_MAC_AI_SECRET_PATH/not_set"))

@@ -293,7 +293,8 @@ class Config:
             return secret_file_dereference()
 
         if value.startswith("*@"):
-            msg = f"resolve_reference: '*@' references not supported (not sure how to handle it wrt to secrets) --> {k}: {value}"
+            # value can be printed here, it's a reference to a secret, not a secret value
+            msg = f"resolve_reference: '*@' references not supported (not sure how to handle it wrt to secrets) --> {value}"
             logging.fatal(msg)
             raise ValueError(msg)
 

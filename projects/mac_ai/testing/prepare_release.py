@@ -8,7 +8,8 @@ import datetime
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_llama_cpp, utils, remote_access, podman_machine, brew, podman, prepare_virglrenderer
+from projects.remote.lib import remote_access
+import prepare_llama_cpp, utils, podman_machine, brew, podman, prepare_virglrenderer
 import llama_cpp, ollama, ramalama
 
 def create_remoting_tarball(base_work_dir):

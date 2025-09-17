@@ -8,7 +8,8 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import remote_access, utils
+import utils
+from projects.remote.lib import remote_access
 
 
 def prepare_test(base_work_dir, platform):
@@ -19,7 +20,7 @@ def prepare_test(base_work_dir, platform):
 def prepare_binary(base_work_dir, platform):
     installer_image(base_work_dir, pull=True)
 
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf '{base_work_dir}/.config/rhel-lightspeed'")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf '{base_work_dir}/.config/rhel-cla'")
 
     bin_dir = installer_run(base_work_dir, "install")
 
@@ -29,20 +30,23 @@ def prepare_binary(base_work_dir, platform):
     remote_access.write(bin_dir / "podzman", f'#!/usr/bin/env bash\n{podman_cmd} "\$@"\n')
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"chmod u+x '{bin_dir / 'podzman'}'")
 
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sed 's+podman+{bin_dir / 'podzman'}+g' '{base_work_dir}/.config/rhel-lightspeed/rhel-lightspeed-runner.sh' > '{base_work_dir}/.config/rhel-lightspeed/rhel-lightspeed-runner.new.sh'")
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"mv '{base_work_dir}/.config/rhel-lightspeed/rhel-lightspeed-runner.new.sh' '{base_work_dir}/.config/rhel-lightspeed/rhel-lightspeed-runner.sh'")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sed 's+podman+{bin_dir / 'podzman'}+g' '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.sh' > '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.new.sh'")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"mv '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.new.sh' '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.sh'")
 
-    return bin_dir / "rhel-lightspeed"
+    return bin_dir / "rhel-cla"
 
 
 def get_binary_path(base_work_dir, platform):
-    return base_work_dir / ".local" / "bin" / "rhel-lightspeed"
+    return base_work_dir / ".local" / "bin" / "rhel-cla"
 
 
 def installer_image(base_work_dir, pull=False, rm=False):
     image_name = get_image_name()
     if not podman_mod.has_image(base_work_dir, image_name):
         if pull:
+            creds = config.project.get_config("prepare.lightspeed.installer.credentials", handled_secretly=True)
+            podman_mod.write_authfile(base_work_dir, creds)
+
             podman_mod.pull_image(base_work_dir, image_name)
             return True
         return False
@@ -87,6 +91,9 @@ def pull_model(base_work_dir, lightspeed_path, model_name):
 
 def start_server(base_work_dir, lightspeed_path):
     with env.NextArtifactDir("lightspeed_start_server"):
+        creds = config.project.get_config("prepare.lightspeed.installer.credentials", handled_secretly=True)
+        podman_mod.write_authfile(base_work_dir, creds)
+
         inspect = podman_mod.inspect_image(base_work_dir, get_image_name())
         with open(env.ARTIFACT_DIR / "inspect-image.json", "w") as f:
             json.dump(inspect, indent=4, fp=f)
@@ -109,8 +116,9 @@ def unload_model(base_work_dir, platform, lightspeed_path, model):
 def run_benchmark(base_work_dir, platform, lightspeed_path, model):
     with env.NextArtifactDir("lightspeed_run_bench"):
         remote_access.mkdir(env.ARTIFACT_DIR / "artifacts")
+        container_name = config.project.get_config("prepare.lightspeed.runtime.container_names.model")
         remote_access.run_with_ansible_ssh_conf(base_work_dir,
-                                                      f"{podman_mod.get_podman_command()} exec llamacpp-model llama-bench --verbose -m '{model}' > '{env.ARTIFACT_DIR}/artifacts/llama-bench.log' 2>&1")
+                                                      f"{podman_mod.get_podman_command()} exec '{container_name}' llama-bench --verbose -m '{model}' > '{env.ARTIFACT_DIR}/artifacts/llama-bench.log' 2>&1")
 
     pass
 
@@ -119,10 +127,10 @@ def cleanup_files(base_work_dir):
     installer_image(base_work_dir, rm=True)
 
     remote_access.run_with_ansible_ssh_conf(
-        base_work_dir, f"rm -rf '{base_work_dir}/.config/rhel-lightspeed'"
+        base_work_dir, f"rm -rf '{base_work_dir}/.config/rhel-cla'"
     )
     remote_access.run_with_ansible_ssh_conf(
-        base_work_dir, f"rm -f '{base_work_dir}/.local/bin/rhel-lightspeed' '{base_work_dir}/.local/bin/podzman'"
+        base_work_dir, f"rm -f '{base_work_dir}/.local/bin/rhel-cla' '{base_work_dir}/.local/bin/podzman'"
     )
 
 

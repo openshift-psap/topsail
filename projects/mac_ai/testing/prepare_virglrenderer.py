@@ -3,7 +3,8 @@ import pathlib
 import logging
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access
+from projects.remote.lib import remote_access
+
 
 def get_build_dir(base_work_dir):
     version = config.project.get_config("prepare.virglrenderer.repo.branch")

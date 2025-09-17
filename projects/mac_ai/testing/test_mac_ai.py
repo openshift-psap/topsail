@@ -16,7 +16,8 @@ CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "
 RUN_DIR = pathlib.Path(os.getenv('PWD')) # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
-import prepare_mac_ai, remote_access, podman, podman_machine, brew, utils
+import prepare_mac_ai, podman, podman_machine, brew, utils
+from projects.remote.lib import remote_access
 
 def prepare_llm_load_test_args(base_work_dir, model_id):
     llm_load_test_kwargs = dict()

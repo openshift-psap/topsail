@@ -3,7 +3,7 @@ import pathlib
 import logging
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access
+from projects.remote.lib import remote_access
 
 def install_dependencies(base_work_dir, capture_stderr=False):
     if config.project.get_config("remote_host.system") != "darwin": return

@@ -4,8 +4,8 @@ import logging
 import json, yaml
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access, podman, prepare_virglrenderer, prepare_llama_cpp
-
+import podman, prepare_virglrenderer, prepare_llama_cpp
+from projects.remote.lib import remote_access
 
 def _run(base_work_dir, cmd, env={}, check=True, capture_stdout=False, machine=True, get_command=False, print_cmd=False):
     podman_cmd = podman.get_podman_command()
