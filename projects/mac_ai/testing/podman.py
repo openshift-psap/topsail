@@ -5,8 +5,8 @@ import yaml
 import json
 
 from projects.core.library import env, config, run, configure_logging, export
-import remote_access, utils
-
+import utils
+from projects.remote.lib import remote_access
 
 def cleanup(base_work_dir):
     version = config.project.get_config("prepare.podman.repo.version", print=False)

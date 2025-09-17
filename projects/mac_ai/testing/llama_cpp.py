@@ -11,8 +11,9 @@ import fire
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
+from projects.remote.lib import remote_access
 import podman as podman_mod
-import remote_access, prepare_llama_cpp
+import prepare_llama_cpp
 from entrypoint import entrypoint
 import utils
 
