@@ -5,9 +5,10 @@ import yaml
 import remote_access
 import utils
 import uuid
+import sys
 
 from projects.core.library import env, config, run
-from projects.matrix_benchmarking.library import visualize
+from projects.matrix_benchmarking.library import visualize, matbenchmark
 from container_engine import ContainerEngine
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -36,8 +37,12 @@ def test():
 
     failed = False
     try:
-        # TODO: run multiple time to avoid outlaying runs
-        test_all_benchmark()
+        iterable_fields = config.project.get_config("test.matbenchmarking.iterable_test_fields")
+
+        if config.project.get_config("test.matbenchmarking.enabled"):
+            matbench_run(iterable_fields)
+        else:
+            test_all_benchmark()
     except Exception as e:
         failed = True
         logging.error(f"Test failed: ({e})")
@@ -58,22 +63,114 @@ def test():
     return failed
 
 
-def test_all_benchmark():
-    all_benchmarks_str = config.project.get_config("test.benchmark")
-    if isinstance(all_benchmarks_str, str):
-        all_benchmarks_str = [all_benchmarks_str]
-    benchmarks = [utils.parse_benchmark(b) for b in all_benchmarks_str]
+def matbench_run(matrix_source_keys):
+    with env.NextArtifactDir("matbenchmarking"):
+        benchmark_values = {}
 
-    all_platforms_str = config.project.get_config("test.platform")
-    if isinstance(all_platforms_str, str):
-        all_platforms_str = [all_platforms_str]
+        for source_key in matrix_source_keys:
+            source_values = config.project.get_config(source_key)
+            logging.info(f"matbench_run: source_key={source_key}, source_values={source_values}")
+            if isinstance(source_values, dict):
+                for k, v in source_values.items():
+                    if not isinstance(v, list):
+                        continue
 
-    provider = config.project.get_config("prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER", print=False)
+                    benchmark_values[f"{source_key}.{k}"] = v
+            elif isinstance(source_values, list):
+                benchmark_values[source_key] = source_values
 
-    for platform_str in all_platforms_str:
-        if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
-            continue
+        expe_to_run = dict(container_bench=benchmark_values)
+        logging.info(f"matbench_run: expe_to_run={expe_to_run}")
+
+        old_version = config.project.get_config("prepare.podman.repo.version", print=False)
+        old_is_repo_enabled = config.project.get_config("prepare.podman.repo.enabled", print=False)
+        old_is_enabled_custom = config.project.get_config("prepare.podman.custom_binary.enabled", print=False)
+        base_work_dir = remote_access.prepare()
+        versions = expe_to_run.get("container_bench", {}).get("test.podman.repo_version", [])
+        for v in versions:
+            logging.info(f"matbench_run: setting test.podman.repo_version={v}")
+            if v == "custom":
+                config.project.set_config("prepare.podman.custom_binary.enabled", True)
+                if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
+                    utils.prepare_custom_podman_binary(base_work_dir)
+            else:
+                config.project.set_config("prepare.podman.repo.enabled", True)
+                config.project.set_config("prepare.podman.repo.version", v)
+                if config.project.get_config("prepare.podman.repo.enabled"):
+                    utils.prepare_podman_from_gh_binary(base_work_dir)
+                    utils.prepare_gv_from_gh_binary(base_work_dir)
+
+        config.project.set_config("prepare.podman.repo.version", old_version)
+        config.project.set_config("prepare.podman.repo.enabled", old_is_repo_enabled)
+        config.project.set_config("prepare.podman.custom_binary.enabled", old_is_enabled_custom)
+
+        json_benchmark_file = matbenchmark.prepare_benchmark_file(
+            path_tpl="test",
+            script_tpl=f"{sys.argv[0]} matbench_run",
+            stop_on_error=config.project.get_config("test.matbenchmarking.stop_on_error"),
+            common_settings=dict(),
+            test_files={},
+            expe_to_run=expe_to_run,
+        )
+
+        logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
+
+        benchmark_file, yaml_content = matbenchmark.save_benchmark_file(json_benchmark_file)
+
+        args = matbenchmark.set_benchmark_args(benchmark_file)
+
+        failed = matbenchmark.run_benchmark(args)
+        if failed:
+            msg = "_run_test_matbenchmarking: matbench benchmark failed :/"
+            logging.error(msg)
+            raise RuntimeError(msg)
+
+        if config.project.get_config("cleanup.files.podman"):
+            logging.info("Cleaning up Podman files")
+            for v in versions:
+                if v == "custom":
+                    continue
+                config.project.set_config("prepare.podman.repo.version", v)
+                utils.cleanup_podman_files(base_work_dir)
+            config.project.set_config("prepare.podman.repo.version", old_version)
+
+
+def matbench_run_one():
+    with env.TempArtifactDir(RUN_DIR):
+        with open(env.ARTIFACT_DIR / "settings.yaml") as f:
+            settings = yaml.safe_load(f)
+
+        with open(env.ARTIFACT_DIR / "skip", "w") as f:
+            print("Results are in a subdirectory, not here.", file=f)
+
+        map_key = config.project.get_config("test.matbenchmarking.map_iterable_test_fields", print=False)
+        logging.info(f"matbench_run_one: map_key={map_key}")
+        for k, v in settings.items():
+            logging.info(f"matbench_run_one: setting {k}={v}")
+            if k not in map_key:
+                raise ValueError(f"matbench_run_one: No mapping for {k} in test.matbenchmarking.map")
+            if k == "test.podman.repo_version":
+                if v == "custom":
+                    config.project.set_config("prepare.podman.custom_binary.enabled", True)
+                else:
+                    config.project.set_config("prepare.podman.repo.enabled", True)
+            config.project.set_config(map_key[k], v)
+
+        config.project.set_config("test.matbenchmarking.enabled", False)
+
+        platform_str = config.project.get_config("test.platform")
+
+        if platform_str in (config.project.get_config("test.platforms_to_skip", print=False) or []):
+            logging.info(f"Skipping {platform_str} test as per test.platforms_to_skip.")
+            return
+
+        all_benchmarks_str = config.project.get_config("test.benchmark")
+        if isinstance(all_benchmarks_str, str):
+            all_benchmarks_str = [all_benchmarks_str]
+        benchmarks = [utils.parse_benchmark(b) for b in all_benchmarks_str]
+
         platform = utils.parse_platform(platform_str)
+        platform.prepare_platform()
         for benchmark in benchmarks:
             if platform.container_engine not in benchmark.supported_container_engines:
                 continue  # skip unsupported benchmarks
@@ -84,12 +181,45 @@ def test_all_benchmark():
                     yaml.dump(dict(
                         platform=platform_str,
                         container_engine=platform.container_engine,
-                        container_engine_provider=provider,
                         benchmark=benchmark.name,
                         benchmark_runs=benchmark.runs,
                     ), f)
                 logging.info(f"Run benchmark: {benchmark.name} on {platform_str}")
                 run_benchmark(platform, benchmark)
+        platform.cleanup_platform()
+
+
+def test_all_benchmark():
+    all_benchmarks_str = config.project.get_config("test.benchmark")
+    if isinstance(all_benchmarks_str, str):
+        all_benchmarks_str = [all_benchmarks_str]
+    benchmarks = [utils.parse_benchmark(b) for b in all_benchmarks_str]
+
+    all_platforms_str = config.project.get_config("test.platform")
+    if isinstance(all_platforms_str, str):
+        all_platforms_str = [all_platforms_str]
+
+    for platform_str in all_platforms_str:
+        if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
+            continue
+        platform = utils.parse_platform(platform_str)
+        platform.prepare_platform()
+        for benchmark in benchmarks:
+            if platform.container_engine not in benchmark.supported_container_engines:
+                continue  # skip unsupported benchmarks
+            config.project.set_config("test.platform", platform_str)  # for the post-processing
+            config.project.set_config("test.benchmark", benchmark.name)  # for the post-processing
+            with env.NextArtifactDir(f"{platform_str}_{benchmark.name}_run_dir".replace("/", "_")):
+                with open(env.ARTIFACT_DIR / "settings.yaml", "w") as f:
+                    yaml.dump(dict(
+                        platform=platform_str,
+                        container_engine=platform.container_engine,
+                        benchmark=benchmark.name,
+                        benchmark_runs=benchmark.runs,
+                    ), f)
+                logging.info(f"Run benchmark: {benchmark.name} on {platform_str}")
+                run_benchmark(platform, benchmark)
+        platform.cleanup_platform()
 
 
 def capture_metrics(platform):

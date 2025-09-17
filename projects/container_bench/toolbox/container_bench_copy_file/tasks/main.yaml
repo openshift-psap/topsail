@@ -1,0 +1,12 @@
+---
+- name: Ensure that the parent directory exists
+  ansible.builtin.file:
+    state: directory
+    path: "{{ container_bench_copy_file_dest | dirname }}"
+    mode: '0755'
+
+- name: Copy a file to the remote host
+  ansible.builtin.copy:
+    src: "{{ container_bench_copy_file_source }}"
+    dest: "{{ container_bench_copy_file_dest }}"
+    mode: 'a+x'
