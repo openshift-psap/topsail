@@ -18,7 +18,7 @@ def apply_preset_by_jobname():
     presets = config.project.get_config("prepare.job_name_to_preset")
     preset_name = presets.get(job_name)
     if not preset_name:
-        logging.info(f"apply_preset_by_jobname: no preset to apply to apply for '{job_name}'")
+        logging.info(f"apply_preset_by_jobname: no preset to apply for '{job_name}'")
         return
 
     logging.info(f"apply_preset_by_jobname: applying the '{preset_name}' preset for job name '{job_name}' ...")
@@ -37,6 +37,7 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     config.init(TESTING_THIS_DIR, apply_config_overrides=False)
     config.project.apply_config_overrides(ignore_not_found=True)
     apply_preset_by_jobname()
+    config.project.apply_config_overrides(ignore_not_found=True)
     config.test_skip_list()
 
 
