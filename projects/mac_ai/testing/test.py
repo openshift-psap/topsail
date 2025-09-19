@@ -29,9 +29,10 @@ def prepare_ci():
     """
     try:
         return prepare_mac_ai.prepare()
-    except Exception as exc:
+    finally:
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
+            exc = None
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
                                     mute_stdout=True, mute_stderr=True)
@@ -55,8 +56,18 @@ def test_ci():
 
         return 1 if failed else 0
     finally:
-        if config.project.get_config("prepare.cleanup_on_exit"):
-            cleanup_cluster()
+        try:
+            if config.project.get_config("prepare.cleanup_on_exit"):
+                cleanup_cluster()
+        finally:
+            if not config.project.get_config("remote_host.run_locally"):
+                # retrieve all the files that have been saved remotely
+                exc = None
+                exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
+                                        path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
+                                        mute_stdout=True, mute_stderr=True)
+                if exc:
+                    logging.error(f"Remote retrieve failed :/ --> {exc}")
 
         export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
 
