@@ -228,6 +228,6 @@ def write(path, content, handled_secretly=False):
     EOL = "\n" # f-string expression part cannot include a backslash
     return run_with_ansible_ssh_conf(
         base_work_dir,
-        f"cat > '{path}' <<EOF\n{content.removesuffix(EOL)}\nEOF",
+        f"cat > '{path}' <<'EOF'\n{content.removesuffix(EOL)}\nEOF",
         handled_secretly=handled_secretly,
     )
