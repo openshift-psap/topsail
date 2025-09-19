@@ -142,7 +142,7 @@ set -o errtrace
 {chdir_cmd}
 
 {cmd}
-    """
+"""
 
     if config.project.get_config("remote_host.verbose_ssh_commands", print=False) and not handled_secretly:
         entrypoint_script = f"set -x\n{entrypoint_script}"
