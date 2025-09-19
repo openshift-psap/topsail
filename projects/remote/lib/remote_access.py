@@ -74,7 +74,7 @@ ansible_ssh_private_key_file: {private_key_path}
 ansible_ssh_user: {remote_username}
 ansible_ssh_common_args: "{' '.join(ssh_flags)}"
 """
-    print(extra_vars_yaml_content)
+
     print(extra_vars_yaml_content, file=extra_vars_file)
     extra_vars_file.flush()
 
