@@ -99,7 +99,7 @@ def prepare_crc_bundle(base_work_dir):
 
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"cp '{bundle_dir}'/{{crc2.img,id_ecdsa_crc,id_ecdsa_crc.pub,kubeconfig}} '{machine_dir}/'"
+        f"cp '{bundle_dir}'/{{crc.img,id_ecdsa_crc,id_ecdsa_crc.pub,kubeconfig}} '{machine_dir}/'"
     )
 
 
