@@ -4,7 +4,7 @@ import logging
 import yaml
 
 from projects.core.library import env, config, run, configure_logging, export
-import utils
+from . import utils
 
 def prepare():
     base_work_dir = pathlib.Path(config.project.get_config("remote_host.base_work_dir", handled_secretly=True))
