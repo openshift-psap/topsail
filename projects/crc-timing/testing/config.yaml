@@ -83,7 +83,10 @@ test:
       user: core
 cleanup:
   cleanup_on_exit: false
-  bundles: true
+  crc_dir:
+    all: true
+    bundles: true
+    machines: true
 
 matbench:
   enabled: true

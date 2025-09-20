@@ -15,9 +15,39 @@ CRC_MAC_AI_SECRET_PATH = pathlib.Path(os.environ.get("CRC_MAC_AI_SECRET_PATH", "
 
 def cleanup():
     base_work_dir = remote_access.prepare()
-    bundles_dir = base_work_dir / "crc-bundles"
-    if config.project.get_config("cleanup.bundles"):
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {bundles_dir}")
+    crc_dir = base_work_dir / "crc"
+
+    if config.project.get_config("cleanup.crc_dir.all"):
+        machine_dir = crc_dir / "machine"
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf '{crc_dir}'")
+        return
+
+    to_cleanup = config.project.get_config("cleanup.crc_dir")
+    # List contents of crc_dir and remove files/directories whose cleanup isn't disabled
+    contents_result = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"ls -1 '{crc_dir}' 2>/dev/null",
+        check=False,
+        capture_stdout=True
+    ).stdout.strip().split('\n')
+
+    for item in contents_result:
+        item_name = item.strip()
+        if not item_name: continue
+
+        item_path = crc_dir / item_path
+
+        should_cleanup = to_cleanup.get(item_name, True)
+        if not should_cleanup:
+            logging.info(f"Skipping cleanup of {item_path}")
+            continue
+
+        logging.info(f"Cleaning up {item_path}")
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf '{item_path}'")
+
+    if not contents_result:
+        logging.info(f"No contents found in {crc_dir} or directory doesn't exist")
+
 
     return 0
 
