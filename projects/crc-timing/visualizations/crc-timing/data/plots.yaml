@@ -1,0 +1,4 @@
+visualize:
+- id: crc_timing
+  generate:
+  - "report: Init report"

@@ -4,7 +4,7 @@ import logging
 import yaml
 
 from projects.core.library import env, config, run, configure_logging, export
-import utils
+from . import utils
 
 def prepare():
     base_work_dir = pathlib.Path(config.project.get_config("remote_host.base_work_dir", handled_secretly=True))
@@ -74,7 +74,7 @@ ansible_ssh_private_key_file: {private_key_path}
 ansible_ssh_user: {remote_username}
 ansible_ssh_common_args: "{' '.join(ssh_flags)}"
 """
-    print(extra_vars_yaml_content)
+
     print(extra_vars_yaml_content, file=extra_vars_file)
     extra_vars_file.flush()
 
@@ -142,7 +142,7 @@ set -o errtrace
 {chdir_cmd}
 
 {cmd}
-    """
+"""
 
     if config.project.get_config("remote_host.verbose_ssh_commands", print=False) and not handled_secretly:
         entrypoint_script = f"set -x\n{entrypoint_script}"
@@ -228,6 +228,6 @@ def write(path, content, handled_secretly=False):
     EOL = "\n" # f-string expression part cannot include a backslash
     return run_with_ansible_ssh_conf(
         base_work_dir,
-        f"cat > '{path}' <<EOF\n{content.removesuffix(EOL)}\nEOF",
+        f"cat > '{path}' <<'EOF'\n{content.removesuffix(EOL)}\nEOF",
         handled_secretly=handled_secretly,
     )
