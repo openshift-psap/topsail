@@ -13,14 +13,14 @@
       dest: "{{ remote_clone_dest }}"
       refspec: "{{ remote_clone_refspec }}"
       force: "{{ remote_clone_force }}"
-    when: remote_clone_refspec or '' | length
+    when: remote_clone_refspec != None
 
   # noqa latest[git]
   - name: Show the commit of the version that has been cloned
     shell:
       git -C "{{ remote_clone_dest }}" fetch origin "{{ remote_clone_refspec }}" &&
       git -C "{{ remote_clone_dest }}" reset --hard FETCH_HEAD
-    when: remote_clone_refspec or '' | length
+    when: remote_clone_refspec != None
 
   # noqa latest[git]
   - name: Git checkout by version
@@ -29,7 +29,7 @@
       dest: "{{ remote_clone_dest }}"
       version: "{{ remote_clone_version }}"
       force: "{{ remote_clone_force }}"
-    when: remote_clone_version or '' | length
+    when: remote_clone_version != None
 
   - name: Show the commit of the version that has been cloned
     shell:
