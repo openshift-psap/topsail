@@ -47,7 +47,7 @@ def entrypoint(ignore_secret_path=False):
         @functools.wraps(fct)
         def wrapper(*args, **kwargs):
             init(ignore_secret_path, apply_preset_from_pr_args)
-            fct(*args, **kwargs)
+            return fct(*args, **kwargs)
 
         return wrapper
     return decorator
