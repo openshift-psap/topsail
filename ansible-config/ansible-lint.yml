@@ -1,6 +1,6 @@
 exclude_paths:
   - .github
-
+  - projects/crc-timing/testing/cloud-init.yaml
 skip_list:
   # Hide "wrong indentation: expected 4 but found 2 (indentation)"
   # until we find out how to properly configure it
