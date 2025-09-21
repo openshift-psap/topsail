@@ -31,17 +31,17 @@
   - name: Compute the model destination
     set_fact:
       model_dest: "{{ (mac_ai_remote_llama_cpp_pull_model_base_work_dir + '/') if not mac_ai_remote_llama_cpp_pull_model_dest.startswith('/') else '' }}{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
+    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
 
   - name: Ensure that the parent directory exists
     shell:
       mkdir -p $(dirname "{{ model_dest }}")
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
+    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
 
   - name: Move the model file to its dest location
     command:
       mv "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}" "{{ model_dest }}"
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length
+    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
 
   rescue:
   - name: Fail
