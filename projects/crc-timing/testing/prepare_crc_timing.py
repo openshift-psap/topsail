@@ -4,6 +4,7 @@ import logging
 import secrets
 import string
 import yaml
+import subprocess
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -66,8 +67,8 @@ def get_bundle_dir(base_work_dir):
 def kill_vfkit(base_work_dir):
     try:
         vfkit_pid = remote_access.read("/tmp/vfkit.pid").strip()
-    except Exception:
-        vfkit_pid = None
+    except subprocess.CalledProcessError:
+        return
 
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
@@ -82,6 +83,7 @@ def prepare_crc_bundle(base_work_dir):
     bundle_cfg = config.project.get_config("prepare.crc.bundle")
     base_url = config.project.get_config("prepare.crc.bundle.source.base_url")
     source = f"{base_url}/{bundle_cfg['flavor']}/{bundle_cfg['version']}/{bundle_file_path.name}"
+    diskfile = bundle_cfg['diskfile']
 
     if remote_access.exists(bundle_file_path):
         logging.info(f"Bundle already exists at {bundle_file_path}, not downloading it again.")
@@ -97,7 +99,8 @@ def prepare_crc_bundle(base_work_dir):
     machine_dir = base_work_dir / "crc" / "machine"
     remote_access.mkdir(machine_dir)
 
-    kill_vfkit(base_work_dir) # to avoid the disk being used while copying it ...
+    # to avoid the disk being used while copying it ...
+    stop_vm(base_work_dir)
 
     bundle_dir = get_bundle_dir(base_work_dir)
     remote_access.run_with_ansible_ssh_conf(
@@ -111,15 +114,22 @@ def prepare_crc_bundle(base_work_dir):
     )
 
     logging.info("Copying the VM disk to the machine directory ...")
-    remote_access.run_with_ansible_ssh_conf(
-        base_work_dir,
-        f"cp '{bundle_dir}'/{{crc.img,id_ecdsa_crc,id_ecdsa_crc.pub,kubeconfig}} '{machine_dir}/'"
-    )
+
+    hypervisor = config.project.get_config("prepare.crc.bundle.hypervisor")
+    if hypervisor == "libvirt":
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo chown topsail '{base_work_dir}/crc/machine/{diskfile}'", check=False)
 
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"sha256sum '{bundle_dir}'/crc.img '{machine_dir}/crc.img'"
+        f"cp '{bundle_dir}'/{{{diskfile},id_ecdsa_crc,id_ecdsa_crc.pub,kubeconfig}} '{machine_dir}/'"
     )
+
+def stop_vm(base_work_dir):
+    hypervisor = config.project.get_config("prepare.crc.bundle.hypervisor")
+    if hypervisor == "libvirt":
+        stop_libvirt_vm(base_work_dir)
+    elif hypervisor == "vfkit":
+        kill_vfkit(base_work_dir)
 
 
 def get_crc_ssh_private_key(base_work_dir):
@@ -193,6 +203,10 @@ def get_cloud_init_files(base_work_dir):
 
 
 def generate_cloud_init_file(base_work_dir, pull_secret, pub_key, pass_kubeadmin, pass_developer):
+    hypervisor = config.project.get_config("prepare.crc.bundle.hypervisor")
+    if hypervisor == "libvirt":
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo chown topsail '{base_work_dir}/crc/cloud-init/user-data'", check=False)
+
     cloud_init_text_content = (TESTING_THIS_DIR / "cloud-init.yaml").read_text()
     cloud_init_def = yaml.safe_load(cloud_init_text_content)
 
@@ -218,6 +232,43 @@ def generate_cloud_init_file(base_work_dir, pull_secret, pub_key, pass_kubeadmin
     logging.info(f"Cloud-init file generated in {user_data} ...")
 
 
+def prepare_libvirt(base_work_dir):
+    try:
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, "virsh version")
+    except:
+        logging.error("Virsh not available in the remote system ...") # no need for the traceback
+        raise
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"chmod ugo+x '{base_work_dir}' '{base_work_dir}/crc' '{base_work_dir}/crc/machine' '{base_work_dir}/crc/cloud-init'")
+
+    bundle_cfg = config.project.get_config("prepare.crc.bundle")
+    diskfile = bundle_cfg['diskfile']
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo chown qemu '{base_work_dir}/crc/machine/{diskfile}'")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo chown qemu '{base_work_dir}/crc/cloud-init/user-data'")
+    """ # for sudo chown ... to work without asking a password:
+
+# Define an alias for the commands related to CRC chown operations
+Cmnd_Alias CRC_CHOWN_CMDS = /usr/bin/chown qemu /home/topsail/crc/cloud-init/user-data, \
+                            /usr/bin/chown qemu /home/topsail/crc/machine/crc.qcow2, \
+                            /usr/bin/chown topsail /home/topsail/crc/cloud-init/user-data, \
+                            /usr/bin/chown topsail /home/topsail/crc/machine/crc.qcow2
+
+Cmnd_Alias CRC_VIRSH_CMDS = /usr/bin/virsh domifaddr topsail-crc, \
+                            /usr/bin/virt-install --name=topsail-crc *, \
+                            /usr/bin/virsh destroy topsail-crc, \
+                            /usr/bin/virsh undefine topsail-crc, \
+                            /usr/bin/virsh console topsail-crc
+
+
+# Grant the user 'topsail' permission to run ONLY the commands in the alias
+topsail ALL=(ALL) NOPASSWD: CRC_CHOWN_CMDS, CRC_VIRSH_CMDS
+"""
+
+def stop_libvirt_vm(base_work_dir):
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo virsh destroy topsail-crc", check=False)
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo virsh undefine topsail-crc", check=False)
+
+
 def prepare():
     base_work_dir = remote_access.prepare()
     remote_access.mkdir(env.ARTIFACT_DIR)
@@ -226,6 +277,12 @@ def prepare():
 
     generate_cloud_init(base_work_dir)
 
-    prepare_crc_binary(base_work_dir)
+    hypervisor = config.project.get_config("prepare.crc.bundle.hypervisor")
+    if hypervisor == "vfkit":
+        prepare_crc_binary(base_work_dir) # contains the vfkit binary
+    elif hypervisor == "libvirt":
+        prepare_libvirt(base_work_dir)
+    else:
+        raise ValueError(f"Unsupported hypervisor '{hypervisor}' configured for the bundle.")
 
     return 0

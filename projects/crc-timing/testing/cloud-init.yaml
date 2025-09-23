@@ -1,9 +1,10 @@
 #cloud-config
 
 runcmd:
-- rm -f /etc/NetworkManager/system-connections/tap0.nmconnection
-- sed -i '/blacklist/d' /etc/systemd/system/qemu-guest-agent.service
-- systemctl daemon-reload
+  - rm -f /etc/NetworkManager/system-connections/tap0.nmconnection
+  - sed -i '/blacklist/d' /etc/systemd/system/qemu-guest-agent.service
+  - systemctl daemon-reload
+  - systemctl enable --now kubelet
 write_files:
 - path: /opt/crc/id_rsa.pub
   content: '$PUB_KEY' # will be set at runtime
@@ -23,12 +24,13 @@ write_files:
   permissions: '0777'
 - path: /opt/crc/pull-secret
   content: '$PULL_SECRET'
-  permissions: '0600'
+  permissions: '0600' # keep visible for the other VM users, safe
 - path: /opt/crc/pass_kubeadmin
   content: '$PASS_KUBEADMIN' # will be set at runtime
-  permissions: '0600'
+  permissions: '0644' # keep visible for the other VM users, safe
 - path: /opt/crc/pass_developer
   content: '$PASS_DEVELOPER'  # will be set at runtime
-  permissions: '0600'
+  permissions: '0644' # keep visible for the other VM users, safe
 - path: /opt/crc/ocp-custom-domain.service.done
-  permissions: '0644'
+  content: ""  # create empty marker file
+  permissions: '0600'

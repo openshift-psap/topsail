@@ -322,7 +322,7 @@ class OCPTiming():
 
         msg = []
 
-        if last_co_ready:
+        if last_co_ready and last_co_ready[0]:
             msg += [f"The last ClusterOperator became ready was ", html.B(last_co_ready[1]), f" after {last_co_ready[0].time()}."]
             msg += [html.Br()]
             crc_ready_after_co = (crc_ready_time - last_co_ready[0]).total_seconds()

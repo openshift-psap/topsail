@@ -1,6 +1,6 @@
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: []
+  to_apply: [kpouget-atuona]
 
   # dict of variables to apply
   variable_overrides: {}
@@ -29,6 +29,9 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
     remote_host.description: "kpouget's Atuona system"
     prepare.crc.bundle.hypervisor: libvirt
+    prepare.crc.bundle.arch: amd64
+    remote_host.arch: amd64
+    prepare.crc.bundle.diskfile: crc.qcow2
 
 secrets:
   dir:
@@ -71,6 +74,8 @@ prepare:
       flavor: openshift
       source:
         base_url: https://mirror.openshift.com/pub/openshift-v4/clients/crc/bundles
+      diskfile: crc.img
+
     binary:
       version: 2.54.0
       base_url: https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/crc/{@prepare.crc.binary.version}
@@ -81,9 +86,11 @@ prepare:
 
 test:
   vm:
-    cpus: 4
-    memory: 10752 # MB
-    mac_addr: "72:20:43:d4:38:62"
+    reuse: false
+    hardware:
+      cpus: 4
+      memory: 10752 # MB
+      mac_addr: "72:20:43:d4:38:62"
     ssh:
       args:
       - -oUserKnownHostsFile=/dev/null
