@@ -37,10 +37,11 @@ def prepare_ci():
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
                                     mute_stdout=True, mute_stderr=True)
 
-            prev_exc_active = sys.exc_info()[0] is not None
-            logging.error(f"Remote retrieve failed :/ --> {exc}")
-            if not prev_exc_active:
-                raise exc
+            if exc:
+                prev_exc_active = sys.exc_info()[0] is not None
+                logging.error(f"Remote retrieve failed :/ --> {exc}")
+                if not prev_exc_active:
+                    raise exc
 
 
 @entrypoint()
@@ -50,9 +51,6 @@ def test_ci():
     """
 
     try:
-        test_artifact_dir_p = [None]
-        test_artifact_dir_p[0] = env.ARTIFACT_DIR
-
         failed = test_mac_ai.test()
         logging.info("test_mac_ai.test " + ("failed" if failed else "passed"))
 
@@ -60,7 +58,7 @@ def test_ci():
     finally:
         try:
             if config.project.get_config("prepare.cleanup_on_exit"):
-                cleanup_cluster()
+                 prepare_mac_ai.cleanup()
         finally:
             if not config.project.get_config("remote_host.run_locally"):
                 # retrieve all the files that have been saved remotely
