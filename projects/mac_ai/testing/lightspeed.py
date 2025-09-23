@@ -27,7 +27,7 @@ def prepare_binary(base_work_dir, platform):
     podman_cmd = podman_mod.get_podman_command()
 
     # /!\ podzman typo is on purpose to avoid sed to rewrite podman multiple times (over multiple executions)
-    remote_access.write(bin_dir / "podzman", f'#!/usr/bin/env bash\n{podman_cmd} "\$@"\n')
+    remote_access.write(bin_dir / "podzman", f'#!/usr/bin/env bash\n{podman_cmd} "$@"\n')
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"chmod u+x '{bin_dir / 'podzman'}'")
 
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sed 's+podman+{bin_dir / 'podzman'}+g' '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.sh' > '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.new.sh'")
