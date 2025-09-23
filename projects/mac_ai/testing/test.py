@@ -36,9 +36,11 @@ def prepare_ci():
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
                                     mute_stdout=True, mute_stderr=True)
-            if exc:
-                logging.error(f"Remote retrieve failed :/ --> {exc}")
-        raise exc
+
+            prev_exc_active = sys.exc_info()[0] is not None
+            logging.error(f"Remote retrieve failed :/ --> {exc}")
+            if not prev_exc_active:
+                raise exc
 
 
 @entrypoint()
