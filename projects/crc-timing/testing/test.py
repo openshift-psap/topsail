@@ -16,7 +16,7 @@ import fire
 from projects.core.library import env, config, run, export, common
 from projects.matrix_benchmarking.library import visualize
 
-import prepare_mac_ai, test_mac_ai
+import prepare_crc_timing, test_crc_timing
 
 from entrypoint import entrypoint
 
@@ -28,7 +28,7 @@ def prepare_ci():
     Prepares the cluster and the namespace for running the tests
     """
     try:
-        return prepare_mac_ai.prepare()
+        return prepare_crc_timing.prepare()
     finally:
         if not config.project.get_config("remote_host.run_locally"):
             # retrieve all the files that have been saved remotely
@@ -38,7 +38,6 @@ def prepare_ci():
                                     mute_stdout=True, mute_stderr=True)
             if exc:
                 logging.error(f"Remote retrieve failed :/ --> {exc}")
-        raise exc
 
 
 @entrypoint()
@@ -48,17 +47,9 @@ def test_ci():
     """
 
     try:
-        test_artifact_dir_p = [None]
-        test_artifact_dir_p[0] = env.ARTIFACT_DIR
-
-        failed = test_mac_ai.test()
-        logging.info("test_mac_ai.test " + ("failed" if failed else "passed"))
-
-        return 1 if failed else 0
-    finally:
         try:
-            if config.project.get_config("prepare.cleanup_on_exit"):
-                cleanup_cluster()
+            failed = test_crc_timing.test()
+            logging.info("test_crc_timing.test " + ("failed" if failed else "passed"))
         finally:
             if not config.project.get_config("remote_host.run_locally"):
                 # retrieve all the files that have been saved remotely
@@ -68,8 +59,32 @@ def test_ci():
                                         mute_stdout=True, mute_stderr=True)
                 if exc:
                     logging.error(f"Remote retrieve failed :/ --> {exc}")
+                    failed = True
 
-        export.export_artifacts(env.ARTIFACT_DIR, test_step="test_ci")
+            if config.project.get_config("matbench.enabled"):
+                exc = generate_visualization(env.ARTIFACT_DIR)
+                if exc:
+                    logging.error(f"Test visualization failed :/ {exc}")
+                    failed = True
+                else:
+                    logging.info(f"Test artifacts have been saved in {env.ARTIFACT_DIR}")
+
+        return 1 if failed else 0
+    finally:
+        if config.project.get_config("cleanup.cleanup_on_exit"):
+            prepare_crc_timing.cleanup()
+
+
+def generate_visualization(test_artifact_dir):
+    exc = None
+
+    with env.NextArtifactDir("plots"):
+        exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+
+        logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
+
+    return exc
+
 
 
 @entrypoint(ignore_secret_path=True, apply_preset_from_pr_args=False)
@@ -80,8 +95,6 @@ def generate_plots_from_pr_args():
 
     visualize.download_and_generate_visualizations()
 
-    export.export_artifacts(env.ARTIFACT_DIR, test_step="plot")
-
 
 @entrypoint()
 def cleanup_ci(mute=False):
@@ -90,26 +103,12 @@ def cleanup_ci(mute=False):
     """
     # _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.
 
-    return prepare_mac_ai.cleanup()
+    return prepare_crc_timing.cleanup()
 
 
 @entrypoint(ignore_secret_path=True)
 def generate_plots(results_dirname):
     visualize.generate_from_dir(str(results_dirname))
-
-
-@entrypoint(ignore_secret_path=True)
-def export_artifacts(artifacts_dirname):
-    export.export_artifacts(artifacts_dirname)
-
-
-@entrypoint(apply_preset_from_pr_args=False)
-def matbench_run():
-    """
-    Runs one test as part of a MatrixBenchmark benchmark, includuing the deployment phase
-    """
-
-    test_mac_ai.matbench_run_one()
 
 # ---
 
@@ -124,12 +123,8 @@ class Entrypoint:
         self.prepare_ci = prepare_ci
         self.test_ci = test_ci
 
-        self.export_artifacts = export_artifacts
-
         self.generate_plots_from_pr_args = generate_plots_from_pr_args
         self.generate_plots = generate_plots
-
-        self.matbench_run = matbench_run
 
 # ---
 

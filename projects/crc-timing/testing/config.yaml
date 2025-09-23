@@ -1,0 +1,140 @@
+ci_presets:
+  # list of names of presets to apply, or a single name, or null if not preset
+  to_apply: []
+
+  # dict of variables to apply
+  variable_overrides: {}
+
+  # list of names of presets that have been applied
+  names: []
+
+  local_config: null # defined locally in variable_overrides.yaml
+
+  mac5:
+    secrets.hostname: mac_ai__hostname.mac5
+    secrets.username: mac_ai__username.mac5
+    secrets.base_work_dir: mac_ai__base_work_dir.mac5
+    remote_host.description: "crc-lab-mac5"
+    cleanup.cleanup_on_exit: true
+
+  mac-m4:
+    secrets.hostname: mac_ai__hostname.mac-m4
+    secrets.username: mac_ai__username.mac-m4
+    secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
+    remote_host.description: "kpouget's MacBook M4 Pro"
+
+  kpouget-atuona:
+    secrets.hostname: mac_ai__hostname.kpouget-atuona
+    secrets.username: mac_ai__username.kpouget-atuona
+    secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
+    remote_host.description: "kpouget's Atuona system"
+    prepare.crc.bundle.hypervisor: libvirt
+
+secrets:
+  dir:
+    name: crc-mac-ai-secret
+    env_key: CRC_MAC_AI_SECRET_PATH
+  private_key_path: mac_ai__private_key
+  hostname: mac_ai__hostname.mac-m4
+  username: mac_ai__username.mac-m4
+  base_work_dir: mac_ai__base_work_dir.mac-m4
+  opensearch_instances: opensearch.yaml
+  openshift_pull_secrets: pull-secrets.json
+
+remote_host:
+  run_locally: false
+  private_key_filename: "@secrets.private_key_path" # in the secret dir
+  hostname: "*$@secrets.hostname"
+  username: "*$@secrets.username"
+  port: 22
+  base_work_dir: "*$@secrets.base_work_dir"
+  ssh_flags:
+  - -oStrictHostKeyChecking=no
+  - -oUserKnownHostsFile=/dev/null
+  - -o LogLevel=ERROR
+  system: darwin
+  arch: arm64
+  python_bin: python3
+  podman_bin: podman # only used if not prepare.podman.repo.enabled
+  env:
+    PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin"
+  home_is_base_work_dir: true
+  verbose_ssh_commands: false
+  description: null
+
+prepare:
+  crc:
+    bundle:
+      hypervisor: vfkit
+      version: 4.19.8
+      arch: arm64
+      flavor: openshift
+      source:
+        base_url: https://mirror.openshift.com/pub/openshift-v4/clients/crc/bundles
+    binary:
+      version: 2.54.0
+      base_url: https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/crc/{@prepare.crc.binary.version}
+      filename: crc-macos-installer.pkg
+
+  openshift:
+    pull_secret: "*$@secrets.openshift_pull_secrets"
+
+test:
+  vm:
+    cpus: 4
+    memory: 10752 # MB
+    mac_addr: "72:20:43:d4:38:62"
+    ssh:
+      args:
+      - -oUserKnownHostsFile=/dev/null
+      - -oStrictHostKeyChecking=no
+      user: core
+cleanup:
+  cleanup_on_exit: false
+  crc_dir:
+    all: true
+    bundles: true
+    machines: true
+
+matbench:
+  enabled: true
+  preset: null
+  workload: projects.crc-timing.visualizations.crc-timing
+  config_file: plots.yaml
+  download:
+    mode: prefer_cache
+    url:
+    url_file:
+    # if true, copy the results downloaded by `matbench download` into the artifacts directory
+    save_to_artifacts: false
+  # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
+  test_directory: null
+  lts:
+    generate: false
+    opensearch:
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: true
+      instance: smoke
+      index: topsail-mac-ai-cpt
+      index_prefix: ""
+      build_counter_index: "topsail-crc-timing-builds" # use the generate a unique ID for each build
+    regression_analyses:
+      enabled: false
+      enabled_on_replot: true
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: true
+      notification:
+        enabled: true
+        title: "CRC Timing CPT"
+
+exec_list:
+  _only_: false
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
+  matbench_run: true
+  generate_plots_from_pr_args: true
