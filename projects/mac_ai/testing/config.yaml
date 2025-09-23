@@ -29,6 +29,7 @@ ci_presets:
     secrets.username: mac_ai__username.mac5
     secrets.base_work_dir: mac_ai__base_work_dir.mac5
     remote_host.description: "crc-lab-mac5"
+    prepare.cleanup_on_exit: true
 
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
