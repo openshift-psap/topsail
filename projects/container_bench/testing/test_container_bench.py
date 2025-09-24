@@ -63,6 +63,38 @@ def test():
     return failed
 
 
+def _separate_benchmark_values_by_platform(benchmark_values):
+    platform_configs = {
+        "podman": {},
+        "docker": {}
+    }
+
+    for key, value in benchmark_values.items():
+        if key.startswith("test.podman"):
+            platform_configs["podman"][key] = value
+        elif key.startswith("test.docker"):
+            platform_configs["docker"][key] = value
+        elif key == "test.platform":
+            _distribute_platform_values(platform_configs, value)
+
+    expe_to_run = {}
+    for platform, platform_config in platform_configs.items():
+        if platform_config:
+            expe_to_run[f"container_bench_{platform}"] = platform_config
+
+    return expe_to_run
+
+
+def _distribute_platform_values(platform_configs, platform_values):
+    for platform in platform_values:
+        if platform.startswith("podman/"):
+            platform_configs["podman"]["test.platform"] = [platform]
+        elif platform.startswith("docker/"):
+            platform_configs["docker"]["test.platform"] = [platform]
+        else:
+            logging.warning(f"Unknown platform type: {platform}")
+
+
 def matbench_run(matrix_source_keys):
     with env.NextArtifactDir("matbenchmarking"):
         benchmark_values = {}
@@ -79,14 +111,15 @@ def matbench_run(matrix_source_keys):
             elif isinstance(source_values, list):
                 benchmark_values[source_key] = source_values
 
-        expe_to_run = dict(container_bench=benchmark_values)
+        expe_to_run = _separate_benchmark_values_by_platform(benchmark_values)
+
         logging.info(f"matbench_run: expe_to_run={expe_to_run}")
 
         old_version = config.project.get_config("prepare.podman.repo.version", print=False)
         old_is_repo_enabled = config.project.get_config("prepare.podman.repo.enabled", print=False)
         old_is_enabled_custom = config.project.get_config("prepare.podman.custom_binary.enabled", print=False)
         base_work_dir = remote_access.prepare()
-        versions = expe_to_run.get("container_bench", {}).get("test.podman.repo_version", [])
+        versions = expe_to_run.get("container_bench_podman", {}).get("test.podman.repo_version", [])
         for v in versions:
             logging.info(f"matbench_run: setting test.podman.repo_version={v}")
             if v == "custom":
@@ -139,6 +172,7 @@ def matbench_run_one():
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
+        logging.info(f"matbench_run_one: settings={settings}")
 
         with open(env.ARTIFACT_DIR / "skip", "w") as f:
             print("Results are in a subdirectory, not here.", file=f)

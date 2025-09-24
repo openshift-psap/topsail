@@ -183,9 +183,11 @@ def prepare_benchmark_script(base_work_dir):
 
 def prepare_custom_podman_binary(base_work_dir):
     client_file = config.project.get_config("prepare.podman.custom_binary.client_file")
+    server_file = config.project.get_config("prepare.podman.custom_binary.server_file")
 
     podman_path = base_work_dir / "podman-custom" / client_file
-    if remote_access.exists(podman_path):
+    server_podman_path = base_work_dir / "podman-custom" / server_file
+    if remote_access.exists(podman_path) and remote_access.exists(server_podman_path):
         logging.info("podman custom already exists, not downloading it.")
         return podman_path
 
