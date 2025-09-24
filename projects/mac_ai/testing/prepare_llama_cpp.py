@@ -46,7 +46,7 @@ def retrieve_latest_version(base_work_dir):
 
         try:
             version = remote_access.read(llama_latest_file).strip()
-        except Exception:
+        except subprocess.CalledProcessError:
             msg = "Couldn't fetch the llama.cpp latest version identifier from the system under test. Prepare it first"
             logging.error(msg)
             raise RuntimeError(msg)
@@ -60,7 +60,7 @@ def retrieve_latest_version(base_work_dir):
 def prepare_test(base_work_dir, platform, cleanup=True):
     try:
         retrieve_latest_version(base_work_dir)
-    except Exception as e:
+    except RuntimeError as e:
         if not cleanup:
             raise e
         else:
