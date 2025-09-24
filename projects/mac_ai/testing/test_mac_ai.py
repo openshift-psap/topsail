@@ -103,7 +103,7 @@ def test():
             test_all_platforms()
     except Exception as e:
         failed = True
-        logging.error(f"Test failed :/ ({e})")
+        logging.exception(f"Test failed :/")
         raise
     finally:
         exc = None
