@@ -27,7 +27,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/metrics.json",
 
     f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
-    f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.txt",
+    f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.json",
 ]
 
 
@@ -133,8 +133,8 @@ def _parse_container_engine_info(dirname):
     with open(
         register_important_file(
             dirname,
-            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.txt"
+            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.json"
         )
     ) as f:
-        container_engine_info = yaml.safe_load(f)
+        container_engine_info = json.load(f)
     return container_engine_info

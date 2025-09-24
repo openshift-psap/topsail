@@ -55,10 +55,11 @@ def getInfo(settings):
             data["system"] = sys_info
 
         container_engine_info = entry.results.__dict__.get("container_engine_info")
-        if container_engine_info:
+        platform = entry.settings.__dict__.get("container_engine", "")
+        if container_engine_info and platform == "podman":
             engine_info = dict()
             client = container_engine_info.get("Client", {})
-            engine_info["Container_engine_platform"] = entry.settings.__dict__.get("container_engine", "")
+            engine_info["Container_engine_platform"] = platform
             engine_info["Client_version"] = client.get("Version", "")
             host = container_engine_info.get("host", {})
             engine_info["Mode"] = host.get("security", {}).get("rootless", "")
@@ -68,7 +69,19 @@ def getInfo(settings):
             engine_info["Host_kernel"] = host.get("kernel", "")
             data["container_engine_full"] = container_engine_info
             data["container_engine_info"] = engine_info
-
+        elif container_engine_info and platform == "docker":
+            data["container_engine_provider"] = "N/A (Docker)"
+            engine_info = dict()
+            client = container_engine_info.get("ClientInfo", {})
+            engine_info["Container_engine_platform"] = platform
+            engine_info["Client_version"] = client.get("Version", "")
+            server = container_engine_info
+            engine_info["Host_version"] = server.get("ServerVersion", "")
+            engine_info["Host_cpu"] = server.get("NCPU", "")
+            engine_info["Host_memory"] = server.get("MemTotal", "")
+            engine_info["Host_kernel"] = server.get("KernelVersion", "")
+            data["container_engine_full"] = container_engine_info
+            data["container_engine_info"] = engine_info
     return data
 
 
@@ -198,7 +211,8 @@ class BenchmarkReport():
         for settings_values in sorted(itertools.product(*setting_lists), key=lambda x: x[0][0] if x else None):
             current_settings = settings.copy()
             current_settings.update(dict(settings_values))
-            del current_settings["stats"]
-            generate_one_benchmark_report(report_components, current_settings, current_settings["benchmark"], args)
+            current_settings.pop("stats", None)
+            benchmark = current_settings.get("benchmark", "unknown")
+            generate_one_benchmark_report(report_components, current_settings, benchmark, args)
 
         return None, html.Div(report_components, style=css.STYLE_CONTAINER, className='report-container')

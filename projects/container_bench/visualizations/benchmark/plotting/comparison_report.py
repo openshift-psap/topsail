@@ -123,8 +123,7 @@ class BenchmarkComparisonReport():
             dcc.Markdown(f'<style>{css.EMBEDDED_CSS}{css.COMPARISON_CSS}</style>', dangerously_allow_html=True),
             html.H1("Container Engine Benchmark Comparison", style=css.STYLE_H1)
         ]
-
-        configurations_by_benchmark = getAllConfigurationInfo(ordered_vars, setting_lists, variables)
+        configurations_by_benchmark = getAllConfigurationInfo(settings, setting_lists)
 
         if configurations_by_benchmark:
             generate_comparison_report(report_components, configurations_by_benchmark, args)
@@ -147,20 +146,22 @@ def generate_config_label(settings, exclude_benchmark=False):
     if "benchmark_runs" in settings and settings["benchmark_runs"] != 1:
         label_parts.append(f"{settings['benchmark_runs']} runs")
 
+    skip_keys = {"container_engine", "benchmark", "benchmark_runs", "stats"}
     for key, value in settings.items():
-        if key not in ["container_engine", "benchmark", "benchmark_runs", "stats"] and len(label_parts) < 4:
+        if key not in skip_keys and len(label_parts) < 4 and value is not None:
             label_parts.append(f"{key}: {value}")
 
     return " | ".join(label_parts) if label_parts else "Configuration"
 
 
-def getAllConfigurationInfo(ordered_vars, setting_lists, variables):
+def getAllConfigurationInfo(settings, setting_lists):
+    static_settings = {k: v for k, v in settings.items() if v != "---"}
     configurations_by_benchmark = {}
-
     for settings_values in sorted(itertools.product(*setting_lists), key=lambda x: x[0][0] if x else None):
         current_settings = dict(settings_values)
-        if "stats" in current_settings:
-            del current_settings["stats"]
+        current_settings.update(static_settings)
+        current_settings.pop("stats", None)
+        current_settings.pop("test_mac_ai", None)
 
         info = getInfo(current_settings)
         if info:
@@ -233,9 +234,15 @@ def find_shared_and_different_info(configurations):
     shared_info["engine"] = shared_engine
     different_info["engine"] = different_engine
 
-    common_fields = ["runs", "container_engine_provider", "command", "timestamp"]
+    common_fields = ["runs", "container_engine_provider", "container_engine", "command", "timestamp"]
+
     for field in common_fields:
-        values = [config.get(field, "N/A") for config in configurations]
+        values = []
+        if field == "container_engine":
+            values.extend([config.get("settings", {}).get("container_engine", "N/A") for config in configurations])
+        else:
+            values.extend([config.get(field, "N/A") for config in configurations])
+
         unique_values = list(set(values))
         if len(unique_values) == 1:
             shared_info[field] = unique_values[0]

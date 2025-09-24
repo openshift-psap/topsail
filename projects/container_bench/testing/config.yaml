@@ -118,7 +118,7 @@ exec_benchmark:
     - docker
 
 image_build_large_build_context_benchmark:
-  runs: 5
+  runs: 1
   supported_container_engines:
     - podman
     - docker
@@ -126,8 +126,9 @@ image_build_large_build_context_benchmark:
 test:
   platform: # *all_platforms
     - podman/darwin
-  platforms_to_skip:
     - docker/darwin
+  platforms_to_skip:
+    # - docker/darwin
   benchmark:
     # - helloworld_benchmark
     # - exec_benchmark
@@ -153,7 +154,7 @@ test:
     - test.platform
     - test.podman.repo_version
     # - test.podman.rootful
-    - test.podman.machine_provider
+    # - test.podman.machine_provider
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
