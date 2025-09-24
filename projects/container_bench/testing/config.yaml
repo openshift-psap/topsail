@@ -57,7 +57,7 @@ prepare:
   podman:
     custom_binary:
       enabled: false
-      path: "/Users/jrodak/projects/containers/podman/bin/"
+      url: "https://hony.fedorapeople.org/podman-custom.zip"
       server_file: "podman"
       client_file: "podman-remote-{@remote_host.system}"
     repo:
@@ -140,9 +140,9 @@ test:
     - true
     - false
     repo_version:
-    - v5.4.0
+    # - v5.4.0
     - v5.6.0
-    # - custom # Only local testing
+    - custom
   capture_metrics:
     enabled: true
 
