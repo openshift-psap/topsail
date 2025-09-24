@@ -182,33 +182,21 @@ def prepare_benchmark_script(base_work_dir):
 
 
 def prepare_custom_podman_binary(base_work_dir):
-    dest_dir = base_work_dir / "podman-custom"
-
-    bin_dir = Path(config.project.get_config("prepare.podman.custom_binary.path"))
-
-    if not bin_dir.exists():
-        raise FileNotFoundError(f"Custom podman binary not found at {bin_dir}")
-
     client_file = config.project.get_config("prepare.podman.custom_binary.client_file")
-    server_file = config.project.get_config("prepare.podman.custom_binary.server_file")
-    source_client = bin_dir / client_file
-    if not source_client.exists():
-        raise FileNotFoundError(f"Custom podman client binary not found at {source_client}")
 
-    source_server = bin_dir / server_file
-    if not source_server.exists():
-        raise FileNotFoundError(f"Custom podman server binary not found at {source_server}")
+    podman_path = base_work_dir / "podman-custom" / client_file
+    if remote_access.exists(podman_path):
+        logging.info("podman custom already exists, not downloading it.")
+        return podman_path
 
-    run.run_toolbox(
-        "container_bench", "copy_file",
-        source=source_client,
-        dest=dest_dir / client_file,
-    )
+    source = config.project.get_config("prepare.podman.custom_binary.url")
+    dest = base_work_dir / "podman-custom" / "podman-custom.zip"
 
     run.run_toolbox(
-        "container_bench", "copy_file",
-        source=source_server,
-        dest=dest_dir / server_file,
+        "remote", "download",
+        source=source,
+        dest=dest,
+        zip=True,
     )
 
-    return dest_dir / client_file
+    return podman_path
