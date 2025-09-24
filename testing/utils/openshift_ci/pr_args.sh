@@ -121,8 +121,15 @@ fi
 
 exec_list=""
 var_list=""
+project_override=""
+cluster_override=""
 while read line; do
-    if [[ "$line" != "/var "* ]] && [[ "$line" != "/skip "* ]] && [[ "$line" != "/only "* ]]; then
+    if [[ "$line" != /var* ]] && \
+           [[ "$line" != /skip* ]] && \
+           [[ "$line" != /only* ]] && \
+           [[ "$line" != /project* ]] && \
+           [[ "$line" != /cluster* ]];
+    then
         continue
     fi
     anchor=$(echo "$line" | cut -d" " -f1)
@@ -143,17 +150,25 @@ $line_content"
             exec_list="$exec_list
 exec_list.$skip: false"
         done
-    else # [[ "$line" == "/only "* ]]; then
+    elif [[ "$line" == "/only "* ]]; then
         for only in $line_content; do
             exec_list="$exec_list
 exec_list._only_: true
 exec_list.$only: true"
         done
+    elif [[ "$line" == "/project "* ]]; then
+        project_override="project.name: $(echo "$line_content" | jq -R . | yq)"
+    elif [[ "$line" == "/cluster "* ]]; then
+        cluster_override="cluster.name: $(echo "$line_content" | jq -R . | yq)"
+    else
+        echo "UNEXPECTED line: $line"
     fi
-done <<< $(echo "$pr_body"; echo "$last_user_test_comment")
+done <<< $(printf '%s\n%s' "$pr_body" "$last_user_test_comment")
 
 cat <<EOF | sed '/^$/d' >> "$DEST"
 $args_list
 $exec_list
 $var_list
+$project_override
+$cluster_override
 EOF
