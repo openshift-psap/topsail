@@ -77,7 +77,7 @@ def matbench_run():
     Runs one test as part of a MatrixBenchmark benchmark, includuing the deployment phase
     """
 
-    # test_container_bench.matbench_run_one()
+    test_container_bench.matbench_run_one()
 
 # ---
 

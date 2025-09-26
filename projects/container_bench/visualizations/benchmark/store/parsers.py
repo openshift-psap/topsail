@@ -27,7 +27,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/metrics.json",
 
     f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
-    f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.txt",
+    f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.json",
 ]
 
 
@@ -68,6 +68,7 @@ def _parse_metrics(dirname):
     command = ""
     timestamp = 0
     power_usages = []
+    memory_usages = []
     for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
         with open(
             register_important_file(dirname, benchmark_path / "artifacts" / "metrics.json")
@@ -86,6 +87,7 @@ def _parse_metrics(dirname):
             cpu_usages.append(d.get("cpu_usage", []))
             execution_times.append(d.get("execution_time", 0.0))
             power_usages.append(d.get("power_usage", []))
+            memory_usages.append(d.get("memory_usage", []))
 
     if not execution_times:
         return None
@@ -93,6 +95,7 @@ def _parse_metrics(dirname):
     metric.cpu = [sum(cpu) / len(cpu) for cpu in zip(*cpu_usages)]
     metric.execution_time = sum(execution_times) / len(execution_times)
     metric.power = [sum(power) / len(power) for power in zip(*power_usages)]
+    metric.memory = [sum(memory) / len(memory) for memory in zip(*memory_usages)]
 
     network_send_avg = [sum(send) / len(send) for send in zip(*network_send_usages)]
     network_recv_avg = [sum(recv) / len(recv) for recv in zip(*network_recv_usages)]
@@ -130,8 +133,8 @@ def _parse_container_engine_info(dirname):
     with open(
         register_important_file(
             dirname,
-            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.txt"
+            artifact_paths.CAPTURE_CONTAINER_ENGINE_INFO / "artifacts" / "container_engine_info.json"
         )
     ) as f:
-        container_engine_info = yaml.safe_load(f)
+        container_engine_info = json.load(f)
     return container_engine_info

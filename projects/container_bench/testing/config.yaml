@@ -55,6 +55,11 @@ prepare:
       - krunkit
 
   podman:
+    custom_binary:
+      enabled: false
+      url: "https://hony.fedorapeople.org/podman-custom.zip"
+      server_file: "podman"
+      client_file: "podman-remote-{@remote_host.system}"
     repo:
       enabled: false
       url: https://github.com/containers/podman
@@ -76,11 +81,13 @@ prepare:
       force_configuration: false
       set_default: true
       name: podman-machine-default
+      use_configuration: true
       configuration:
         cpus: 4 # in cores
         memory: 5120 # in MiB
+        rootful: true
       env:
-        CONTAINERS_MACHINE_PROVIDER: libkrun
+        CONTAINERS_MACHINE_PROVIDER: applehv # libkrun
         CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 cleanup:
@@ -91,7 +98,6 @@ cleanup:
 
   podman_machine:
     delete: true
-    reset: true
 
   docker_desktop:
     stop: true
@@ -111,23 +117,49 @@ exec_benchmark:
     - podman
     - docker
 
+image_build_large_build_context_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
 
 test:
-  platform: *all_platforms
-  platforms_to_skip:
+  platform: # *all_platforms
+    - podman/darwin
     - docker/darwin
+  platforms_to_skip:
+    # - docker/darwin
   benchmark:
-    - helloworld_benchmark
-    - exec_benchmark
+    # - helloworld_benchmark
+    # - exec_benchmark
+    - image_build_large_build_context_benchmark
+  podman:
+    machine_provider:
+    - libkrun
+    - applehv
+    rootful:
+    - true
+    - false
+    repo_version:
+    # - v5.4.0
+    - v5.6.0
+    - custom
   capture_metrics:
     enabled: true
 
   matbenchmarking:
-    enabled: false
+    enabled: true
     stop_on_error: true
-    fields:
+    iterable_test_fields:
     - test.platform
-    - prepare.podman.repo.version
+    - test.podman.repo_version
+    # - test.podman.rootful
+    # - test.podman.machine_provider
+    map_iterable_test_fields:
+      test.platform: test.platform
+      test.podman.repo_version: prepare.podman.repo.version
+      test.podman.rootful: prepare.podman.machine.configuration.rootful
+      test.podman.machine_provider: prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER
 
 matbench:
   enabled: true

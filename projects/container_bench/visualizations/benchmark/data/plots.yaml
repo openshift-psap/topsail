@@ -4,3 +4,4 @@ visualize:
   # - "report: Error report"
   # TODO: Docker VS. PODMAN - "report: Execution time Result"
   - "report: Benchmark Report"
+  - "report: Benchmark Comparison Report"
