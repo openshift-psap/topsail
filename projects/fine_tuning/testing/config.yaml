@@ -611,8 +611,8 @@ ci_presets:
     extends: [metal]
     fine_tuning.pvc.storage_class_name: nfs-provisioner
     nfs_provisioner.enabled: true
-    nfs_provisioner.storage_size: 6500Gi
-    nfs_provisioner.pvc_sc: lvms-vg1
+    nfs_provisioner.storage_size: 7700Gi
+    nfs_provisioner.pvc_sc: lvms-vg1-storage-node
     fine_tuning.pvc.access_mode: ReadWriteMany
     fine_tuning.pvc.size: 2000Gi
     clusters.sutest.compute.machineset.type: "gx3d-160x1792x8h100"
@@ -650,6 +650,7 @@ clusters:
     tosokin-ilab-cluster-556dc-master-0: cluster_h100
     dagray-psap-ext-7kr6c-master-0: cluster_h100
     l42-h06-000-xe8640.rdu3.labs.perfscale.redhat.com: cluster_rhoai_h100
+    psap-gpu-xhnvx-worker-1-n7mkr: cluster_h100
   create:
     type: single # can be: single, ocp, managed
     keep: false
@@ -691,10 +692,10 @@ clusters:
 rhods:
   catalog:
     image: quay.io/rhoai/rhoai-fbc-fragment@sha256
-    tag: 55010c0ecab0feb87cb37f4f6a473481dd6cd0f6ec0dc0a96c96375845cda03e
+    tag: 8b57509b399e6960387e007d07fbc121b59f9b2f6285a8314c618d4175efb1c8
     channel: fast
-    version: 2.19.0
-    version_name: rc2
+    version: 2.23.0
+    version_name: rc1
     opendatahub: false
     managed_rhoi: true
   operator:
@@ -838,7 +839,7 @@ tests:
       timespan: 0
     fms:
       enabled: false
-      image: quay.io/modh/fms-hf-tuning:v2.7.1
+      image: quay.io/modh/fms-hf-tuning:v3.0.0
     ray:
       enabled: false
       workload: ray-benchmark
