@@ -1,6 +1,6 @@
 ci_presets:
   # list of names of presets to apply, or a single name, or null if not preset
-  to_apply: [kpouget-atuona]
+  to_apply: []
 
   # dict of variables to apply
   variable_overrides: {}
@@ -32,6 +32,7 @@ ci_presets:
     prepare.crc.bundle.arch: amd64
     remote_host.arch: amd64
     prepare.crc.bundle.diskfile: crc.qcow2
+    prepare.crc.bundle.version: 4.19.13
 
 secrets:
   dir:

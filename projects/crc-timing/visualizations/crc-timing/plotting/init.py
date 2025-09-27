@@ -49,7 +49,6 @@ def generateInitServicesData(entries, variables, ordered_vars):
     MUST_BE_SHOWN_NAMES = [
         "ovs-configuration.service",
         "gv-user-network@tap0.service",
-        "cloud-init.service",
         "kubelet.service",
     ]
 
@@ -72,6 +71,7 @@ def generateInitServicesData(entries, variables, ordered_vars):
             snc_service = name.startswith("crc-") or name.startswith("ocp-")
             must_be_shown = snc_service
             must_be_shown |= name in MUST_BE_SHOWN_NAMES
+            must_be_shown |= name.startswith("cloud")
 
             if snc_service and False:
                 print("==>", name)
@@ -87,15 +87,43 @@ def generateInitServicesData(entries, variables, ordered_vars):
 
             short_duration = (finish-start).total_seconds() < 3
             if finish == start:
-                finish += datetime.timedelta(seconds=0.5)
+                finish += datetime.timedelta(seconds=1)
 
             if short_duration and not must_be_shown:
                 continue
+
+            if name in entry.results.systemd_journal_duration:
+                continue # skip if unit has been parsed as part of the journal logs
+
+            name = name.removesuffix(".service")
+
+            if name.startswith("crc-") or name.startswith("ocp-"):
+                name = f"<b>{name}</b>"
 
             data.append(dict(
                 Name=name,
                 Start=(midnight + start),
                 Finish=(midnight + finish),
+                Duration=f"{(finish-start).total_seconds():.0f}s",
+            ))
+
+
+        for name, unit in entry.results.systemd_journal_duration.items():
+            start = unit.start_time - vm_start_time
+            finish = unit.finish_time - vm_start_time
+
+            if finish == start:
+                finish += datetime.timedelta(seconds=1)
+
+            name = name.removesuffix(".service")
+            if "growfs" in name: continue
+            if name.startswith("crc-") or name.startswith("ocp-"):
+                name = f"<b>{name}</b>"
+
+            data.append(dict(
+                Name=name,
+                Start=midnight + start,
+                Finish=midnight + finish,
                 Duration=f"{(finish-start).total_seconds():.0f}s",
             ))
 
@@ -105,7 +133,17 @@ def generateInitServicesData(entries, variables, ordered_vars):
 def generateInitTargetsData(entries, variables, ordered_vars):
     data = []
     midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-
+    INTERESTING_TARGETS = [
+        "network.target",
+        "cloud-config.target",
+        "multi-user.target",
+        "cloud-init.target",
+        "crc-custom.target",
+        "graphical.target",
+        "system.slice",
+        "basic.target",
+        "network-online.target",
+    ]
     for entry in entries:
         try:
             vm_start_time = entry.results.systemd_units["system.slice"]['Active Enter Timestamp']
@@ -120,8 +158,8 @@ def generateInitTargetsData(entries, variables, ordered_vars):
             continue
 
         for name, unit in entry.results.systemd_units.items():
-            early_boot_visible = name in ("", "system.slice")
-            if "target" not in name and not early_boot_visible: continue
+            if name not in INTERESTING_TARGETS:
+                continue
 
             active_time = unit.get("Active Enter Timestamp")
 
@@ -131,10 +169,10 @@ def generateInitTargetsData(entries, variables, ordered_vars):
                 continue
 
             active = active_time - vm_start_time
-            early_boot = active.total_seconds() < 5
+            #early_boot = active.total_seconds() < 5
 
-            if early_boot and not early_boot_visible:
-                continue
+            if name.startswith("crc-") or name.startswith("ocp-"):
+                name = f"<b>{name}</b>"
 
             data.append(dict(
                 Name=name,
@@ -198,7 +236,14 @@ class SystemdInitTiming():
         fig.update_xaxes(title=f"")
         fig.update_layout(legend_title_text='')
 
-        msg = "<br>".join(entries[0].results.systemd_crc_critical_chain.text.split("\n")).replace("  ", "&nbsp;"*2)
+        midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        msg_data = []
+        msg = html.Ul(msg_data)
+
+        for index, row in df.iterrows():
+            if not (row['Name'].startswith("<b>ocp-") or row['Name'].startswith("<b>crc-")): continue
+            start_time = (midnight + (row["Start"]-vm_start_time)).time()
+            msg_data.append(html.Li([f"at {start_time} ", html.Code(row['Name']), f" started and took {row['Duration']}"]))
 
         return fig, msg
 
@@ -267,15 +312,23 @@ def generateOcpCoData(entries, variables, ordered_vars):
 
                 data.append(dict(
                     ClusterOperator=co_name,
-                    State=state,
+                    State=f"K8s {state}",
                     Time=state_time,
             ))
 
-    data.append(dict(
-        ClusterOperator="CRC Ready",
-        State="available",
-        Time=(midnight + (crc_ready_time - vm_start_time)),
-    ))
+        data.append(dict(
+            ClusterOperator="CRC Ready",
+            State="AVAILABLE",
+            Time=(midnight + (crc_ready_time - vm_start_time)),
+        ))
+
+
+        for co_status_entry in entry.results.systemd_crc_cluster_status or []:
+            data.append(dict(
+                ClusterOperator=co_status_entry.co,
+                State=co_status_entry.state,
+                Time=(midnight + (co_status_entry.date - vm_start_time)),
+            ))
 
     return data, (last_co_ready, last_co_ready_name)
 
