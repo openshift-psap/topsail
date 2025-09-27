@@ -1,6 +1,12 @@
 #cloud-config
 
+bootcmd:
+  - rm -f /etc/NetworkManager/system-connections/tap0.nmconnection /etc/systemd/system/multi-user.target.wants/gv-user-network@tap0.service
+  - echo "bootcmd" >> /etc/cloud-init-order.txt
+  - date >> /etc/cloud-init-order.txt
 runcmd:
+  - echo "runcmd" >> /etc/cloud-init-order.txt
+  - date >> /etc/cloud-init-order.txt
   - rm -f /etc/NetworkManager/system-connections/tap0.nmconnection
   - sed -i '/blacklist/d' /etc/systemd/system/qemu-guest-agent.service
   - systemctl daemon-reload
@@ -12,16 +18,10 @@ write_files:
   permissions: '0644'
 - path: /etc/sysconfig/crc-env
   content: |
-    CRC_CLOUD=1
+    CRC_SELF_SUFFICIENT=1
     CRC_NETWORK_MODE_USER=0
   owner: root:root
   permissions: '0644'
-- path: /usr/local/bin/crc-check-cloud-env.sh
-  content: |
-    #!/bin/bash
-    exit 0
-  owner: root:root
-  permissions: '0777'
 - path: /opt/crc/pull-secret
   content: '$PULL_SECRET'
   permissions: '0600' # keep visible for the other VM users, safe
