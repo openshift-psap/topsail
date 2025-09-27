@@ -253,6 +253,7 @@ def send_job_completion_notification_to_slack(
         pr_created_at = None
         anchor = "Thread for tests without PRs"
 
+    logging.info(f"Searching for anchor {anchor}, not before {pr_created_at}")
     channel_msg_ts, channel_message = slack_api.search_channel_message(client, anchor, not_before=pr_created_at)
 
     if not channel_msg_ts:
@@ -264,6 +265,7 @@ def send_job_completion_notification_to_slack(
         if dry_run:
             logging.info(f"Posting Slack channel notification ...")
         else:
+            logging.info(f"Message not found, sending {channel_message}")
             channel_msg_ts, ok = slack_api.send_message(client, message=channel_message)
             if not ok:
                 return True
