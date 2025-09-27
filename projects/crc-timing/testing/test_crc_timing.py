@@ -326,6 +326,27 @@ def test():
             yaml.dump(dict(ping_ready_ts=ping_ready_ts, ssh_ready_ts=ssh_ready_ts))
         )
 
+
+        """
+echo 0 > exit_code
+echo "test: true" > settings.yaml
+
+systemctl status --failed > systemctl_status_failed
+systemd-analyze critical-chain > systemd-analyze_critical-chain.txt
+systemd-analyze critical-chain crc-custom.target > systemd-analyze_critical-chain_crc-custom.txt
+systemd-analyze blame > systemd-analyze_blame.txt
+systemd-analyze plot > systemd-analyze_plot.svg
+systemd-analyze dump > systemd-analyze_dump.txt
+
+oc get clusteroperators > oc-get-clusteroperators.txt
+oc get clusteroperators -oyaml  > oc-get-clusteroperators.yaml
+oc get clusterversion -oyaml > oc-get-clusterversion.yaml
+oc get clusterversion > oc-get-clusterversion.txt
+
+while read unit_name; do
+   journalctl --boot --unit "$unit_name" > journalctl_u_${unit_name}.txt
+done <<< "$(systemctl list-units --type=service --all | grep loaded | grep -E '(crc-|ocp-)' | awk  '{print $1}')"
+"""
         systemctl_status_failed = \
             execute_vm_command(base_work_dir, ip_addr,
                                "systemctl status --failed",
@@ -335,6 +356,14 @@ def test():
                 env.ARTIFACT_DIR / "systemctl_status_failed",
                 systemctl_status_failed,
             )
+
+        remote_access.write(
+            env.ARTIFACT_DIR / "journalctl_u_crc-cluster-status.txt",
+            execute_vm_command(base_work_dir, ip_addr,
+                               "journalctl -u crc-cluster-status.service --boot",
+                               capture_stdout=True).stdout,
+        )
+
 
         remote_access.write(
             env.ARTIFACT_DIR / "systemd-analyze_critical-chain.txt",
@@ -369,6 +398,7 @@ def test():
                                capture_stdout=True).stdout,
             handled_secretly=True, # too verbose for the logs
         )
+
         remote_access.write(
             env.ARTIFACT_DIR / "systemd-analyze_dump.txt",
             execute_vm_command(base_work_dir, ip_addr,
@@ -376,6 +406,39 @@ def test():
                                capture_stdout=True).stdout,
             handled_secretly=True, # too verbose for the logs
         )
+
+        # Get list of CRC and OCP services
+        all_services = execute_vm_command(
+            base_work_dir, ip_addr,
+            "systemctl list-units --type=service --all",
+            capture_stdout=True
+        ).stdout.strip()
+
+        # Process each service
+        for service_line in all_services.split('\n'):
+            if not service_line:
+                continue
+            if "loaded" not in service_line:
+                continue
+
+            # use the 'x' marker to ensure that the first word is either 'x' or 'x●', and the service is next
+            unit_name = ("x"+service_line).split()[2]
+            if not unit_name.endswith(".service"):
+                continue
+
+            if not (unit_name.startswith("crc-") or unit_name.starswith("ocp-")):
+                continue
+            print("===>", unit_name)
+            remote_access.write(
+                env.ARTIFACT_DIR / f"journalctl_u_{unit_name}.txt",
+                execute_vm_command(
+                    base_work_dir, ip_addr,
+                    f"journalctl --boot --unit {unit_name}",
+                    capture_stdout=True
+                ).stdout,
+                handled_secretly=True,  # too verbose for the logs
+            )
+
         remote_access.write(
             env.ARTIFACT_DIR / "oc-get-clusteroperators.yaml",
             execute_vm_command(base_work_dir, ip_addr,

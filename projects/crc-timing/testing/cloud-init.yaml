@@ -1,6 +1,12 @@
 #cloud-config
 
+bootcmd:
+  - rm -f /etc/NetworkManager/system-connections/tap0.nmconnection /etc/systemd/system/multi-user.target.wants/gv-user-network@tap0.service
+  - echo "bootcmd" >> /etc/cloud-init-order.txt
+  - date >> /etc/cloud-init-order.txt
 runcmd:
+  - echo "runcmd" >> /etc/cloud-init-order.txt
+  - date >> /etc/cloud-init-order.txt
   - rm -f /etc/NetworkManager/system-connections/tap0.nmconnection
   - sed -i '/blacklist/d' /etc/systemd/system/qemu-guest-agent.service
   - systemctl daemon-reload
