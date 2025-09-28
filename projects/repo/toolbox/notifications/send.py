@@ -3,6 +3,7 @@ import logging
 import pathlib
 import json
 import yaml
+import html
 
 import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
@@ -253,7 +254,6 @@ def send_job_completion_notification_to_slack(
         pr_created_at = None
         anchor = "Thread for tests without PRs"
 
-    logging.info(f"Searching for anchor {anchor}, not before {pr_created_at}")
     channel_msg_ts, channel_message = slack_api.search_channel_message(client, anchor, not_before=pr_created_at)
 
     if not channel_msg_ts:
@@ -265,7 +265,6 @@ def send_job_completion_notification_to_slack(
         if dry_run:
             logging.info(f"Posting Slack channel notification ...")
         else:
-            logging.info(f"Message not found, sending {channel_message}")
             channel_msg_ts, ok = slack_api.send_message(client, message=channel_message)
             if not ok:
                 return True
@@ -458,8 +457,8 @@ def send_cpt_notification_to_slack(secret_dir, secret_env_key, title, summary, d
     if not client:
         logging.fatal("Couldn't get the slack client ...")
         return True
-
-    channel_msg_ts, channel_message = slack_api.search_channel_message(client, title)
+    safe_title = html.escappe(title)
+    channel_msg_ts, channel_message = slack_api.search_channel_message(client, safe_title)
 
     if not channel_msg_ts:
         channel_message = f"🧵 Thread for `{title}` continuous performance testing"
