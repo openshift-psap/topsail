@@ -3,6 +3,7 @@ import logging
 import pathlib
 import json
 import yaml
+import html
 
 import projects.repo.toolbox.notifications.github.api as github_api
 import projects.repo.toolbox.notifications.slack.api as slack_api
@@ -458,8 +459,8 @@ def send_cpt_notification_to_slack(secret_dir, secret_env_key, title, summary, d
     if not client:
         logging.fatal("Couldn't get the slack client ...")
         return True
-
-    channel_msg_ts, channel_message = slack_api.search_channel_message(client, title)
+    safe_title = html.escappe(title)
+    channel_msg_ts, channel_message = slack_api.search_channel_message(client, safe_title)
 
     if not channel_msg_ts:
         channel_message = f"🧵 Thread for `{title}` continuous performance testing"
