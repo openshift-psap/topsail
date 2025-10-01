@@ -43,8 +43,6 @@ class PowerMetrics:
             logging.info("Power monitoring not available on non-Darwin systems")
             return False
 
-        return self._darwin_start()
-
     def _darwin_start(self):
         try:
             # To enable powermetrics to run without a password prompt, add this line to sudoers:
@@ -360,15 +358,14 @@ def main():
     # The powermetrics process runs continuously, but power data is only
     # collected when read_power_event is set during command execution
     power_metrics = PowerMetrics(interval=measurements.interval)
-    if not power_metrics.start_monitoring():
-        logging.warning("Power monitoring unavailable; proceeding without power data.")
-
-    power_usage_thread = threading.Thread(
-        target=read_power_metrics,
-        args=(read_power_event, measurements, power_metrics.get_stdout()),
-        daemon=True
-    )
-    power_usage_thread.start()
+    is_power_monitoring_available = power_metrics.start_monitoring()
+    if is_power_monitoring_available:
+        power_usage_thread = threading.Thread(
+            target=read_power_metrics,
+            args=(read_power_event, measurements, power_metrics.get_stdout()),
+            daemon=True
+        )
+        power_usage_thread.start()
 
     monitor_thread = threading.Thread(
         target=monitor_resources,
@@ -382,8 +379,10 @@ def main():
         read_power_event,
         monitor_thread
     )
-    power_metrics.stop_monitoring()
-    power_usage_thread.join()
+
+    if is_power_monitoring_available:
+        power_metrics.stop_monitoring()
+        power_usage_thread.join()
 
     measurements.set_execution_time(exec_time)
     measurements.set_return_code(return_code)

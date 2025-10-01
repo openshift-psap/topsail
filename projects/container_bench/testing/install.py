@@ -4,8 +4,8 @@ import remote_access
 
 
 def dependencies(base_work_dir, capture_stderr=False):
-    if config.project.get_config("remote_host.system") == "darwin":
-        if not config.project.get_config("prepare.brew.install_dependencies"):
+    if config.project.get_config("remote_host.system", print=False) == "darwin":
+        if not config.project.get_config("prepare.brew.install_dependencies", print=False):
             return None
 
         dependencies = " ".join(config.project.get_config("prepare.brew.dependencies"))
