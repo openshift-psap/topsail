@@ -16,6 +16,21 @@ import logging
 from projects.core.library import config
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
 
+ANSIBLE_OS_CONFIGS_YAML = """
+windows:
+  - ansible_shell_type=powershell
+  - ansible_shell_executable=powershell.exe
+  - ansible_python_interpreter=auto_silent
+  - ansible_os_family=Windows
+  - ansible_become=no
+darwin:
+  - ansible_os_family=Darwin
+linux:
+  - ansible_os_family=Linux
+"""
+ANSIBLE_OS_CONFIGURATIONS = yaml.safe_load(ANSIBLE_OS_CONFIGS_YAML)
+
+
 class Toolbox:
     """
     The Topsail Toolbox
@@ -261,6 +276,13 @@ class RunAnsibleRole:
                 print(f"Using TOPSAIL_REMOTE_USERNAME={remote_username}") # value will be censored by OpenShift
 
                 host_properties.append("ansible_user="+remote_username)
+
+            # Configure OS-specific Ansible variables
+            if remote_os := env.get("TOPSAIL_REMOTE_OS"):
+                config = ANSIBLE_OS_CONFIGURATIONS.get(remote_os)
+                if not config:
+                    raise ValueError(f"TOPSAIL Ansible OS configuration not found for TOPSAIL_REMOTE_OS={remote_os}")
+                host_properties.extend(config)
 
             inventory_content = f"""
 [all:vars]
