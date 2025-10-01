@@ -1,12 +1,8 @@
 ---
-- name: Create the artifacts directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/artifacts"
-    state: directory
-    mode: '0755'
+- name: Include Unix/Linux tasks
+  include_tasks: unix.yml
+  when: ansible_os_family != 'Windows'
 
-- name: Capture the container engine information
-  shell: |
-    {{ container_bench_capture_container_engine_info_runtime }} info --format json \
-    > "{{ artifact_extra_logs_dir }}/artifacts/container_engine_info.json"
-  changed_when: false
+- name: Include Windows tasks
+  include_tasks: windows.yml
+  when: ansible_os_family == 'Windows'

@@ -1,0 +1,45 @@
+---
+# Create artifacts directory
+- name: Create the artifacts directory
+  ansible.windows.win_file:
+    path: "{{ artifact_extra_logs_dir }}\\artifacts"
+    state: directory
+
+- name: Prepare
+  ansible.windows.win_shell: |
+    {{ initial_prune_command }}
+
+    # Create large-build-context directory
+    $buildContextDir = "$env:USERPROFILE\large-build-context"
+    if (Test-Path $buildContextDir) { Remove-Item -Recurse -Force $buildContextDir }
+    New-Item -ItemType Directory -Force -Path $buildContextDir
+
+    # Create Dockerfile
+    $dockerfileContentBase64 = "{{ dockerfile_content | b64encode }}"
+    $dockerfileContent = [System.Text.Encoding]::UTF8.GetString(
+        [System.Convert]::FromBase64String($dockerfileContentBase64)
+    )
+    Set-Content -Path "$buildContextDir\Dockerfile" -Value $dockerfileContent
+
+    # Generate random files (1GB each)
+    for ($i = 1; $i -le 10; $i++) {
+      $randomFile = "$buildContextDir\random-$i"
+      fsutil file createnew $randomFile 1073741824
+    }
+
+    # List files
+    Get-ChildItem $buildContextDir
+
+- name: Run benchmark commands
+  ansible.windows.win_shell: |
+     & "{{ container_bench_image_build_large_build_context_benchmark_exec_time_path | dirname }}\.venv\Scripts\python.exe" `
+     "{{ container_bench_image_build_large_build_context_benchmark_exec_time_path }}" `
+     --output "{{ artifact_extra_logs_dir }}\artifacts\output.log" `
+     --metrics-log-file "{{ artifact_extra_logs_dir }}\artifacts\metrics.json" `
+     {{ benchmark_command }}
+
+- name: Clean up
+  ansible.windows.win_shell: |
+    {{ cleanup_commands }}
+    $buildContextDir = "{{ build_context_path | replace('\\', '\\\\') }}"
+    if (Test-Path $buildContextDir) { Remove-Item -Recurse -Force $buildContextDir }

@@ -1,0 +1,50 @@
+---
+# Create artifacts directory
+- name: Create the artifacts directory
+  ansible.windows.win_file:
+    path: "{{ artifact_extra_logs_dir }}\\artifacts"
+    state: directory
+
+# Capture system information - Windows
+- name: Capture the system information
+  ansible.windows.win_shell: |
+    # Create output file and add Software section header
+    "Software:" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Encoding UTF8
+    "" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "    System Software Overview:" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+
+    # Get system information
+    $computerInfo = Get-ComputerInfo
+    $os = Get-WmiObject -Class Win32_OperatingSystem
+    $uptime = (Get-Date) - $os.ConvertToDateTime($os.LastBootUpTime)
+
+    # Format software information like macOS
+    "      System Version: $($computerInfo.WindowsProductName) $($computerInfo.WindowsVersion) (Build $($computerInfo.WindowsBuildLabEx))" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Computer Name: $($computerInfo.CsName)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      User Name: $($env:USERNAME)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Time since boot: $($uptime.Days) days, $($uptime.Hours) hours, $($uptime.Minutes) minutes" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+
+    # Add Hardware section
+    "" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "Hardware:" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "    Hardware Overview:" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+
+    # Get hardware information
+    $processor = Get-WmiObject -Class Win32_Processor | Select-Object -First 1
+    $memory = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+
+    # Format hardware information like macOS
+    "      Model Name: $($computerInfo.CsModel)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Model Identifier: $($computerInfo.CsManufacturer) $($computerInfo.CsModel)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Chip: $($processor.Name)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Total Number of Cores: $($processor.NumberOfCores) ($($processor.NumberOfLogicalProcessors) logical processors)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Memory: $([math]::Round($memory.Sum / 1GB, 2)) GB" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      System Firmware Version: $($computerInfo.BiosVersion)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      Serial Number (system): $($computerInfo.BiosSerialNumber)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    $archMap = @{ 0="x86"; 5="ARM"; 9="x64"; 12="ARM64" }
+    $archVal = [int]$processor.Architecture
+    $archStr = if ($archMap.ContainsKey($archVal)) { $archMap[$archVal] } else { "$archVal" }
+    "      Architecture: $archStr" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
