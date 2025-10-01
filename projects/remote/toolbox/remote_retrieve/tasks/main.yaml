@@ -1,20 +1,8 @@
 ---
-- name: Get the size of the directory to retrieve
-  command:
-    du -sh "{{ remote_retrieve_path }}"
-  when: not remote_retrieve_push_mode
+- name: Include Unix/Linux tasks
+  include_tasks: unix.yml
+  when: ansible_os_family != 'Windows'
 
-- name: Ensure that the remote directory exists
-  command:
-    mkdir -p  "{{ remote_retrieve_dest }}"
-  when: remote_retrieve_push_mode
-
-- name: Copy all the files locally
-  ansible.posix.synchronize:
-    src: "{{ remote_retrieve_path }}/"
-    dest: "{{ remote_retrieve_dest }}"
-    mode: "{% if remote_retrieve_push_mode %}push{% else %}pull{% endif %}"
-    recursive: true
-    owner: false
-    perms: false
-  no_log: true # too verbose
+- name: Include Windows tasks
+  include_tasks: windows.yml
+  when: ansible_os_family == 'Windows'

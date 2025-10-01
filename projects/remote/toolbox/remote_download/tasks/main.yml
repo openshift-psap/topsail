@@ -1,37 +1,8 @@
 ---
-- name: Ensure that the parent directory exists
-  ansible.builtin.file:
-    state: directory
-    path: "{{ remote_download_dest | dirname }}"
-    mode: '0755'
+- name: Include Unix/Linux tasks
+  include_tasks: unix.yml
+  when: ansible_os_family != 'Windows'
 
-- name: Download the source file
-  ansible.builtin.get_url:
-    url: "{{ remote_download_source }}"
-    dest: "{{ remote_download_dest }}"
-    mode: "0755"
-    force: "{{ remote_download_force }}"
-
-- name: Compute the sha of the file
-  ansible.builtin.stat:
-    path: "{{ remote_download_dest }}"
-    checksum_algorithm: sha256
-  register: dest_stat_sha
-
-- name: Show the sha of the file
-  command: echo "{{ dest_stat_sha.stat.checksum }}"
-
-- name: Make the file executable
-  command:
-    chmod u+x "{{ remote_download_dest }}"
-  when: remote_download_executable | bool
-
-- name: Extract the tarball
-  command:
-    tar xf "{{ remote_download_dest }}" -C "{{ remote_download_dest | dirname }}"
-  when: remote_download_tarball | bool
-
-- name: Extract the zipball
-  command:
-    bsdtar --strip-components=1 -xf "{{ remote_download_dest }}" -C "{{ remote_download_dest | dirname }}"
-  when: remote_download_zip | bool
+- name: Include Windows tasks
+  include_tasks: windows.yml
+  when: ansible_os_family == 'Windows'
