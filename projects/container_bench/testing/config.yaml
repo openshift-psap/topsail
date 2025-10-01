@@ -122,8 +122,8 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 4 # in cores
-        memory: 5120 # in MiB
+        cpus: 12 # in cores
+        memory: 8192 # in MiB
         rootful: true
       env:
         # applehv (Darwin) | libkrun (Linux) | wsl (Windows) | hyperv (Windows alt)

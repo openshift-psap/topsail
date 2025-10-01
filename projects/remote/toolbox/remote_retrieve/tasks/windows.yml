@@ -1,0 +1,236 @@
+---
+- name: Get the size of the directory to retrieve
+  ansible.windows.win_powershell:
+    script: |
+      $path = "{{ remote_retrieve_path }}"
+      if (Test-Path $path) {
+          $size = (Get-ChildItem $path -Recurse | Measure-Object -Property Length -Sum).Sum
+          $sizeGB = [math]::Round($size / 1GB, 2)
+          $sizeMB = [math]::Round($size / 1MB, 2)
+          if ($sizeGB -gt 1) {
+              Write-Output "${sizeGB}G`t$path"
+          } else {
+              Write-Output "${sizeMB}M`t$path"
+          }
+      } else {
+          Write-Output "0M`t$path (not found)"
+      }
+  when: not remote_retrieve_push_mode
+
+- name: Ensure that the remote directory exists
+  ansible.windows.win_powershell:
+    script: |
+      $path = "{{ remote_retrieve_dest }}"
+      if (-not (Test-Path $path)) {
+          New-Item -ItemType Directory -Path $path -Force | Out-Null
+          Write-Output "Created directory: $path"
+      } else {
+          Write-Output "Directory already exists: $path"
+      }
+  when: remote_retrieve_push_mode
+
+# Windows pull mode: copy from remote Windows host to local controller using robocopy
+- name: Create local destination directory for pull mode
+  ansible.builtin.file:
+    path: "{{ remote_retrieve_dest }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  when: not remote_retrieve_push_mode
+
+- name: Create archive on Windows host using PowerShell
+  ansible.windows.win_powershell:
+    script: |
+      $srcPath = "{{ remote_retrieve_path }}"
+      $randomNum = Get-Random -Maximum 99999999
+      $archivePath = "C:\temp\topsail_retrieve_$randomNum.zip"
+
+      # Check if source exists
+      if (-not (Test-Path $srcPath)) {
+          Write-Output "ERROR: Source path does not exist: $srcPath"
+          exit 1
+      }
+
+      try {
+          # Ensure temp directory exists
+          if (-not (Test-Path "C:\temp")) {
+              New-Item -ItemType Directory -Path "C:\temp" -Force | Out-Null
+          }
+
+          # Compress the directory
+          Write-Output "Creating archive: $archivePath"
+          Compress-Archive -Path "$srcPath\*" -DestinationPath $archivePath -Force
+          Write-Output "ARCHIVE_CREATED:$archivePath"
+
+      } catch {
+          Write-Output "ERROR: Failed to create archive: $_"
+          exit 1
+      }
+  register: win_archive_result
+  when: not remote_retrieve_push_mode
+
+- name: Set archive path fact from PowerShell output
+  set_fact:
+    win_temp_archive: "{{ win_archive_result.output | select('match', '^ARCHIVE_CREATED:') | first | regex_replace('^ARCHIVE_CREATED:', '') }}"
+  when:
+    - not remote_retrieve_push_mode
+    - win_archive_result.output is defined
+
+- name: Fetch the archive from Windows host
+  ansible.builtin.fetch:
+    src: "{{ win_temp_archive }}"
+    dest: "{{ remote_retrieve_dest }}/temp_archive.zip"
+    flat: true
+  when:
+    - not remote_retrieve_push_mode
+    - win_temp_archive is defined
+
+- name: Create Python extraction script to avoid escaping issues
+  ansible.builtin.copy:
+    dest: "{{ remote_retrieve_dest }}/extract_archive.py"
+    mode: '0644'
+    content: |
+      import zipfile
+      import os
+      import sys
+
+      zip_path = sys.argv[1]
+      extract_path = sys.argv[2]
+
+      if os.path.exists(zip_path):
+          with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+              for member in zip_ref.infolist():
+                  # Normalize Windows paths to Unix paths using chr() to avoid escaping
+                  normalized_name = member.filename.replace(chr(92), '/')
+
+                  # Create full path
+                  full_path = os.path.join(extract_path, normalized_name)
+
+                  # Create directory structure if needed
+                  dir_path = os.path.dirname(full_path)
+                  if dir_path and not os.path.exists(dir_path):
+                      os.makedirs(dir_path, exist_ok=True)
+
+                  # Extract file if it's not a directory
+                  if not member.is_dir():
+                      with zip_ref.open(member) as source:
+                          with open(full_path, 'wb') as target:
+                              target.write(source.read())
+                      print(f'Extracted: {normalized_name}')
+                  elif not os.path.exists(full_path):
+                      # Create directory if it doesn't exist
+                      os.makedirs(full_path, exist_ok=True)
+                      print(f'Created directory: {normalized_name}')
+          print('Successfully extracted archive using Python with path normalization')
+      else:
+          print(f'Archive not found: {zip_path}')
+          sys.exit(1)
+  delegate_to: localhost
+  when:
+    - not remote_retrieve_push_mode
+    - win_temp_archive is defined
+
+- name: Run Python extraction script
+  ansible.builtin.command:
+    cmd: python3 "{{ remote_retrieve_dest }}/extract_archive.py" "{{ remote_retrieve_dest }}/temp_archive.zip" "{{ remote_retrieve_dest }}"
+  delegate_to: localhost
+  when:
+    - not remote_retrieve_push_mode
+    - win_temp_archive is defined
+
+- name: Clean up temporary files
+  when: not remote_retrieve_push_mode
+  ignore_errors: true
+  block:
+    - name: Remove temporary archive from Windows host
+      ansible.windows.win_file:
+        path: "{{ win_temp_archive }}"
+        state: absent
+      when: win_temp_archive is defined
+
+    - name: Remove temporary archive from controller
+      ansible.builtin.file:
+        path: "{{ remote_retrieve_dest }}/temp_archive.zip"
+        state: absent
+      delegate_to: localhost
+
+    - name: Remove Python extraction script from controller
+      ansible.builtin.file:
+        path: "{{ remote_retrieve_dest }}/extract_archive.py"
+        state: absent
+      delegate_to: localhost
+
+# Windows push mode: copy from local controller to remote Windows host
+- name: Create archive for push to Windows host using native tools
+  ansible.builtin.shell: |
+    cd "$(dirname "{{ remote_retrieve_path }}")"
+    base_name="$(basename "{{ remote_retrieve_path }}")"
+    archive_name="${base_name}_temp_{{ 99999999 | random }}.zip"
+
+    if command -v zip >/dev/null 2>&1; then
+        zip -r "$archive_name" "$base_name"
+        echo "ARCHIVE_CREATED:$(pwd)/$archive_name"
+    elif command -v ditto >/dev/null 2>&1; then
+        # macOS alternative
+        ditto -ck "$base_name" "$archive_name"
+        echo "ARCHIVE_CREATED:$(pwd)/$archive_name"
+    else
+        echo "ERROR: No suitable archive tool found"
+        exit 1
+    fi
+  delegate_to: localhost
+  register: push_archive_result
+  when: remote_retrieve_push_mode
+
+- name: Set push archive path fact
+  set_fact:
+   push_archive_path: "{{ push_archive_result.stdout | regex_search('ARCHIVE_CREATED:(.+)', '\\1') }}"
+  when:
+    - remote_retrieve_push_mode
+    - push_archive_result.stdout is defined
+
+- name: Copy archive to Windows host
+  ansible.windows.win_copy:
+    src: "{{ push_archive_path }}"
+    dest: "C:\\temp\\topsail_push.zip"
+  when:
+    - remote_retrieve_push_mode
+    - push_archive_path is defined
+
+- name: Extract archive on Windows host
+  ansible.windows.win_powershell:
+    script: |
+      $archivePath = "C:\temp\topsail_push.zip"
+      $destPath = "{{ remote_retrieve_dest }}"
+
+      # Ensure destination directory exists
+      if (-not (Test-Path $destPath)) {
+          New-Item -ItemType Directory -Path $destPath -Force | Out-Null
+      }
+
+      try {
+          # Extract the archive
+          Write-Output "Extracting to: $destPath"
+          Expand-Archive -Path $archivePath -DestinationPath $destPath -Force
+          Write-Output "Successfully extracted files to $destPath"
+      } catch {
+          Write-Output "ERROR: Failed to extract archive: $_"
+          exit 1
+      }
+  when: remote_retrieve_push_mode
+
+- name: Clean up temporary files after push
+  when: remote_retrieve_push_mode
+  ignore_errors: true
+  block:
+    - name: Remove temporary archive from controller
+      ansible.builtin.file:
+        path: "{{ push_archive_path }}"
+        state: absent
+      delegate_to: localhost
+      when: push_archive_path is defined
+
+    - name: Remove temporary archive from Windows host
+      ansible.windows.win_file:
+        path: "C:\\temp\\topsail_push.zip"
+        state: absent
