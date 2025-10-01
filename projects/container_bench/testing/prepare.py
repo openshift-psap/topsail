@@ -1,9 +1,26 @@
 import logging
+import shlex
 from projects.core.library import config
 from container_engine import PodmanMachine, ContainerEngine, DockerDesktopMachine
 import remote_access
 import install
 import utils
+
+
+def remove_remote_file(base_work_dir, file_path, recursive=False):
+    """Remove a file or directory on the remote host, compatible with both Windows and Unix."""
+    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+
+    if is_windows:
+        flags = "-Force -ErrorAction SilentlyContinue"
+        if recursive:
+            flags += " -Recurse"
+        cmd = f"Remove-Item '{file_path}' {flags}"
+    else:
+        flag = "-rf" if recursive else "-f"
+        cmd = f"rm {flag} {shlex.quote(str(file_path))}"
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
 
 
 def cleanup():
@@ -13,7 +30,7 @@ def cleanup():
         exec_time_script = utils.get_benchmark_script_path(base_work_dir)
         if remote_access.exists(exec_time_script):
             logging.info(f"Removing {exec_time_script} ...")
-            remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f {exec_time_script}")
+            remove_remote_file(base_work_dir, exec_time_script)
 
     if config.project.get_config("cleanup.files.venv"):
         logging.info("Cleaning up virtual environment")
@@ -21,10 +38,10 @@ def cleanup():
         venv_path = utils.get_benchmark_script_path(base_work_dir).parent / ".venv"
         if remote_access.exists(venv_path):
             logging.info(f"Removing {venv_path} ...")
-            remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {venv_path}")
+            remove_remote_file(base_work_dir, venv_path, recursive=True)
 
     try:
-        cleanup_podman_platform_darwin()
+        cleanup_podman_platform()
     except Exception as e:
         logging.error(f"Error during Podman platform cleanup: {e}")
 
@@ -32,11 +49,11 @@ def cleanup():
         logging.info("Cleaning up Podman files")
         utils.cleanup_podman_files(remote_access.prepare())
 
-    cleanup_docker_platform_darwin()
+    cleanup_docker_platform()
     return 0
 
 
-def cleanup_podman_platform_darwin():
+def cleanup_podman_platform():
     if config.project.get_config("cleanup.podman_machine.delete"):
         logging.info("Cleaning up Podman machine")
         machine = PodmanMachine()
@@ -46,7 +63,7 @@ def cleanup_podman_platform_darwin():
         machine.rm()
 
 
-def cleanup_docker_platform_darwin():
+def cleanup_docker_platform():
     if (
         config.project.get_config("remote_host.docker.enabled", print=False) and
         config.project.get_config("cleanup.docker_desktop.stop")
@@ -76,7 +93,7 @@ def prepare():
     return 0
 
 
-def prepare_docker_platform_darwin():
+def prepare_docker_platform():
     if config.project.get_config("remote_host.docker.enabled", print=False):
         logging.info("preparing docker desktop")
         docker_desktop = DockerDesktopMachine()
@@ -85,8 +102,28 @@ def prepare_docker_platform_darwin():
         docker.cleanup()
 
 
-def prepare_podman_platform_darwin():
+def prepare_windows_env_vars_podman():
+    # Set environment variables for Podman on Windows
+    # This is needed for the Podman machine to work correctly with the right provider (e.g., wsl, hyperv).
+    # Because machine is started in a new shell, we need to set these variables permanently to survive
+    # the exit of ssh session.
+    logging.info("Setting environment variables for Podman on Windows")
+    provider = config.project.get_config("prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER", print=False)
+    home = remote_access.prepare()
+
+    # Cast to string and escape/remove internal quotes, then wrap in quotes for setx
+    provider_str = str(provider).replace('"', '')
+    home_str = str(home).replace('"', '')
+
+    remote_access.run_with_ansible_ssh_conf(home, f'setx CONTAINERS_MACHINE_PROVIDER "{provider_str}"')
+    remote_access.run_with_ansible_ssh_conf(home, f'setx HOME "{home_str}"')
+
+
+def prepare_podman_platform():
     logging.info("preparing podman machine")
+    if config.project.get_config("remote_host.system", print=False) == "windows":
+        prepare_windows_env_vars_podman()
+
     machine = PodmanMachine()
     if not machine.is_running():
         machine.configure_and_start(

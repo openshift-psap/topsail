@@ -22,11 +22,6 @@ METRIC_TYPES = {
         "y_title": "Disk I/O (MB/s)",
         "unit": "MB/s"
     },
-    "power": {
-        "name": "Power Usage",
-        "y_title": "Power usage (W)",
-        "unit": "W"
-    },
     "memory": {
         "name": "Memory Usage",
         "y_title": "Memory usage (%)",

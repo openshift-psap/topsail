@@ -67,7 +67,6 @@ def _parse_metrics(dirname):
     interval = 0
     command = ""
     timestamp = 0
-    power_usages = []
     memory_usages = []
     for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
         with open(
@@ -86,7 +85,6 @@ def _parse_metrics(dirname):
 
             cpu_usages.append(d.get("cpu_usage", []))
             execution_times.append(d.get("execution_time", 0.0))
-            power_usages.append(d.get("power_usage", []))
             memory_usages.append(d.get("memory_usage", []))
 
     if not execution_times:
@@ -94,7 +92,6 @@ def _parse_metrics(dirname):
 
     metric.cpu = [sum(cpu) / len(cpu) for cpu in zip(*cpu_usages)]
     metric.execution_time = sum(execution_times) / len(execution_times)
-    metric.power = [sum(power) / len(power) for power in zip(*power_usages)]
     metric.memory = [sum(memory) / len(memory) for memory in zip(*memory_usages)]
 
     network_send_avg = [sum(send) / len(send) for send in zip(*network_send_usages)]
