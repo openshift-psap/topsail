@@ -131,6 +131,8 @@ class BenchmarkComparisonReport():
             report_components.append(
                 html.Div("No configuration data found for comparison", style=css.STYLE_ERROR_MESSAGE)
             )
+        if len(report_components) <= 2:
+            return None, html.Div("There is nothing to compare", style=css.STYLE_ERROR_MESSAGE)
 
         return None, html.Div(report_components, style=css.STYLE_CONTAINER, className='report-container')
 
@@ -732,7 +734,6 @@ def create_plots_section(configurations, args):
 
     plot_names = [
         "System CPU Usage",
-        "System Power Usage",
         "System Memory Usage",
         "System Network Usage",
         "System Disk Usage"

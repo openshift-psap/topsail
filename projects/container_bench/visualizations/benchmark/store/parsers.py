@@ -118,7 +118,7 @@ def _parse_system_state(dirname):
         return None
 
     with open(
-        register_important_file(dirname, artifact_paths.CAPTURE_SYSTEM_STATE / "artifacts" / "system_profiler.txt")
+        register_important_file(dirname, artifact_paths.CAPTURE_SYSTEM_STATE / "artifacts" / "system_info.txt")
     ) as f:
         system_state = yaml.safe_load(f)
     return system_state
