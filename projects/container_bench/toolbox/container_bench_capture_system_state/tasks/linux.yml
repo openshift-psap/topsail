@@ -1,0 +1,78 @@
+---
+# Create artifacts directory
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+# Capture system information - Linux
+- name: Capture the system information
+  shell: |
+    set -o pipefail
+    echo "Software:" > "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "    System Software Overview:" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
+    # Get system information
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "      System Version: $NAME $VERSION" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    elif [ -f /etc/redhat-release ]; then
+        echo "      System Version: $(cat /etc/redhat-release)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    elif [ -f /etc/debian_version ]; then
+        echo "      System Version: Debian $(cat /etc/debian_version)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    else
+        echo "      System Version: $(uname -s) $(uname -r)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    fi
+
+    echo "      Computer Name: $(hostname)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "      User Name: $(whoami)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
+    # Get uptime
+    uptime_info=$(uptime -p 2>/dev/null || uptime)
+    echo "      Time since boot: $uptime_info" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
+    # Add Hardware section
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "Hardware:" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "    Hardware Overview:" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
+    # Get hardware information
+    if [ -f /sys/devices/virtual/dmi/id/product_name ]; then
+        model_name=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null || echo "Unknown")
+        echo "      Model Name: $model_name" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    fi
+
+    if [ -f /sys/devices/virtual/dmi/id/sys_vendor ] && [ -f /sys/devices/virtual/dmi/id/product_name ]; then
+        manufacturer=$(cat /sys/devices/virtual/dmi/id/sys_vendor 2>/dev/null || echo "Unknown")
+        model=$(cat /sys/devices/virtual/dmi/id/product_name 2>/dev/null || echo "Unknown")
+        echo "      Model Identifier: $manufacturer $model" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    fi
+
+    # CPU information
+    if [ -f /proc/cpuinfo ]; then
+        cpu_model=$(grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | sed 's/^ *//')
+        cpu_cores=$(grep "cpu cores" /proc/cpuinfo | head -1 | cut -d: -f2 | sed 's/^ *//')
+        cpu_threads=$(grep "processor" /proc/cpuinfo | wc -l)
+        echo "      Chip: $cpu_model" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+        echo "      Total Number of Cores: $cpu_cores ($cpu_threads logical processors)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    fi
+
+    # Memory information
+    if [ -f /proc/meminfo ]; then
+        memory_kb=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
+        memory_gb=$(echo "scale=2; $memory_kb / 1024 / 1024" | bc -l 2>/dev/null || echo "$(($memory_kb / 1024 / 1024))")
+        echo "      Memory: ${memory_gb} GB" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+    fi
+
+    # Architecture
+    arch=$(uname -m)
+    echo "      Architecture: $arch" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
+    # Kernel version
+    kernel=$(uname -r)
+    echo "      Kernel Version: $kernel" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
