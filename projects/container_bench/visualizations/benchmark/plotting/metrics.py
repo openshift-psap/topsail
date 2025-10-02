@@ -26,6 +26,11 @@ METRIC_TYPES = {
         "name": "Power Usage",
         "y_title": "Power usage (W)",
         "unit": "W"
+    },
+    "memory": {
+        "name": "Memory Usage",
+        "y_title": "Memory usage (%)",
+        "unit": "%"
     }
 }
 
@@ -109,7 +114,7 @@ def _process_single_metric_data(main_field, entry_name, interval, metric_key):
     return data
 
 
-def generate_usage_data(entries, variables, main_key, secondary_key, benchmark_name):
+def generate_usage_data(entries, variables, main_key, secondary_key):
     """Generate usage data for visualization from entries."""
     data = []
     variables_copy = dict(variables)  # make a copy before modifying
@@ -117,8 +122,6 @@ def generate_usage_data(entries, variables, main_key, secondary_key, benchmark_n
     for entry in entries:
         main_field = entry.results.__dict__.get(main_key)
         if not main_field:
-            continue
-        if entry.settings.__dict__.get("benchmark") != benchmark_name:
             continue
 
         entry_name = entry.get_name(variables_copy)
@@ -128,7 +131,7 @@ def generate_usage_data(entries, variables, main_key, secondary_key, benchmark_n
             data.extend(_process_network_data(main_field, entry_name, interval))
         elif secondary_key == "disk":
             data.extend(_process_disk_data(main_field, entry_name, interval))
-        elif secondary_key in ["cpu", "power"]:
+        elif secondary_key in ["cpu", "power", "memory"]:
             data.extend(_process_single_metric_data(main_field, entry_name, interval, secondary_key))
 
     return data
@@ -174,7 +177,7 @@ class MetricUsage:
         return traces
 
     def _create_single_metric_trace(self, df):
-        """Create trace for single-value metrics (CPU, power)."""
+        """Create trace for single-value metrics (CPU, power, memory)."""
         return go.Scatter(
             x=df["ts"],
             y=df["usage"],
@@ -186,9 +189,9 @@ class MetricUsage:
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
         """Generate the plot for the metric usage."""
-        benchmark_name = cfg.get("benchmark", False)
-        entries = common.Matrix.all_records(settings, setting_lists)
-        df = pd.DataFrame(generate_usage_data(entries, variables, "metrics", self.key, benchmark_name))
+        current_settings = cfg.get("current_settings", False)
+        entries = common.Matrix.filter_records(current_settings)
+        df = pd.DataFrame(generate_usage_data(entries, variables, "metrics", self.key))
 
         if df.empty:
             return None, "No data available..."
@@ -204,11 +207,12 @@ class MetricUsage:
                 fig.add_trace(trace)
             fig.update_traces(marker=dict(size=4))
             fig.update_layout(legend_title_text="Type")
-        else:  # cpu or power
+        else:  # cpu or power or memory
             fig.add_trace(self._create_single_metric_trace(df))
 
         # Set y-axis title and overall layout
         fig.update_yaxes(title=self.metric_config["y_title"])
+        fig.update_xaxes(title="Time (s)")
         fig.update_layout(title=self.name, title_x=0.5)
 
         return fig, ""

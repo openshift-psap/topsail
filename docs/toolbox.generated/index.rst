@@ -57,6 +57,7 @@ Toolbox Documentation
 * :doc:`capture_system_state <Container_Bench.capture_system_state>`	 Captures the state of the remote Mac system
 * :doc:`exec_benchmark <Container_Bench.exec_benchmark>`	 Runs the exec benchmark with the given runtime
 * :doc:`helloworld_benchmark <Container_Bench.helloworld_benchmark>`	 Runs the helloworld benchmark with the given runtime
+* :doc:`image_build_large_build_context_benchmark <Container_Bench.image_build_large_build_context_benchmark>`	 Runs the image build large build context benchmark with the given runtime
 * :doc:`prepare_benchmark_script_on_remote <Container_Bench.prepare_benchmark_script_on_remote>`	 Prepares the benchmark script on the remote machine
 
 ``fine_tuning``

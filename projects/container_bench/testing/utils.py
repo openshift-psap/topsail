@@ -1,6 +1,7 @@
 import tempfile
 import os
 import platform
+import prepare
 from projects.core.library import config
 from projects.core.library import run
 import remote_access
@@ -98,12 +99,15 @@ def cleanup_podman_files(base_work_dir):
 
     dest = base_work_dir / f"podman-{version}"
 
-    if not remote_access.exists(dest):
-        logging.info(f"{dest} does not exists, nothing to remove.")
-        return
+    if remote_access.exists(dest):
+        logging.info(f"Removing {dest} ...")
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
 
-    logging.info(f"Removing {dest} ...")
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
+    dest = base_work_dir / "podman-custom"
+
+    if remote_access.exists(dest):
+        logging.info(f"Removing {dest} ...")
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
 
 
 def parse_platform(platform_str):
@@ -119,6 +123,13 @@ def parse_platform(platform_str):
         raise ValueError(f"Unsupported container engine: {p.container_engine}. Expected 'podman' or 'docker'.")
     if p.platform not in ["darwin"]:  # TODO: Implement "linux", "windows"
         raise ValueError(f"Unsupported platform: {p.platform}.")
+
+    if p.container_engine == "podman":
+        p.prepare_platform = prepare.prepare_podman_platform_darwin
+        p.cleanup_platform = prepare.cleanup_podman_platform_darwin
+    elif p.container_engine == "docker":
+        p.prepare_platform = prepare.prepare_docker_platform_darwin
+        p.cleanup_platform = prepare.cleanup_docker_platform_darwin
 
     return p
 
@@ -168,3 +179,26 @@ def prepare_benchmark_script(base_work_dir):
     )
 
     return dest
+
+
+def prepare_custom_podman_binary(base_work_dir):
+    client_file = config.project.get_config("prepare.podman.custom_binary.client_file")
+    server_file = config.project.get_config("prepare.podman.custom_binary.server_file")
+
+    podman_path = base_work_dir / "podman-custom" / client_file
+    server_podman_path = base_work_dir / "podman-custom" / server_file
+    if remote_access.exists(podman_path) and remote_access.exists(server_podman_path):
+        logging.info("podman custom already exists, not downloading it.")
+        return podman_path
+
+    source = config.project.get_config("prepare.podman.custom_binary.url")
+    dest = base_work_dir / "podman-custom" / "podman-custom.zip"
+
+    run.run_toolbox(
+        "remote", "download",
+        source=source,
+        dest=dest,
+        zip=True,
+    )
+
+    return podman_path

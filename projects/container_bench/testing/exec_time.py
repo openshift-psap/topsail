@@ -12,7 +12,7 @@ import datetime
 
 DEFAULT_OUTPUT_FILE = "output.log"
 DEFAULT_METRICS_LOG_FILE = "metrics.json"
-DEFAULT_INTERVAL = 0.1
+DEFAULT_INTERVAL = 0.5
 
 
 class PowerMetrics:
