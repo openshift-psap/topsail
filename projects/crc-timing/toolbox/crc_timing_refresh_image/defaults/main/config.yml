@@ -1,0 +1,46 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Crc.refresh_image
+
+# Parameters
+# the source Snapshot ID (e.g., snap-0123...)
+# Mandatory value
+crc_timing_refresh_image_source_snapshot_id:
+
+# the name for the new AMI
+# Mandatory value
+crc_timing_refresh_image_new_ami_name:
+
+# an existing EC2 Key Pair name for the worker instance
+# Mandatory value
+crc_timing_refresh_image_key_pair_name:
+
+# path to the private key to use to login into the controller EC2
+# Mandatory value
+crc_timing_refresh_image_private_key_path:
+
+# the URL of the repo to use for updating the SNC image
+# Mandatory value
+crc_timing_refresh_image_git_repo:
+
+# the repo branch to use for updating the SNC image
+# Mandatory value
+crc_timing_refresh_image_git_branch:
+
+# the region to use
+crc_timing_refresh_image_aws_region: us-west-1
+
+# the availability zone to use
+crc_timing_refresh_image_aws_availability_zone: us-west-1a
+
+# the instance type for the controller EC2
+crc_timing_refresh_image_worker_instance_type: t2.micro
+
+# the AMI ID to run on the controller EC2
+crc_timing_refresh_image_worker_ami_id: ami-0020037e76c9ad658
+
+# the name of the security-group to use. Date will be added
+crc_timing_refresh_image_security_group_name: topsail-refresh-image-sg
+
+# the name of the user to use in the image
+crc_timing_refresh_image_ami_image_user: fedora
