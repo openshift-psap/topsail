@@ -51,7 +51,7 @@
     src: "{{ step_artifact_dir }}/test_env"
     dest: "{{ artifact_extra_logs_dir }}/jump_host.env"
     mode: "pull"
-  no_log: true # not necessary, and leaks the hostnames
+  # no_log: true # not necessary, and leaks the hostnames
 
 - name: Populate the variables_overrides files
   shell: |
