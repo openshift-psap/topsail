@@ -33,7 +33,7 @@
       cd "{{ remote_build_image_base_directory }}";
       ./{{ remote_build_image_prepare_script }} \
         &> "{{ artifact_extra_logs_dir }}/artifacts/prepare.log"
-    when: remote_build_image_prepare_script | default('', true) | trim
+    when: remote_build_image_prepare_script != None
 
   - name: Build the image
     shell: |
