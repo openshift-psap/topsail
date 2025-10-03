@@ -56,7 +56,8 @@ def cleanup():
 def get_bundle_file_path(base_work_dir):
     bundles_dir = base_work_dir / "crc/bundles"
     cfg = config.project.get_config("prepare.crc.bundle")
-    return bundles_dir / f"crc_{cfg['hypervisor']}_{cfg['version']}_{cfg['arch']}.crcbundle"
+    pr_build = f"_{cfg['pr']}" if cfg.get("pr") else ""
+    return bundles_dir / f"crc_{cfg['hypervisor']}_{cfg['version']}_{cfg['arch']}{pr_build}.crcbundle"
 
 
 def get_bundle_dir(base_work_dir):
@@ -81,8 +82,14 @@ def prepare_crc_bundle(base_work_dir):
     remote_access.mkdir(bundle_file_path.parent)
 
     bundle_cfg = config.project.get_config("prepare.crc.bundle")
-    base_url = config.project.get_config("prepare.crc.bundle.source.base_url")
-    source = f"{base_url}/{bundle_cfg['flavor']}/{bundle_cfg['version']}/{bundle_file_path.name}"
+    source_urls = config.project.get_config("prepare.crc.bundle.source")
+
+    if pr_number := bundle_cfg.get("pr"):
+        base_url = source_urls["pr_base_url"] + str(pr_number)
+    else:
+        base_url = source_urls["base_url"] + f"/{bundle_cfg['flavor']}/{bundle_cfg['version']}"
+
+    source = f"{base_url}/{bundle_file_path.name}"
     diskfile = bundle_cfg['diskfile']
 
     if remote_access.exists(bundle_file_path):
