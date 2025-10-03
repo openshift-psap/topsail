@@ -139,7 +139,7 @@ def open_tunnel(
     -i {private_key_path} {jump_host} \
     -L {local_host_port}:{bastion_host}:{bastion_host_port} \
     -N"
-
+    verbose=True
     if verbose:
         logging.info(cmd)
 
