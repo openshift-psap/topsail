@@ -1,0 +1,2 @@
+---
+instance_script_template: templates/instance_script.sh.j2

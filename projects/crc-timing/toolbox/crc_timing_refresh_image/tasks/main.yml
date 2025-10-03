@@ -1,0 +1,275 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: Main execution block with cleanup
+  block:
+  - name: Set the security-group-name
+    set_fact:
+      security_group_name: "{{  crc_timing_refresh_image_security_group_name }}-{{ lookup('pipe', 'date +%s') }}"
+
+
+  - name: Create Security Group for SSH access
+    command:
+      aws ec2 create-security-group
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --group-name "{{ security_group_name }}"
+          --description "Allow SSH for TOPSAIL to access the EC2 instance"
+    register: sg_create_raw
+
+  - name: Set Security Group ID fact
+    set_fact:
+      security_group_id: "{{ (sg_create_raw.stdout | from_json).GroupId }}"
+
+  - name: Authorize SSH ingress to the Security Group
+    command:
+      aws ec2 authorize-security-group-ingress
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --group-id "{{ security_group_id }}"
+            --protocol tcp
+            --port 22
+            --cidr 0.0.0.0/0
+
+
+  - name: 1. Get snapshot details (AZ and Size)
+    command:
+        aws ec2 describe-snapshots
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --snapshot-ids "{{ crc_timing_refresh_image_source_snapshot_id }}"
+            --query "Snapshots[0].{Size:VolumeSize}"
+    register: snapshot_details_raw
+
+  - name: Set snapshot facts
+    set_fact:
+      snapshot_size: "{{ (snapshot_details_raw.stdout | from_json).Size }}"
+
+  - name: Print snapshot details
+    debug:
+      msg: "Found snapshot with size '{{ snapshot_size }} GiB'."
+
+  - name: 2. Create EBS volume from snapshot
+    command:
+      aws ec2 create-volume
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --snapshot-id "{{ crc_timing_refresh_image_source_snapshot_id }}"
+          --availability-zone "{{ crc_timing_refresh_image_aws_availability_zone }}"
+    register: volume_create_raw
+
+  - name: Set volume ID fact
+    set_fact:
+      volume_id: "{{ (volume_create_raw.stdout | from_json).VolumeId }}"
+
+  - name: Set volume blck ID fact
+    set_fact:
+      volume_blk_id: "{{ volume_id.replace('vol-', '') }}"
+
+  - name: Wait for volume to become available
+    command:
+      aws ec2 wait volume-available
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --volume-ids "{{ volume_id }}"
+    changed_when: false
+
+  - name: Apply the instance script template
+    template:
+      src: "{{ instance_script_template }}"
+      dest: "{{ artifact_extra_logs_dir }}/src/instance_script.sh"
+      mode: '0700'
+
+  - name: 3. Launch temporary worker instance
+    command:
+        aws ec2 run-instances
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --image-id "{{ crc_timing_refresh_image_worker_ami_id }}"
+            --instance-type "{{ crc_timing_refresh_image_worker_instance_type }}"
+            --key-name "{{ crc_timing_refresh_image_key_pair_name }}"
+            --placement "AvailabilityZone={{ crc_timing_refresh_image_aws_availability_zone }}"
+            --security-group-ids "{{ security_group_id }}"
+    no_log: true # too verbose
+    register: instance_create_raw
+
+  - name: Set instance ID fact
+    set_fact:
+      instance_id: "{{ (instance_create_raw.stdout | from_json).Instances[0].InstanceId }}"
+
+  - name: Print info about EC2 instance being created
+    debug:
+      msg: Created EC2 instance {{ instance_id }}
+
+  - name: Wait for instance to be running
+    command:
+      time aws ec2 wait instance-running
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --instance-ids "{{ instance_id }}"
+    changed_when: false
+
+  - name: Get the Public IP of the instance
+    command:
+      aws ec2 describe-instances
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --instance-ids "{{ instance_id}}"
+          --query "Reservations[0].Instances[0].PublicIpAddress"
+          --output text
+    register: ec2_public_ip_cmd
+
+  - name: 4. Attach volume to worker instance
+    command:
+      aws ec2 attach-volume
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --device /dev/sdf
+          --instance-id "{{ instance_id }}"
+          --volume-id "{{ volume_id }}"
+
+  - name: Print info about EC2 instance public IP
+    debug:
+      msg: "Ec2 instance IP: {{ ec2_public_ip_cmd.stdout }}"
+
+  - name: Set the ssh parameters
+    set_fact:
+      ssh_args: '-oIdentitiesOnly=yes -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -o LogLevel=ERROR -i "{{ crc_timing_refresh_image_private_key_path }}"'
+      ssh_host: "{{ crc_timing_refresh_image_ami_image_user }}@{{ ec2_public_ip_cmd.stdout }}"
+
+  - name: Wait for the SSH connection to work
+    command:
+      ssh {{ ssh_args }} {{ ssh_host }} exit 0
+    retries: 30
+    delay: 5
+    register: ssh_working
+    until: ssh_working.rc == 0
+
+  - name: Copy the script to the remote host
+    command:
+      scp {{ ssh_args }} "{{ artifact_extra_logs_dir }}/src/instance_script.sh" {{ ssh_host }}:instance_script.sh
+
+  - name: Execute the script on the remote host
+    command:
+      ssh  {{ ssh_args }} {{ ssh_host }} bash -x instance_script.sh
+
+  - name: 5. Detach volume from worker
+    command:
+      aws ec2 detach-volume
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --instance-id "{{ instance_id }}"
+          --volume-id "{{ volume_id }}"
+
+  - name: Wait for volume to become available again
+    command:
+      aws ec2 wait volume-available
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --volume-ids "{{ volume_id }}"
+    changed_when: false
+
+  - name: 6. Create new snapshot from modified volume
+    command:
+      aws ec2 create-snapshot
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --volume-id "{{ volume_id }}"
+          --description "Snapshot for new AMI {{ crc_timing_refresh_image_new_ami_name }}"
+    register: new_snapshot_raw
+
+  - name: Set new snapshot ID fact
+    set_fact:
+      new_snapshot_id: "{{ (new_snapshot_raw.stdout | from_json).SnapshotId }}"
+
+  - name: Wait for new snapshot to complete
+    command:
+      aws ec2 wait snapshot-completed
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --snapshot-ids "{{ new_snapshot_id }}"
+    changed_when: false
+
+  - name: 7. Check for existing AMI and deregister it
+    block:
+    - name: Find AMI by name
+      command:
+        aws ec2 describe-images
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --owners self
+            --filters "Name=name,Values={{ crc_timing_refresh_image_new_ami_name }}"
+            --query "Images[0].{ImageId:ImageId, SnapshotId:BlockDeviceMappings[0].Ebs.SnapshotId}"
+      register: existing_ami_raw
+      changed_when: false
+
+  - name: Set existing AMI facts
+    set_fact:
+      existing_ami: "{{ existing_ami_raw.stdout | from_json }}"
+    when: existing_ami_raw.stdout | from_json is not none
+
+  - name: Deregister the old AMI if it exists
+    when: existing_ami is defined and existing_ami.ImageId
+    block:
+    - name: Print info about AMI being deleted
+      debug:
+        msg: "Found existing AMI {{ existing_ami.ImageId }} with snapshot {{ existing_ami.SnapshotId }}. Deregistering it now."
+
+    - name: Deregister AMI
+      command:
+        aws ec2 deregister-image
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --image-id {{ existing_ami.ImageId }}
+
+    - name: Delete associated snapshot
+      command:
+        aws ec2 delete-snapshot
+            --region "{{ crc_timing_refresh_image_aws_region }}"
+            --snapshot-id "{{ existing_ami.SnapshotId }}"
+
+  - name: 8. Register new AMI from the snapshot
+    command: |
+      aws ec2 register-image \
+          --region "{{ crc_timing_refresh_image_aws_region }}" \
+          --name "{{ crc_timing_refresh_image_new_ami_name }}" \
+          --description "Custom AMI created by Ansible from snapshot {{ crc_timing_refresh_image_source_snapshot_id }}" \
+          --architecture x86_64 \
+          --root-device-name /dev/sda1 \
+          --block-device-mappings '[{"DeviceName": "/dev/sda1", "Ebs": {"SnapshotId": "{{ new_snapshot_id }}", "VolumeType": "gp2", "DeleteOnTermination": true}}]' \
+          --virtualization-type hvm \
+          --ena-support
+    register: new_ami_raw
+
+  - name: Set new AMI ID fact
+    set_fact:
+      new_ami_id: "{{ (new_ami_raw.stdout | from_json).ImageId }}"
+
+  always:
+  - name: Cleanup. Terminate worker instance
+    command:
+      aws ec2 terminate-instances
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --instance-ids "{{ instance_id }}"
+    when: instance_id is defined
+
+  - name: Wait for worker instance to be fully terminated
+    command:
+      aws ec2 wait instance-terminated
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --instance-ids "{{ instance_id }}"
+    when: instance_id is defined
+    changed_when: false
+
+  - name: Cleanup. Delete intermediate volume
+    command:
+      aws ec2 delete-volume
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --volume-id "{{ volume_id }}"
+    when: volume_id is defined
+
+  - name: Cleanup. Delete the temporary Security Group
+    command:
+      aws ec2 delete-security-group
+          --region "{{ crc_timing_refresh_image_aws_region }}"
+          --group-id {{ security_group_id }}
+    when: security_group_id is defined
+
+- name: Print success message
+  debug:
+    msg: "SUCCESS! New AMI created: {{ new_ami_id }}"
