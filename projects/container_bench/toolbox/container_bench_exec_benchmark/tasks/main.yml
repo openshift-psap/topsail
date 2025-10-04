@@ -1,25 +1,22 @@
 ---
-- name: Create the artifacts directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/artifacts"
-    state: directory
-    mode: '0755'
+# Define common command templates (shared across all platforms)
+- name: Set common commands
+  set_fact:
+    prepare_commands: |
+      {{ container_bench_exec_benchmark_runtime }} system prune -a -f
+      {{ container_bench_exec_benchmark_runtime }} pull registry.fedoraproject.org/fedora:latest
+      {{ container_bench_exec_benchmark_runtime }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
+    cleanup_commands: |
+      {{ container_bench_exec_benchmark_runtime }} stop benchmark_exec
+      {{ container_bench_exec_benchmark_runtime }} rm -f benchmark_exec
+      {{ container_bench_exec_benchmark_runtime }} system prune -a -f
+    benchmark_command: |
+      {{ container_bench_exec_benchmark_runtime }} exec benchmark_exec true
 
-- name: Prepare
-  shell: |
-    {{ container_bench_exec_benchmark_runtime }} system prune -a -f
-    {{ container_bench_exec_benchmark_runtime }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
+- name: Include Unix/Linux tasks
+  include_tasks: unix.yml
+  when: ansible_os_family != 'Windows'
 
-- name: Run benchmark commands
-  shell: |
-     {{ container_bench_exec_benchmark_exec_time_path | dirname }}/.venv/bin/python \
-     {{ container_bench_exec_benchmark_exec_time_path }}  \
-     --output "{{ artifact_extra_logs_dir }}/artifacts/output.log"  \
-     --metrics-log-file "{{ artifact_extra_logs_dir }}/artifacts/metrics.json"  \
-     {{ container_bench_exec_benchmark_runtime }} exec benchmark_exec true
-
-- name: Clean up
-  shell: |
-    {{ container_bench_exec_benchmark_runtime }} stop benchmark_exec
-    {{ container_bench_exec_benchmark_runtime }} rm -f benchmark_exec
-    {{ container_bench_exec_benchmark_runtime }} system prune -a -f
+- name: Include Windows tasks
+  include_tasks: windows.yml
+  when: ansible_os_family == 'Windows'

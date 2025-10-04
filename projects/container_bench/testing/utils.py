@@ -57,7 +57,7 @@ def prepare_gv_from_gh_binary(base_work_dir):
 
 
 def prepare_podman_from_gh_binary(base_work_dir):
-    system = config.project.get_config("remote_host.system")
+    system = config.project.get_config("remote_host.system", print=False)
 
     podman_path, version = _get_repo_podman_path(base_work_dir)
 
@@ -101,35 +101,31 @@ def cleanup_podman_files(base_work_dir):
 
     if remote_access.exists(dest):
         logging.info(f"Removing {dest} ...")
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
+        prepare.remove_remote_file(base_work_dir, dest, recursive=True)
 
     dest = base_work_dir / "podman-custom"
 
     if remote_access.exists(dest):
         logging.info(f"Removing {dest} ...")
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")
+        prepare.remove_remote_file(base_work_dir, dest, recursive=True)
 
 
 def parse_platform(platform_str):
     p = SimpleNamespace()
-    platform_parts = platform_str.split("/")
-    if len(platform_parts) != 2:
-        raise ValueError(
-            f"Invalid platform format: {platform_str}. Expected format is 'container_engine/platform'.")
-    p.container_engine = platform_parts[0]
-    p.platform = platform_parts[1]
+    p.container_engine = platform_str
+    p.platform = config.project.get_config("remote_host.system", print=False)
 
     if p.container_engine not in ["podman", "docker"]:
         raise ValueError(f"Unsupported container engine: {p.container_engine}. Expected 'podman' or 'docker'.")
-    if p.platform not in ["darwin"]:  # TODO: Implement "linux", "windows"
+    if p.platform not in ["darwin", "windows"]:  # TODO: Implement "linux",
         raise ValueError(f"Unsupported platform: {p.platform}.")
 
     if p.container_engine == "podman":
-        p.prepare_platform = prepare.prepare_podman_platform_darwin
-        p.cleanup_platform = prepare.cleanup_podman_platform_darwin
+        p.prepare_platform = prepare.prepare_podman_platform
+        p.cleanup_platform = prepare.cleanup_podman_platform
     elif p.container_engine == "docker":
-        p.prepare_platform = prepare.prepare_docker_platform_darwin
-        p.cleanup_platform = prepare.cleanup_docker_platform_darwin
+        p.prepare_platform = prepare.prepare_docker_platform
+        p.cleanup_platform = prepare.cleanup_docker_platform
 
     return p
 

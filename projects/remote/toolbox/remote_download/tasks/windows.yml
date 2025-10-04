@@ -1,0 +1,37 @@
+---
+- name: Ensure that the parent directory exists
+  ansible.windows.win_file:
+    path: "{{ remote_download_dest | dirname }}"
+    state: directory
+
+- name: Download the source file
+  ansible.windows.win_get_url:
+    url: "{{ remote_download_source }}"
+    dest: "{{ remote_download_dest }}"
+    force: "{{ remote_download_force }}"
+
+- name: Compute the sha of the file
+  ansible.windows.win_stat:
+    path: "{{ remote_download_dest }}"
+    checksum_algorithm: sha256
+  register: dest_stat_sha
+
+- name: Show the sha of the file
+  ansible.windows.win_shell: echo "{{ dest_stat_sha.stat.checksum }}"
+
+- name: Extract the zipball
+  ansible.windows.win_shell: |
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $tempDir -Force
+    Expand-Archive -Path "{{ remote_download_dest }}" -DestinationPath $tempDir -Force
+    $extractedItems = Get-ChildItem -Path $tempDir
+    if ($extractedItems.Count -eq 1 -and $extractedItems[0].PSIsContainer) {
+        # Single top-level directory - move contents up (strip-components=1 behavior)
+        $topDir = $extractedItems[0].FullName
+        Get-ChildItem -Path $topDir -Recurse | Move-Item -Destination "{{ remote_download_dest | dirname }}" -Force
+    } else {
+        # Multiple items at root - move all items
+        Get-ChildItem -Path $tempDir | Move-Item -Destination "{{ remote_download_dest | dirname }}" -Force
+    }
+    Remove-Item -Path $tempDir -Recurse -Force
+  when: remote_download_zip | bool

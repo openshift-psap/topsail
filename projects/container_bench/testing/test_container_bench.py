@@ -70,6 +70,11 @@ def _separate_benchmark_values_by_platform(benchmark_values):
     common_values = {}
     for key, value in benchmark_values.items():
         if key.startswith("test.podman"):
+            # Special handling for Windows and machine_provider not same as Darwin
+            if key == "test.podman.machine_provider":
+                is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+                supported_hypervisors = ["wsl", "hyperv"] if is_windows else ["libkrun", "applehv"]
+                value = [v for v in value if v in supported_hypervisors]
             platform_configs["podman"][key] = value
         elif key.startswith("test.docker"):
             platform_configs["docker"][key] = value
@@ -85,6 +90,7 @@ def _separate_benchmark_values_by_platform(benchmark_values):
     expe_to_run = {}
     for platform, platform_config in platform_configs.items():
         if platform_config:
+            platform_config["test.platform"] = platform
             expe_to_run[f"container_bench_{platform}"] = platform_config
 
     return expe_to_run
@@ -92,9 +98,9 @@ def _separate_benchmark_values_by_platform(benchmark_values):
 
 def _distribute_platform_values(platform_configs, platform_values):
     for platform in platform_values:
-        if platform.startswith("podman/"):
+        if platform.startswith("podman"):
             platform_configs["podman"].setdefault("test.platform", []).append(platform)
-        elif platform.startswith("docker/"):
+        elif platform.startswith("docker"):
             platform_configs["docker"].setdefault("test.platform", []).append(platform)
         else:
             logging.warning(f"Unknown platform type: {platform}")
@@ -244,7 +250,7 @@ def test_all_benchmarks_and_platforms():
         all_platforms_str = [all_platforms_str]
 
     for platform_str in all_platforms_str:
-        if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
+        if platform_str in (config.project.get_config("test.platforms_to_skip", print=False) or []):
             continue
         run_benchmarks_for_specific_platform(platform_str, benchmarks)
 
@@ -258,8 +264,8 @@ def capture_metrics(platform):
         "container_bench", "capture_container_engine_info",
         runtime=c.engine_binary,
     )
-    if platform.platform == "darwin":
-        run.run_toolbox("container_bench", "capture_system_state")
+
+    run.run_toolbox("container_bench", "capture_system_state")
 
 
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
@@ -319,7 +325,6 @@ def run_benchmark(platform, benchmark):
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
                                     mute_stdout=True, mute_stderr=True)
-
         with open(env.ARTIFACT_DIR / "exit_code", "w") as f:
             print(exit_code, file=f)
 
