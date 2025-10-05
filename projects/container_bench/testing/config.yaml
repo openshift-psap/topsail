@@ -68,7 +68,7 @@ remote_host:
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: false
+    enabled: true
     docker_bin: docker
   env:
     # Darwin: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
@@ -90,6 +90,7 @@ prepare:
       - krunkit
 
   podman:
+    # Custom binary or repo version must be disabled for matbenchmarking
     custom_binary:
       # Zip needs to contains current architecture for remote_host
       enabled: false
@@ -166,10 +167,9 @@ image_build_large_build_context_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
-    - docker
   benchmark:
-    - helloworld_benchmark
-    - exec_benchmark
+    # - helloworld_benchmark
+    # - exec_benchmark
     - image_build_large_build_context_benchmark
   podman:
     machine_provider:
@@ -182,8 +182,7 @@ test:
     - false
     repo_version:
     - v5.4.0
-    - v5.6.0
-    # - custom
+    - custom
   capture_metrics:
     enabled: true
 
@@ -192,9 +191,9 @@ test:
     stop_on_error: true
     iterable_test_fields:
     - test.platform
-    # - test.podman.repo_version
+    - test.podman.repo_version
     # - test.podman.rootful
-    - test.podman.machine_provider
+    # - test.podman.machine_provider
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
