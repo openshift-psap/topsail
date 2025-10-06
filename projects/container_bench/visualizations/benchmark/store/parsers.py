@@ -9,7 +9,6 @@ register_important_file = None  # will be when importing store/__init__.py
 RUN_BENCHMARK_DIR = "*_run_metrics"
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.TEST_RUN_DIR = "*_run_dir"
 artifact_dirnames.RUN_BENCHMARK = RUN_BENCHMARK_DIR
 artifact_dirnames.CAPTURE_SYSTEM_STATE = "*__container_bench__capture_system_state"
 artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO = "*__container_bench__capture_container_engine_info"
@@ -21,12 +20,9 @@ IMPORTANT_FILES = [
     "config.yaml",
     ".uuid",
 
-    f"{artifact_dirnames.TEST_RUN_DIR}/output/output.json",
-    f"{artifact_dirnames.TEST_RUN_DIR}/src/benchmark.config.yaml",
-
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/metrics.json",
 
-    f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
+    f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_info.txt",
     f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.json",
 ]
 
