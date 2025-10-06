@@ -85,10 +85,12 @@ def cleanup():
         is_running = podman_machine.is_running(base_work_dir)
         if is_running:
             podman_machine.stop(base_work_dir)
+            is_running = podman_machine.is_running(base_work_dir)
+
         if is_running is not None:
-            podman_machine.rm(base_work_dir)
             if config.project.get_config("cleanup.podman_machine.reset"):
                 podman_machine.reset(base_work_dir)
+            podman_machine.rm(base_work_dir)
 
     if config.project.get_config("cleanup.files.podman"):
         podman.cleanup(base_work_dir)
