@@ -444,7 +444,7 @@ prepare:
       repo:
         enabled: true
         url: https://github.com/containers/gvisor-tap-vsock/
-        version: v0.8.3
+        version: v0.8.7
         file: "gvproxy-{@remote_host.system}"
 
     container:
