@@ -60,6 +60,17 @@ Toolbox Documentation
 * :doc:`image_build_large_build_context_benchmark <Container_Bench.image_build_large_build_context_benchmark>`	 Runs the image build large build context benchmark with the given runtime
 * :doc:`prepare_benchmark_script_on_remote <Container_Bench.prepare_benchmark_script_on_remote>`	 Prepares the benchmark script on the remote machine
 
+``crc``
+*******
+
+::
+
+    Commands relating to CRC
+    
+
+                
+* :doc:`refresh_image <Crc.refresh_image>`	 Update a CRC AMI image with a given SNC repo commit
+
 ``fine_tuning``
 ***************
 
