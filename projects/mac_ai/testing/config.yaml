@@ -436,7 +436,7 @@ prepare:
     repo:
       enabled: true
       url: https://github.com/containers/podman
-      version: v5.6.0
+      version: v5.6.2
       darwin:
         file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
         zip: true
@@ -444,7 +444,7 @@ prepare:
       repo:
         enabled: true
         url: https://github.com/containers/gvisor-tap-vsock/
-        version: v0.8.3
+        version: v0.8.7
         file: "gvproxy-{@remote_host.system}"
 
     container:
