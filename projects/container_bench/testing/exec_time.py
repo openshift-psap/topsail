@@ -5,121 +5,12 @@ import sys
 import psutil
 import threading
 import json
-import platform
-import re
 import logging
 import datetime
 
 DEFAULT_OUTPUT_FILE = "output.log"
 DEFAULT_METRICS_LOG_FILE = "metrics.json"
 DEFAULT_INTERVAL = 0.5
-
-
-class PowerMetrics:
-    """
-    Manages powermetrics process for continuous power monitoring on macOS.
-
-    This class starts a long-running powermetrics subprocess that outputs
-    power consumption data continuously. The process runs in parallel with
-    the measured command and provides real-time power measurements through
-    its stdout stream.
-    """
-    def __init__(self, interval=DEFAULT_INTERVAL):
-        self.interval = int(interval * 1000.0)
-        self.process = None
-        self.is_running = False
-
-    def start_monitoring(self):
-        """Start the powermetrics process for continuous monitoring.
-
-        Starts a long-running powermetrics subprocess that continuously outputs
-        power measurements. This process runs in parallel with the measured command
-        and provides real-time power consumption data through its stdout.
-
-        Returns:
-            bool: True if powermetrics started successfully, False otherwise.
-        """
-        if platform.system() != "Darwin":
-            logging.info("Power monitoring not available on non-Darwin systems")
-            return False
-
-        return self._darwin_start()
-
-    def _darwin_start(self):
-        try:
-            # To enable powermetrics to run without a password prompt, add this line to sudoers:
-            # Run 'sudo visudo' and add:
-            # <username> ALL = (root) NOPASSWD: /usr/bin/powermetrics
-            # Replace <username> with your actual username (e.g., john ALL = (root) NOPASSWD: /usr/bin/powermetrics)
-            # This allows the script to run powermetrics with sudo without interactive password input
-            cmd = [
-                "sudo",
-                "-n",
-                "powermetrics",
-                "--samplers",
-                "cpu_power",
-                "-i", str(self.interval),
-                "-n", "-1",
-                "-b", "1"
-            ]
-            self.process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-            )
-            self.is_running = True
-            # Verify the process didn't exit immediately (e.g., permission error)
-            time.sleep(2)
-            if self.process.poll() is not None:
-                err = ""
-                try:
-                    err = self.process.stderr.read().strip()
-                except Exception:
-                    pass
-                logging.error(f"powermetrics exited immediately (code {self.process.returncode}). {err}")
-                logging.error("Check sudoers configuration to allow powermetrics without a password.")
-                self.is_running = False
-                self.process = None
-                return False
-            return True
-
-        except FileNotFoundError as e:
-            logging.error(f"powermetrics not found: {e}")
-            return False
-        except Exception as e:
-            logging.error(f"Failed to start powermetrics: {e}")
-            return False
-
-    def stop_monitoring(self):
-        """Stop the powermetrics process.
-
-        Gracefully terminates the powermetrics subprocess by sending SIGTERM.
-        If the process doesn't terminate within 5 seconds, it will be forcefully
-        killed with SIGKILL.
-        """
-        if self.process and self.is_running:
-            try:
-                self.process.terminate()
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
-                logging.warning("PowerMetrics process was forcefully killed")
-            except Exception as e:
-                logging.error(f"Error stopping powermetrics: {e}")
-            finally:
-                self.is_running = False
-                self.process = None
-
-    def get_stdout(self):
-        """Get the stdout stream of the powermetrics process.
-
-        Returns:
-            TextIOWrapper or None: The stdout stream if process is running, None otherwise.
-        """
-        return self.process.stdout if self.process else None
 
 
 class Measurements:
@@ -131,7 +22,6 @@ class Measurements:
         self.interval = interval
         self.execution_time = 0.0
         self.return_code = 0
-        self.power_usage = []
         self.command = ""
         self.timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -144,7 +34,6 @@ class Measurements:
             "interval": self.interval,
             "execution_time": self.execution_time,
             "return_code": self.return_code,
-            "power_usage": self.power_usage,
             "command": self.command,
             "timestamp": self.timestamp,
         }
@@ -157,60 +46,6 @@ class Measurements:
 
     def set_command(self, command):
         self.command = command
-
-
-def parse_power_line(line):
-    """Parse a line containing power information to extract watts.
-
-    Extracts power values from powermetrics output lines that contain
-    "Combined Power". Supports both watts (W) and milliwatts (mW) units.
-
-    Args:
-        line (str): A line from powermetrics output containing power data.
-
-    Returns:
-        float: Power consumption in watts, or 0.0 if parsing fails.
-    """
-    try:
-        # Extract "<value> <unit>" where unit is W or mW (case-insensitive)
-        match = re.search(r'(\d+\.?\d*)\s*(mW|W)', line, re.IGNORECASE)
-        if match:
-            value_str, unit = match.groups()
-            value = float(value_str)
-            unit = unit.lower()
-            if unit == "mw":
-                return value / 1000.0  # Convert mW to W
-            return value  # assume W
-    except (ValueError, IndexError, AttributeError) as e:
-        logging.error(f"Error parsing power line '{line}': {e}")
-    return 0.0
-
-
-def read_power_metrics(read_event, measurements, stdout_stream):
-    """
-    Reads power usage data from a running powermetrics process in a separate thread.
-
-    This function continuously reads power measurements from the stdout stream of a
-    powermetrics process. It only collects power data when the read_event is set,
-    allowing precise control over when power measurements are recorded during
-    command execution.
-
-    Args:
-        read_event (threading.Event): Controls when to collect power measurements.
-        measurements (Measurements): Container used to store the collected data.
-        stdout_stream: The stdout stream from the powermetrics process.
-
-    """
-    if not stdout_stream:
-        return
-
-    try:
-        for line in stdout_stream:
-            line = line.strip()
-            if "Combined Power" in line and read_event.is_set():
-                measurements.power_usage.append(parse_power_line(line))
-    except Exception as e:
-        logging.error(f"Error in power monitoring: {e}")
 
 
 def monitor_resources(stop_event, measurements):
@@ -260,7 +95,7 @@ def monitor_resources(stop_event, measurements):
     measurements.disk_usage["write"] = disk_write_list
 
 
-def execute_command(command_list, stop_event, read_power_event, monitor_thread):
+def execute_command(command_list, stop_event, monitor_thread):
     """
     Executes a command and captures its output, error, and execution time.
 
@@ -271,7 +106,6 @@ def execute_command(command_list, stop_event, read_power_event, monitor_thread):
     Args:
         command_list (list): A list of strings representing the command and its arguments.
         stop_event (threading.Event): Signals the monitor thread to stop.
-        read_power_event (threading.Event): Controls when power data is collected.
         monitor_thread (threading.Thread): Thread sampling CPU/net/disk/memory.
 
     Returns:
@@ -282,7 +116,6 @@ def execute_command(command_list, stop_event, read_power_event, monitor_thread):
                execution_time (float): Time taken to execute the command in seconds.
     """
     monitor_thread.start()
-    read_power_event.set()
     start_time = time.perf_counter()
     try:
         with subprocess.Popen(
@@ -300,7 +133,6 @@ def execute_command(command_list, stop_event, read_power_event, monitor_thread):
         stdout, stderr, return_code, end_time = "", str(e), -1, time.perf_counter()
     finally:
         stop_event.set()
-        read_power_event.clear()
         monitor_thread.join()
 
     execution_time = end_time - start_time
@@ -352,23 +184,8 @@ def main():
 
     measurements = Measurements(interval=DEFAULT_INTERVAL)
     stop_event = threading.Event()
-    read_power_event = threading.Event()
 
     command_to_run = args.command
-
-    # Start powermetrics process and power reading thread
-    # The powermetrics process runs continuously, but power data is only
-    # collected when read_power_event is set during command execution
-    power_metrics = PowerMetrics(interval=measurements.interval)
-    if not power_metrics.start_monitoring():
-        logging.warning("Power monitoring unavailable; proceeding without power data.")
-
-    power_usage_thread = threading.Thread(
-        target=read_power_metrics,
-        args=(read_power_event, measurements, power_metrics.get_stdout()),
-        daemon=True
-    )
-    power_usage_thread.start()
 
     monitor_thread = threading.Thread(
         target=monitor_resources,
@@ -379,11 +196,8 @@ def main():
     stdout, stderr, return_code, exec_time = execute_command(
         command_to_run,
         stop_event,
-        read_power_event,
         monitor_thread
     )
-    power_metrics.stop_monitoring()
-    power_usage_thread.join()
 
     measurements.set_execution_time(exec_time)
     measurements.set_return_code(return_code)

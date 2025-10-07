@@ -5,6 +5,80 @@ import logging
 from projects.core.library import config
 
 
+def build_env_command_windows(env_dict):
+    """Build PowerShell environment variable setting command for Windows."""
+    if not env_dict:
+        return ""
+
+    env_commands = []
+    for k, v in env_dict.items():
+        env_commands.append(f"$env:{k}='{v}'")
+
+    return "; ".join(env_commands) + ";"
+
+
+def build_env_command_unix(env_dict):
+    """Build Unix env command for setting environment variables."""
+    if not env_dict:
+        return ""
+
+    env_values = " ".join(f"'{k}={v}'" for k, v in env_dict.items())
+    return f"env {env_values}"
+
+
+def build_env_command(env_dict):
+    """Build environment command based on target system type."""
+    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+
+    if is_windows:
+        return build_env_command_windows(env_dict)
+    else:
+        return build_env_command_unix(env_dict)
+
+
+def build_windows_start_script(service_name, start_command, binary_path):
+    """Build PowerShell script for starting services on Windows with wait logic."""
+    return f"""
+$scriptContent = @"
+& {start_command} *>&1 | Out-File -FilePath "`$env:USERPROFILE\\{service_name}_script_log.txt"
+"@
+
+Set-Content -Path "$env:USERPROFILE\\start_{service_name}.ps1" -Value $scriptContent
+$command = "powershell.exe -ExecutionPolicy Bypass -File `"$env:USERPROFILE\\start_{service_name}.ps1`""
+
+$result = Invoke-WmiMethod -Class Win32_Process -Name Create -ArgumentList $command
+
+# Wait for {service_name} to be fully ready using while loop
+Write-Output "Waiting for {service_name} to boot..."
+$timeout = 120  # 2 minutes timeout
+$elapsed = 0
+$interval = 5
+
+while ($elapsed -lt $timeout) {{
+    try {{
+        & {binary_path} info *>$null
+        if ($LASTEXITCODE -eq 0) {{
+            Write-Output "{service_name.capitalize()} is ready after $elapsed seconds"
+            break
+        }}
+    }} catch {{
+        # Continue waiting
+    }}
+
+    Write-Output "Still waiting... ($elapsed/$timeout seconds)"
+    Start-Sleep -Seconds $interval
+    $elapsed += $interval
+}}
+
+if ($elapsed -ge $timeout) {{
+    Write-Output "Warning: Timeout waiting for {service_name} to be ready"
+    type $env:USERPROFILE\\{service_name}_script_log.txt
+}}
+
+Remove-Item "$env:USERPROFILE\\start_{service_name}.ps1" -Force -ErrorAction SilentlyContinue
+"""
+
+
 def get_podman_binary(base_work_dir):
     if config.project.get_config("prepare.podman.repo.enabled", print=False):
         version = config.project.get_config("prepare.podman.repo.version", print=False)
@@ -48,14 +122,11 @@ class ContainerEngine:
         if self.engine == "docker":
             return cmd
 
-        podman_env = self.get_env()
+        env_cmd = build_env_command(self.get_env())
 
         if config.project.get_config("prepare.podman.machine.enabled", print=False):
             machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
             cmd = f"{cmd} --connection '{machine_name}'"
-
-        env_values = " ".join(f"'{k}={v}'" for k, v in (podman_env).items())
-        env_cmd = f"env {env_values}"
 
         cmd = f"{env_cmd} {cmd}"
 
@@ -107,10 +178,8 @@ class PodmanMachine:
         return env_
 
     def get_cmd_env(self):
-        env_values = " ".join(f"'{k}={v}'" for k, v in (self.get_env()).items())
-        env_cmd = f"env {env_values}"
-
-        return env_cmd
+        env_dict = self.get_env()
+        return build_env_command(env_dict)
 
     def configure_and_start(self, force_restart=True, configure=False):
         machine_state = self.inspect()
@@ -164,6 +233,15 @@ class PodmanMachine:
     def configure(self):
         name = config.project.get_config("prepare.podman.machine.name", print=False)
         configuration = config.project.get_config("prepare.podman.machine.configuration")
+        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+        is_wsl = config.project.get_config("prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER") == "wsl"
+        # Changing CPUs, Memory not supported for WSL machines
+        if is_windows and is_wsl:
+            if "cpus" in configuration:
+                del configuration["cpus"]
+            if "memory" in configuration:
+                del configuration["memory"]
+
         config_str = " ".join(f"--{k}={v}" for k, v in configuration.items())
 
         remote_access.run_with_ansible_ssh_conf(
@@ -178,6 +256,17 @@ class PodmanMachine:
 
     def start(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine start {self.machine_name}"
+        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+        if is_windows:
+            # Environment variables must be set permanently using setx, because machine is started in a new shell.
+            # To survive the exit of ssh session.
+            # -------------
+            cmd = build_windows_start_script(
+                service_name="podman",
+                start_command=f"{get_podman_binary(self.base_work_dir)} machine start {self.machine_name}",
+                binary_path=get_podman_binary(self.base_work_dir)
+            )
+            # -------------
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def stop(self):
@@ -186,7 +275,10 @@ class PodmanMachine:
 
     def rm(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine rm {self.machine_name} --force"
-        remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
+        remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
+        if config.project.get_config("remote_host.system", print=False) == "windows":
+            cmd = "Remove-Item $env:USERPROFILE\\podman_script_log.txt -Force -ErrorAction SilentlyContinue"
+            remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
 
     def reset(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine reset --force"
@@ -201,12 +293,15 @@ class PodmanMachine:
 
     def inspect(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine inspect {self.machine_name}"
-        inspect_cmd = remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, capture_stdout=True, check=False)
+        inspect_cmd = remote_access.run_with_ansible_ssh_conf(
+            self.base_work_dir, cmd,
+            capture_stderr=True, capture_stdout=True, check=False
+        )
         if inspect_cmd.returncode != 0:
-            if "VM does not exist" in inspect_cmd.stdout:
+            if "VM does not exist" in inspect_cmd.stderr:
                 logging.info("podman_machine: inspect: VM does not exist")
             else:
-                logging.error(f"podman_machine: inspect: unhandled status: {inspect_cmd.stdout.strip()}")
+                logging.error(f"podman_machine: inspect: unhandled status: {inspect_cmd.stderr.strip()}")
             return None
 
         return json.loads(inspect_cmd.stdout)
@@ -238,17 +333,40 @@ class DockerDesktopMachine:
 
     def start(self):
         cmd = "docker desktop start"
+        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+        if is_windows:
+            # Environment variables must be set permanently using setx, because machine is started in a new shell.
+            # To survive the exit of ssh session.
+            # -------------
+            cmd = build_windows_start_script(
+                service_name="docker",
+                start_command="docker desktop start",
+                binary_path="docker"
+            )
+            # -------------
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def stop(self):
         cmd = "docker desktop stop"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
+        if config.project.get_config("remote_host.system", print=False) == "windows":
+            cmd = "Remove-Item $env:USERPROFILE\\docker_script_log.txt -Force -ErrorAction SilentlyContinue"
+            remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
 
     def is_running(self):
         cmd = "docker desktop status"
-        result = remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, capture_stdout=True, check=False)
+        result = remote_access.run_with_ansible_ssh_conf(
+            self.base_work_dir, cmd,
+            capture_stdout=True, capture_stderr=True, check=False
+        )
+        if "You can start Docker Desktop" in result.stderr.strip():
+            return False
+
         if result.returncode != 0:
-            logging.error(f"Docker Desktop status check failed: {result.stdout.strip()}")
+            logging.error(
+                f"Docker Desktop status check failed:\n"
+                f"STDOUT: {result.stdout.strip()}\nSTDERR: {result.stderr.strip()}"
+            )
             return None
 
         return "running" in result.stdout.lower()

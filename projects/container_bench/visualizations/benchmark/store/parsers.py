@@ -9,7 +9,6 @@ register_important_file = None  # will be when importing store/__init__.py
 RUN_BENCHMARK_DIR = "*_run_metrics"
 
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.TEST_RUN_DIR = "*_run_dir"
 artifact_dirnames.RUN_BENCHMARK = RUN_BENCHMARK_DIR
 artifact_dirnames.CAPTURE_SYSTEM_STATE = "*__container_bench__capture_system_state"
 artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO = "*__container_bench__capture_container_engine_info"
@@ -21,12 +20,9 @@ IMPORTANT_FILES = [
     "config.yaml",
     ".uuid",
 
-    f"{artifact_dirnames.TEST_RUN_DIR}/output/output.json",
-    f"{artifact_dirnames.TEST_RUN_DIR}/src/benchmark.config.yaml",
-
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/metrics.json",
 
-    f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_profiler.txt",
+    f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_info.txt",
     f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.json",
 ]
 
@@ -67,7 +63,6 @@ def _parse_metrics(dirname):
     interval = 0
     command = ""
     timestamp = 0
-    power_usages = []
     memory_usages = []
     for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
         with open(
@@ -86,7 +81,6 @@ def _parse_metrics(dirname):
 
             cpu_usages.append(d.get("cpu_usage", []))
             execution_times.append(d.get("execution_time", 0.0))
-            power_usages.append(d.get("power_usage", []))
             memory_usages.append(d.get("memory_usage", []))
 
     if not execution_times:
@@ -94,7 +88,6 @@ def _parse_metrics(dirname):
 
     metric.cpu = [sum(cpu) / len(cpu) for cpu in zip(*cpu_usages)]
     metric.execution_time = sum(execution_times) / len(execution_times)
-    metric.power = [sum(power) / len(power) for power in zip(*power_usages)]
     metric.memory = [sum(memory) / len(memory) for memory in zip(*memory_usages)]
 
     network_send_avg = [sum(send) / len(send) for send in zip(*network_send_usages)]
@@ -118,7 +111,7 @@ def _parse_system_state(dirname):
         return None
 
     with open(
-        register_important_file(dirname, artifact_paths.CAPTURE_SYSTEM_STATE / "artifacts" / "system_profiler.txt")
+        register_important_file(dirname, artifact_paths.CAPTURE_SYSTEM_STATE / "artifacts" / "system_info.txt")
     ) as f:
         system_state = yaml.safe_load(f)
     return system_state

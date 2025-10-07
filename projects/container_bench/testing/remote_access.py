@@ -3,6 +3,7 @@ import pathlib
 import logging
 import utils
 import yaml
+import shlex
 
 from projects.core.library import config, run
 from constants import CONTAINER_BENCH_SECRET_PATH
@@ -27,6 +28,7 @@ def prepare():
 
     os.environ["TOPSAIL_REMOTE_HOSTNAME"] = remote_hostname
     os.environ["TOPSAIL_REMOTE_USERNAME"] = remote_username
+    os.environ["TOPSAIL_REMOTE_OS"] = config.project.get_config("remote_host.system", print=False)
 
     #
 
@@ -79,7 +81,7 @@ ansible_ssh_common_args: "{' '.join(ssh_flags)}"
     return base_work_dir
 
 
-def run_with_ansible_ssh_conf(
+def run_with_ansible_ssh_conf_windows(
         base_work_dir, cmd,
         extra_env=None,
         check=True,
@@ -88,6 +90,7 @@ def run_with_ansible_ssh_conf(
         chdir=None,
         print_cmd=False,
 ):
+    """Windows-specific SSH execution function using PowerShell."""
     if extra_env is None:
         extra_env = {}
 
@@ -99,8 +102,87 @@ def run_with_ansible_ssh_conf(
     )
 
     if config.project.get_config("remote_host.run_locally", print=False):
-        logging.info(f"Running on the local host: {cmd}")
+        logging.info(f"Running on the local Windows host: {cmd}")
+        return run.run(cmd, **run_kwargs)
 
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
+        ansible_ssh_config = yaml.safe_load(f)
+
+    ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
+    host = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
+    port = ansible_ssh_config["ansible_port"]
+    user = ansible_ssh_config["ansible_ssh_user"]
+    private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
+
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
+        ansible_extra_env = yaml.safe_load(f)
+
+    def escape_powershell_single_quote(value):
+        """Escape single quotes in PowerShell by replacing ' with ''"""
+        return str(value).replace("'", "''")
+
+    env_vars = ansible_extra_env | extra_env
+    if env_vars:
+        env_cmd = "\n".join(
+            f"$env:{escape_powershell_single_quote(k)}='{escape_powershell_single_quote(v)}'"
+            for k, v in env_vars.items()
+        )
+    else:
+        env_cmd = ""
+
+    chdir_cmd = f"Set-Location '{escape_powershell_single_quote(chdir)}'" if chdir else "Set-Location $env:USERPROFILE"
+
+    tmp_file_path, tmp_file = utils.get_tmp_fd()
+
+    env_section = f"{env_cmd}\n" if env_cmd else ""
+
+    entrypoint_script = f"""
+$ErrorActionPreference = "Stop"
+
+{env_section}{chdir_cmd}
+
+{cmd}
+    """
+
+    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
+        entrypoint_script = f"$VerbosePreference = 'Continue'\n{entrypoint_script}"
+
+    logging.info(f"Running on the remote Windows host: {chdir_cmd}; {cmd}")
+
+    with open(tmp_file_path, "w") as f:
+        print(entrypoint_script, file=f)
+    if print_cmd:
+        print(entrypoint_script)
+
+    proc = run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
+                   "powershell.exe -Command -",
+                   **run_kwargs, stdin_file=tmp_file)
+
+    return proc
+
+
+def run_with_ansible_ssh_conf_unix(
+        base_work_dir, cmd,
+        extra_env=None,
+        check=True,
+        capture_stdout=False,
+        capture_stderr=False,
+        chdir=None,
+        print_cmd=False,
+):
+    """Linux/Unix-specific SSH execution function using bash."""
+    if extra_env is None:
+        extra_env = {}
+
+    run_kwargs = dict(
+        log_command=False,
+        check=check,
+        capture_stdout=capture_stdout,
+        capture_stderr=capture_stderr,
+    )
+
+    if config.project.get_config("remote_host.run_locally", print=False):
+        logging.info(f"Running on the local Unix host: {cmd}")
         return run.run(cmd, **run_kwargs)
 
     with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
@@ -137,29 +219,94 @@ exec {cmd}
     if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
         entrypoint_script = f"set -x\n{entrypoint_script}"
 
-    logging.info(f"Running on the remote host: {chdir_cmd}; {cmd}")
+    logging.info(f"Running on the remote Unix host: {chdir_cmd}; {cmd}")
 
     with open(tmp_file_path, "w") as f:
         print(entrypoint_script, file=f)
     if print_cmd:
         print(entrypoint_script)
 
-    return run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
+    proc = run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
                    "bash",
                    **run_kwargs, stdin_file=tmp_file)
 
+    return proc
 
-def exists(path):
+
+def run_with_ansible_ssh_conf(
+        base_work_dir, cmd,
+        extra_env=None,
+        check=True,
+        capture_stdout=False,
+        capture_stderr=False,
+        chdir=None,
+        print_cmd=False,
+):
+    """Automatically choose the appropriate SSH function based on remote system type."""
+    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+
+    if is_windows:
+        return run_with_ansible_ssh_conf_windows(
+            base_work_dir, cmd,
+            extra_env=extra_env,
+            check=check,
+            capture_stdout=capture_stdout,
+            capture_stderr=capture_stderr,
+            chdir=chdir,
+            print_cmd=print_cmd,
+        )
+    else:
+        return run_with_ansible_ssh_conf_unix(
+            base_work_dir, cmd,
+            extra_env=extra_env,
+            check=check,
+            capture_stdout=capture_stdout,
+            capture_stderr=capture_stderr,
+            chdir=chdir,
+            print_cmd=print_cmd,
+        )
+
+
+def exists_windows(path):
+    """Windows-specific path existence check using PowerShell Test-Path."""
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.exists()
-    base_work_dir = prepare()
-    test_flag = '-e'
 
-    ret = run_with_ansible_ssh_conf(
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf_windows(
         base_work_dir,
-        f"test {test_flag} {path}",
+        f"Test-Path '{path}'",
+        capture_stdout=True,
+        check=False,
+    )
+
+    # PowerShell Test-Path returns "True" or "False" as text
+    return ret.stdout and ret.stdout.strip().lower() == "true"
+
+
+def exists_unix(path):
+    """Unix-specific path existence check using test command."""
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.exists()
+
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf_unix(
+        base_work_dir,
+        f"test -e {shlex.quote(str(path))}",
         capture_stdout=True,
         check=False,
     )
 
     return ret.returncode == 0
+
+
+def exists(path):
+    """Check if path exists on remote system, automatically choosing Windows or Unix method."""
+    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
+
+    if is_windows:
+        return exists_windows(path)
+    else:
+        return exists_unix(path)

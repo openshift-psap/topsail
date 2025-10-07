@@ -1,35 +1,25 @@
 ---
-- name: Create the artifacts directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/artifacts"
-    state: directory
-    mode: '0755'
-
-- name: Prepare
-  shell: |
-    {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f
-    mkdir ${HOME}/large-build-context
-    cd ${HOME}/large-build-context
-    cat <<'EOF' > Dockerfile
+# Define common command templates (shared across all platforms)
+- name: Set common commands
+  set_fact:
+    initial_prune_command: "{{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f"
+    cleanup_commands: |
+      {{ container_bench_image_build_large_build_context_benchmark_runtime }} rmi -f large-build-context-benchmark
+      {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f
+    dockerfile_content: |
       FROM scratch
       COPY random-1 random-1
       COPY random-10 random-10
-    EOF
-    for i in {1..10}; do
-        dd if=/dev/urandom of=random-$i bs=1G count=1
-    done
-    ls
+    build_context_path: "{{ '$env:USERPROFILE\\large-build-context' if ansible_os_family == 'Windows' else '${HOME}/large-build-context' }}"
 
-- name: Run benchmark commands
-  shell: |
-     {{ container_bench_image_build_large_build_context_benchmark_exec_time_path | dirname }}/.venv/bin/python \
-     {{ container_bench_image_build_large_build_context_benchmark_exec_time_path }}  \
-     --output "{{ artifact_extra_logs_dir }}/artifacts/output.log"  \
-     --metrics-log-file "{{ artifact_extra_logs_dir }}/artifacts/metrics.json"  \
-     {{ container_bench_image_build_large_build_context_benchmark_runtime }} build -t large-build-context-benchmark ${HOME}/large-build-context
+- name: Set platform-specific paths
+  set_fact:
+    benchmark_command: "{{ container_bench_image_build_large_build_context_benchmark_runtime }} build -t large-build-context-benchmark {{ build_context_path }}"
 
-- name: Clean up
-  shell: |
-    {{ container_bench_image_build_large_build_context_benchmark_runtime }} rmi -f large-build-context-benchmark
-    rm -rf ${HOME}/large-build-context/
-    {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f
+- name: Include Unix/Linux tasks
+  include_tasks: unix.yml
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: windows.yml
+  when: ansible_os_family == 'Windows'

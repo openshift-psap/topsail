@@ -87,6 +87,9 @@ def getInfo(settings):
 
 def generate_one_benchmark_report(report_components, settings, benchmark, args):
     info = getInfo(settings)
+    if not info:
+        return
+
     container_engine_info = info.get("container_engine_info", {})
     system = info.get("system", {})
 
@@ -115,9 +118,16 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
         ("CPU", f"{system.get('CPU_model', 'N/A')}", False, False),
         ("Cores", f"{system.get('CPU_cores', 'N/A')}", False, False),
         ("Memory", system.get('Memory', 'N/A'), False, False),
-        ("OS Version", system.get('OS_version', 'N/A'), False, False),
-        ("Kernel", system.get('Kernel_version', 'N/A'), True, False),
     ]
+
+    is_windows = "windows" in system.get("OS_version", "").lower()
+    if is_windows:
+        host_items.append(("OS Version", system.get('OS_version', 'N/A'), True, False))
+    else:
+        host_items.extend([
+            ("OS Version", system.get('OS_version', 'N/A'), False, False),
+            ("Kernel", system.get('Kernel_version', 'N/A'), True, False)
+        ])
 
     mem_val = container_engine_info.get('Host_memory')
     try:
@@ -155,7 +165,6 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
     if info.get('exec_time', 0) > 5:  # Only show plots for longer benchmarks (>5s)
         plot_names = [
             "System CPU Usage",
-            "System Power Usage",
             "System Memory Usage",
             "System Network Usage",
             "System Disk Usage"
@@ -207,12 +216,16 @@ class BenchmarkReport():
             dcc.Markdown(f'<style>{css.EMBEDDED_CSS}</style>', dangerously_allow_html=True),
             html.H1("Container Engine Benchmark Results", style=css.STYLE_H1)
         ]
+        static_settings = {k: v for k, v in settings.items() if v != "---"}
 
         for settings_values in sorted(itertools.product(*setting_lists), key=lambda x: x[0][0] if x else None):
-            current_settings = settings.copy()
-            current_settings.update(dict(settings_values))
+            current_settings = dict(settings_values)
+            current_settings.update(static_settings)
             current_settings.pop("stats", None)
+            current_settings.pop("test_mac_ai", None)
+
             benchmark = current_settings.get("benchmark", "unknown")
+
             generate_one_benchmark_report(report_components, current_settings, benchmark, args)
 
         return None, html.Div(report_components, style=css.STYLE_CONTAINER, className='report-container')

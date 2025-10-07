@@ -1,6 +1,36 @@
+# ============================================================================
+# CROSS-PLATFORM CONFIGURATION
+# ============================================================================
+# To switch between operating systems, change the values below:
+#
+# For Darwin/macOS (arm64):
+#   system: darwin
+#   arch: arm64
+#   exec_file_extension: ""
+#   env_path: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+#   machine_provider: applehv
+#
+# For Linux (amd64):
+#   system: linux
+#   arch: amd64
+#   exec_file_extension: ""
+#   env_path: (inherit from user environment)
+#   machine_provider: podman machine not supported, disable machine
+#
+# For Windows (amd64):
+#   system: windows
+#   arch: amd64
+#   exec_file_extension: ".exe"
+#   env_path: (inherit from user environment)
+#   machine_provider: wsl
+# ============================================================================
+
+# Darwin IP: jrodakmac.usersys.redhat.com
+# Windows IP: 10.43.2.47
+
 __platforms: &all_platforms
-  - podman/darwin
-  - docker/darwin
+  - podman
+  - docker
 
 ci_presets:
   to_apply: []
@@ -21,6 +51,7 @@ remote_host:
   hostname: "*$@secrets.hostname"
   username: "*$@secrets.username"
   port: 22
+  # On windows this must be same path as home of user. For example: C:\Users\jrodak-topsail
   base_work_dir: "*$@secrets.base_work_dir"
   ssh_flags:
     - "-oStrictHostKeyChecking=no"
@@ -29,20 +60,24 @@ remote_host:
     - "-oControlMaster=auto"
     - "-oControlPath=/tmp/ssh-%r@%h:%p"
     - "-oControlPersist=60s"
-  system: darwin
-  arch: arm64
+  # === CHANGE THESE VALUES TO SWITCH OS ===
+  system: darwin              # darwin | linux | windows
+  arch: arm64                 # arm64 (Darwin only) | amd64 (Linux/Windows)
   python_bin: python3
-  podman_bin: podman # only used if not prepare.podman.repo.enabled
+  podman_bin: podman
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: false
+    enabled: true
     docker_bin: docker
   env:
+    # Darwin: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+    # Linux:  Dont set PATH for Linux, inherit from user environment
+    # Windows: Dont set PATH for Windows, inherit from user environment
     PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
   home_is_base_work_dir: true
   verbose_ssh_commands: true
-
+  exec_file_extension: ""     # "" (Unix) | ".exe" (Windows)
 
 prepare:
   # the list of platform environments to prepare
@@ -55,11 +90,13 @@ prepare:
       - krunkit
 
   podman:
+    # Custom binary or repo version must be disabled for matbenchmarking
     custom_binary:
+      # Zip needs to contains current architecture for remote_host
       enabled: false
       url: "https://hony.fedorapeople.org/podman-custom.zip"
-      server_file: "podman"
-      client_file: "podman-remote-{@remote_host.system}"
+      server_file: "podman-{@remote_host.arch}" # Always Linux
+      client_file: "podman-{@remote_host.system}-{@remote_host.arch}{@remote_host.exec_file_extension}"
     repo:
       enabled: false
       url: https://github.com/containers/podman
@@ -67,28 +104,32 @@ prepare:
       darwin:
         file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
         zip: true
+      windows:
+        file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
+        zip: true
     gvisor:
       repo:
         enabled: true
         url: https://github.com/containers/gvisor-tap-vsock/
         version: v0.8.3
-        file: "gvproxy-{@remote_host.system}"
+        file: "gvproxy-{@remote_host.system}{@remote_host.exec_file_extension}"
 
     stop_on_exit: true
 
     machine:
-      enabled: true
+      enabled: true # disable for linux
       force_configuration: false
       set_default: true
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 4 # in cores
-        memory: 5120 # in MiB
+        cpus: 12 # in cores
+        memory: 8192 # in MiB
         rootful: true
       env:
-        CONTAINERS_MACHINE_PROVIDER: applehv # libkrun
-        CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
+        # applehv (Darwin) | libkrun (Linux) | wsl (Windows) | hyperv (Windows alt)
+        CONTAINERS_MACHINE_PROVIDER: applehv
+      # CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 cleanup:
   files:
@@ -106,43 +147,41 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
-  runs: 10
+  runs: 5
   supported_container_engines:
     - podman
     - docker
 
 exec_benchmark:
-  runs: 10
+  runs: 5
   supported_container_engines:
     - podman
     - docker
 
 image_build_large_build_context_benchmark:
-  runs: 1
+  runs: 5
   supported_container_engines:
     - podman
     - docker
 
 test:
-  platform: # *all_platforms
-    - podman/darwin
-    - docker/darwin
+  platform: *all_platforms
   platforms_to_skip:
-    # - docker/darwin
   benchmark:
     # - helloworld_benchmark
     # - exec_benchmark
     - image_build_large_build_context_benchmark
   podman:
     machine_provider:
-    - libkrun
-    - applehv
+     - libkrun
+     - applehv
+     - wsl
+     - hyperv
     rootful:
     - true
     - false
     repo_version:
-    # - v5.4.0
-    - v5.6.0
+    - v5.4.0
     - custom
   capture_metrics:
     enabled: true
