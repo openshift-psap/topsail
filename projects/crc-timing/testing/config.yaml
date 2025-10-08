@@ -24,11 +24,22 @@ ci_presets:
     remote_host.description: "kpouget's MacBook M4 Pro"
 
   kpouget-atuona:
+    extends: [libvirt]
     secrets.hostname: mac_ai__hostname.kpouget-atuona
     secrets.username: mac_ai__username.kpouget-atuona
     secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
     remote_host.description: "kpouget's Atuona system"
+
+  libvirt:
     prepare.crc.bundle.hypervisor: libvirt
+    remote_host.arch: amd64
+    prepare.crc.bundle.arch: amd64
+    prepare.crc.bundle.diskfile: crc.qcow2
+
+  libvirt_wip:
+    extends: [libvirt]
+    prepare.crc.bundle.version: 4.19.15
+    prepare.crc.bundle.pr: 1168
 
 secrets:
   dir:
@@ -71,6 +82,10 @@ prepare:
       flavor: openshift
       source:
         base_url: https://mirror.openshift.com/pub/openshift-v4/clients/crc/bundles
+        pr_base_url: https://storage.googleapis.com/crc-bundle-
+      diskfile: crc.img
+      pr: null
+
     binary:
       version: 2.54.0
       base_url: https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/crc/{@prepare.crc.binary.version}
@@ -81,9 +96,11 @@ prepare:
 
 test:
   vm:
-    cpus: 4
-    memory: 10752 # MB
-    mac_addr: "72:20:43:d4:38:62"
+    reuse: false
+    hardware:
+      cpus: 4
+      memory: 10752 # MB
+      mac_addr: "72:20:43:d4:38:62"
     ssh:
       args:
       - -oUserKnownHostsFile=/dev/null
