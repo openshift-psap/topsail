@@ -13,3 +13,7 @@ jump_ci_ensure_lock_owner:
 
 # if enabled, ensure that the cluster's kubeconfig file exists
 jump_ci_ensure_lock_check_kubeconfig: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

@@ -22,3 +22,7 @@ kserve_extract_protos_grpcurl_methods:
 
 # if True, copy the protos to the command artifacts. If False, don't.
 kserve_extract_protos_grpcurl_copy_to_artifacts: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

@@ -12,6 +12,10 @@ cluster_prometheus_db_label: app.kubernetes.io/component=prometheus
 # Namespace where to search Promtheus Pod.
 cluster_prometheus_db_namespace: openshift-monitoring
 
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
+
 # Constants
 # Prefix to apply to the db name in 'dump' mode
 # Defined as a constant in Cluster.reset_prometheus_db

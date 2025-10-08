@@ -17,3 +17,7 @@ mac_ai_remote_llama_cpp_pull_model_name:
 
 # if specified, where to put the model being pulled
 mac_ai_remote_llama_cpp_pull_model_dest: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

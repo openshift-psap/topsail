@@ -25,3 +25,7 @@ rhods_deploy_ods_opendatahub: false
 
 # if True, deploys RHOAI with the Managed Service flag. If False, deploys it as Self-Managed.
 rhods_deploy_ods_managed_rhoai: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

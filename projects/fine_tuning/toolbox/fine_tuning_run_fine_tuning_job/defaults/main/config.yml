@@ -92,3 +92,7 @@ fine_tuning_run_fine_tuning_job_use_host_network: false
 
 # if enabled, allows files retrieval from the pod to the artifacts directory.
 fine_tuning_run_fine_tuning_job_retrieve_files: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

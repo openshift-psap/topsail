@@ -20,3 +20,7 @@ jump_ci_retrieve_artifacts_local_dir: artifacts
 
 # if True, skip the cluster is lock check (eg, when included from another role).
 jump_ci_retrieve_artifacts_skip_cluster_lock: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

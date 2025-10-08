@@ -25,3 +25,7 @@ cluster_preload_image_pod_toleration_key:
 
 # Pod toleration to apply to the DaemonSet.
 cluster_preload_image_pod_toleration_effect:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

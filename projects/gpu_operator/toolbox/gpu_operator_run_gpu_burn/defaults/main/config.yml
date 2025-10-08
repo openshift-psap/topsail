@@ -17,3 +17,7 @@ gpu_operator_run_gpu_burn_keep_resources: false
 # if true, fails if no GPU is available in the cluster.
 # Type: Bool
 gpu_operator_run_gpu_burn_ensure_has_gpu: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

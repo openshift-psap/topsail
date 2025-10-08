@@ -29,3 +29,7 @@ kserve_validate_model_method: null
 
 # if not empty, the proto file to pass to grpcurl
 kserve_validate_model_proto: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

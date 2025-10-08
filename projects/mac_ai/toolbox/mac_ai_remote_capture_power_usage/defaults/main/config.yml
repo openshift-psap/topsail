@@ -11,3 +11,7 @@ mac_ai_remote_capture_power_usage_sample_rate: 1000
 
 # if true, only stop the capture
 mac_ai_remote_capture_power_usage_stop: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

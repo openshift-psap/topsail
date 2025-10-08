@@ -85,3 +85,7 @@ fine_tuning_ray_fine_tuning_job_use_secondary_nic: false
 
 # if a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.
 fine_tuning_ray_fine_tuning_job_ephemeral_output_pvc_size: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

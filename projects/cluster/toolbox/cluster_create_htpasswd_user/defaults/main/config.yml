@@ -14,6 +14,10 @@ cluster_create_htpasswd_user_passwordfile:
 # If True, waits for the user to be able to login into the cluster.
 cluster_create_htpasswd_user_wait: false
 
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
+
 # Constants
 # Name of the secret that will contain the htpasswd passwords
 # Defined as a constant in Cluster.create_htpasswd_adminuser

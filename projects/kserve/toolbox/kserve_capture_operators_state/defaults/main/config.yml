@@ -5,3 +5,7 @@
 # Parameters
 # if True, do not try to capture any Serverless related resource
 kserve_capture_operators_state_raw_deployment: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

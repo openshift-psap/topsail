@@ -29,3 +29,7 @@ storage_download_to_image_storage_dir: /
 
 # base image for the image containing the data
 storage_download_to_image_base_image: registry.access.redhat.com/ubi9/ubi
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

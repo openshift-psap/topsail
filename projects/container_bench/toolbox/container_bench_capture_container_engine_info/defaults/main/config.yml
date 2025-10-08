@@ -6,3 +6,7 @@
 # the container engine to capture information from (e.g., podman, docker)
 # Mandatory value
 container_bench_capture_container_engine_info_runtime:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

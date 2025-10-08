@@ -6,3 +6,7 @@
 # The image to upgrade the cluster to
 # Mandatory value
 cluster_upgrade_to_image_image:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

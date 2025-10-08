@@ -15,3 +15,7 @@ cluster_set_project_annotation_project: null
 
 # If set, the annotation will be set for any new project.
 cluster_set_project_annotation_all: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

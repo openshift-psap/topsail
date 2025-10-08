@@ -36,3 +36,7 @@ kserve_deploy_model_delete_others: true
 
 # if True, do not try to configure anything related to Serverless.
 kserve_deploy_model_raw_deployment: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

@@ -17,3 +17,7 @@ storage_deploy_nfs_provisioner_storage_class_name: nfs-provisioner
 
 # Set to true to mark the storage class as default in the cluster
 storage_deploy_nfs_provisioner_default_sc: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
