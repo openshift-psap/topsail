@@ -9,7 +9,7 @@
   ansible.builtin.get_url:
     url: "{{ remote_download_source }}"
     dest: "{{ remote_download_dest }}"
-    mode: "0755"
+    mode: "{{ '0755' if remote_download_executable | bool else '0644' }}"
     force: "{{ remote_download_force }}"
 
 - name: Compute the sha of the file
@@ -20,11 +20,6 @@
 
 - name: Show the sha of the file
   command: echo "{{ dest_stat_sha.stat.checksum }}"
-
-- name: Make the file executable
-  command:
-    chmod u+x "{{ remote_download_dest }}"
-  when: remote_download_executable | bool
 
 - name: Extract the tarball
   command:
