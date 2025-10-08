@@ -31,6 +31,3 @@ write_files:
 - path: /opt/crc/pass_developer
   content: '$PASS_DEVELOPER'  # will be set at runtime
   permissions: '0644' # keep visible for the other VM users, safe
-- path: /opt/crc/ocp-custom-domain.service.done
-  content: ""  # create empty marker file
-  permissions: '0600'
