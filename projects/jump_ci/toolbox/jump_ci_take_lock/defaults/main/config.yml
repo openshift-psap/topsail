@@ -10,3 +10,7 @@ jump_ci_take_lock_cluster:
 # name of the lock owner
 # Mandatory value
 jump_ci_take_lock_owner:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

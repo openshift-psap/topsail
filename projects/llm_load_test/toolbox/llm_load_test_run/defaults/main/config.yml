@@ -56,3 +56,7 @@ llm_load_test_run_endpoint: /v1/completions
 
 # command to use to launch Python
 llm_load_test_run_python_cmd: python3
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

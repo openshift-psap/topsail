@@ -10,3 +10,7 @@ container_bench_image_build_large_build_context_benchmark_exec_time_path:
 # the runtime to use for the benchmark (e.g., docker, podman)
 # Mandatory value
 container_bench_image_build_large_build_context_benchmark_runtime:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

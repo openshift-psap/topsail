@@ -17,3 +17,7 @@ rhods_update_datasciencecluster_show_all: false
 # Type: Dict
 rhods_update_datasciencecluster_extra_settings:
   spec.components.kserve.serving.managementState: Removed
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

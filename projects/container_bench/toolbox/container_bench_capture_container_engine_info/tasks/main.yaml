@@ -1,4 +1,9 @@
 ---
+# Define common command template
+- name: Set common command
+  set_fact:
+    container_info_command: "{{ container_bench_capture_container_engine_info_runtime }} info --format json"
+
 - name: Include Unix/Linux tasks
   include_tasks: unix.yml
   when: ansible_os_family != 'Windows'

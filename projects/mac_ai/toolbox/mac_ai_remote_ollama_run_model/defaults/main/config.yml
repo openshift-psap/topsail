@@ -17,3 +17,7 @@ mac_ai_remote_ollama_run_model_name:
 
 # if True, unloads (stops serving) this model
 mac_ai_remote_ollama_run_model_unload: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

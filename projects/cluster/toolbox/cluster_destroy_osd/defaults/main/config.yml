@@ -6,3 +6,7 @@
 # The name of the cluster to destroy.
 # Mandatory value
 cluster_destroy_osd_cluster_name:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

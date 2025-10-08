@@ -15,3 +15,7 @@ server_undeploy_ldap_use_rosa: false
 
 # Cluster to use when using OCM or ROSA.
 server_undeploy_ldap_cluster_name: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

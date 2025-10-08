@@ -21,3 +21,7 @@ gpu_operator_extend_metrics_extra_metrics: null
 
 # if True, wait for the DCGM components to take into account the new configuration
 gpu_operator_extend_metrics_wait_refresh: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

@@ -27,3 +27,7 @@ mac_ai_remote_ramalama_run_bench_device: null
 
 # the image to use to run ramalama
 mac_ai_remote_ramalama_run_bench_image: quay.io/ramalama/ramalama:latest
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

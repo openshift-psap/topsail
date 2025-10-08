@@ -26,3 +26,7 @@ remote_build_image_container_file_is_local: false
 
 # dict of build args kv to pass to podman build.
 remote_build_image_build_args: {}
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

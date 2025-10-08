@@ -10,3 +10,7 @@ server_deploy_nginx_server_namespace:
 # directory containing the files to serve on the HTTP server.
 # Mandatory value
 server_deploy_nginx_server_directory:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

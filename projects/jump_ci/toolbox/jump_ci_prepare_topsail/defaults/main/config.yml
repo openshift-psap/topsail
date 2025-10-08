@@ -37,3 +37,7 @@ jump_ci_prepare_topsail_update_from_imagetag: main
 
 # if disabled, don't cleanup the old images
 jump_ci_prepare_topsail_cleanup_old_pr_images: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

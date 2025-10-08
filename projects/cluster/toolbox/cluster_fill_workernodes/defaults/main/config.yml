@@ -11,3 +11,7 @@ cluster_fill_workernodes_name: resource-placeholder
 
 # label to use to select the nodes to fill
 cluster_fill_workernodes_label_selector: node-role.kubernetes.io/worker
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

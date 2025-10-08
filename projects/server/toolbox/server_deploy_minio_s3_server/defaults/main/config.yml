@@ -13,6 +13,10 @@ server_deploy_minio_s3_server_namespace: minio
 # The name of the default bucket to create in Minio.
 server_deploy_minio_s3_server_bucket_name: myBucket
 
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
+
 # Constants
 # Name of the Minio admin user
 # Defined as a constant in Server.deploy_minio_s3_server

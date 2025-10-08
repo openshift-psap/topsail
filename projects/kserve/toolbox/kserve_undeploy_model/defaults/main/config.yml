@@ -15,3 +15,7 @@ kserve_undeploy_model_inference_service_name:
 
 # delete all the inference services/servingruntime of the namespace
 kserve_undeploy_model_all: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

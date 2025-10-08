@@ -23,3 +23,7 @@ cluster_query_prometheus_db_start_ts: null
 
 # the end timestamp of the history to query. Incompatible with duration_s flag.
 cluster_query_prometheus_db_end_ts: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

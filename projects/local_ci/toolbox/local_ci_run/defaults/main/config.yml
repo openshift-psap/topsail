@@ -63,3 +63,7 @@ local_ci_run_pr_config: null
 
 # If True, updates the git repo with the latest main/PR before running the test.
 local_ci_run_update_git: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

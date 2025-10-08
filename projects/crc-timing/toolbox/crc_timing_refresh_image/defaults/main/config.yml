@@ -44,3 +44,7 @@ crc_timing_refresh_image_security_group_name: topsail-refresh-image-sg
 
 # the name of the user to use in the image
 crc_timing_refresh_image_ami_image_user: fedora
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

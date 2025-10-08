@@ -72,3 +72,7 @@ local_ci_run_multi_need_all_success: false
 
 # if true, do not wait for the job to complete. Most of the options above become irrelevant
 local_ci_run_multi_launch_as_daemon: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

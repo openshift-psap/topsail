@@ -10,3 +10,7 @@ pipelines_deploy_application_name:
 # the namespace in which the application should be deployed
 # Mandatory value
 pipelines_deploy_application_namespace:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

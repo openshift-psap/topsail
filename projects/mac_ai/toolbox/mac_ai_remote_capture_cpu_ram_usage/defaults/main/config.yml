@@ -5,3 +5,7 @@
 # Parameters
 # if true, only stop the capture
 mac_ai_remote_capture_cpu_ram_usage_stop: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

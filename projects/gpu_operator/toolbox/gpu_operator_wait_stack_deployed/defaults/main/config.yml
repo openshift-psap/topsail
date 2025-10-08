@@ -5,3 +5,7 @@
 # Parameters
 # namespace in which the GPU Operator is deployed
 gpu_operator_wait_stack_deployed_namespace: nvidia-gpu-operator
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

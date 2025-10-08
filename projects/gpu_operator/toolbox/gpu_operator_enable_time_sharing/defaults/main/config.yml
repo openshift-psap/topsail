@@ -12,3 +12,7 @@ gpu_operator_enable_time_sharing_namespace: nvidia-gpu-operator
 
 # name of the ConfigMap where the configuration will be stored
 gpu_operator_enable_time_sharing_configmap_name: time-slicing-config-all
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

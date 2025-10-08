@@ -31,6 +31,10 @@ cluster_create_osd_compute_machine_type: m5.xlarge
 # Type: Int
 cluster_create_osd_compute_nodes: 2
 
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
+
 # Constants
 # Name of the worker node machinepool
 # Defined as a constant in Cluster.create_osd

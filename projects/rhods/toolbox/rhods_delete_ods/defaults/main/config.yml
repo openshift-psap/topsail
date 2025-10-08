@@ -5,3 +5,7 @@
 # Parameters
 # Namespace where RHODS is installed.
 rhods_delete_ods_namespace: redhat-ods-operator
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

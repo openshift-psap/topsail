@@ -20,3 +20,7 @@ cluster_update_pods_per_node_label_value:
 
 # limit the maximum number of processes that can be created by containers within a pod
 cluster_update_pods_per_node_pod_pids_limit: 4096
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

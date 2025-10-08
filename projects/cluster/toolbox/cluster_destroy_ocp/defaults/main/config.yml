@@ -17,3 +17,7 @@ cluster_destroy_ocp_tag_value: owned
 
 # The path to the `openshift-install` to use to destroy the cluster. If empty, pick it up from the `deploy-cluster` subproject.
 cluster_destroy_ocp_openshift_install: openshift-install
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

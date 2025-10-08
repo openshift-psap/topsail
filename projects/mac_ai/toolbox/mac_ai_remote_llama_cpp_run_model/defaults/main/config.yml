@@ -24,3 +24,7 @@ mac_ai_remote_llama_cpp_run_model_prefix:
 
 # number of layers to store in VRAM
 mac_ai_remote_llama_cpp_run_model_ngl: 99
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

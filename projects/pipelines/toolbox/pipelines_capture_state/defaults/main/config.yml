@@ -14,3 +14,7 @@ pipelines_capture_state_user_id:
 
 # whether to capture extra descriptions and YAML's
 pipelines_capture_state_capture_extra_artifacts: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

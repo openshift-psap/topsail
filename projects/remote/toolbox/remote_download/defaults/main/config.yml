@@ -22,3 +22,7 @@ remote_download_tarball: false
 
 # if true, unzip the zipball (currently only on MacOS)
 remote_download_zip: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

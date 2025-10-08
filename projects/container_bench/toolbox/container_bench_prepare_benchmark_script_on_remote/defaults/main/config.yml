@@ -10,3 +10,7 @@ container_bench_prepare_benchmark_script_on_remote_source:
 # the destination path on the remote machine
 # Mandatory value
 container_bench_prepare_benchmark_script_on_remote_dest:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

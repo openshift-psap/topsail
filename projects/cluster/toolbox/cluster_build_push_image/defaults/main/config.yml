@@ -42,3 +42,7 @@ cluster_build_push_image_from_image: null
 
 # Base imagestreamtag to use, instead of the FROM image specified in the Dockerfile.
 cluster_build_push_image_from_imagetag: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

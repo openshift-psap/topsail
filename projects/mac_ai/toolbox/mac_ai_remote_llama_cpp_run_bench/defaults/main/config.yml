@@ -25,3 +25,7 @@ mac_ai_remote_llama_cpp_run_bench_llama_bench: true
 
 # if true, runs the test-backend-ops benchmark
 mac_ai_remote_llama_cpp_run_bench_test_backend_ops: true
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

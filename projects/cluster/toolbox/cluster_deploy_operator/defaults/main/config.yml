@@ -45,3 +45,7 @@ cluster_deploy_operator_config_env_names: []
 
 # if not empty, base name of the CSV. If empty, use the manifest_name.
 cluster_deploy_operator_csv_base_name: null
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
