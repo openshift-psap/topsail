@@ -10,6 +10,8 @@ SCRIPT_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PROJECT_DIR = SCRIPT_THIS_DIR.parent
 TOPSAIL_DIR = SCRIPT_THIS_DIR.parent.parent.parent
 
+TOPSAIL_OS_DEFAULT_VALUES = dict(ansible_os_family="Linux")
+
 def _generate_config(component):
     if not hasattr(component, "ansible_role"):
         print(f"{component.__qualname__}\n- not an ansible role.\n")
@@ -78,6 +80,18 @@ def _generate_config(component):
                   else f"{ansible_arg_name}:", file=f)
             if i < len(mapped_params)-1:
                 print("", file=f)
+
+        # Add hardcoded default values for ansible variables to ensure role remains standalone
+        if ansible_mapped_params and TOPSAIL_OS_DEFAULT_VALUES:
+            if len(mapped_params) > 0:
+                print("", file=f)
+            print("# Default Ansible variables", file=f)
+
+            for i, (var_name, default_value) in enumerate(TOPSAIL_OS_DEFAULT_VALUES.items()):
+                print(f"# Default value for {var_name} to ensure role remains standalone", file=f)
+                print(yaml.dump({var_name: default_value}).strip(), file=f)
+                if i < len(TOPSAIL_OS_DEFAULT_VALUES)-1:
+                    print("", file=f)
 
         if len(ansible_constants) > 0:
             print("", file=f)

@@ -279,7 +279,7 @@ class RunAnsibleRole:
 
             # Configure OS-specific Ansible variables
             if remote_os := env.get("TOPSAIL_REMOTE_OS"):
-                config = ANSIBLE_OS_CONFIGURATIONS.get(remote_os)
+                config = ANSIBLE_OS_CONFIGURATIONS.get(remote_os.lower())
                 if not config:
                     raise ValueError(f"TOPSAIL Ansible OS configuration not found for TOPSAIL_REMOTE_OS={remote_os}")
                 host_properties.extend(config)
