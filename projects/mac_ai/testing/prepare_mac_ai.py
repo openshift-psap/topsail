@@ -1,6 +1,7 @@
 import os
 import pathlib
 import logging
+import subprocess
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -39,10 +40,11 @@ def cleanup():
         if is_running is None:
             logging.warning("Podman machine doesn't exist.")
         elif not is_running:
-            if podman_machine.start(base_work_dir, use_remoting=False):
+            try:
+                podman_machine.start(base_work_dir, use_remoting=False)
                 is_running = True
-            else:
-                logging.warning(f"Could not start podman machine, cannot check/move the {local_image_name} image ...")
+            except subprocess.CalledProcessError:
+                logging.warning("Could not start podman machine, cannot cleanup the llama_cpp images ...")
                 is_running = None
 
         if is_running:
@@ -88,9 +90,15 @@ def cleanup():
             is_running = podman_machine.is_running(base_work_dir)
 
         if is_running is not None:
-            if config.project.get_config("cleanup.podman_machine.reset"):
-                podman_machine.reset(base_work_dir)
             podman_machine.rm(base_work_dir)
+
+        if config.project.get_config("cleanup.podman_machine.reset"):
+            try:
+                podman_machine.reset(base_work_dir)
+            except subprocess.CalledProcessError as e:
+                if e.returncode != 127:
+                    raise
+                logging.info("Cannot reset podman machine, podman binary already cleaned up.")
 
     if config.project.get_config("cleanup.files.podman"):
         podman.cleanup(base_work_dir)
