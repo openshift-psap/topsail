@@ -66,7 +66,11 @@ def download_ramalama(base_work_dir, dest, version):
     )
 
     remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
-                                            chdir=dest)
+                                        chdir=dest)
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, "git fetch origin refs/pull/2014/head", chdir=dest)
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, "git cherry-pick FETCH_HEAD", chdir=dest)
+
 
 
 def build_container_image(base_work_dir, ramalama_path):
