@@ -457,7 +457,7 @@ def send_cpt_notification_to_slack(secret_dir, secret_env_key, title, summary, d
     if not client:
         logging.fatal("Couldn't get the slack client ...")
         return True
-    safe_title = html.escappe(title)
+    safe_title = html.escape(title)
     channel_msg_ts, channel_message = slack_api.search_channel_message(client, safe_title)
 
     if not channel_msg_ts:

@@ -105,7 +105,9 @@ def inspect(base_work_dir):
     name = config.project.get_config("prepare.podman.machine.name", print=False)
     inspect_cmd = _run(base_work_dir, f"inspect {name}", capture_stdout=True, check=False)
     if inspect_cmd.returncode != 0:
-        if "VM does not exist" in inspect_cmd.stdout:
+        if inspect_cmd.returncode == 127:
+            logging.info("podman_machine: inspect: podman binary not found")
+        elif "VM does not exist" in inspect_cmd.stdout:
             logging.info("podman_machine: inspect: VM does not exist")
         else:
             logging.error(f"podman_machine: inspect: unhandled status: {inspect_cmd.stdout.strip()}")

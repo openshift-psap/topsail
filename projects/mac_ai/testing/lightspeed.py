@@ -33,6 +33,9 @@ def prepare_binary(base_work_dir, platform):
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sed 's+podman+{bin_dir / 'podzman'}+g' '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.sh' > '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.new.sh'")
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"mv '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.new.sh' '{base_work_dir}/.config/rhel-cla/rhel-cla-runner.sh'")
 
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sed 's+ramalama:latest+ramalama:0.12.3+g' '{base_work_dir}/.config/rhel-cla/.env' > '{base_work_dir}/.config/rhel-cla/.env.fixed'")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"mv '{base_work_dir}/.config/rhel-cla/.env.fixed' '{base_work_dir}/.config/rhel-cla/.env'")
+
     return bin_dir / "rhel-cla"
 
 
