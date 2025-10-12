@@ -61,34 +61,66 @@ def monitor_resources(stop_event, measurements):
     disk_write_list = []
     disk_read_list = []
 
-    # Get initial network and disk counters
-    last_net_io = psutil.net_io_counters()
-    last_disk_io = psutil.disk_io_counters()
+    try:
+        last_net_io = psutil.net_io_counters()
+        last_disk_io = psutil.disk_io_counters()
+    except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+        logging.warning(f"Could not initialize I/O counters: {e}")
+        last_net_io = None
+        last_disk_io = None
 
     while not stop_event.is_set():
-        # Overall System CPU Usage
-        measurements.cpu_usage.append(psutil.cpu_percent(interval=measurements.interval))
+        try:
+            # Overall System CPU Usage
+            cpu_percent = psutil.cpu_percent(interval=measurements.interval)
+            measurements.cpu_usage.append(cpu_percent)
 
-        # --- Network Usage ---
-        current_net_io = psutil.net_io_counters()
-        bytes_sent = current_net_io.bytes_sent - last_net_io.bytes_sent
-        bytes_recv = current_net_io.bytes_recv - last_net_io.bytes_recv
-        net_send_list.append(bytes_sent)
-        net_recv_list.append(bytes_recv)
-        last_net_io = current_net_io
+            # --- Network Usage ---
+            if last_net_io is not None:
+                try:
+                    current_net_io = psutil.net_io_counters()
+                    bytes_sent = max(0, current_net_io.bytes_sent - last_net_io.bytes_sent)
+                    bytes_recv = max(0, current_net_io.bytes_recv - last_net_io.bytes_recv)
+                    net_send_list.append(bytes_sent)
+                    net_recv_list.append(bytes_recv)
+                    last_net_io = current_net_io
+                except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+                    logging.warning(f"Network monitoring failed: {e}")
+                    net_send_list.append(0)
+                    net_recv_list.append(0)
 
-        # --- Disk I/O ---
-        current_disk_io = psutil.disk_io_counters()
-        read_bytes = current_disk_io.read_bytes - last_disk_io.read_bytes
-        write_bytes = current_disk_io.write_bytes - last_disk_io.write_bytes
-        disk_read_list.append(read_bytes)
-        disk_write_list.append(write_bytes)
-        last_disk_io = current_disk_io
+            # --- Disk I/O ---
+            if last_disk_io is not None:
+                try:
+                    current_disk_io = psutil.disk_io_counters()
+                    read_bytes = max(0, current_disk_io.read_bytes - last_disk_io.read_bytes)
+                    write_bytes = max(0, current_disk_io.write_bytes - last_disk_io.write_bytes)
+                    disk_read_list.append(read_bytes)
+                    disk_write_list.append(write_bytes)
+                    last_disk_io = current_disk_io
+                except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+                    logging.warning(f"Disk monitoring failed: {e}")
+                    disk_read_list.append(0)
+                    disk_write_list.append(0)
 
-        # --- Memory Usage ---
-        measurements.memory_usage.append(psutil.virtual_memory().percent)
+            # --- Memory Usage ---
+            try:
+                memory_percent = psutil.virtual_memory().percent
+                measurements.memory_usage.append(memory_percent)
+            except (psutil.AccessDenied, psutil.NoSuchProcess) as e:
+                logging.warning(f"Memory monitoring failed: {e}")
+                measurements.memory_usage.append(0)
 
-    # Extend the lists with the collected data
+        except Exception as e:
+            logging.error(f"Unexpected error in resource monitoring: {e}")
+            # Continue monitoring but add zero values
+            measurements.cpu_usage.append(0)
+            net_send_list.append(0)
+            net_recv_list.append(0)
+            disk_read_list.append(0)
+            disk_write_list.append(0)
+            measurements.memory_usage.append(0)
+
     measurements.network_usage["send"] = net_send_list
     measurements.network_usage["recv"] = net_recv_list
     measurements.disk_usage["read"] = disk_read_list
@@ -98,10 +130,6 @@ def monitor_resources(stop_event, measurements):
 def execute_command(command_list, stop_event, monitor_thread):
     """
     Executes a command and captures its output, error, and execution time.
-
-    Starts the monitoring thread for system resources, sets the power reading event
-    to begin power data collection, then executes the command and waits for completion.
-    The power monitoring reads from a pre-started powermetrics process.
 
     Args:
         command_list (list): A list of strings representing the command and its arguments.
@@ -115,9 +143,22 @@ def execute_command(command_list, stop_event, monitor_thread):
                return_code (int): Return code of the command.
                execution_time (float): Time taken to execute the command in seconds.
     """
-    monitor_thread.start()
-    start_time = time.perf_counter()
+    stdout = ""
+    stderr = ""
+    return_code = -1
+    end_time = None
+
     try:
+        monitor_thread.start()
+    except RuntimeError as e:
+        logging.error(f"Failed to start monitoring thread: {e}")
+
+    start_time = time.perf_counter()
+
+    try:
+        if not command_list or not all(isinstance(cmd, str) for cmd in command_list):
+            raise ValueError("Command list must be non-empty and contain only strings")
+
         with subprocess.Popen(
             command_list,
             stdout=subprocess.PIPE,
@@ -125,18 +166,50 @@ def execute_command(command_list, stop_event, monitor_thread):
             text=True,
             bufsize=1,
         ) as process:
-            stdout, stderr = process.communicate()
-            process.wait()
-            return_code = process.returncode
+            try:
+                stdout, stderr = process.communicate(timeout=3600)  # 1 hour timeout
+                return_code = process.returncode
+            except subprocess.TimeoutExpired:
+                logging.error("Command execution timed out after 1 hour")
+                process.kill()
+                stdout, stderr = process.communicate()
+                return_code = -1
+                stderr = f"Command timed out after 1 hour\n{stderr}"
+
         end_time = time.perf_counter()
+
+    except FileNotFoundError as e:
+        error_msg = f"Command not found: {command_list[0]} - {e}"
+        logging.error(error_msg)
+        stderr = error_msg
+        return_code = 127
+        end_time = time.perf_counter()
+
+    except PermissionError as e:
+        error_msg = f"Permission denied executing: {command_list[0]} - {e}"
+        logging.error(error_msg)
+        stderr = error_msg
+        return_code = 126
+        end_time = time.perf_counter()
+
     except Exception as e:
-        stdout, stderr, return_code, end_time = "", str(e), -1, time.perf_counter()
+        error_msg = f"Unexpected error executing command: {e}"
+        logging.error(error_msg)
+        stderr = error_msg
+        return_code = -1
+        end_time = time.perf_counter()
+
     finally:
         stop_event.set()
-        monitor_thread.join()
+        try:
+            if monitor_thread.is_alive():
+                monitor_thread.join(timeout=5.0)  # Wait max 5 seconds
+                if monitor_thread.is_alive():
+                    logging.warning("Monitoring thread did not stop gracefully")
+        except Exception as e:
+            logging.warning(f"Error stopping monitoring thread: {e}")
 
-    execution_time = end_time - start_time
-
+    execution_time = (end_time or time.perf_counter()) - start_time
     return stdout, stderr, return_code, execution_time
 
 
@@ -146,7 +219,6 @@ def write_to_file(filepath, content):
 
 
 def main():
-    # Configure logging
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',

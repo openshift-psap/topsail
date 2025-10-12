@@ -8,6 +8,8 @@ import remote_access
 import logging
 from types import SimpleNamespace
 from pathlib import Path
+from config_manager import ConfigManager, ConfigKeys
+
 __keep_open = []
 
 
@@ -27,7 +29,9 @@ def get_tmp_fd():
 
 
 def prepare_podman_from_gh_binary(base_work_dir):
-    system = config.project.get_config("remote_host.system", print=False)
+    system_type = ConfigManager.get_system_type()
+    system = system_type.value
+    podman_config = ConfigManager.get_podman_config()
 
     podman_path, version = _get_repo_podman_path(base_work_dir)
 
@@ -35,18 +39,19 @@ def prepare_podman_from_gh_binary(base_work_dir):
         logging.info(f"podman {version} already exists, not downloading it.")
         return podman_path
 
-    zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file")
-    if system == "linux":
+    zip_file = ConfigManager.get_repo_file_for_system(system)
+    repo_url = config.project.get_config(ConfigKeys.PODMAN_REPO_URL, print=False)
+    if ConfigManager.is_linux():
         source = "/".join([
-            config.project.get_config("prepare.podman.repo.url"),
+            repo_url,
             "archive/refs/tags",
             zip_file,
         ])
     else:
         source = "/".join([
-            config.project.get_config("prepare.podman.repo.url"),
+            repo_url,
             "releases/download",
-            config.project.get_config("prepare.podman.repo.version"),
+            podman_config['repo_version'],
             zip_file,
         ])
 
@@ -63,18 +68,20 @@ def prepare_podman_from_gh_binary(base_work_dir):
 
 
 def _get_repo_podman_path(base_work_dir):
-    version = config.project.get_config("prepare.podman.repo.version", print=False)
+    podman_config = ConfigManager.get_podman_config()
+    version = podman_config['repo_version']
 
     podman_path = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
 
-    if config.project.get_config("remote_host.system", print=False) == "linux":
+    if ConfigManager.is_linux():
         podman_path = base_work_dir / f"podman-{version}"
 
     return podman_path, version
 
 
 def cleanup_podman_files(base_work_dir):
-    version = config.project.get_config("prepare.podman.repo.version", print=False)
+    podman_config = ConfigManager.get_podman_config()
+    version = podman_config['repo_version']
 
     dest = base_work_dir / f"podman-{version}"
 
@@ -92,7 +99,7 @@ def cleanup_podman_files(base_work_dir):
 def parse_platform(platform_str):
     p = SimpleNamespace()
     p.container_engine = platform_str
-    p.platform = config.project.get_config("remote_host.system", print=False)
+    p.platform = ConfigManager.get_system_type().value
 
     if p.container_engine not in ["podman", "docker"]:
         raise ValueError(f"Unsupported container engine: {p.container_engine}. Expected 'podman' or 'docker'.")
@@ -111,9 +118,9 @@ def parse_platform(platform_str):
 
 def parse_benchmark(benchmark_name):
     b = SimpleNamespace()
-    supported_container_engines = config.project.get_config(
-        f"{benchmark_name}.supported_container_engines",
-        print=False)
+    benchmark_config = ConfigManager.get_benchmark_config(benchmark_name)
+
+    supported_container_engines = benchmark_config['supported_container_engines']
     if not supported_container_engines:
         raise ValueError(f"Benchmark '{benchmark_name}' is not supported or has no runtimes defined.")
     b.name = benchmark_name
@@ -121,9 +128,7 @@ def parse_benchmark(benchmark_name):
         supported_container_engines = [supported_container_engines]
     b.supported_container_engines = supported_container_engines
 
-    raw_runs = config.project.get_config(
-        f"{benchmark_name}.runs",
-        print=False)
+    raw_runs = benchmark_config['runs']
     try:
         runs = int(raw_runs)
     except (TypeError, ValueError):
@@ -157,8 +162,9 @@ def prepare_benchmark_script(base_work_dir):
 
 
 def prepare_custom_podman_binary(base_work_dir):
-    client_file = config.project.get_config("prepare.podman.custom_binary.client_file")
-    server_file = config.project.get_config("prepare.podman.custom_binary.server_file")
+    custom_binary_config = ConfigManager.get_custom_binary_config()
+    client_file = custom_binary_config['client_file']
+    server_file = custom_binary_config['server_file']
 
     podman_path = base_work_dir / "podman-custom" / client_file
     server_podman_path = base_work_dir / "podman-custom" / server_file
@@ -166,7 +172,7 @@ def prepare_custom_podman_binary(base_work_dir):
         logging.info("podman custom already exists, not downloading it.")
         return podman_path
 
-    source = config.project.get_config("prepare.podman.custom_binary.url")
+    source = custom_binary_config['url']
     dest = base_work_dir / "podman-custom" / "podman-custom.zip"
 
     run.run_toolbox(
@@ -180,13 +186,14 @@ def prepare_custom_podman_binary(base_work_dir):
 
 
 def docker_service(operation):
-    logging.info("Stopping Docker service")
+    if not ConfigManager.is_linux():
+        logging.info("docker_service skipped: non-Linux system.")
+        return
+    logging.info(f"Docker service: {operation}")
     base_work_dir = remote_access.prepare()
     if operation == "stop":
-        cmd = "sudo systemctl stop docker.socket"
-        remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
-    cmd = f"sudo systemctl {operation} docker"
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, "sudo systemctl stop docker.socket")
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"sudo systemctl {operation} docker")
 
 
 def build_podman_from_gh_binary():

@@ -1,14 +1,16 @@
-
-from projects.core.library import config
 import remote_access
+from config_manager import ConfigManager, SystemType
 
 
 def dependencies(base_work_dir, capture_stderr=False):
-    if config.project.get_config("remote_host.system", print=False) == "darwin":
-        if not config.project.get_config("prepare.brew.install_dependencies", print=False):
+    system_type = ConfigManager.get_system_type()
+
+    if system_type == SystemType.DARWIN:
+        brew_config = ConfigManager.get_brew_config()
+        if not brew_config['install_dependencies']:
             return None
 
-        dependencies = " ".join(config.project.get_config("prepare.brew.dependencies"))
+        dependencies = " ".join(brew_config['dependencies'])
 
         return remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
@@ -16,10 +18,11 @@ def dependencies(base_work_dir, capture_stderr=False):
             capture_stderr=capture_stderr,
         )
 
-    if config.project.get_config("remote_host.system", print=False) == "linux":
-        if not config.project.get_config("prepare.dnf.install_dependencies", print=False):
+    if system_type == SystemType.LINUX:
+        dnf_config = ConfigManager.get_dnf_config()
+        if not dnf_config['install_dependencies']:
             return None
-        if config.project.get_config("prepare.dnf.enable_docker_repo", print=False):
+        if dnf_config['enable_docker_repo']:
             docker_repo_url = "https://download.docker.com/linux/fedora/docker-ce.repo"
             docker_repo_cmd = f"sudo dnf config-manager addrepo --overwrite --from-repofile={docker_repo_url}"
             remote_access.run_with_ansible_ssh_conf(
@@ -28,7 +31,7 @@ def dependencies(base_work_dir, capture_stderr=False):
                 capture_stderr=capture_stderr,
             )
 
-        dependencies = " ".join(config.project.get_config("prepare.dnf.dependencies"))
+        dependencies = " ".join(dnf_config['dependencies'])
 
         return remote_access.run_with_ansible_ssh_conf(
             base_work_dir,
@@ -36,5 +39,4 @@ def dependencies(base_work_dir, capture_stderr=False):
             capture_stderr=capture_stderr,
         )
 
-    # TODO implement other systems if needed
     return None
