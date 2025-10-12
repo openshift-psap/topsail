@@ -8,6 +8,7 @@
 
 # Capture container engine information
 - name: Capture the container engine information
+  become: "{{ container_bench_capture_container_engine_info_rootfull }}"
   shell: |
     {{ container_info_command }} > "{{ artifact_extra_logs_dir }}/artifacts/container_engine_info.json"
   changed_when: false

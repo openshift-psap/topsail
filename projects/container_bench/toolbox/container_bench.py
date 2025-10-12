@@ -14,13 +14,17 @@ class Container_Bench:
     def helloworld_benchmark(
             self,
             exec_time_path,
-            runtime,
+            binary_path,
+            rootfull=False,
+            additional_args="",
     ):
         """
         Runs the helloworld benchmark with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
-          runtime: the runtime to use for the benchmark (e.g., docker, podman)
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
         """
         return RunAnsibleRole(locals())
 
@@ -29,13 +33,17 @@ class Container_Bench:
     def exec_benchmark(
             self,
             exec_time_path,
-            runtime,
+            binary_path,
+            rootfull=False,
+            additional_args="",
     ):
         """
         Runs the exec benchmark with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
-          runtime: the runtime to use for the benchmark (e.g., docker, podman)
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
         """
         return RunAnsibleRole(locals())
 
@@ -44,13 +52,17 @@ class Container_Bench:
     def image_build_large_build_context_benchmark(
             self,
             exec_time_path,
-            runtime,
+            binary_path,
+            rootfull=False,
+            additional_args="",
     ):
         """
         Runs the image build large build context benchmark with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
-          runtime: the runtime to use for the benchmark (e.g., docker, podman)
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
         """
         return RunAnsibleRole(locals())
 
@@ -71,12 +83,16 @@ class Container_Bench:
     @AnsibleMappedParams
     def capture_container_engine_info(
             self,
-            runtime
+            binary_path,
+            rootfull=False,
+            additional_args="",
     ):
         """
         Captures the info of the container engine
         Args:
-          runtime: the container engine to capture information from (e.g., podman, docker)
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
         """
 
         return RunAnsibleRole(locals())

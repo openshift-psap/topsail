@@ -2,10 +2,10 @@
 # Define common command templates (shared across all platforms)
 - name: Set common commands
   set_fact:
-    initial_prune_command: "{{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f"
+    initial_prune_command: "{{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} system prune -a -f"
     cleanup_commands: |
-      {{ container_bench_image_build_large_build_context_benchmark_runtime }} rmi -f large-build-context-benchmark
-      {{ container_bench_image_build_large_build_context_benchmark_runtime }} system prune -a -f
+      {{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} rmi -f large-build-context-benchmark
+      {{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} system prune -a -f
     dockerfile_content: |
       FROM scratch
       COPY random-1 random-1
@@ -14,7 +14,7 @@
 
 - name: Set platform-specific paths
   set_fact:
-    benchmark_command: "{{ container_bench_image_build_large_build_context_benchmark_runtime }} build -t large-build-context-benchmark {{ build_context_path }}"
+    benchmark_command: "{{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} build -t large-build-context-benchmark {{ build_context_path }}"
 
 - name: Include Unix/Linux tasks
   include_tasks: unix.yml

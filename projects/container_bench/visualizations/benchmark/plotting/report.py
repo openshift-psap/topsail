@@ -38,12 +38,15 @@ def getInfo(settings):
         data["container_engine_provider"] = container_engine_provider
         data["runs"] = entry.settings.__dict__.get("benchmark_runs", 1)
 
+        is_linux = False
         system_state = entry.results.__dict__.get("system_state")
         if system_state:
             sys_info = dict()
             software = system_state.get("Software", {})
             system_software_overview = software.get("System Software Overview", {})
             sys_info["OS_version"] = system_software_overview.get("System Version", "")
+            if "linux" in sys_info["OS_version"].lower():
+                is_linux = True
             sys_info["Kernel_version"] = system_software_overview.get("Kernel Version", "")
 
             hardware = system_state.get("Hardware", {})
@@ -52,6 +55,9 @@ def getInfo(settings):
             sys_info["CPU_cores"] = hardware_overview.get("Total Number of Cores", "")
             sys_info["Memory"] = hardware_overview.get("Memory", "")
             sys_info["Model_id"] = hardware_overview.get("Model Identifier", "")
+            sys_info["Architecture"] = hardware_overview.get("Architecture", "")
+            if "Apple" in sys_info["CPU_model"]:
+                sys_info["Architecture"] = "Arm64"
             data["system"] = sys_info
 
         container_engine_info = entry.results.__dict__.get("container_engine_info")
@@ -60,13 +66,16 @@ def getInfo(settings):
             engine_info = dict()
             client = container_engine_info.get("Client", {})
             engine_info["Container_engine_platform"] = platform
-            engine_info["Client_version"] = client.get("Version", "")
+            if not is_linux:
+                engine_info["Client_version"] = client.get("Version", "")
             host = container_engine_info.get("host", {})
             engine_info["Mode"] = host.get("security", {}).get("rootless", "")
             engine_info["Host_version"] = container_engine_info.get("version", {}).get("Version", "")
             engine_info["Host_cpu"] = host.get("cpus", "")
             engine_info["Host_memory"] = host.get("memTotal", "")
             engine_info["Host_kernel"] = host.get("kernel", "")
+            runtime = host.get("ociRuntime", {})
+            engine_info["Runtime"] = runtime.get("name", "")
             data["container_engine_full"] = container_engine_info
             data["container_engine_info"] = engine_info
         elif container_engine_info and platform == "docker":
@@ -74,14 +83,20 @@ def getInfo(settings):
             engine_info = dict()
             client = container_engine_info.get("ClientInfo", {})
             engine_info["Container_engine_platform"] = platform
-            engine_info["Client_version"] = client.get("Version", "")
+            if not is_linux:
+                engine_info["Client_version"] = client.get("Version", "")
             server = container_engine_info
             engine_info["Host_version"] = server.get("ServerVersion", "")
             engine_info["Host_cpu"] = server.get("NCPU", "")
             engine_info["Host_memory"] = server.get("MemTotal", "")
             engine_info["Host_kernel"] = server.get("KernelVersion", "")
+            engine_info["Runtime"] = server.get("DefaultRuntime", "")
             data["container_engine_full"] = container_engine_info
             data["container_engine_info"] = engine_info
+
+        if is_linux:
+            data.pop("container_engine_provider", None)
+
     return data
 
 
@@ -117,6 +132,7 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
         ("Model ID", system.get('Model_id', 'N/A'), False, False),
         ("CPU", f"{system.get('CPU_model', 'N/A')}", False, False),
         ("Cores", f"{system.get('CPU_cores', 'N/A')}", False, False),
+        ("Architecture", f"{system.get('Architecture', 'N/A')}", False, False),
         ("Memory", system.get('Memory', 'N/A'), False, False),
     ]
 
@@ -137,14 +153,18 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
 
     engine_items = [
         ("Engine", container_engine_info.get('Container_engine_platform', 'N/A'), False, False),
-        ("Client Version", container_engine_info.get('Client_version', 'N/A'), False, False),
-        ("Provider", info.get('container_engine_provider', 'N/A'), False, False),
         ("Rootless", container_engine_info.get('Mode', 'N/A'), False, False),
         ("Host Version", container_engine_info.get('Host_version', 'N/A'), False, False),
+        ("Runtime", container_engine_info.get('Runtime', 'N/A'), False, False),
         ("Host CPU", container_engine_info.get('Host_cpu', 'N/A'), False, False),
         ("Host Memory", mem_display, False, False),
         ("Host Kernel", container_engine_info.get('Host_kernel', 'N/A'), True, False),
     ]
+
+    is_linux = "linux" in system.get("OS_version", "").lower()
+    if not is_linux:
+        engine_items.insert(1, ("Client Version", container_engine_info.get('Client_version', 'N/A'), False, False))
+        engine_items.insert(2, ("Provider", info.get('container_engine_provider', 'N/A'), False, False))
 
     # Create info cards in rows for better readability
     summary_row = html.Div([

@@ -141,17 +141,24 @@ def generate_config_label(settings, exclude_benchmark=False):
     label_parts = []
 
     if "container_engine" in settings:
-        label_parts.append(f"{settings['container_engine']}")
+        engine = settings['container_engine']
+        label_parts.append(engine)
+
     if "benchmark" in settings and not exclude_benchmark:
         benchmark_name = settings['benchmark'].replace('_', ' ').title()
-        label_parts.append(f"{benchmark_name}")
-    if "benchmark_runs" in settings and settings["benchmark_runs"] != 1:
-        label_parts.append(f"{settings['benchmark_runs']} runs")
+        label_parts.append(benchmark_name)
 
-    skip_keys = {"container_engine", "benchmark", "benchmark_runs", "stats"}
-    for key, value in settings.items():
-        if key not in skip_keys and len(label_parts) < 4 and value is not None:
-            label_parts.append(f"{key}: {value}")
+    skip_keys = {"container_engine", "benchmark", "benchmark_runs", "stats", "test_mac_ai", "platform"}
+
+    keys = [k for k in settings.keys() if k not in skip_keys]
+
+    for key in sorted(keys):
+        value = settings[key]
+        if value is not None and value != "---":
+            short_key = key.replace("test.podman.", "").replace("test.docker.", "")
+            if '.' in short_key:
+                short_key = short_key.split('.')[-1]
+            label_parts.append(f"{short_key}: {value}")
 
     return " | ".join(label_parts) if label_parts else "Configuration"
 
@@ -209,7 +216,7 @@ def find_shared_and_different_info(configurations):
     shared_info = {}
     different_info = {}
 
-    system_fields = ["Model_id", "CPU_model", "CPU_cores", "Memory", "OS_version", "Kernel_version"]
+    system_fields = ["Model_id", "CPU_model", "CPU_cores", "Architecture", "Memory", "OS_version", "Kernel_version"]
     system_field_map = {field: field for field in system_fields}
 
     def get_system_info(config):
@@ -222,8 +229,7 @@ def find_shared_and_different_info(configurations):
     different_info["system"] = different_system
 
     engine_fields = [
-        "Container_engine_platform", "Client_version", "Host_version",
-        "Mode", "Host_cpu", "Host_memory", "Host_kernel"
+        "Client_version", "Host_version", "Mode", "Runtime", "Host_cpu", "Host_memory", "Host_kernel"
     ]
     engine_field_map = {field: field for field in engine_fields}
 
@@ -276,6 +282,7 @@ def _create_host_info_card(shared_info):
         "Model_id": "Model ID",
         "CPU_model": "CPU",
         "CPU_cores": "Cores",
+        "Architecture": "Architecture",
         "Memory": "Memory",
         "OS_version": "OS Version",
         "Kernel_version": "Kernel"
@@ -301,6 +308,7 @@ def _create_engine_info_card(shared_info):
         "Client_version": "Client Version",
         "Host_version": "Host Version",
         "Mode": "Rootless Mode",
+        "Runtime": "Runtime",
         "Host_cpu": "Host CPU",
         "Host_memory": "Host Memory",
         "Host_kernel": "Host Kernel",
@@ -387,7 +395,8 @@ def calculate_usage_deltas(configurations):
 
 
 def _create_comparison_table_header(configurations):
-    header_cells = [html.Th("", style=css.STYLE_TABLE_HEADER)]
+    header_cells = [html.Th("Metric", style=css.STYLE_TABLE_HEADER)]
+
     for config in configurations:
         header_cells.append(html.Th(config["config_label"], style=css.STYLE_TABLE_HEADER))
 
@@ -531,14 +540,101 @@ def create_performance_comparison_table(configurations):
     if not configurations:
         return None
 
-    rows = [_create_comparison_table_header(configurations)]
+    # Sort configurations by execution time (fastest first)
+    sorted_configurations = sorted(configurations, key=lambda config: config.get("exec_time", 0))
 
-    rows.append(_create_execution_time_row(configurations))
+    # Create transposed table with configurations as rows
+    rows = []
 
-    rows.append(_create_info_row("Command", configurations, "command"))
-    rows.append(_create_info_row("Timestamp", configurations, "timestamp"))
+    # Header: Configuration | Execution Time | Command | Timestamp
+    header_cells = [
+        html.Th("Configuration", style=css.STYLE_TABLE_HEADER),
+        html.Th("Execution Time", style=css.STYLE_TABLE_HEADER),
+        html.Th("Command", style=css.STYLE_TABLE_HEADER),
+        html.Th("Timestamp", style=css.STYLE_TABLE_HEADER)
+    ]
+    rows.append(html.Tr(header_cells))
 
-    rows.extend(_create_metrics_rows(configurations))
+    # Find fastest time for highlighting
+    valid_times = [c.get("exec_time", 0) for c in sorted_configurations if c.get("exec_time", 0) > 0]
+    fastest_time = min(valid_times) if valid_times else 0
+
+    # Data rows: one row per configuration
+    for config in sorted_configurations:
+        config_label = config.get("config_label", "Unknown")
+        exec_time = config.get("exec_time", 0)
+        runs = config.get("runs", 1)
+        command = config.get("command", "N/A")
+        timestamp = config.get("timestamp", "N/A")
+
+        # Mark fastest time
+        is_fastest = (exec_time == fastest_time and
+                      len(sorted_configurations) > 1 and
+                      exec_time > 0)
+
+        # Format execution time with runs like previous version
+        if exec_time:
+            time_content = [
+                html.Span(
+                    f"{units.format_duration(exec_time)}",
+                    style=css.STYLE_INFO_VALUE_HIGHLIGHT
+                ),
+                html.Br(),
+                html.Small(
+                    f"(Average of {runs} runs)",
+                    style=css.STYLE_SMALL_TEXT
+                )
+            ]
+
+            if is_fastest:
+                time_content.extend([
+                    html.Br(),
+                    html.Small("⚡ FASTEST", style={'color': '#28a745', 'font-weight': 'bold'})
+                ])
+        else:
+            time_content = "N/A"
+
+        row_cells = [
+            # Configuration name
+            html.Td(config_label, style={**css.STYLE_TABLE_CELL, 'font-weight': 'bold', 'background': '#f8f9fa'}),
+
+            # Execution time with runs
+            html.Td(
+                time_content,
+                style=css.STYLE_TABLE_CELL_HIGHLIGHT if is_fastest else css.STYLE_TABLE_CELL
+            ),
+
+            # Command
+            html.Td(
+                html.Code(command, style={'font-size': '0.85rem', 'word-break': 'break-all'})
+                if command != "N/A" else command,
+                style=css.STYLE_TABLE_CELL
+            ),
+
+            # Timestamp
+            html.Td(timestamp, style=css.STYLE_TABLE_CELL)
+        ]
+
+        rows.append(html.Tr(row_cells))
+
+    # Add delta row if there are multiple configurations with valid times
+    if len(valid_times) > 1:
+        slowest_time = max(valid_times)
+        delta = slowest_time - fastest_time
+        delta_percentage = ((slowest_time - fastest_time) / fastest_time) * 100 if fastest_time > 0 else 0
+
+        delta_cell_style = {**css.STYLE_TABLE_CELL, 'font-weight': 'bold', 'background': '#f8f9fa'}
+        delta_row_cells = [
+            html.Td("Performance Delta", style=delta_cell_style),
+            html.Td([
+                html.Span(f"Δ {units.format_duration(delta)}", style={'font-weight': 'bold'}),
+                html.Br(),
+                html.Small(f"({delta_percentage:.1f}% faster)", style={'color': '#6c757d'})
+            ], style=css.STYLE_TABLE_CELL),
+            html.Td("-", style=css.STYLE_TABLE_CELL),
+            html.Td("-", style=css.STYLE_TABLE_CELL)
+        ]
+        rows.append(html.Tr(delta_row_cells))
 
     return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
@@ -587,20 +683,22 @@ def _process_engine_field_value(field_key, value):
 
 
 def create_system_differences_table(configurations, different_info):
-    """Create table showing system property differences."""
+    """Create transposed table showing system property differences."""
     if not different_info.get("system"):
         return None
+
+    # Sort configurations by execution time (fastest first)
+    sorted_configurations = sorted(configurations, key=lambda config: config.get("exec_time", 0))
 
     system_field_map = {
         "Model_id": "Model ID",
         "CPU_model": "CPU Model",
         "CPU_cores": "CPU Cores",
+        "Architecture": "Architecture",
         "Memory": "Memory",
         "OS_version": "OS Version",
         "Kernel_version": "Kernel Version"
     }
-
-    header_row = _create_table_header(configurations, "System Property", delta_column=False)
 
     filtered_field_map = {
         k: v for k, v in system_field_map.items()
@@ -610,58 +708,92 @@ def create_system_differences_table(configurations, different_info):
     if not filtered_field_map:
         return None
 
-    rows = [header_row]
+    rows = []
 
-    def get_system_info(config):
-        return config.get("system", {})
+    header_cells = [html.Th("Configuration", style=css.STYLE_TABLE_HEADER)]
+    for field_key, field_display in filtered_field_map.items():
+        header_cells.append(html.Th(field_display, style=css.STYLE_TABLE_HEADER))
+    rows.append(html.Tr(header_cells))
 
-    rows.extend(_create_table_row_from_field_map(configurations, filtered_field_map, get_system_info))
+    for config in sorted_configurations:
+        config_label = config.get("config_label", "Unknown")
+        system_info = config.get("system", {})
 
-    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE) if len(rows) > 1 else None
+        row_cells = [
+            html.Td(config_label, style={**css.STYLE_TABLE_CELL, 'font-weight': 'bold', 'background': '#f8f9fa'})
+        ]
+
+        for field_key, field_display in filtered_field_map.items():
+            value = system_info.get(field_key, "N/A")
+            row_cells.append(html.Td(str(value), style=css.STYLE_TABLE_CELL))
+
+        rows.append(html.Tr(row_cells))
+
+    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
 
 def create_engine_differences_table(configurations, different_info):
-    header_row = _create_table_header(configurations, "Engine Property", delta_column=False)
-    rows = [header_row]
+    """Create transposed table showing engine property differences."""
+    if not different_info:
+        return None
+
+    sorted_configurations = sorted(configurations, key=lambda config: config.get("exec_time", 0))
+
+    all_field_map = {}
 
     if different_info.get("container_engine_provider"):
-        row_cells = [html.Td("Provider", style=css.STYLE_TABLE_CELL)]
-        for config in configurations:
-            provider = config.get("container_engine_provider", "N/A")
-            row_cells.append(html.Td(provider, style=css.STYLE_TABLE_CELL))
-        rows.append(html.Tr(row_cells))
+        all_field_map["provider"] = "Provider"
 
     if different_info.get("container_engine"):
-        row_cells = [html.Td("Engine", style=css.STYLE_TABLE_CELL)]
-        for config in configurations:
-            engine = config.get("settings", {}).get("container_engine", "N/A")
-            row_cells.append(html.Td(engine, style=css.STYLE_TABLE_CELL))
-        rows.append(html.Tr(row_cells))
+        all_field_map["engine"] = "Engine"
 
     if different_info.get("engine"):
         engine_field_map = {
-            "Container_engine_platform": "Engine",
             "Client_version": "Client Version",
             "Host_version": "Host Version",
             "Mode": "Rootless Mode",
+            "Runtime": "Runtime",
             "Host_cpu": "Host CPU",
             "Host_memory": "Host Memory",
             "Host_kernel": "Host Kernel"
         }
 
-        filtered_field_map = {
-            k: v for k, v in engine_field_map.items()
-            if different_info["engine"].get(k)
-        }
+        for field_key, field_display in engine_field_map.items():
+            if different_info["engine"].get(field_key):
+                all_field_map[field_key] = field_display
 
-        def get_engine_info(config):
-            return config.get("container_engine_info", {})
+    if not all_field_map:
+        return None
 
-        rows.extend(_create_table_row_from_field_map(
-            configurations, filtered_field_map, get_engine_info, _process_engine_field_value
-        ))
+    rows = []
 
-    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE) if len(rows) > 1 else None
+    header_cells = [html.Th("Configuration", style=css.STYLE_TABLE_HEADER)]
+    for field_key, field_display in all_field_map.items():
+        header_cells.append(html.Th(field_display, style=css.STYLE_TABLE_HEADER))
+    rows.append(html.Tr(header_cells))
+
+    for config in sorted_configurations:
+        config_label = config.get("config_label", "Unknown")
+
+        row_cells = [
+            html.Td(config_label, style={**css.STYLE_TABLE_CELL, 'font-weight': 'bold', 'background': '#f8f9fa'})
+        ]
+
+        for field_key, field_display in all_field_map.items():
+            if field_key == "provider":
+                value = config.get("container_engine_provider", "N/A")
+            elif field_key == "engine":
+                value = config.get("settings", {}).get("container_engine", "N/A")
+            else:
+                engine_info = config.get("container_engine_info", {})
+                value = engine_info.get(field_key, "N/A")
+                value = _process_engine_field_value(field_key, value)
+
+            row_cells.append(html.Td(str(value), style=css.STYLE_TABLE_CELL))
+
+        rows.append(html.Tr(row_cells))
+
+    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
 
 def create_differences_comparison_table(configurations, different_info):

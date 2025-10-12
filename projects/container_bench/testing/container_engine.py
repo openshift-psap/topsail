@@ -83,11 +83,15 @@ def get_podman_binary(base_work_dir):
     if config.project.get_config("prepare.podman.repo.enabled", print=False):
         version = config.project.get_config("prepare.podman.repo.version", print=False)
         podman_bin = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
+        if config.project.get_config("remote_host.system", print=False) == "linux":
+            podman_bin = base_work_dir / f"podman-{version}" / "bin" / "podman"
     else:
         podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
 
     if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
         podman_file = config.project.get_config("prepare.podman.custom_binary.client_file", print=False)
+        if config.project.get_config("remote_host.system", print=False) == "linux":
+            podman_file = config.project.get_config("prepare.podman.custom_binary.server_file", print=False)
         podman_bin = base_work_dir / "podman-custom" / podman_file
         if not remote_access.exists(podman_bin):
             podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
@@ -124,13 +128,35 @@ class ContainerEngine:
 
         env_cmd = build_env_command(self.get_env())
 
-        if config.project.get_config("prepare.podman.machine.enabled", print=False):
+        is_linux = config.project.get_config("remote_host.system", print=False) == "linux"
+
+        if config.project.get_config("prepare.podman.machine.enabled", print=False) and not is_linux:
             machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
             cmd = f"{cmd} --connection '{machine_name}'"
+
+        if is_linux:
+            if config.project.get_config("prepare.podman.linux.rootful", print=False):
+                cmd = f"sudo {cmd}"
+            if runtime := config.project.get_config("prepare.podman.linux.runtime", print=False):
+                cmd = f"{cmd} --runtime {runtime}"
 
         cmd = f"{env_cmd} {cmd}"
 
         return cmd
+
+    def is_rootful(self):
+        if config.project.get_config("remote_host.system", print=False) == "linux":
+            return config.project.get_config("prepare.podman.linux.rootful", print=False)
+        return config.project.get_config("prepare.podman.machine.rootful", print=False)
+
+    def additional_args(self):
+        additional_args = ""
+        if self.engine == "docker":
+            return additional_args
+        if config.project.get_config("remote_host.system", print=False) == "linux":
+            if runtime := config.project.get_config("prepare.podman.linux.runtime", print=False):
+                additional_args = f"{additional_args} --runtime {runtime}"
+        return additional_args
 
     def cleanup(self):
         ret = remote_access.run_with_ansible_ssh_conf(

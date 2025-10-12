@@ -72,6 +72,8 @@ def _separate_benchmark_values_by_platform(benchmark_values):
         if key.startswith("test.podman"):
             # Special handling for Windows and machine_provider not same as Darwin
             if key == "test.podman.machine_provider":
+                if config.project.get_config("remote_host.system", print=False) == "linux":
+                    continue
                 is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
                 supported_hypervisors = ["wsl", "hyperv"] if is_windows else ["libkrun", "applehv"]
                 value = [v for v in value if v in supported_hypervisors]
@@ -142,7 +144,6 @@ def matbench_run(matrix_source_keys):
                 config.project.set_config("prepare.podman.repo.version", v)
                 if config.project.get_config("prepare.podman.repo.enabled"):
                     utils.prepare_podman_from_gh_binary(base_work_dir)
-                    utils.prepare_gv_from_gh_binary(base_work_dir)
 
         config.project.set_config("prepare.podman.repo.version", old_version)
         config.project.set_config("prepare.podman.repo.enabled", old_is_repo_enabled)
@@ -199,7 +200,12 @@ def matbench_run_one():
                     config.project.set_config("prepare.podman.custom_binary.enabled", True)
                 else:
                     config.project.set_config("prepare.podman.repo.enabled", True)
-            config.project.set_config(map_key[k], v)
+            if type(map_key[k]) is list:
+                for k in map_key[k]:
+                    logging.info(f"matbench_run_one: setting {k}={v}")
+                    config.project.set_config(k, v)
+            else:
+                config.project.set_config(map_key[k], v)
 
         config.project.set_config("test.matbenchmarking.enabled", False)
 
@@ -262,7 +268,9 @@ def capture_metrics(platform):
     c = ContainerEngine(platform.container_engine)
     run.run_toolbox(
         "container_bench", "capture_container_engine_info",
-        runtime=c.engine_binary,
+        binary_path=c.engine_binary,
+        rootfull=c.is_rootful(),
+        additional_args=c.additional_args(),
     )
 
     run.run_toolbox("container_bench", "capture_system_state")
@@ -271,7 +279,9 @@ def capture_metrics(platform):
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
     c = ContainerEngine(platform.container_engine)
     benchmark_kwargs = dict(
-        runtime=c.engine_binary,
+        binary_path=c.engine_binary,
+        rootfull=c.is_rootful(),
+        additional_args=c.additional_args(),
         exec_time_path=utils.get_benchmark_script_path(base_work_dir),
         artifact_dir_suffix="_run_metrics"
     )

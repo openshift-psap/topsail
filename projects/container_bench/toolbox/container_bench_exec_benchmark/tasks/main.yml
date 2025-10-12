@@ -3,15 +3,15 @@
 - name: Set common commands
   set_fact:
     prepare_commands: |
-      {{ container_bench_exec_benchmark_runtime }} system prune -a -f
-      {{ container_bench_exec_benchmark_runtime }} pull registry.fedoraproject.org/fedora:latest
-      {{ container_bench_exec_benchmark_runtime }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} system prune -a -f
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} pull registry.fedoraproject.org/fedora:latest
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
     cleanup_commands: |
-      {{ container_bench_exec_benchmark_runtime }} stop benchmark_exec
-      {{ container_bench_exec_benchmark_runtime }} rm -f benchmark_exec
-      {{ container_bench_exec_benchmark_runtime }} system prune -a -f
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} stop benchmark_exec
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} rm -f benchmark_exec
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} system prune -a -f
     benchmark_command: |
-      {{ container_bench_exec_benchmark_runtime }} exec benchmark_exec true
+      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} exec benchmark_exec true
 
 - name: Include Unix/Linux tasks
   include_tasks: unix.yml

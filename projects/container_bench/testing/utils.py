@@ -26,36 +26,6 @@ def get_tmp_fd():
         return file_path, py_file
 
 
-def prepare_gv_from_gh_binary(base_work_dir):
-
-    podman_path, _ = _get_repo_podman_path(base_work_dir)
-    gvisor_path = podman_path.parent.parent / "libexec" / "podman" / "gvproxy"
-
-    if remote_access.exists(gvisor_path):
-        logging.info("gvproxy exists, not downloading it.")
-        return
-
-    src_file = config.project.get_config("prepare.podman.gvisor.repo.file")
-
-    source = "/".join([
-        config.project.get_config("prepare.podman.gvisor.repo.url"),
-        "releases/download",
-        config.project.get_config("prepare.podman.gvisor.repo.version"),
-        src_file,
-    ])
-
-    result = run.run_toolbox(
-        "remote", "download",
-        source=source,
-        dest=gvisor_path,
-        executable=True,
-    )
-
-    if result.returncode != 0:
-        logging.error(f"Failed to download gvproxy from {source}")
-        raise RuntimeError("gvproxy download failed")
-
-
 def prepare_podman_from_gh_binary(base_work_dir):
     system = config.project.get_config("remote_host.system", print=False)
 
@@ -66,13 +36,19 @@ def prepare_podman_from_gh_binary(base_work_dir):
         return podman_path
 
     zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file")
-
-    source = "/".join([
-        config.project.get_config("prepare.podman.repo.url"),
-        "releases/download",
-        config.project.get_config("prepare.podman.repo.version"),
-        zip_file,
-    ])
+    if system == "linux":
+        source = "/".join([
+            config.project.get_config("prepare.podman.repo.url"),
+            "archive/refs/tags",
+            zip_file,
+        ])
+    else:
+        source = "/".join([
+            config.project.get_config("prepare.podman.repo.url"),
+            "releases/download",
+            config.project.get_config("prepare.podman.repo.version"),
+            zip_file,
+        ])
 
     dest = base_work_dir / f"podman-{version}" / zip_file
 
@@ -90,6 +66,9 @@ def _get_repo_podman_path(base_work_dir):
     version = config.project.get_config("prepare.podman.repo.version", print=False)
 
     podman_path = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
+
+    if config.project.get_config("remote_host.system", print=False) == "linux":
+        podman_path = base_work_dir / f"podman-{version}"
 
     return podman_path, version
 
@@ -117,7 +96,7 @@ def parse_platform(platform_str):
 
     if p.container_engine not in ["podman", "docker"]:
         raise ValueError(f"Unsupported container engine: {p.container_engine}. Expected 'podman' or 'docker'.")
-    if p.platform not in ["darwin", "windows"]:  # TODO: Implement "linux",
+    if p.platform not in ["darwin", "windows", "linux"]:
         raise ValueError(f"Unsupported platform: {p.platform}.")
 
     if p.container_engine == "podman":
@@ -198,3 +177,28 @@ def prepare_custom_podman_binary(base_work_dir):
     )
 
     return podman_path
+
+
+def docker_service(operation):
+    logging.info("Stopping Docker service")
+    base_work_dir = remote_access.prepare()
+    if operation == "stop":
+        cmd = "sudo systemctl stop docker.socket"
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
+    cmd = f"sudo systemctl {operation} docker"
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
+
+
+def build_podman_from_gh_binary():
+    logging.info("Building Podman from GitHub repository")
+    base_work_dir = remote_access.prepare()
+    path, _ = _get_repo_podman_path(base_work_dir)
+    if not remote_access.exists(path):
+        logging.fatal("Missing source codes for podman")
+        return
+    cmd = "make binaries"
+    ret = remote_access.run_with_ansible_ssh_conf(
+        base_work_dir, cmd, chdir=path, capture_stderr=True, capture_stdout=True
+    )
+    logging.info(f"stdout:{ret.stdout}")
+    logging.info(f"stderr:{ret.stderr}")

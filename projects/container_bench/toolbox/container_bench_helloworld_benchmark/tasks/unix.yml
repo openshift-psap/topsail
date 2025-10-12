@@ -8,10 +8,12 @@
 
 # Prepare container environment
 - name: Prepare container environment
+  become: "{{ container_bench_helloworld_benchmark_rootfull }}"
   shell: "{{ prepare_commands }}"
 
 # Run benchmark commands
 - name: Run benchmark commands
+  become: "{{ container_bench_helloworld_benchmark_rootfull }}"
   shell: |
     {{ container_bench_helloworld_benchmark_exec_time_path | dirname }}/.venv/bin/python \
     {{ container_bench_helloworld_benchmark_exec_time_path }} \
@@ -21,4 +23,5 @@
 
 # Clean up container environment
 - name: Clean up container environment
+  become: "{{ container_bench_helloworld_benchmark_rootfull }}"
   shell: "{{ cleanup_commands }}"

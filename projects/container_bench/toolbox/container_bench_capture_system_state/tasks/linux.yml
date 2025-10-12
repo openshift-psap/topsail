@@ -27,6 +27,10 @@
         echo "      System Version: $(uname -s) $(uname -r)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
     fi
 
+    # Kernel version
+    kernel=$(uname -r)
+    echo "      Kernel Version: $kernel" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
+
     echo "      Computer Name: $(hostname)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
     echo "      User Name: $(whoami)" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
 
@@ -63,16 +67,16 @@
     fi
 
     # Memory information
-    if [ -f /proc/meminfo ]; then
-        memory_kb=$(grep "MemTotal" /proc/meminfo | awk '{print $2}')
-        memory_gb=$(echo "scale=2; $memory_kb / 1024 / 1024" | bc -l 2>/dev/null || echo "$(($memory_kb / 1024 / 1024))")
+    if command -v free >/dev/null 2>&1; then
+        # Get memory in bytes to match container engine info format, then convert using base 1000 (decimal)
+        memory_kb=$(free | awk 'NR==2{print $2}')
+        memory_bytes=$((memory_kb * 1024))
+        # Convert bytes to GB using base 1000 (decimal) to match visualization layer
+        memory_gb=$(echo "scale=1; $memory_bytes / 1000 / 1000 / 1000" | bc -l)
+
         echo "      Memory: ${memory_gb} GB" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
     fi
 
     # Architecture
     arch=$(uname -m)
     echo "      Architecture: $arch" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"
-
-    # Kernel version
-    kernel=$(uname -r)
-    echo "      Kernel Version: $kernel" >> "{{ artifact_extra_logs_dir }}/artifacts/system_info.txt"

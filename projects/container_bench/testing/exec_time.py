@@ -222,6 +222,7 @@ def main():
     if return_code != 0:
         logging.warning(f"Command exited with return code {return_code}")
         logging.warning(f"STDERR: {stderr}")
+        sys.exit(return_code)
 
 
 if __name__ == "__main__":

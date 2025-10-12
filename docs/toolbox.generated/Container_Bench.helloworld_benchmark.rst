@@ -23,7 +23,17 @@ Parameters
 * Path to the exec_time.py script
 
 
-``runtime``  
+``binary_path``  
 
-* The runtime to use for the benchmark (e.g., docker, podman)
+* Path to the container engine binary (e.g., docker, podman)
+
+
+``rootfull``  
+
+* Whether to run the benchmark as root user
+
+
+``additional_args``  
+
+* Additional arguments to pass to the container engine binary
 

@@ -54,7 +54,10 @@ def cleanup():
 
 
 def cleanup_podman_platform():
-    if config.project.get_config("cleanup.podman_machine.delete"):
+    if (
+        config.project.get_config("remote_host.system", print=False) != "linux" and
+        config.project.get_config("cleanup.podman_machine.delete")
+    ):
         logging.info("Cleaning up Podman machine")
         machine = PodmanMachine()
         is_running = machine.is_running()
@@ -64,6 +67,12 @@ def cleanup_podman_platform():
 
 
 def cleanup_docker_platform():
+    if (
+        config.project.get_config("remote_host.system", print=False) == "linux" and
+        config.project.get_config("cleanup.docker_service.stop")
+    ):
+        utils.docker_service("stop")
+        return
     if (
         config.project.get_config("remote_host.docker.enabled", print=False) and
         config.project.get_config("cleanup.docker_desktop.stop")
@@ -85,7 +94,6 @@ def prepare():
 
     if config.project.get_config("prepare.podman.repo.enabled"):
         utils.prepare_podman_from_gh_binary(base_work_dir)
-        utils.prepare_gv_from_gh_binary(base_work_dir)
 
     if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
         utils.prepare_custom_podman_binary(base_work_dir)
@@ -94,12 +102,18 @@ def prepare():
 
 
 def prepare_docker_platform():
-    if config.project.get_config("remote_host.docker.enabled", print=False):
+    if not config.project.get_config("remote_host.docker.enabled", print=False):
+        return 0
+
+    if config.project.get_config("remote_host.system", print=False) == "linux":
+        utils.docker_service("start")
+    else:
         logging.info("preparing docker desktop")
         docker_desktop = DockerDesktopMachine()
         docker_desktop.start()
-        docker = ContainerEngine("docker")
-        docker.cleanup()
+
+    docker = ContainerEngine("docker")
+    docker.cleanup()
 
 
 def prepare_windows_env_vars_podman():
@@ -120,16 +134,21 @@ def prepare_windows_env_vars_podman():
 
 
 def prepare_podman_platform():
-    logging.info("preparing podman machine")
-    if config.project.get_config("remote_host.system", print=False) == "windows":
-        prepare_windows_env_vars_podman()
+    if config.project.get_config("remote_host.system", print=False) == "linux":
+        if config.project.get_config("prepare.podman.repo.enabled"):
+            logging.info("Build Podman from GitHub repository")
+            utils.build_podman_from_gh_binary()
+    else:
+        logging.info("preparing podman machine")
+        if config.project.get_config("remote_host.system", print=False) == "windows":
+            prepare_windows_env_vars_podman()
 
-    machine = PodmanMachine()
-    if not machine.is_running():
-        machine.configure_and_start(
-            force_restart=True,
-            configure=config.project.get_config("prepare.podman.machine.use_configuration", print=False)
-        )
+        machine = PodmanMachine()
+        if not machine.is_running():
+            machine.configure_and_start(
+                force_restart=True,
+                configure=config.project.get_config("prepare.podman.machine.use_configuration", print=False)
+            )
 
     logging.info("cleaning up podman")
     podman = ContainerEngine("podman")

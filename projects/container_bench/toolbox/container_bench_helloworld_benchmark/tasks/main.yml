@@ -3,12 +3,12 @@
 - name: Set common commands
   set_fact:
     prepare_commands: |
-      {{ container_bench_helloworld_benchmark_runtime }} system prune -a -f
-      {{ container_bench_helloworld_benchmark_runtime }} pull quay.io/podman/hello
+      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} system prune -a -f
+      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} pull quay.io/podman/hello
     cleanup_commands: |
-      {{ container_bench_helloworld_benchmark_runtime }} system prune -a -f
+      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} system prune -a -f
     benchmark_command: |
-      {{ container_bench_helloworld_benchmark_runtime }} run --rm quay.io/podman/hello
+      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} run --rm quay.io/podman/hello
 
 - name: Include Unix/Linux tasks
   include_tasks: unix.yml
