@@ -3,8 +3,7 @@ import plotly.graph_objects as go
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
-# Constants
-BYTES_TO_MB = 1024 * 1024
+from .utils.metrics import BYTES_TO_MEGABYTES
 
 METRIC_TYPES = {
     "cpu": {
@@ -31,13 +30,11 @@ METRIC_TYPES = {
 
 
 def register():
-    """Register all metric usage visualizations."""
     for metric_type in METRIC_TYPES.keys():
         MetricUsage(metric_type)
 
 
 def _process_network_data(main_field, entry_name, interval):
-    """Process network usage data and return formatted entries."""
     data = []
     if not hasattr(main_field, "network") or not main_field.network:
         return data
@@ -48,8 +45,8 @@ def _process_network_data(main_field, entry_name, interval):
     if not send_data or not recv_data:
         return data
 
-    mb_s_sent = [(item / BYTES_TO_MB) / interval for item in send_data]
-    mb_s_recv = [(item / BYTES_TO_MB) / interval for item in recv_data]
+    mb_s_sent = [(item / BYTES_TO_MEGABYTES) / interval for item in send_data]
+    mb_s_recv = [(item / BYTES_TO_MEGABYTES) / interval for item in recv_data]
     time_points = [i * interval for i in range(len(send_data))]
 
     for send, recv, timestamp in zip(mb_s_sent, mb_s_recv, time_points):
@@ -63,7 +60,6 @@ def _process_network_data(main_field, entry_name, interval):
 
 
 def _process_disk_data(main_field, entry_name, interval):
-    """Process disk usage data and return formatted entries."""
     data = []
     if not hasattr(main_field, "disk") or not main_field.disk:
         return data
@@ -74,8 +70,8 @@ def _process_disk_data(main_field, entry_name, interval):
     if not read_data or not write_data:
         return data
 
-    read_mb_s = [(item / BYTES_TO_MB) / interval for item in read_data]
-    write_mb_s = [(item / BYTES_TO_MB) / interval for item in write_data]
+    read_mb_s = [(item / BYTES_TO_MEGABYTES) / interval for item in read_data]
+    write_mb_s = [(item / BYTES_TO_MEGABYTES) / interval for item in write_data]
     time_points = [i * interval for i in range(len(read_data))]
 
     for read, write, timestamp in zip(read_mb_s, write_mb_s, time_points):
@@ -89,7 +85,6 @@ def _process_disk_data(main_field, entry_name, interval):
 
 
 def _process_single_metric_data(main_field, entry_name, interval, metric_key):
-    """Process single metric data (CPU or Power) and return formatted entries."""
     data = []
     if not hasattr(main_field, metric_key):
         return data
@@ -110,7 +105,6 @@ def _process_single_metric_data(main_field, entry_name, interval, metric_key):
 
 
 def generate_usage_data(entries, variables, main_key, secondary_key):
-    """Generate usage data for visualization from entries."""
     data = []
     variables_copy = dict(variables)  # make a copy before modifying
 
@@ -133,10 +127,8 @@ def generate_usage_data(entries, variables, main_key, secondary_key):
 
 
 class MetricUsage:
-    """Visualization class for system metric usage (CPU, Network, Disk, Power)."""
 
     def __init__(self, metric_type):
-        """Initialize with a specific metric type."""
         if metric_type not in METRIC_TYPES:
             supported_types = list(METRIC_TYPES.keys())
             error_msg = f"Unknown metric type: {metric_type}. Supported types: {supported_types}"
@@ -151,11 +143,9 @@ class MetricUsage:
         common.Matrix.settings["stats"].add(self.name)
 
     def do_hover(self, meta_value, variables, figure, data, click_info):
-        """Handle hover events on the plot."""
         return "nothing"
 
     def _create_dual_metric_traces(self, df, metric_keys):
-        """Create traces for metrics with dual values (network, disk)."""
         traces = []
         for key in metric_keys:
             traces.append(
@@ -172,7 +162,6 @@ class MetricUsage:
         return traces
 
     def _create_single_metric_trace(self, df):
-        """Create trace for single-value metrics (CPU, power, memory)."""
         return go.Scatter(
             x=df["ts"],
             y=df["usage"],
@@ -183,7 +172,6 @@ class MetricUsage:
         )
 
     def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
-        """Generate the plot for the metric usage."""
         current_settings = cfg.get("current_settings", False)
         entries = common.Matrix.filter_records(current_settings)
         df = pd.DataFrame(generate_usage_data(entries, variables, "metrics", self.key))
@@ -205,9 +193,7 @@ class MetricUsage:
         else:  # cpu or power or memory
             fig.add_trace(self._create_single_metric_trace(df))
 
-        # Set y-axis title and overall layout
         fig.update_yaxes(title=self.metric_config["y_title"])
         fig.update_xaxes(title="Time (s)")
         fig.update_layout(title=self.name, title_x=0.5)
-
         return fig, ""
