@@ -156,7 +156,7 @@ prepare:
       use_configuration: true
       configuration:
         cpus: 12 # in cores
-        memory: 8192 # in MiB
+        memory: 8116 # in MB
         rootful: false
       env:
         # applehv (Darwin) | libkrun (Linux) | wsl (Windows) | hyperv (Windows alt)
@@ -194,7 +194,7 @@ exec_benchmark:
     - docker
 
 image_build_large_build_context_benchmark:
-  runs: 5
+  runs: 10
   supported_container_engines:
     - podman
     - docker
@@ -216,7 +216,7 @@ test:
     - true
     - false
     repo_version:
-    - v5.4.0
+    - v5.5.0
     - custom
     runtime: # Linux only
     - crun
@@ -229,7 +229,7 @@ test:
     stop_on_error: true
     iterable_test_fields:
     - test.platform
-    # - test.podman.repo_version
+    - test.podman.repo_version
     # - test.podman.rootful
     # - test.podman.machine_provider
     # - test.podman.runtime

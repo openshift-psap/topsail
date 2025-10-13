@@ -90,7 +90,7 @@ class BenchmarkComparisonReport():
         return None, html.Div(report_components, style=css.STYLE_CONTAINER, className='report-container')
 
 
-def create_shared_info_section(shared_info, configurations):
+def create_shared_info_section(shared_info):
     cards = []
 
     summary_card = create_summary_info_card(shared_info, "Benchmark Summary", include_exec_time=False)
@@ -254,7 +254,7 @@ def create_average_usage_comparison_table(configurations):
     return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
 
-def create_differences_comparison_table(configurations, different_info):
+def create_differences_comparison_table(configurations):
     if not configurations or len(configurations) < 2:
         return html.Div("No differences found between configurations")
 
@@ -285,12 +285,12 @@ def create_technical_details_section(configurations):
         return None
 
     details_sections = []
-    for i, config in enumerate(configurations):
-        config_label = config.get("config_label", f"Configuration {i+1}")
+    for _, config in enumerate(configurations):
         container_engine_full = config.get("container_engine_full", {})
+        display_config_label = generate_display_config_label(config, configurations)
 
         details_sections.append(html.Div([
-            html.H5(f"{config_label}", style=css.STYLE_H4),
+            html.H5(f"{display_config_label}", style=css.STYLE_H4),
             html.Pre(
                 json.dumps(container_engine_full, indent=2),
                 style=css.STYLE_JSON_PRE
@@ -348,16 +348,16 @@ def _create_benchmark_section(benchmark, configurations, args):
     benchmark_display = format_benchmark_title(benchmark)
     section_components = [html.H2(f"Benchmark: {benchmark_display}", style=css.STYLE_H2_SECTION)]
 
-    shared_info, different_info = find_shared_and_different_info(configurations)
+    shared_info, _ = find_shared_and_different_info(configurations)
 
-    differences_table = create_differences_comparison_table(configurations, different_info)
+    differences_table = create_differences_comparison_table(configurations)
     section_components.extend([
         html.H3("Configuration Differences & Results", style=css.STYLE_H3),
         differences_table,
         html.Br()
     ])
 
-    shared_section = create_shared_info_section(shared_info, configurations)
+    shared_section = create_shared_info_section(shared_info)
     section_components.extend([
         html.H3("Shared Configuration", style=css.STYLE_H3),
         shared_section,

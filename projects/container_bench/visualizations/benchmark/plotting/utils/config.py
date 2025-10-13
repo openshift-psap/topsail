@@ -221,7 +221,7 @@ def generate_config_label(settings, exclude_benchmark=False):
         label_parts.append(benchmark_name)
 
     for key in sorted(settings.keys()):
-        if key not in CONFIGURATION_EXCLUDED_KEYS:
+        if key not in ["container_engine", "benchmark"]:
             value = settings[key]
             if value is not None and value != "---":
                 short_key = normalize_configuration_key(key)
