@@ -116,7 +116,7 @@
     command:
       aws ec2 describe-instances
           --region "{{ crc_timing_refresh_image_aws_region }}"
-          --instance-ids "{{ instance_id}}"
+          --instance-ids "{{ instance_id }}"
           --query "Reservations[0].Instances[0].PublicIpAddress"
           --output text
     register: ec2_public_ip_cmd
