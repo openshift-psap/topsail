@@ -22,15 +22,18 @@ from . import prom as workload_prom
 register_important_file = None # will be when importing store/__init__.py
 
 SYSTEMD_DATE_TIME_FMT = "%a %Y-%m-%d %H:%M:%S %Z"
+SYSTEMD_UNIT_TIME_FMT = "%Y %b %d %H:%M:%S" # needs the year 2025 to be prepended
 
 artifact_dirnames = types.SimpleNamespace()
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
+artifact_dirnames.JOURNALCTL_U_FILES = "journalctl_u_*.txt"
 
 IMPORTANT_FILES = [
     "systemd-analyze_dump.txt",
     "oc-get-clusteroperators.yaml",
     "systemd-analyze_critical-chain_crc-custom.txt",
     "systemd-analyze_critical-chain.txt",
+    "journalctl_u_*.txt",
 ]
 
 
@@ -45,9 +48,11 @@ def parse_once(results, dirname):
     # results.test_uuid = helpers_store_parsers.parse_test_uuid(dirname)
 
     results.systemd_units = _parse_systemd_units(dirname)
-
+    results.systemd_crc_cluster_status = _parse_systemd_crc_cluster_status(dirname)
     results.systemd_crc_critical_chain = _parse_systemd_critical_chain(dirname, "systemd-analyze_critical-chain_crc-custom.txt")
     results.systemd_critical_chain = _parse_systemd_critical_chain(dirname, "systemd-analyze_critical-chain.txt")
+
+    results.systemd_journal_duration = _parse_systemd_journal_duration(dirname)
 
     results.ocp_co = _parse_ocp_co(dirname)
 
@@ -63,6 +68,68 @@ def _parse_systemd_critical_chain(dirname, fname):
         critical_chain.text = f.read()
 
     return critical_chain
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_systemd_journal_duration(dirname):
+    systemd_journal_duration = {}
+
+    for journal_file in dirname.glob(artifact_dirnames.JOURNALCTL_U_FILES):
+        entry = types.SimpleNamespace()
+
+        lines = [
+            ln for ln in register_important_file(dirname, journal_file)
+            .read_text()
+            .splitlines()
+            if ln and not ln.startswith("-- ") # remove the journal lines starting with -- [Boot ...|Journal begins ...|...]
+        ]
+        if not lines:
+            continue
+
+        first_line = lines[0]
+        last_line = lines[-1]
+        if first_line == last_line:
+            continue
+
+        entry.start_time = datetime.datetime.strptime(f"{datetime.datetime.now().year} {first_line[:15]}", SYSTEMD_UNIT_TIME_FMT)
+        entry.finish_time = datetime.datetime.strptime(f"{datetime.datetime.now().year} {last_line[:15]}", SYSTEMD_UNIT_TIME_FMT)
+        entry.duration = entry.finish_time - entry.start_time
+        entry.name = journal_file.name.removeprefix("journalctl_u_").removesuffix(".txt")
+
+        systemd_journal_duration[entry.name] = entry
+
+    return systemd_journal_duration
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_systemd_crc_cluster_status(dirname):
+    systemd_crc_cluster_status = []
+
+    with open(register_important_file(dirname, "journalctl_u_crc-cluster-status.service.txt")) as f:
+        for line in f.readlines():
+            if "-- Boot" in line:
+                systemd_crc_cluster_status = [] # keep only the last boot
+                continue
+
+            entry = types.SimpleNamespace()
+
+            entry.date = datetime.datetime.strptime(f"{datetime.datetime.now().year} {line[:15]}", SYSTEMD_UNIT_TIME_FMT)
+
+            if "is still" in line:
+                entry.co = line.partition(": ")[-1].split()[0].split("/")[1]
+                entry.state = line.partition("is still ")[-1].partition(" after ")[0]
+            elif "stabilized at" in line:
+                entry.co = line.partition(": ")[-1].split()[0].split("/")[1]
+                entry.state = "STABLE"
+            elif ("All clusteroperators became stable" in line
+                  or "All clusteroperators are still stable" in line):
+                entry.co = "CLUSTER"
+                entry.state = "STABLE"
+            else:
+                continue
+
+            systemd_crc_cluster_status.append(entry)
+
+    return systemd_crc_cluster_status
 
 
 @helpers_store_parsers.ignore_file_not_found

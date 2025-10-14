@@ -1,6 +1,7 @@
 import os
 import pathlib
 import logging
+import subprocess
 
 from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
@@ -46,7 +47,7 @@ def retrieve_latest_version(base_work_dir):
 
         try:
             version = remote_access.read(llama_latest_file).strip()
-        except Exception:
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
             msg = "Couldn't fetch the llama.cpp latest version identifier from the system under test. Prepare it first"
             logging.error(msg)
             raise RuntimeError(msg)
@@ -60,12 +61,12 @@ def retrieve_latest_version(base_work_dir):
 def prepare_test(base_work_dir, platform, cleanup=True):
     try:
         retrieve_latest_version(base_work_dir)
-    except Exception as e:
+    except RuntimeError as e:
         if not cleanup:
-            raise e
+            raise
         else:
             # expected during cleanup
-            logging.info(f"Failed to retrieve the latest llama.cpp latest version: {e}", e)
+            logging.info("Failed to retrieve the latest llama.cpp latest version: %s", e)
 
     if not platform.needs_podman: return
 

@@ -28,25 +28,23 @@ git clone "{{ crc_timing_refresh_image_git_repo }}" -b "{{ crc_timing_refresh_im
 cd snc
 git show --quiet
 
+export APPS_DOMAIN="apps-crc.testing"
+envsubst '${APPS_DOMAIN}' < systemd/dnsmasq.sh.template > systemd/crc-dnsmasq.sh
+
 sudo cp -v systemd/*.sh $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/
 sudo chmod ugo+x $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/*.sh
 sudo cp -v systemd/*.service ${ROOT_FS}/etc/systemd/system
+sudo cp -v systemd/*.target ${ROOT_FS}/etc/systemd/system
+sudo cp -rv systemd/*.d ${ROOT_FS}/etc/systemd/system
 
 sudo rm -f ${ROOT_FS}/etc/systemd/system/crc-no-tap.service
-
-# Mute ovs-configuration.service
-
-sudo mkdir ${ROOT_FS}/etc/systemd/system/ovs-configuration.service.d
-cat | sudo tee ${ROOT_FS}/etc/systemd/system/ovs-configuration.service.d/mute-console.conf <<EOF
-[Service]
-StandardOutput=file:/var/log/ovs-configure.log
-StandardError=file:/var/log/ovs-configure.log
-EOF
 
 cat | sudo tee ${ROOT_FS}/etc/sysconfig/crc-env <<EOF
 CRC_SELF_SUFFICIENT=1
 CRC_NETWORK_MODE_USER=0
 EOF
+
+
 
 # --- !!! END OF MODIFICATIONS !!! ---
 
