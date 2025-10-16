@@ -1,33 +1,3 @@
-# ============================================================================
-# CROSS-PLATFORM CONFIGURATION
-# ============================================================================
-# To switch between operating systems, change the values below:
-#
-# For Darwin/macOS (arm64):
-#   system: darwin
-#   arch: arm64
-#   exec_file_extension: ""
-#   env_path: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
-#   machine_provider: applehv
-#
-# For Linux (amd64):
-#   system: linux
-#   arch: amd64
-#   exec_file_extension: ""
-#   env_path: (inherit from user environment)
-#   machine_provider: podman machine not supported, disable machine
-#
-# For Windows (amd64):
-#   system: windows
-#   arch: amd64
-#   exec_file_extension: ".exe"
-#   env_path: (inherit from user environment)
-#   machine_provider: wsl
-# ============================================================================
-
-# Darwin IP: jrodakmac.usersys.redhat.com
-# Windows IP: 10.43.2.47
-
 __platforms: &all_platforms
   - podman
   - docker
@@ -35,24 +5,37 @@ __platforms: &all_platforms
 ci_presets:
   to_apply: []
 
+  variable_overrides: {}
+
+  names: []
+
+  local_config: null
+
+  darwin:
+    secrets.machine_info: info.darwin.yaml
+
+  linux:
+    secrets.machine_info: info.linux.yaml
+
+  windows:
+    secrets.machine_info: info.windows.yaml
+
 secrets:
   dir:
     name: crc-container-bench-secret
     env_key: CONTAINER_BENCH_SECRET_PATH
-  private_key_path: mac__private_key.mac-m3pro
-  hostname: mac__hostname.mac-m3pro
-  username: mac__username.mac-m3pro
-  base_work_dir: mac__base_work_dir.mac-m3pro
+  private_key_path: private_key
+  machine_info: info.yaml
   opensearch_instances: opensearch.yaml
 
 remote_host:
+  info: "*$@secrets.machine_info"
   run_locally: false
   private_key_filename: "@secrets.private_key_path" # in the secret dir
-  hostname: "*$@secrets.hostname"
-  username: "*$@secrets.username"
+  hostname: "" # This is set from machine info secret
+  username: "" # This is set from machine info secret
   port: 22
-  # On windows this must be same path as home of user. For example: C:\Users\jrodak-topsail
-  base_work_dir: "*$@secrets.base_work_dir"
+  base_work_dir: "" # This is set from machine info secret
   ssh_flags:
     - "-oStrictHostKeyChecking=no"
     - "-oUserKnownHostsFile=/dev/null"
@@ -60,9 +43,8 @@ remote_host:
     - "-oControlMaster=auto"
     - "-oControlPath=/tmp/ssh-%r@%h:%p"
     - "-oControlPersist=60s"
-  # === CHANGE THESE VALUES TO SWITCH OS ===
-  system: darwin              # darwin | linux | windows
-  arch: arm64                 # arm64 (Darwin only) | amd64 (Linux/Windows)
+  system: "" # This is set from machine info secret
+  arch: "" # This is set from machine info secret
   python_bin: python3
   podman_bin: podman
   docker:
@@ -70,18 +52,15 @@ remote_host:
     # User must be logged in system to use Docker Desktop.
     enabled: true
     docker_bin: docker
+  # Empty environment values are ignored.
   env:
-    # Darwin: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
-    # Linux:  Dont set PATH for Linux, inherit from user environment
-    # Windows: Dont set PATH for Windows, inherit from user environment
-    PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+    # Default PATH value is configured from secrets:
+    PATH: "" # This is set from machine info secret
   home_is_base_work_dir: true
   verbose_ssh_commands: true
-  exec_file_extension: ""     # "" (Unix) | ".exe" (Windows)
+  exec_file_extension: "" # This is set from machine info secret
 
 prepare:
-  # the list of platform environments to prepare
-
   cleanup_on_exit: false
 
   brew:
@@ -99,6 +78,7 @@ prepare:
       - containerd.io
       - docker-buildx-plugin
       - docker-compose-plugin
+      - krun
       # runtime
       - bsdtar
       # Podman build dependencies:
@@ -158,9 +138,10 @@ prepare:
         cpus: 12 # in cores
         memory: 8116 # in MB
         rootful: false
+      # Empty environment values are ignored.
       env:
-        # applehv (Darwin) | libkrun (Linux) | wsl (Windows) | hyperv (Windows alt)
-        CONTAINERS_MACHINE_PROVIDER: applehv
+      # Default machine provider is configured from secrets
+        CONTAINERS_MACHINE_PROVIDER: "" # This is set from machine info secret
       # CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 cleanup:
@@ -182,7 +163,7 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
-  runs: 5
+  runs: 3
   supported_container_engines:
     - podman
     - docker
@@ -203,9 +184,9 @@ test:
   platform: *all_platforms
   platforms_to_skip:
   benchmark:
-    # - helloworld_benchmark
+    - helloworld_benchmark
     # - exec_benchmark
-    - image_build_large_build_context_benchmark
+    # - image_build_large_build_context_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -213,14 +194,15 @@ test:
      - wsl
      - hyperv
     rootful:
-    - true
-    - false
+     - true
+     - false
     repo_version:
-    - v5.5.0
-    - custom
+     - v5.5.0
+    # - custom
     runtime: # Linux only
-    - crun
-    - runc
+     - crun
+     - krun
+     - runc
   capture_metrics:
     enabled: true
 
@@ -228,11 +210,11 @@ test:
     enabled: true
     stop_on_error: true
     iterable_test_fields:
-    - test.platform
-    - test.podman.repo_version
+     - test.platform
+     - test.podman.repo_version
     # - test.podman.rootful
-    # - test.podman.machine_provider
-    # - test.podman.runtime
+     - test.podman.machine_provider
+     - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
@@ -255,3 +237,13 @@ matbench:
     save_to_artifacts: false
   # directory to plot. Set by topsail/testing/visualize.py before launching the visualization
   test_directory: null
+
+exec_list:
+  _only_: false
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
+  matbench_run: true
+  generate_plots_from_pr_args: true

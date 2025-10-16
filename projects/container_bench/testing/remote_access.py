@@ -43,8 +43,8 @@ def prepare():
     env = config.project.get_config("remote_host.env") or {}
 
     for k, v in env.copy().items():
-        if not v:
-            del env[k]
+        if not v or v == "":
+            env.pop(k)
             continue
 
         if not v.startswith("*$@"):

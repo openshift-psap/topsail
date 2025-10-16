@@ -3,11 +3,43 @@ import pathlib
 import os
 import logging
 import datetime
+import yaml
 
 from projects.core.library import env, config, run
 from constants import CONTAINER_BENCH_SECRET_PATH, TESTING_THIS_DIR
 
 initialized = False
+
+
+def apply_preset_from_kubeconfig():
+    kubeconfig_file = os.environ.get("KUBECONFIG")
+    if not kubeconfig_file:
+        logging.info("No KUBECONFIG defined, no preset to apply")
+        return
+
+    try:
+        with open(kubeconfig_file) as f:
+            content = yaml.safe_load(f)
+    except Exception as e:
+        logging.error(f"Kubeconfig {kubeconfig_file} isn't a valid yaml file: {e}")
+        return
+
+    if not isinstance(content, dict):
+        logging.info(f"Kubeconfig {kubeconfig_file} is empty or not a mapping; no preset to apply")
+        return
+
+    if content.get("clusters"):
+        logging.info(f"Kubeconfig {kubeconfig_file} is a K8s kubeconfig.")
+
+    if content.get("description"):
+        logging.info(f"Kubeconfig description: {content['description']}")
+
+    if "preset_name" in content:
+        if not content['preset_name']:
+            logging.info("Kubeconfig preset to apply: none")
+        else:
+            logging.info(f"Kubeconfig preset to apply: {content['preset_name']}")
+            config.project.apply_preset(content['preset_name'])
 
 
 def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
@@ -22,6 +54,8 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     env.init()
     config.init(TESTING_THIS_DIR, apply_preset_from_pr_args)
 
+    apply_preset_from_kubeconfig()
+
     if not ignore_secret_path:
         if not CONTAINER_BENCH_SECRET_PATH.exists():
             raise RuntimeError(
@@ -29,6 +63,17 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
                 "does not exists."
             )
         run.run(f'sha256sum "$CONTAINER_BENCH_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+
+    logging.info("Configuring remote according to info from secrets")
+    info = config.project.get_config("remote_host.info", handled_secretly=True)
+    try:
+        loaded = yaml.safe_load(info) if info else None
+    except yaml.YAMLError as e:
+        raise RuntimeError("remote_host.info secret contains invalid YAML") from e
+    if not isinstance(loaded, dict) or not loaded:
+        raise RuntimeError("remote_host.info secret must be a non-empty YAML mapping")
+    for k, v in loaded.items():
+        config.project.set_config(k, v, print=False)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):

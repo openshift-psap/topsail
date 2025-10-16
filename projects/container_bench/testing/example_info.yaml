@@ -1,0 +1,24 @@
+# Example of info.yaml content
+#
+# Configuration format:
+# - Key: dot-notation path to the configuration value
+# - Value: desired configuration value
+# - All keys must exist in the base configuration
+#
+# =============================================================================
+# REQUIRED VALUES
+# =============================================================================
+
+remote_host.hostname: jrodakmac.usersys.redhat.com
+remote_host.username: jrodak-topsail
+remote_host.base_work_dir: /Users/jrodak-topsail/topsail.ci
+remote_host.system: darwin
+remote_host.arch: arm64
+
+# =============================================================================
+# OPTIONAL VALUES
+# =============================================================================
+
+remote_host.env.PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+remote_host.exec_file_extension: ""
+prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER: applehv
