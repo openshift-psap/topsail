@@ -9,6 +9,22 @@ from .. import models
 from ..models import lts as models_lts
 
 
+def _generate_inter_token_latency(results):
+    if not results.llm_load_test_output: return None
+
+    itl = dict(results.llm_load_test_output["summary"]["itl"])
+    itl["values"] = [x["itl"] for x in results.llm_load_test_output["results"] if x["itl"]]
+    return types.SimpleNamespace(**itl)
+
+
+def _generate_time_to_first_token(results):
+    if not results.llm_load_test_output: return None
+
+    ttft = dict(results.llm_load_test_output["summary"]["ttft"])
+    ttft["values"] = [x["ttft"] for x in results.llm_load_test_output["results"] if x["ttft"]]
+    return types.SimpleNamespace(**ttft)
+
+
 def generate_lts_payload(results, import_settings):
     lts_payload = types.SimpleNamespace()
 
@@ -135,6 +151,10 @@ def generate_lts_results(results):
 
     results_lts.prompt_processing = _generate_llama_bench(results, "pp512")
     results_lts.token_generation = _generate_llama_bench(results, "tg128")
+
+    results_lts.llm_load_test = types.SimpleNamespace()
+    results_lts.llm_load_test.ttft = _generate_time_to_first_token(results)
+    results_lts.llm_load_test.itl = _generate_inter_token_latency(results)
 
     return results_lts
 

@@ -17,3 +17,14 @@ def pp_throughput(lts_payload):
 @matbench_models.KPIMetadata(help="Token generation throughput", unit="token/s")
 def tg_throughput(lts_payload):
     return lts_payload.results.token_generation.throughput
+
+@matbench_models.LowerBetter
+@matbench_models.KPIMetadata(help="Median time to first token", unit="ms")
+def llm_load_test_ttft(lts_payload):
+    return lts_payload.results.llm_load_test.ttft.median
+
+
+@matbench_models.LowerBetter
+@matbench_models.KPIMetadata(help="Median iter-token latency", unit="ms")
+def llm_load_test_itl(lts_payload):
+    return lts_payload.results.llm_load_test.itl.median

@@ -71,6 +71,8 @@ ci_presets:
     - macos/llama_cpp/vulkan
     # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
+    test.llm_load_test.args.concurrency: 1
+    test.llm_load_test.args.duration: 300
 
   cpt_ramalama:
     extends: [use_intlab_os, analyze_kpis, export_kpis]
