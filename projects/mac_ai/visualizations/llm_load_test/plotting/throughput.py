@@ -94,7 +94,8 @@ def generateThroughputData(entries, variables, ordered_vars, model_name=None):
         datum["itl_mean"] = _generate_inter_token_latency(entry.results).mean
         datum["ttft_mean"] = _generate_time_to_first_token(entry.results).mean
 
-        datum["gen_throughput"] = 1/datum["itl_mean"] * 1000
+        datum["gen_throughput"] = 1/datum["itl_mean"] * 1000 \
+            if datum["itl_mean"] else None
 
         data.append(datum)
 
