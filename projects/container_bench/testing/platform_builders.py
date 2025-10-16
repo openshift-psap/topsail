@@ -19,6 +19,8 @@ class WindowsCommandBuilder(PlatformCommandBuilder):
 
         env_commands = []
         for k, v in env_dict.items():
+            if v is None or v == "":
+                continue
             env_commands.append(f"$env:{k}='{v}'")
 
         return "; ".join(env_commands) + ";"
@@ -70,7 +72,7 @@ class UnixCommandBuilder(PlatformCommandBuilder):
         if not env_dict:
             return ""
 
-        env_values = " ".join(f"'{k}={v}'" for k, v in env_dict.items())
+        env_values = " ".join(f"'{k}={v}'" for k, v in env_dict.items() if v is not None and v != "")
         return f"env {env_values}"
 
     def build_service_start_script(self, service_name, start_command, binary_path) -> str:

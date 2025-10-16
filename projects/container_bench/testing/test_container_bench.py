@@ -23,6 +23,7 @@ os.chdir(TOPSAIL_DIR)
 
 
 def test():
+    remote_access.prepare()
     failed = False
     try:
         test_config = ConfigManager.get_test_config()
@@ -65,6 +66,8 @@ def _separate_benchmark_values_by_platform(benchmark_values):
                     continue
                 supported_hypervisors = ["wsl", "hyperv"] if ConfigManager.is_windows() else ["libkrun", "applehv"]
                 value = [v for v in value if v in supported_hypervisors]
+            if key == "test.podman.runtime" and not ConfigManager.is_linux():
+                continue
             platform_configs["podman"][key] = value
         elif key.startswith("test.docker"):
             platform_configs["docker"][key] = value
@@ -173,6 +176,7 @@ def matbench_run(matrix_source_keys):
 
 
 def matbench_run_one():
+    remote_access.prepare()
     with env.TempArtifactDir(RUN_DIR):
         with open(env.ARTIFACT_DIR / "settings.yaml") as f:
             settings = yaml.safe_load(f)
