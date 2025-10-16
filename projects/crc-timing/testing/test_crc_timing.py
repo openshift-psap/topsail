@@ -345,7 +345,7 @@ oc get clusterversion > oc-get-clusterversion.txt
 
 while read unit_name; do
    journalctl --boot --unit "$unit_name" > journalctl_u_${unit_name}.txt
-done <<< "$(systemctl list-units --type=service --all | grep loaded | grep -E '(crc-|ocp-)' | awk  '{print $1}')"
+done <<< "$(systemctl list-units --type=service --all | grep loaded | grep -E '(crc-|ocp-|cloud-)' | awk  '{print $1}')"
 """
         systemctl_status_failed = \
             execute_vm_command(base_work_dir, ip_addr,
@@ -416,7 +416,7 @@ done <<< "$(systemctl list-units --type=service --all | grep loaded | grep -E '(
             if not unit_name.endswith(".service"):
                 continue
 
-            if not (unit_name.startswith("crc-") or unit_name.startswith("ocp-")):
+            if not (unit_name.startswith("crc-") or unit_name.startswith("ocp-") or unit_name.startswith("cloud-")):
                 continue
 
             remote_access.write(

@@ -19,8 +19,6 @@ echo "--- Filesystem mounted ---"
 
 sudo dnf install -y git > /dev/null
 
-ROOT_FS=$(echo $MOUNT_POINT/ostree/deploy/rhcos/deploy/*.0)
-
 # --- !!! YOUR MODIFICATIONS GO HERE !!! ---
 
 cd /tmp
@@ -31,19 +29,14 @@ git show --quiet
 export APPS_DOMAIN="apps-crc.testing"
 envsubst '${APPS_DOMAIN}' < systemd/dnsmasq.sh.template > systemd/crc-dnsmasq.sh
 
-sudo cp -v systemd/*.sh $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/
+ROOT_FS=$(echo $MOUNT_POINT/ostree/deploy/rhcos/deploy/*.0)
+sudo cp systemd/*.sh $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/
+sudo cp systemd/*.py $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/
 sudo chmod ugo+x $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/*.sh
-sudo cp -v systemd/*.service ${ROOT_FS}/etc/systemd/system
-sudo cp -v systemd/*.target ${ROOT_FS}/etc/systemd/system
-sudo cp -rv systemd/*.d ${ROOT_FS}/etc/systemd/system
-
-sudo rm -f ${ROOT_FS}/etc/systemd/system/crc-no-tap.service
-
-cat | sudo tee ${ROOT_FS}/etc/sysconfig/crc-env <<EOF
-CRC_SELF_SUFFICIENT=1
-CRC_NETWORK_MODE_USER=0
-EOF
-
+sudo chmod ugo+x $MOUNT_POINT/ostree/deploy/rhcos/var/usrlocal/bin/*.py
+sudo cp systemd/*.service ${ROOT_FS}/etc/systemd/system
+sudo cp systemd/*.target ${ROOT_FS}/etc/systemd/system
+sudo cp -r systemd/*.d ${ROOT_FS}/etc/systemd/system
 
 
 # --- !!! END OF MODIFICATIONS !!! ---

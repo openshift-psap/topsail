@@ -27,6 +27,12 @@ crc_timing_refresh_image_git_repo:
 # Mandatory value
 crc_timing_refresh_image_git_branch:
 
+# name of the local script to execute (update_disk or refresh_image)
+crc_timing_refresh_image_script: refresh_image
+
+# size of the spare disk. Optional.
+crc_timing_refresh_image_disk_size: null
+
 # the region to use
 crc_timing_refresh_image_aws_region: us-west-1
 

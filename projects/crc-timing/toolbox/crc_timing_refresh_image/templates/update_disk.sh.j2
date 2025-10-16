@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -o pipefail
+set -o errexit
+set -o nounset
+set -o errtrace
+
+sudo dnf install -y zstd qemu-img
+
+sudo mkfs.ext4 /dev/xvdg
+
+sudo mount /dev/xvdg /mnt/
+sudo mkdir /mnt/storage
+sudo chown fedora:fedora /mnt/storage
+
+cd /mnt/storage
+
+VERSION="4.19.15"
+ARCH=amd64
+PR=1168
+HYPERVISOR=libvirt
+BUNDLE_DIR="crc_${HYPERVISOR}_${VERSION}_${ARCH}_${PR}"
+BUNDLE_URL="https://storage.googleapis.com/crc-bundle-${PR}/${BUNDLE_DIR}.crcbundle"
+curl -Ssf "$BUNDLE_URL" | tar xv --zstd
+cd "$BUNDLE_DIR"
+
+sudo qemu-img convert -f qcow2 -O raw ./crc.qcow2 /dev/xvdf
+sync
