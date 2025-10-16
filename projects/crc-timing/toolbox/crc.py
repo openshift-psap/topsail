@@ -23,6 +23,8 @@ class Crc:
             private_key_path,
             git_repo,
             git_branch,
+            script="refresh_image",
+            disk_size=None,
             aws_region="us-west-1",
             aws_availability_zone="us-west-1a",
             worker_instance_type="t2.micro",
@@ -41,6 +43,8 @@ class Crc:
             git_repo: the URL of the repo to use for updating the SNC image
             git_branch: the repo branch to use for updating the SNC image
 
+            script: name of the local script to execute (update_disk or refresh_image)
+            disk_size: size of the spare disk. Optional.
             aws_region: the region to use
             aws_availability_zone: the availability zone to use
             worker_instance_type: the instance type for the controller EC2
@@ -48,5 +52,15 @@ class Crc:
             security_group_name: the name of the security-group to use. Date will be added
             ami_image_user: the name of the user to use in the image
         """
+
+        VALID_SCRIPTS= ("update_disk", "refresh_image")
+        if script not in VALID_SCRIPTS:
+            logging.error(f"Invalid script: '{script}'. Expected one of {', '.join(VALID_SCRIPTS)}")
+            raise SystemExit(1)
+
+        if script == "update_disk" and not disk_size:
+            logging.error(f"Script '{script}' expects a disk size.")
+            raise SystemExit(1)
+        del VALID_SCRIPTS
 
         return RunAnsibleRole(locals())

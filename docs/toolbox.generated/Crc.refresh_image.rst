@@ -48,6 +48,18 @@ Parameters
 * The repo branch to use for updating the SNC image
 
 
+``script``  
+
+* Name of the local script to execute (update_disk or refresh_image)
+
+* default value: ``refresh_image``
+
+
+``disk_size``  
+
+* Size of the spare disk. Optional.
+
+
 ``aws_region``  
 
 * The region to use

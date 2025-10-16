@@ -81,9 +81,23 @@
 
   - name: Apply the instance script template
     template:
-      src: "{{ instance_script_template }}"
+      src: "templates/{{ crc_timing_refresh_image_script }}.sh.j2"
       dest: "{{ artifact_extra_logs_dir }}/src/instance_script.sh"
       mode: '0700'
+
+  - name: Prepare the block device mapping file
+    shell: |
+      cat > "{{ artifact_extra_logs_dir }}/src/block-device-mappings.json" <<'EOF'
+      [
+        {
+          "DeviceName": "/dev/xvdg",
+          "Ebs": {
+            "VolumeSize": {{ crc_timing_refresh_image_disk_size }}
+          }
+        }
+      ]
+      EOF
+    when: crc_timing_refresh_image_disk_size is not None
 
   - name: 3. Launch temporary worker instance
     command:
@@ -94,6 +108,9 @@
             --key-name "{{ crc_timing_refresh_image_key_pair_name }}"
             --placement "AvailabilityZone={{ crc_timing_refresh_image_aws_availability_zone }}"
             --security-group-ids "{{ security_group_id }}"
+            {% if crc_timing_refresh_image_disk_size is not None %}
+            --block-device-mappings "file://{{ artifact_extra_logs_dir }}/src/block-device-mappings.json"
+            {% endif %}
     no_log: true # too verbose
     register: instance_create_raw
 
@@ -185,6 +202,10 @@
       aws ec2 wait snapshot-completed
           --region "{{ crc_timing_refresh_image_aws_region }}"
           --snapshot-ids "{{ new_snapshot_id }}"
+    register: wait_snapshot_completed
+    retries: 10
+    delay: 1
+    until: wait_snapshot_completed.rc != 255
     changed_when: false
 
   - name: 7. Check for existing AMI and deregister it
