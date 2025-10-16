@@ -2,95 +2,29 @@ import remote_access
 import json
 import logging
 
-from projects.core.library import config
-
-
-def build_env_command_windows(env_dict):
-    """Build PowerShell environment variable setting command for Windows."""
-    if not env_dict:
-        return ""
-
-    env_commands = []
-    for k, v in env_dict.items():
-        env_commands.append(f"$env:{k}='{v}'")
-
-    return "; ".join(env_commands) + ";"
-
-
-def build_env_command_unix(env_dict):
-    """Build Unix env command for setting environment variables."""
-    if not env_dict:
-        return ""
-
-    env_values = " ".join(f"'{k}={v}'" for k, v in env_dict.items())
-    return f"env {env_values}"
-
-
-def build_env_command(env_dict):
-    """Build environment command based on target system type."""
-    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-
-    if is_windows:
-        return build_env_command_windows(env_dict)
-    else:
-        return build_env_command_unix(env_dict)
-
-
-def build_windows_start_script(service_name, start_command, binary_path):
-    """Build PowerShell script for starting services on Windows with wait logic."""
-    return f"""
-$scriptContent = @"
-& {start_command} *>&1 | Out-File -FilePath "`$env:USERPROFILE\\{service_name}_script_log.txt"
-"@
-
-Set-Content -Path "$env:USERPROFILE\\start_{service_name}.ps1" -Value $scriptContent
-$command = "powershell.exe -ExecutionPolicy Bypass -File `"$env:USERPROFILE\\start_{service_name}.ps1`""
-
-$result = Invoke-WmiMethod -Class Win32_Process -Name Create -ArgumentList $command
-
-# Wait for {service_name} to be fully ready using while loop
-Write-Output "Waiting for {service_name} to boot..."
-$timeout = 120  # 2 minutes timeout
-$elapsed = 0
-$interval = 5
-
-while ($elapsed -lt $timeout) {{
-    try {{
-        & {binary_path} info *>$null
-        if ($LASTEXITCODE -eq 0) {{
-            Write-Output "{service_name.capitalize()} is ready after $elapsed seconds"
-            break
-        }}
-    }} catch {{
-        # Continue waiting
-    }}
-
-    Write-Output "Still waiting... ($elapsed/$timeout seconds)"
-    Start-Sleep -Seconds $interval
-    $elapsed += $interval
-}}
-
-if ($elapsed -ge $timeout) {{
-    Write-Output "Warning: Timeout waiting for {service_name} to be ready"
-    type $env:USERPROFILE\\{service_name}_script_log.txt
-}}
-
-Remove-Item "$env:USERPROFILE\\start_{service_name}.ps1" -Force -ErrorAction SilentlyContinue
-"""
+from config_manager import ConfigManager
+from platform_builders import build_env_command, build_service_start_script
 
 
 def get_podman_binary(base_work_dir):
-    if config.project.get_config("prepare.podman.repo.enabled", print=False):
-        version = config.project.get_config("prepare.podman.repo.version", print=False)
-        podman_bin = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
-    else:
-        podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
+    podman_config = ConfigManager.get_podman_config()
+    custom_binary_config = ConfigManager.get_custom_binary_config()
 
-    if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
-        podman_file = config.project.get_config("prepare.podman.custom_binary.client_file", print=False)
+    if podman_config['repo_enabled']:
+        version = podman_config['repo_version']
+        podman_bin = base_work_dir / f"podman-{version}" / "usr" / "bin" / "podman"
+        if ConfigManager.is_linux():
+            podman_bin = base_work_dir / f"podman-{version}" / "bin" / "podman"
+    else:
+        podman_bin = ConfigManager.get_binary_path("podman")
+
+    if custom_binary_config['enabled']:
+        podman_file = custom_binary_config['client_file']
+        if ConfigManager.is_linux():
+            podman_file = custom_binary_config['server_file']
         podman_bin = base_work_dir / "podman-custom" / podman_file
         if not remote_access.exists(podman_bin):
-            podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
+            podman_bin = ConfigManager.get_binary_path("podman")
 
     return podman_bin
 
@@ -101,19 +35,20 @@ class ContainerEngine:
         if self.engine not in ["podman", "docker"]:
             raise ValueError(f"Unsupported container engine: {self.engine}")
         self.base_work_dir = remote_access.prepare()
-        self.engine_binary = None
+        self.podman_config = ConfigManager.get_podman_config()
+
         if self.engine == "podman":
             self.engine_binary = get_podman_binary(self.base_work_dir)
         elif self.engine == "docker":
-            self.engine_binary = config.project.get_config("remote_host.docker.docker_bin", print=False) or "docker"
+            self.engine_binary = ConfigManager.get_binary_path("docker")
 
     def get_env(self):
         env_ = dict(HOME=self.base_work_dir)
         if self.engine == "docker":
             return env_
 
-        if config.project.get_config("prepare.podman.machine.enabled", print=False):
-            env_ |= config.project.get_config("prepare.podman.machine.env", print=False)
+        if self.podman_config['machine_enabled']:
+            env_ |= self.podman_config['machine_env'] or {}
 
         return env_
 
@@ -124,13 +59,35 @@ class ContainerEngine:
 
         env_cmd = build_env_command(self.get_env())
 
-        if config.project.get_config("prepare.podman.machine.enabled", print=False):
-            machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
+        is_linux = ConfigManager.is_linux()
+
+        if self.podman_config['machine_enabled'] and not is_linux:
+            machine_name = self.podman_config['machine_name']
             cmd = f"{cmd} --connection '{machine_name}'"
+
+        if is_linux:
+            if self.podman_config['linux_rootful']:
+                cmd = f"sudo -E {cmd}"
+            if runtime := self.podman_config['linux_runtime']:
+                cmd = f"{cmd} --runtime {runtime}"
 
         cmd = f"{env_cmd} {cmd}"
 
         return cmd
+
+    def is_rootful(self):
+        if ConfigManager.is_linux():
+            return self.podman_config['linux_rootful']
+        return False  # Rootfull podman is running in a VM on non-Linux hosts
+
+    def additional_args(self):
+        additional_args = ""
+        if self.engine == "docker":
+            return additional_args
+        if ConfigManager.is_linux():
+            if runtime := self.podman_config['linux_runtime']:
+                additional_args = f"{additional_args} --runtime {runtime}"
+        return additional_args
 
     def cleanup(self):
         ret = remote_access.run_with_ansible_ssh_conf(
@@ -167,13 +124,14 @@ class ContainerEngine:
 
 class PodmanMachine:
     def __init__(self):
-        self.machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
+        self.podman_config = ConfigManager.get_podman_config()
+        self.machine_name = self.podman_config['machine_name']
         self.base_work_dir = remote_access.prepare()
 
     def get_env(self):
         env_ = dict(HOME=self.base_work_dir)
-        if config.project.get_config("prepare.podman.machine.enabled", print=False):
-            env_ |= config.project.get_config("prepare.podman.machine.env", print=False)
+        if self.podman_config['machine_enabled']:
+            env_ |= self.podman_config['machine_env'] or {}
 
         return env_
 
@@ -188,8 +146,10 @@ class PodmanMachine:
             machine_state = self.inspect()
         was_stopped = machine_state[0]["State"] == "stopped"
 
+        machine_config = ConfigManager.get_podman_machine_config()
+
         if force_restart and not was_stopped:
-            if config.project.get_config("prepare.podman.machine.force_configuration"):
+            if machine_config['force_configuration']:
                 self.stop()
                 was_stopped = True
 
@@ -197,10 +157,10 @@ class PodmanMachine:
             logging.info("podman machine already running. Skipping the configuration part.")
             return
 
-        if config.project.get_config("prepare.podman.machine.set_default"):
-            name = config.project.get_config("prepare.podman.machine.name", print=False)
+        if machine_config['set_default']:
+            name = machine_config['name']
             rootless = ""
-            if config.project.get_config("prepare.podman.machine.configuration.rootful", print=False):
+            if machine_config['configuration_rootful']:
                 rootless = "-root"
             remote_access.run_with_ansible_ssh_conf(
                 self.base_work_dir,
@@ -219,8 +179,9 @@ class PodmanMachine:
             logging.error(msg)
             raise RuntimeError(msg)
 
-        if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
-            podman_file = config.project.get_config("prepare.podman.custom_binary.server_file", print=False)
+        custom_binary_config = ConfigManager.get_custom_binary_config()
+        if custom_binary_config['enabled']:
+            podman_file = custom_binary_config['server_file']
             podman_bin = self.base_work_dir / "podman-custom" / podman_file
             self.cp(podman_bin, "~/podman")
             ret = self.ssh("chmod +x ./podman")
@@ -231,12 +192,12 @@ class PodmanMachine:
                 raise RuntimeError("Failed to start custom podman server")
 
     def configure(self):
-        name = config.project.get_config("prepare.podman.machine.name", print=False)
-        configuration = config.project.get_config("prepare.podman.machine.configuration")
-        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-        is_wsl = config.project.get_config("prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER") == "wsl"
+        name = self.podman_config['machine_name']
+        machine_config = ConfigManager.get_podman_machine_config()
+        configuration = machine_config['configuration']
+        is_wsl = machine_config['env_containers_machine_provider'] == "wsl"
         # Changing CPUs, Memory not supported for WSL machines
-        if is_windows and is_wsl:
+        if ConfigManager.is_windows() and is_wsl:
             if "cpus" in configuration:
                 del configuration["cpus"]
             if "memory" in configuration:
@@ -255,18 +216,17 @@ class PodmanMachine:
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def start(self):
-        cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine start {self.machine_name}"
-        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-        if is_windows:
-            # Environment variables must be set permanently using setx, because machine is started in a new shell.
-            # To survive the exit of ssh session.
-            # -------------
-            cmd = build_windows_start_script(
+        start_command = f"{get_podman_binary(self.base_work_dir)} machine start {self.machine_name}"
+        cmd = f"{self.get_cmd_env()} {start_command}"
+
+        if ConfigManager.is_windows():
+            # Use platform-specific service start script for Windows
+            cmd = build_service_start_script(
                 service_name="podman",
-                start_command=f"{get_podman_binary(self.base_work_dir)} machine start {self.machine_name}",
-                binary_path=get_podman_binary(self.base_work_dir)
+                start_command=start_command,
+                binary_path=str(get_podman_binary(self.base_work_dir))
             )
-            # -------------
+
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def stop(self):
@@ -276,7 +236,7 @@ class PodmanMachine:
     def rm(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine rm {self.machine_name} --force"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
-        if config.project.get_config("remote_host.system", print=False) == "windows":
+        if ConfigManager.is_windows():
             cmd = "Remove-Item $env:USERPROFILE\\podman_script_log.txt -Force -ErrorAction SilentlyContinue"
             remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
 
@@ -332,24 +292,23 @@ class DockerDesktopMachine:
         # remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def start(self):
-        cmd = "docker desktop start"
-        is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-        if is_windows:
-            # Environment variables must be set permanently using setx, because machine is started in a new shell.
-            # To survive the exit of ssh session.
-            # -------------
-            cmd = build_windows_start_script(
+        start_command = "docker desktop start"
+        cmd = start_command
+
+        if ConfigManager.is_windows():
+            # Use platform-specific service start script for Windows
+            cmd = build_service_start_script(
                 service_name="docker",
-                start_command="docker desktop start",
+                start_command=start_command,
                 binary_path="docker"
             )
-            # -------------
+
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def stop(self):
         cmd = "docker desktop stop"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
-        if config.project.get_config("remote_host.system", print=False) == "windows":
+        if ConfigManager.is_windows():
             cmd = "Remove-Item $env:USERPROFILE\\docker_script_log.txt -Force -ErrorAction SilentlyContinue"
             remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd, check=False)
 

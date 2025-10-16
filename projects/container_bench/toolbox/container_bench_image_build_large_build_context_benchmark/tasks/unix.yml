@@ -8,6 +8,7 @@
 
 # Prepare build context
 - name: Prepare
+  become: "{{ container_bench_image_build_large_build_context_benchmark_rootfull }}"
   shell: |
     {{ initial_prune_command }}
     mkdir ${HOME}/large-build-context
@@ -22,6 +23,7 @@
 
 # Run benchmark commands
 - name: Run benchmark commands
+  become: "{{ container_bench_image_build_large_build_context_benchmark_rootfull }}"
   shell: |
      {{ container_bench_image_build_large_build_context_benchmark_exec_time_path | dirname }}/.venv/bin/python \
      {{ container_bench_image_build_large_build_context_benchmark_exec_time_path }} \
@@ -30,6 +32,7 @@
      {{ benchmark_command }}
 
 - name: Clean up
+  become: "{{ container_bench_image_build_large_build_context_benchmark_rootfull }}"
   shell: |
     {{ cleanup_commands }}
     rm -rf {{ build_context_path }}

@@ -2,7 +2,7 @@
 # Define common command template
 - name: Set common command
   set_fact:
-    container_info_command: "{{ container_bench_capture_container_engine_info_runtime }} info --format json"
+    container_info_command: "{{ container_bench_capture_container_engine_info_binary_path }} {{ container_bench_capture_container_engine_info_additional_args }} info --format json"
 
 - name: Include Unix/Linux tasks
   include_tasks: unix.yml

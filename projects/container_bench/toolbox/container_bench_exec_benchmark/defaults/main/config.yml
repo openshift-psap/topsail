@@ -7,9 +7,15 @@
 # Mandatory value
 container_bench_exec_benchmark_exec_time_path:
 
-# the runtime to use for the benchmark (e.g., docker, podman)
+# path to the container engine binary (e.g., docker, podman)
 # Mandatory value
-container_bench_exec_benchmark_runtime:
+container_bench_exec_benchmark_binary_path:
+
+# whether to run the benchmark as root user
+container_bench_exec_benchmark_rootfull: false
+
+# additional arguments to pass to the container engine binary
+container_bench_exec_benchmark_additional_args:
 
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone

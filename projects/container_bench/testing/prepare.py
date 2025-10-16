@@ -1,17 +1,15 @@
 import logging
 import shlex
-from projects.core.library import config
+
 from container_engine import PodmanMachine, ContainerEngine, DockerDesktopMachine
+from config_manager import ConfigManager
 import remote_access
 import install
 import utils
 
 
 def remove_remote_file(base_work_dir, file_path, recursive=False):
-    """Remove a file or directory on the remote host, compatible with both Windows and Unix."""
-    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-
-    if is_windows:
+    if ConfigManager.is_windows():
         flags = "-Force -ErrorAction SilentlyContinue"
         if recursive:
             flags += " -Recurse"
@@ -24,7 +22,9 @@ def remove_remote_file(base_work_dir, file_path, recursive=False):
 
 
 def cleanup():
-    if config.project.get_config("cleanup.files.exec_time"):
+    cleanup_config = ConfigManager.get_extended_cleanup_config()
+
+    if cleanup_config['files_exec_time']:
         logging.info("Cleaning up exec_time script")
         base_work_dir = remote_access.prepare()
         exec_time_script = utils.get_benchmark_script_path(base_work_dir)
@@ -32,7 +32,7 @@ def cleanup():
             logging.info(f"Removing {exec_time_script} ...")
             remove_remote_file(base_work_dir, exec_time_script)
 
-    if config.project.get_config("cleanup.files.venv"):
+    if cleanup_config['files_venv']:
         logging.info("Cleaning up virtual environment")
         base_work_dir = remote_access.prepare()
         venv_path = utils.get_benchmark_script_path(base_work_dir).parent / ".venv"
@@ -45,7 +45,7 @@ def cleanup():
     except Exception as e:
         logging.error(f"Error during Podman platform cleanup: {e}")
 
-    if config.project.get_config("cleanup.files.podman"):
+    if cleanup_config['files_podman']:
         logging.info("Cleaning up Podman files")
         utils.cleanup_podman_files(remote_access.prepare())
 
@@ -54,7 +54,11 @@ def cleanup():
 
 
 def cleanup_podman_platform():
-    if config.project.get_config("cleanup.podman_machine.delete"):
+    cleanup_config = ConfigManager.get_extended_cleanup_config()
+    if (
+        not ConfigManager.is_linux() and
+        cleanup_config['podman_machine_delete']
+    ):
         logging.info("Cleaning up Podman machine")
         machine = PodmanMachine()
         is_running = machine.is_running()
@@ -64,9 +68,16 @@ def cleanup_podman_platform():
 
 
 def cleanup_docker_platform():
+    cleanup_config = ConfigManager.get_extended_cleanup_config()
     if (
-        config.project.get_config("remote_host.docker.enabled", print=False) and
-        config.project.get_config("cleanup.docker_desktop.stop")
+        ConfigManager.is_linux() and
+        cleanup_config['docker_service_stop']
+    ):
+        utils.docker_service("stop")
+        return
+    if (
+        ConfigManager.is_docker_enabled() and
+        cleanup_config['docker_desktop_stop']
     ):
         logging.info("Stopping Docker Desktop")
         docker_desktop = DockerDesktopMachine()
@@ -83,23 +94,31 @@ def prepare():
     logging.info("installing dependencies")
     install.dependencies(base_work_dir)
 
-    if config.project.get_config("prepare.podman.repo.enabled"):
-        utils.prepare_podman_from_gh_binary(base_work_dir)
-        utils.prepare_gv_from_gh_binary(base_work_dir)
+    podman_config = ConfigManager.get_podman_config()
+    custom_binary_config = ConfigManager.get_custom_binary_config()
 
-    if config.project.get_config("prepare.podman.custom_binary.enabled", print=False):
+    if podman_config['repo_enabled']:
+        utils.prepare_podman_from_gh_binary(base_work_dir)
+
+    if custom_binary_config['enabled']:
         utils.prepare_custom_podman_binary(base_work_dir)
 
     return 0
 
 
 def prepare_docker_platform():
-    if config.project.get_config("remote_host.docker.enabled", print=False):
+    if not ConfigManager.is_docker_enabled():
+        return 0
+
+    if ConfigManager.is_linux():
+        utils.docker_service("start")
+    else:
         logging.info("preparing docker desktop")
         docker_desktop = DockerDesktopMachine()
         docker_desktop.start()
-        docker = ContainerEngine("docker")
-        docker.cleanup()
+
+    docker = ContainerEngine("docker")
+    docker.cleanup()
 
 
 def prepare_windows_env_vars_podman():
@@ -108,7 +127,8 @@ def prepare_windows_env_vars_podman():
     # Because machine is started in a new shell, we need to set these variables permanently to survive
     # the exit of ssh session.
     logging.info("Setting environment variables for Podman on Windows")
-    provider = config.project.get_config("prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER", print=False)
+    machine_config = ConfigManager.get_podman_machine_config()
+    provider = machine_config['env_containers_machine_provider']
     home = remote_access.prepare()
 
     # Cast to string and escape/remove internal quotes, then wrap in quotes for setx
@@ -120,16 +140,23 @@ def prepare_windows_env_vars_podman():
 
 
 def prepare_podman_platform():
-    logging.info("preparing podman machine")
-    if config.project.get_config("remote_host.system", print=False) == "windows":
-        prepare_windows_env_vars_podman()
+    podman_config = ConfigManager.get_podman_config()
 
-    machine = PodmanMachine()
-    if not machine.is_running():
-        machine.configure_and_start(
-            force_restart=True,
-            configure=config.project.get_config("prepare.podman.machine.use_configuration", print=False)
-        )
+    if ConfigManager.is_linux():
+        if podman_config['repo_enabled']:
+            logging.info("Build Podman from GitHub repository")
+            utils.build_podman_from_gh_binary()
+    else:
+        logging.info("preparing podman machine")
+        if ConfigManager.is_windows():
+            prepare_windows_env_vars_podman()
+
+        machine = PodmanMachine()
+        if not machine.is_running():
+            machine.configure_and_start(
+                force_restart=True,
+                configure=ConfigManager.should_use_podman_machine_configuration()
+            )
 
     logging.info("cleaning up podman")
     podman = ContainerEngine("podman")

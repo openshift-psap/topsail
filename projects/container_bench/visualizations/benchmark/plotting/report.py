@@ -1,92 +1,81 @@
 import itertools
 from dash import html, dcc
 import json
-import logging
 import matrix_benchmarking.plotting.table_stats as table_stats
-import matrix_benchmarking.common as common
 import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 import projects.matrix_benchmarking.visualizations.helpers.plotting.styles_css as css
 import projects.matrix_benchmarking.visualizations.helpers.plotting.html as html_elements
-import projects.matrix_benchmarking.visualizations.helpers.plotting.units as units
+from .utils.config import GetInfo
+from .utils.shared import (
+    MIN_PLOT_BENCHMARK_TIME,
+    SYSTEM_INFO_FIELD_MAPPINGS,
+    ENGINE_INFO_FIELD_MAPPINGS,
+    format_benchmark_title,
+    create_host_info_items,
+    create_engine_info_items,
+    create_summary_info_card,
+    format_field_value,
+    detect_linux_system,
+    detect_windows_system
+)
 
 
 def register():
     BenchmarkReport()
 
 
-def getInfo(settings):
-    data = dict()
-    for entry in common.Matrix.filter_records(settings):
-        metrics = entry.results.__dict__.get("metrics")
-        if not metrics:
-            continue
-        test_config = entry.results.__dict__.get("test_config", {})
-        container_engine_provider = ""
-        if not test_config:
-            logging.warning("Missing test_config in entry results.")
-        else:
-            container_engine_provider = test_config.yaml_file.get(
-                "prepare", {}).get(
-                    "podman", {}).get(
-                        "machine", {}).get(
-                            "env", {}).get("CONTAINERS_MACHINE_PROVIDER", "")
+def generate_host_items(system_info):
+    base_items = create_host_info_items(system_info, SYSTEM_INFO_FIELD_MAPPINGS)
 
-        data["exec_time"] = metrics.execution_time
-        data["command"] = metrics.command
-        data["timestamp"] = metrics.timestamp
+    is_windows = detect_windows_system(system_info)
+    if is_windows:
+        base_items = [(name, value, False, highlight) for name, value, _, highlight in base_items
+                      if name != SYSTEM_INFO_FIELD_MAPPINGS["OS_version"]]
+        os_version_item = (SYSTEM_INFO_FIELD_MAPPINGS["OS_version"],
+                           system_info.get('OS_version', 'N/A'), True, False)
+        base_items.append(os_version_item)
+    else:
+        base_items = [(name, value, False, highlight) for name, value, _, highlight in base_items
+                      if name != SYSTEM_INFO_FIELD_MAPPINGS["Kernel_version"]]
+        kernel_version_item = (SYSTEM_INFO_FIELD_MAPPINGS["Kernel_version"],
+                               system_info.get('Kernel_version', 'N/A'), True, False)
+        base_items.append(kernel_version_item)
 
-        data["container_engine_provider"] = container_engine_provider
-        data["runs"] = entry.settings.__dict__.get("benchmark_runs", 1)
+    return base_items
 
-        system_state = entry.results.__dict__.get("system_state")
-        if system_state:
-            sys_info = dict()
-            software = system_state.get("Software", {})
-            system_software_overview = software.get("System Software Overview", {})
-            sys_info["OS_version"] = system_software_overview.get("System Version", "")
-            sys_info["Kernel_version"] = system_software_overview.get("Kernel Version", "")
 
-            hardware = system_state.get("Hardware", {})
-            hardware_overview = hardware.get("Hardware Overview", {})
-            sys_info["CPU_model"] = hardware_overview.get("Chip", "")
-            sys_info["CPU_cores"] = hardware_overview.get("Total Number of Cores", "")
-            sys_info["Memory"] = hardware_overview.get("Memory", "")
-            sys_info["Model_id"] = hardware_overview.get("Model Identifier", "")
-            data["system"] = sys_info
+def generate_engine_items(container_engine_info, system_info, provider_info):
+    is_linux = detect_linux_system(system_info)
 
-        container_engine_info = entry.results.__dict__.get("container_engine_info")
-        platform = entry.settings.__dict__.get("container_engine", "")
-        if container_engine_info and platform == "podman":
-            engine_info = dict()
-            client = container_engine_info.get("Client", {})
-            engine_info["Container_engine_platform"] = platform
-            engine_info["Client_version"] = client.get("Version", "")
-            host = container_engine_info.get("host", {})
-            engine_info["Mode"] = host.get("security", {}).get("rootless", "")
-            engine_info["Host_version"] = container_engine_info.get("version", {}).get("Version", "")
-            engine_info["Host_cpu"] = host.get("cpus", "")
-            engine_info["Host_memory"] = host.get("memTotal", "")
-            engine_info["Host_kernel"] = host.get("kernel", "")
-            data["container_engine_full"] = container_engine_info
-            data["container_engine_info"] = engine_info
-        elif container_engine_info and platform == "docker":
-            data["container_engine_provider"] = "N/A (Docker)"
-            engine_info = dict()
-            client = container_engine_info.get("ClientInfo", {})
-            engine_info["Container_engine_platform"] = platform
-            engine_info["Client_version"] = client.get("Version", "")
-            server = container_engine_info
-            engine_info["Host_version"] = server.get("ServerVersion", "")
-            engine_info["Host_cpu"] = server.get("NCPU", "")
-            engine_info["Host_memory"] = server.get("MemTotal", "")
-            engine_info["Host_kernel"] = server.get("KernelVersion", "")
-            data["container_engine_full"] = container_engine_info
-            data["container_engine_info"] = engine_info
-    return data
+    engine_items = create_engine_info_items(
+        container_engine_info,
+        provider_info if not is_linux else None,
+        ENGINE_INFO_FIELD_MAPPINGS
+    )
+
+    if not is_linux:
+        client_version_display = ENGINE_INFO_FIELD_MAPPINGS["Client_version"]
+        client_version_value = container_engine_info.get('Client_version', 'N/A')
+
+        if len(engine_items) > 1:
+            engine_items.insert(1, (client_version_display, client_version_value, False, False))
+
+    formatted_items = []
+    for i, (name, value, is_last, highlight) in enumerate(engine_items):
+        field_key = None
+        for key, display_name in ENGINE_INFO_FIELD_MAPPINGS.items():
+            if display_name == name:
+                field_key = key
+                break
+
+        formatted_value = format_field_value(field_key, value) if field_key else value
+        formatted_items.append((name, formatted_value, is_last, highlight))
+
+    return formatted_items
 
 
 def generate_one_benchmark_report(report_components, settings, benchmark, args):
-    info = getInfo(settings)
+    info = GetInfo(settings)
     if not info:
         return
 
@@ -94,61 +83,18 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
     system = info.get("system", {})
 
     report_components.extend([
-        html.H2(f"Benchmark: {benchmark.replace('_', ' ')}", style=css.STYLE_H2_SECTION),
+        html.H2(f"Benchmark: {format_benchmark_title(benchmark)}", style=css.STYLE_H2_SECTION),
     ])
 
-    summary_items = [
-        ("Command", html.Code(info.get('command', 'N/A')), False, False),
-        ("Timestamp", info.get('timestamp', 'N/A'), False, False),
-        ("Execution Time", [
-            html.Span(
-                f"{units.format_duration(info.get('exec_time', 0))}",
-                style=css.STYLE_INFO_VALUE_HIGHLIGHT
-            ),
-            html.Br(),
-            html.Small(
-                f"(Average of {info.get('runs', 1)} runs)",
-                style=css.STYLE_SMALL_TEXT
-            )
-        ], True, True),
-    ]
+    host_items = generate_host_items(system)
+    engine_items = generate_engine_items(
+        container_engine_info,
+        system,
+        info.get('container_engine_provider', 'N/A')
+    )
 
-    host_items = [
-        ("Model ID", system.get('Model_id', 'N/A'), False, False),
-        ("CPU", f"{system.get('CPU_model', 'N/A')}", False, False),
-        ("Cores", f"{system.get('CPU_cores', 'N/A')}", False, False),
-        ("Memory", system.get('Memory', 'N/A'), False, False),
-    ]
-
-    is_windows = "windows" in system.get("OS_version", "").lower()
-    if is_windows:
-        host_items.append(("OS Version", system.get('OS_version', 'N/A'), True, False))
-    else:
-        host_items.extend([
-            ("OS Version", system.get('OS_version', 'N/A'), False, False),
-            ("Kernel", system.get('Kernel_version', 'N/A'), True, False)
-        ])
-
-    mem_val = container_engine_info.get('Host_memory')
-    try:
-        mem_display = units.human_readable_size(int(mem_val))
-    except (TypeError, ValueError):
-        mem_display = "N/A"
-
-    engine_items = [
-        ("Engine", container_engine_info.get('Container_engine_platform', 'N/A'), False, False),
-        ("Client Version", container_engine_info.get('Client_version', 'N/A'), False, False),
-        ("Provider", info.get('container_engine_provider', 'N/A'), False, False),
-        ("Rootless", container_engine_info.get('Mode', 'N/A'), False, False),
-        ("Host Version", container_engine_info.get('Host_version', 'N/A'), False, False),
-        ("Host CPU", container_engine_info.get('Host_cpu', 'N/A'), False, False),
-        ("Host Memory", mem_display, False, False),
-        ("Host Kernel", container_engine_info.get('Host_kernel', 'N/A'), True, False),
-    ]
-
-    # Create info cards in rows for better readability
     summary_row = html.Div([
-        html_elements.info_card("Benchmark Summary", summary_items)
+        create_summary_info_card(info, "Benchmark Summary")
     ], style=css.STYLE_INFO_ROW)
 
     system_row = html.Div([
@@ -162,7 +108,7 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
     ])
 
     body = [info_section]
-    if info.get('exec_time', 0) > 5:  # Only show plots for longer benchmarks (>5s)
+    if info.get('exec_time', 0) > MIN_PLOT_BENCHMARK_TIME:  # Only show plots for longer benchmarks
         plot_names = [
             "System CPU Usage",
             "System Memory Usage",

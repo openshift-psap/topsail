@@ -3,9 +3,15 @@
 # Source component: Container_Bench.capture_container_engine_info
 
 # Parameters
-# the container engine to capture information from (e.g., podman, docker)
+# path to the container engine binary (e.g., docker, podman)
 # Mandatory value
-container_bench_capture_container_engine_info_runtime:
+container_bench_capture_container_engine_info_binary_path:
+
+# whether to run the benchmark as root user
+container_bench_capture_container_engine_info_rootfull: false
+
+# additional arguments to pass to the container engine binary
+container_bench_capture_container_engine_info_additional_args:
 
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone

@@ -7,6 +7,7 @@ import shlex
 
 from projects.core.library import config, run
 from constants import CONTAINER_BENCH_SECRET_PATH
+from config_manager import ConfigManager
 
 
 def prepare():
@@ -28,7 +29,7 @@ def prepare():
 
     os.environ["TOPSAIL_REMOTE_HOSTNAME"] = remote_hostname
     os.environ["TOPSAIL_REMOTE_USERNAME"] = remote_username
-    os.environ["TOPSAIL_REMOTE_OS"] = config.project.get_config("remote_host.system", print=False)
+    os.environ["TOPSAIL_REMOTE_OS"] = ConfigManager.get_system_type().value
 
     #
 
@@ -90,7 +91,6 @@ def run_with_ansible_ssh_conf_windows(
         chdir=None,
         print_cmd=False,
 ):
-    """Windows-specific SSH execution function using PowerShell."""
     if extra_env is None:
         extra_env = {}
 
@@ -242,10 +242,7 @@ def run_with_ansible_ssh_conf(
         chdir=None,
         print_cmd=False,
 ):
-    """Automatically choose the appropriate SSH function based on remote system type."""
-    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-
-    if is_windows:
+    if ConfigManager.is_windows():
         return run_with_ansible_ssh_conf_windows(
             base_work_dir, cmd,
             extra_env=extra_env,
@@ -268,7 +265,6 @@ def run_with_ansible_ssh_conf(
 
 
 def exists_windows(path):
-    """Windows-specific path existence check using PowerShell Test-Path."""
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.exists()
 
@@ -286,7 +282,6 @@ def exists_windows(path):
 
 
 def exists_unix(path):
-    """Unix-specific path existence check using test command."""
     if config.project.get_config("remote_host.run_locally", print=False):
         return path.exists()
 
@@ -303,10 +298,7 @@ def exists_unix(path):
 
 
 def exists(path):
-    """Check if path exists on remote system, automatically choosing Windows or Unix method."""
-    is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-
-    if is_windows:
+    if ConfigManager.is_windows():
         return exists_windows(path)
     else:
         return exists_unix(path)

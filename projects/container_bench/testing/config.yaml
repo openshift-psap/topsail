@@ -89,6 +89,37 @@ prepare:
     dependencies:
       - krunkit
 
+  dnf:
+    install_dependencies: false
+    enable_docker_repo: true
+    dependencies:
+      - podman
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      # runtime
+      - bsdtar
+      # Podman build dependencies:
+      - catatonit
+      - conmon
+      - containers-common-extra
+      - gpgme-devel
+      - libassuan-devel
+      - libgpg-error-devel
+      - libseccomp-devel
+      - libselinux-devel
+      - shadow-utils-subid-devel
+      - make
+      - sqlite-devel
+      - systemd-devel
+      - gcc
+      - glib2-devel
+      - glibc-devel
+      - glibc-static
+      - golang
+
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
     custom_binary:
@@ -107,25 +138,26 @@ prepare:
       windows:
         file: podman-remote-release-{@remote_host.system}_{@remote_host.arch}.zip
         zip: true
-    gvisor:
-      repo:
-        enabled: true
-        url: https://github.com/containers/gvisor-tap-vsock/
-        version: v0.8.3
-        file: "gvproxy-{@remote_host.system}{@remote_host.exec_file_extension}"
+      linux:
+        file: "{@prepare.podman.repo.version}.zip"
+        zip: true
 
     stop_on_exit: true
 
+    linux:
+      rootful: false
+      runtime: crun  # runc | crun
+
     machine:
-      enabled: true # disable for linux
+      enabled: true
       force_configuration: false
       set_default: true
       name: podman-machine-default
       use_configuration: true
       configuration:
         cpus: 12 # in cores
-        memory: 8192 # in MiB
-        rootful: true
+        memory: 8116 # in MB
+        rootful: false
       env:
         # applehv (Darwin) | libkrun (Linux) | wsl (Windows) | hyperv (Windows alt)
         CONTAINERS_MACHINE_PROVIDER: applehv
@@ -141,6 +173,9 @@ cleanup:
     delete: true
 
   docker_desktop:
+    stop: true
+
+  docker_service:
     stop: true
 
 export_artifacts:
@@ -159,7 +194,7 @@ exec_benchmark:
     - docker
 
 image_build_large_build_context_benchmark:
-  runs: 5
+  runs: 10
   supported_container_engines:
     - podman
     - docker
@@ -181,8 +216,11 @@ test:
     - true
     - false
     repo_version:
-    - v5.4.0
+    - v5.5.0
     - custom
+    runtime: # Linux only
+    - crun
+    - runc
   capture_metrics:
     enabled: true
 
@@ -194,10 +232,14 @@ test:
     - test.podman.repo_version
     # - test.podman.rootful
     # - test.podman.machine_provider
+    # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
-      test.podman.rootful: prepare.podman.machine.configuration.rootful
+      test.podman.rootful:
+        - prepare.podman.machine.configuration.rootful
+        - prepare.podman.linux.rootful
+      test.podman.runtime: prepare.podman.linux.runtime
       test.podman.machine_provider: prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER
 
 matbench:

@@ -10,6 +10,7 @@ import sys
 from projects.core.library import env, config, run
 from projects.matrix_benchmarking.library import visualize, matbenchmark
 from container_engine import ContainerEngine
+from config_manager import ConfigManager
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 TOPSAIL_DIR = pathlib.Path(config.__file__).parents[3]
@@ -21,25 +22,13 @@ RUN_DIR = pathlib.Path(_pwd if _pwd else os.getcwd())  # for run_one_matbench
 os.chdir(TOPSAIL_DIR)
 
 
-def safety_checks():
-    do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
-    all_platforms = config.project.get_config("test.platform")
-
-    multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
-    if not multi_test:
-        return  # safe
-    # TODO: check
-    return
-
-
 def test():
-    safety_checks()
-
     failed = False
     try:
-        iterable_fields = config.project.get_config("test.matbenchmarking.iterable_test_fields")
+        test_config = ConfigManager.get_test_config()
+        iterable_fields = test_config['iterable_test_fields']
 
-        if config.project.get_config("test.matbenchmarking.enabled"):
+        if test_config['matbenchmarking_enabled']:
             matbench_run(iterable_fields)
         else:
             test_all_benchmarks_and_platforms()
@@ -49,7 +38,7 @@ def test():
         raise
     finally:
         exc = None
-        if config.project.get_config("matbench.enabled", print=False):
+        if ConfigManager.is_matbench_enabled():
             exc = generate_visualization(env.ARTIFACT_DIR)
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
@@ -72,8 +61,9 @@ def _separate_benchmark_values_by_platform(benchmark_values):
         if key.startswith("test.podman"):
             # Special handling for Windows and machine_provider not same as Darwin
             if key == "test.podman.machine_provider":
-                is_windows = config.project.get_config("remote_host.system", print=False) == "windows"
-                supported_hypervisors = ["wsl", "hyperv"] if is_windows else ["libkrun", "applehv"]
+                if ConfigManager.is_linux():
+                    continue
+                supported_hypervisors = ["wsl", "hyperv"] if ConfigManager.is_windows() else ["libkrun", "applehv"]
                 value = [v for v in value if v in supported_hypervisors]
             platform_configs["podman"][key] = value
         elif key.startswith("test.docker"):
@@ -126,9 +116,12 @@ def matbench_run(matrix_source_keys):
 
         logging.info(f"matbench_run: expe_to_run={expe_to_run}")
 
-        old_version = config.project.get_config("prepare.podman.repo.version", print=False)
-        old_is_repo_enabled = config.project.get_config("prepare.podman.repo.enabled", print=False)
-        old_is_enabled_custom = config.project.get_config("prepare.podman.custom_binary.enabled", print=False)
+        podman_config = ConfigManager.get_podman_config()
+        custom_binary_config = ConfigManager.get_custom_binary_config()
+        old_version = podman_config['repo_version']
+        old_is_repo_enabled = podman_config['repo_enabled']
+        old_is_enabled_custom = custom_binary_config['enabled']
+
         base_work_dir = remote_access.prepare()
         versions = expe_to_run.get("container_bench_podman", {}).get("test.podman.repo_version", [])
         for v in versions:
@@ -142,7 +135,6 @@ def matbench_run(matrix_source_keys):
                 config.project.set_config("prepare.podman.repo.version", v)
                 if config.project.get_config("prepare.podman.repo.enabled"):
                     utils.prepare_podman_from_gh_binary(base_work_dir)
-                    utils.prepare_gv_from_gh_binary(base_work_dir)
 
         config.project.set_config("prepare.podman.repo.version", old_version)
         config.project.set_config("prepare.podman.repo.enabled", old_is_repo_enabled)
@@ -151,7 +143,7 @@ def matbench_run(matrix_source_keys):
         json_benchmark_file = matbenchmark.prepare_benchmark_file(
             path_tpl="test",
             script_tpl=f"{sys.argv[0]} matbench_run",
-            stop_on_error=config.project.get_config("test.matbenchmarking.stop_on_error"),
+            stop_on_error=ConfigManager.get_test_config()['stop_on_error'],
             common_settings=dict(),
             test_files={},
             expe_to_run=expe_to_run,
@@ -159,7 +151,7 @@ def matbench_run(matrix_source_keys):
 
         logging.info(f"Benchmark configuration to run: \n{yaml.dump(json_benchmark_file, sort_keys=False)}")
 
-        benchmark_file, yaml_content = matbenchmark.save_benchmark_file(json_benchmark_file)
+        benchmark_file, _ = matbenchmark.save_benchmark_file(json_benchmark_file)
 
         args = matbenchmark.set_benchmark_args(benchmark_file)
 
@@ -169,7 +161,8 @@ def matbench_run(matrix_source_keys):
             logging.error(msg)
             raise RuntimeError(msg)
 
-        if config.project.get_config("cleanup.files.podman"):
+        cleanup_config = ConfigManager.get_cleanup_config()
+        if cleanup_config['files_podman']:
             logging.info("Cleaning up Podman files")
             for v in versions:
                 if v == "custom":
@@ -188,7 +181,8 @@ def matbench_run_one():
         with open(env.ARTIFACT_DIR / "skip", "w") as f:
             print("Results are in a subdirectory, not here.", file=f)
 
-        map_key = config.project.get_config("test.matbenchmarking.map_iterable_test_fields", print=False)
+        test_config = ConfigManager.get_test_config()
+        map_key = test_config['map_iterable_test_fields']
         logging.info(f"matbench_run_one: map_key={map_key}")
         for k, v in settings.items():
             logging.info(f"matbench_run_one: setting {k}={v}")
@@ -199,17 +193,23 @@ def matbench_run_one():
                     config.project.set_config("prepare.podman.custom_binary.enabled", True)
                 else:
                     config.project.set_config("prepare.podman.repo.enabled", True)
-            config.project.set_config(map_key[k], v)
+            if isinstance(map_key[k], list):
+                for mapped_key in map_key[k]:
+                    logging.info(f"matbench_run_one: setting {mapped_key}={v}")
+                    config.project.set_config(mapped_key, v)
+            else:
+                config.project.set_config(map_key[k], v)
 
         config.project.set_config("test.matbenchmarking.enabled", False)
 
-        platform_str = config.project.get_config("test.platform")
+        test_config = ConfigManager.get_test_config()
+        platform_str = test_config['platform']
 
-        if platform_str in (config.project.get_config("test.platforms_to_skip", print=False) or []):
+        if platform_str in (test_config['platforms_to_skip'] or []):
             logging.info(f"Skipping {platform_str} test as per test.platforms_to_skip.")
             return
 
-        all_benchmarks_str = config.project.get_config("test.benchmark")
+        all_benchmarks_str = test_config['benchmark']
         if isinstance(all_benchmarks_str, str):
             all_benchmarks_str = [all_benchmarks_str]
         benchmarks = [utils.parse_benchmark(b) for b in all_benchmarks_str]
@@ -240,29 +240,33 @@ def run_benchmarks_for_specific_platform(platform_str, benchmarks):
 
 
 def test_all_benchmarks_and_platforms():
-    all_benchmarks_str = config.project.get_config("test.benchmark")
+    test_config = ConfigManager.get_test_config()
+    all_benchmarks_str = test_config['benchmark']
     if isinstance(all_benchmarks_str, str):
         all_benchmarks_str = [all_benchmarks_str]
     benchmarks = [utils.parse_benchmark(b) for b in all_benchmarks_str]
 
-    all_platforms_str = config.project.get_config("test.platform")
+    all_platforms_str = test_config['platform']
     if isinstance(all_platforms_str, str):
         all_platforms_str = [all_platforms_str]
 
     for platform_str in all_platforms_str:
-        if platform_str in (config.project.get_config("test.platforms_to_skip", print=False) or []):
+        if platform_str in (test_config['platforms_to_skip'] or []):
             continue
         run_benchmarks_for_specific_platform(platform_str, benchmarks)
 
 
 def capture_metrics(platform):
-    if not config.project.get_config("test.capture_metrics.enabled", print=False):
+    test_config = ConfigManager.get_test_config()
+    if not test_config['capture_metrics_enabled']:
         logging.info("capture_metrics: Metrics capture not enabled.")
         return
     c = ContainerEngine(platform.container_engine)
     run.run_toolbox(
         "container_bench", "capture_container_engine_info",
-        runtime=c.engine_binary,
+        binary_path=c.engine_binary,
+        rootfull=c.is_rootful(),
+        additional_args=c.additional_args(),
     )
 
     run.run_toolbox("container_bench", "capture_system_state")
@@ -271,7 +275,9 @@ def capture_metrics(platform):
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
     c = ContainerEngine(platform.container_engine)
     benchmark_kwargs = dict(
-        runtime=c.engine_binary,
+        binary_path=c.engine_binary,
+        rootfull=c.is_rootful(),
+        additional_args=c.additional_args(),
         exec_time_path=utils.get_benchmark_script_path(base_work_dir),
         artifact_dir_suffix="_run_metrics"
     )
@@ -320,7 +326,7 @@ def run_benchmark(platform, benchmark):
         exit_code = 0
     finally:
         exc = None
-        if not config.project.get_config("remote_host.run_locally"):
+        if not ConfigManager.should_run_locally():
             # retrieve all the files that have been saved remotely
             exc = run.run_and_catch(exc, run.run_toolbox, "remote", "retrieve",
                                     path=env.ARTIFACT_DIR, dest=env.ARTIFACT_DIR,
