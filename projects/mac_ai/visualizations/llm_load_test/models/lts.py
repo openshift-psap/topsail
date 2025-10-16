@@ -40,9 +40,16 @@ class LlamaBenchStats(matbench_models.ExclusiveModel):
     throughput: float
     err: float
 
-LTS_SCHEMA_VERSION = "1.1"
+
+class LlmLoadTestResults(matbench_models.ExclusiveModel):
+    ttft: LlmLoadTestStats
+    itl: LlmLoadTestStats
+
+
+LTS_SCHEMA_VERSION = "1.2"
 # 1.0: first version
 # 1.1: switching from llm-load-test to llama-bench results
+# 1.2: add llm-load-test TTFT and ITL
 
 class Metadata(matbench_models.Metadata):
     lts_schema_version: str
@@ -55,11 +62,10 @@ class Metadata(matbench_models.Metadata):
     test_path: str = Field(default="Not set")
     urls: Optional[dict[str, str]]
 
-
 class Results(matbench_models.ExclusiveModel):
     prompt_processing: LlamaBenchStats
     token_generation: LlamaBenchStats
-
+    llm_load_test: LlmLoadTestResults
 
 class KPI(matbench_models.KPI, Settings): pass
 
