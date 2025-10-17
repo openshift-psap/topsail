@@ -124,9 +124,9 @@ class ContainerEngine:
 
 class PodmanMachine:
     def __init__(self):
+        self.base_work_dir = remote_access.prepare()
         self.podman_config = ConfigManager.get_podman_config()
         self.machine_name = self.podman_config['machine_name']
-        self.base_work_dir = remote_access.prepare()
 
     def get_env(self):
         env_ = dict(HOME=self.base_work_dir)

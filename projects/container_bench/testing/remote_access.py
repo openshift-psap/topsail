@@ -11,6 +11,11 @@ from config_manager import ConfigManager
 
 
 def prepare():
+    logging.info("Configuring remote according to info from secrets")
+    info = config.project.get_config("remote_host.info", handled_secretly=True)
+    for k, v in yaml.safe_load(info).items():
+        config.project.set_config(k, v, print=False)
+
     base_work_dir = pathlib.Path(config.project.get_config("remote_host.base_work_dir", handled_secretly=True))
 
     if config.project.get_config("remote_host.run_locally", print=False):
@@ -43,8 +48,8 @@ def prepare():
     env = config.project.get_config("remote_host.env") or {}
 
     for k, v in env.copy().items():
-        if not v:
-            del env[k]
+        if not v or v == "":
+            env.pop(k)
             continue
 
         if not v.startswith("*$@"):
