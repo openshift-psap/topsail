@@ -107,6 +107,7 @@ def prepare():
 
 
 def prepare_docker_platform():
+    remote_access.prepare()
     if not ConfigManager.is_docker_enabled():
         return 0
 
@@ -126,10 +127,10 @@ def prepare_windows_env_vars_podman():
     # This is needed for the Podman machine to work correctly with the right provider (e.g., wsl, hyperv).
     # Because machine is started in a new shell, we need to set these variables permanently to survive
     # the exit of ssh session.
+    home = remote_access.prepare()
     logging.info("Setting environment variables for Podman on Windows")
     machine_config = ConfigManager.get_podman_machine_config()
     provider = machine_config['env_containers_machine_provider']
-    home = remote_access.prepare()
 
     # Cast to string and escape/remove internal quotes, then wrap in quotes for setx
     provider_str = str(provider).replace('"', '')
@@ -140,6 +141,7 @@ def prepare_windows_env_vars_podman():
 
 
 def prepare_podman_platform():
+    remote_access.prepare()
     podman_config = ConfigManager.get_podman_config()
 
     if ConfigManager.is_linux():

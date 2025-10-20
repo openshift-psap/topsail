@@ -65,6 +65,8 @@ def _separate_benchmark_values_by_platform(benchmark_values):
                     continue
                 supported_hypervisors = ["wsl", "hyperv"] if ConfigManager.is_windows() else ["libkrun", "applehv"]
                 value = [v for v in value if v in supported_hypervisors]
+            if key == "test.podman.runtime" and not ConfigManager.is_linux():
+                continue
             platform_configs["podman"][key] = value
         elif key.startswith("test.docker"):
             platform_configs["docker"][key] = value
