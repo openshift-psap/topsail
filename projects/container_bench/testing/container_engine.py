@@ -181,6 +181,7 @@ class PodmanMachine:
 
         custom_binary_config = ConfigManager.get_custom_binary_config()
         if custom_binary_config['enabled']:
+            return
             podman_file = custom_binary_config['server_file']
             podman_bin = self.base_work_dir / "podman-custom" / podman_file
             self.cp(podman_bin, "~/podman")

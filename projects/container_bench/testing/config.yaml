@@ -13,6 +13,7 @@ ci_presets:
 
   darwin:
     secrets.machine_info: info.darwin.yaml
+    prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER: libkrun
 
   linux:
     secrets.machine_info: info.linux.yaml
@@ -105,7 +106,7 @@ prepare:
     custom_binary:
       # Zip needs to contains current architecture for remote_host
       enabled: false
-      url: "https://hony.fedorapeople.org/podman-custom.zip"
+      url: "http://hony.fedorapeople.org/podman-custom.zip"
       server_file: "podman-{@remote_host.arch}" # Always Linux
       client_file: "podman-{@remote_host.system}-{@remote_host.arch}{@remote_host.exec_file_extension}"
     repo:
@@ -135,14 +136,14 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 12 # in cores
+        cpus: 8 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
       env:
       # Default machine provider is configured from secrets
         CONTAINERS_MACHINE_PROVIDER: "" # This is set from machine info secret
-      # CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
+        CONTAINERS_HELPER_BINARY_DIR: /opt/homebrew/bin/
 
 cleanup:
   files:
@@ -163,13 +164,13 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
-  runs: 3
+  runs: 10
   supported_container_engines:
     - podman
     - docker
 
 exec_benchmark:
-  runs: 5
+  runs: 10
   supported_container_engines:
     - podman
     - docker
@@ -185,8 +186,8 @@ test:
   platforms_to_skip:
   benchmark:
     - helloworld_benchmark
-    # - exec_benchmark
-    # - image_build_large_build_context_benchmark
+    - exec_benchmark
+    - image_build_large_build_context_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -197,8 +198,8 @@ test:
      - true
      - false
     repo_version:
-     - v5.5.0
-    # - custom
+     - v5.6.0
+     - custom
     runtime: # Linux only
      - crun
      - krun
@@ -214,7 +215,7 @@ test:
      - test.podman.repo_version
     # - test.podman.rootful
      - test.podman.machine_provider
-     - test.podman.runtime
+    # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
