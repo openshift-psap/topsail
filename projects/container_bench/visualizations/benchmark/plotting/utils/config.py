@@ -8,6 +8,7 @@ from .shared import (
     detect_linux_system,
     detect_windows_system
 )
+
 CONFIGURATION_EXCLUDED_KEYS = {
     "container_engine", "benchmark", "benchmark_runs", "stats",
     "test_mac_ai", "platform", "repo_version",
@@ -169,7 +170,8 @@ def GetInfo(settings):
             continue
 
         data.update({
-            "exec_time": metrics.execution_time,
+            "execution_time_95th_percentile": metrics.execution_time_95th_percentile,
+            "jitter": metrics.execution_time_jitter,
             "command": metrics.command,
             "timestamp": metrics.timestamp,
             "runs": entry.settings.__dict__.get("benchmark_runs", 1)
