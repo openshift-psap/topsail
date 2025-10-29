@@ -302,3 +302,24 @@ def exists(path):
         return exists_windows(path)
     else:
         return exists_unix(path)
+
+
+def create_remote_directory(path):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        path.mkdir(parents=True, exist_ok=True)
+        return
+
+    base_work_dir = prepare()
+
+    if ConfigManager.is_windows():
+        run_with_ansible_ssh_conf_windows(
+            base_work_dir,
+            f"New-Item -ItemType Directory -Path '{path}' -Force",
+            check=True,
+        )
+    else:
+        run_with_ansible_ssh_conf_unix(
+            base_work_dir,
+            f"mkdir -p {shlex.quote(str(path))}",
+            check=True,
+        )

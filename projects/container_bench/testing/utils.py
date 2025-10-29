@@ -96,6 +96,16 @@ def cleanup_podman_files(base_work_dir):
         prepare.remove_remote_file(base_work_dir, dest, recursive=True)
 
 
+def cleanup_container_images(base_work_dir):
+    container_images_config = ConfigManager.get_container_images_config()
+    images_dir = container_images_config['dir']
+    dest = Path(images_dir)
+
+    if remote_access.exists(dest):
+        logging.info(f"Removing container images directory {dest} ...")
+        prepare.remove_remote_file(base_work_dir, dest, recursive=True)
+
+
 def parse_platform(platform_str):
     p = SimpleNamespace()
     p.container_engine = platform_str

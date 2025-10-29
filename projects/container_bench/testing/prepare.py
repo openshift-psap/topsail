@@ -49,6 +49,10 @@ def cleanup():
         logging.info("Cleaning up Podman files")
         utils.cleanup_podman_files(remote_access.prepare())
 
+    if cleanup_config['container_images']:
+        logging.info("Cleaning up container images")
+        utils.cleanup_container_images(remote_access.prepare())
+
     cleanup_docker_platform()
     return 0
 
@@ -119,6 +123,7 @@ def prepare_docker_platform():
         docker_desktop.start()
 
     docker = ContainerEngine("docker")
+    docker.store_container_images_as_tar()
     docker.cleanup()
 
 
@@ -162,6 +167,7 @@ def prepare_podman_platform():
 
     logging.info("cleaning up podman")
     podman = ContainerEngine("podman")
+    podman.store_container_images_as_tar()
     podman.cleanup()
 
     return 0
