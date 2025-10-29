@@ -1,19 +1,29 @@
 ---
-# Define common command templates (shared across all platforms)
-- name: Set common commands
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_helloworld_benchmark_exec_time_path is defined
+      - container_bench_helloworld_benchmark_binary_path is defined
+      - container_bench_helloworld_benchmark_rootfull is defined
+      - container_bench_helloworld_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    role_name: "container_bench_helloworld_benchmark"
+
+- name: Set common commands (shared across all platforms)
   set_fact:
-    prepare_commands: |
-      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} system prune -a -f
-      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} pull quay.io/podman/hello
-    cleanup_commands: |
-      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} system prune -a -f
+    image_to_pull: "quay.io/podman/hello"
+    prepare_commands: "" # Image is pulled using shared pull_image task below
+    cleanup_commands: "" # Cleanup handled by shared tasks
     benchmark_command: |
-      {{ container_bench_helloworld_benchmark_binary_path }} {{ container_bench_helloworld_benchmark_additional_args }} run --rm quay.io/podman/hello
+      {{ binary_path }} {{ additional_args }} run --rm quay.io/podman/hello
 
 - name: Include Unix/Linux tasks
-  include_tasks: unix.yml
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
   when: ansible_os_family != 'Windows'
 
 - name: Include Windows tasks
-  include_tasks: windows.yml
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
   when: ansible_os_family == 'Windows'

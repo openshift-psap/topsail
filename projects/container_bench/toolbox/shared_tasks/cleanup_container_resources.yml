@@ -1,0 +1,101 @@
+---
+# Comprehensive cleanup of container resources (containers, images, volumes, networks)
+# Usage:
+# - include_tasks: "../../shared_tasks/cleanup_container_resources.yml"
+# Requires: binary_path variable (additional_args, rootfull optional)
+
+- name: Validate required cleanup variables
+  fail:
+    msg: "Required variable 'binary_path' is not defined"
+  when: binary_path is not defined
+
+- name: Stop all running containers (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} stop $({{ binary_path }} {{ additional_args | default('') }} ps -q) 2>/dev/null || true"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: Stop all running containers (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} stop $({{ binary_path }} {{ additional_args | default('') }} ps -q) 2>$null || exit 0"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: Remove all containers (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} rm -f $({{ binary_path }} {{ additional_args | default('') }} ps -aq) 2>/dev/null || true"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: Remove all containers (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} rm -f $({{ binary_path }} {{ additional_args | default('') }} ps -aq) 2>$null || exit 0"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: Remove all images (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} rmi -f $({{ binary_path }} {{ additional_args | default('') }} images -q) 2>/dev/null || true"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: Remove all images (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} rmi -f $({{ binary_path }} {{ additional_args | default('') }} images -q) 2>$null || exit 0"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: Remove all volumes (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} volume rm -f $({{ binary_path }} {{ additional_args | default('') }} volume ls -q) 2>/dev/null || true"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: Remove all volumes (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} volume rm -f $({{ binary_path }} {{ additional_args | default('') }} volume ls -q) 2>$null || exit 0"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: Remove all networks (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} network rm -f $({{ binary_path }} {{ additional_args | default('') }} network ls -q) 2>/dev/null || true"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: Remove all networks (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} network rm -f $({{ binary_path }} {{ additional_args | default('') }} network ls -q) 2>$null || exit 0"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: System prune (remove unused containers, networks, images) (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} system prune -a -f"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: System prune (remove unused containers, networks, images) (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} system prune -a -f"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'
+
+- name: System prune with volumes (remove unused volumes as well) (Unix/Linux)
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} system prune --volumes -a -f"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family != 'Windows'
+
+- name: System prune with volumes (remove unused volumes as well) (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} system prune --volumes -a -f"
+  ignore_errors: true
+  changed_when: false
+  when: ansible_os_family == 'Windows'

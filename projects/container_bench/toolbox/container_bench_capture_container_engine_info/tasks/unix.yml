@@ -1,12 +1,7 @@
 ---
-# Create artifacts directory
-- name: Create the artifacts directory
-  file:
-    path: "{{ artifact_extra_logs_dir }}/artifacts"
-    state: directory
-    mode: '0755'
+- name: Include shared artifacts directory creation
+  include_tasks: "../../shared_tasks/create_artifacts_dir.yml"
 
-# Capture container engine information
 - name: Capture the container engine information
   become: "{{ container_bench_capture_container_engine_info_rootfull }}"
   shell: |
