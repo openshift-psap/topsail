@@ -209,7 +209,6 @@ test:
     # - custom
     runtime: # Linux only
      - crun
-     - krun
      - runc
   capture_metrics:
     enabled: true

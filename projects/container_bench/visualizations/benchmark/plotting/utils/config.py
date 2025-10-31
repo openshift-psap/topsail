@@ -11,7 +11,7 @@ from .shared import (
 
 CONFIGURATION_EXCLUDED_KEYS = {
     "container_engine", "benchmark", "benchmark_runs", "stats",
-    "test_mac_ai", "platform", "repo_version",
+    "test_mac_ai", "platform", "repo_version", "test.podman.machine_provider",
     "test.podman.repo_version", "test.docker.repo_version"
 }
 

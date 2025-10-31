@@ -3,11 +3,12 @@ import pathlib
 import logging
 import utils
 import yaml
-import shlex
+import shutil
 
 from projects.core.library import config, run
 from constants import CONTAINER_BENCH_SECRET_PATH
 from config_manager import ConfigManager
+from platform_builders import PlatformFactory
 
 
 def prepare():
@@ -82,157 +83,6 @@ ansible_ssh_common_args: "{' '.join(ssh_flags)}"
     return base_work_dir
 
 
-def run_with_ansible_ssh_conf_windows(
-        base_work_dir, cmd,
-        extra_env=None,
-        check=True,
-        capture_stdout=False,
-        capture_stderr=False,
-        chdir=None,
-        print_cmd=False,
-):
-    if extra_env is None:
-        extra_env = {}
-
-    run_kwargs = dict(
-        log_command=False,
-        check=check,
-        capture_stdout=capture_stdout,
-        capture_stderr=capture_stderr,
-    )
-
-    if config.project.get_config("remote_host.run_locally", print=False):
-        logging.info(f"Running on the local Windows host: {cmd}")
-        return run.run(cmd, **run_kwargs)
-
-    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
-        ansible_ssh_config = yaml.safe_load(f)
-
-    ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
-    host = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
-    port = ansible_ssh_config["ansible_port"]
-    user = ansible_ssh_config["ansible_ssh_user"]
-    private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
-
-    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
-        ansible_extra_env = yaml.safe_load(f)
-
-    def escape_powershell_single_quote(value):
-        """Escape single quotes in PowerShell by replacing ' with ''"""
-        return str(value).replace("'", "''")
-
-    env_vars = ansible_extra_env | extra_env
-    if env_vars:
-        env_cmd = "\n".join(
-            f"$env:{escape_powershell_single_quote(k)}='{escape_powershell_single_quote(v)}'"
-            for k, v in env_vars.items()
-        )
-    else:
-        env_cmd = ""
-
-    chdir_cmd = f"Set-Location '{escape_powershell_single_quote(chdir)}'" if chdir else "Set-Location $env:USERPROFILE"
-
-    tmp_file_path, tmp_file = utils.get_tmp_fd()
-
-    env_section = f"{env_cmd}\n" if env_cmd else ""
-
-    entrypoint_script = f"""
-$ErrorActionPreference = "Stop"
-
-{env_section}{chdir_cmd}
-
-{cmd}
-    """
-
-    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
-        entrypoint_script = f"$VerbosePreference = 'Continue'\n{entrypoint_script}"
-
-    logging.info(f"Running on the remote Windows host: {chdir_cmd}; {cmd}")
-
-    with open(tmp_file_path, "w") as f:
-        print(entrypoint_script, file=f)
-    if print_cmd:
-        print(entrypoint_script)
-
-    proc = run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
-                   "powershell.exe -Command -",
-                   **run_kwargs, stdin_file=tmp_file)
-
-    return proc
-
-
-def run_with_ansible_ssh_conf_unix(
-        base_work_dir, cmd,
-        extra_env=None,
-        check=True,
-        capture_stdout=False,
-        capture_stderr=False,
-        chdir=None,
-        print_cmd=False,
-):
-    """Linux/Unix-specific SSH execution function using bash."""
-    if extra_env is None:
-        extra_env = {}
-
-    run_kwargs = dict(
-        log_command=False,
-        check=check,
-        capture_stdout=capture_stdout,
-        capture_stderr=capture_stderr,
-    )
-
-    if config.project.get_config("remote_host.run_locally", print=False):
-        logging.info(f"Running on the local Unix host: {cmd}")
-        return run.run(cmd, **run_kwargs)
-
-    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
-        ansible_ssh_config = yaml.safe_load(f)
-
-    ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
-    host = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
-    port = ansible_ssh_config["ansible_port"]
-    user = ansible_ssh_config["ansible_ssh_user"]
-    private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
-
-    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
-        ansible_extra_env = yaml.safe_load(f)
-
-    export_cmd = "\n".join(f"export {k}='{v}'" for k, v in (ansible_extra_env | extra_env).items())
-
-    chdir_cmd = f"cd '{chdir}'" if chdir else "cd $HOME"
-
-    tmp_file_path, tmp_file = utils.get_tmp_fd()
-
-    entrypoint_script = f"""
-set -o pipefail
-set -o errexit
-set -o nounset
-set -o errtrace
-
-{export_cmd}
-
-{chdir_cmd}
-
-exec {cmd}
-    """
-
-    if config.project.get_config("remote_host.verbose_ssh_commands", print=False):
-        entrypoint_script = f"set -x\n{entrypoint_script}"
-
-    logging.info(f"Running on the remote Unix host: {chdir_cmd}; {cmd}")
-
-    with open(tmp_file_path, "w") as f:
-        print(entrypoint_script, file=f)
-    if print_cmd:
-        print(entrypoint_script)
-
-    proc = run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- "
-                   "bash",
-                   **run_kwargs, stdin_file=tmp_file)
-
-    return proc
-
-
 def run_with_ansible_ssh_conf(
         base_work_dir, cmd,
         extra_env=None,
@@ -242,66 +92,72 @@ def run_with_ansible_ssh_conf(
         chdir=None,
         print_cmd=False,
 ):
-    if ConfigManager.is_windows():
-        return run_with_ansible_ssh_conf_windows(
-            base_work_dir, cmd,
-            extra_env=extra_env,
-            check=check,
-            capture_stdout=capture_stdout,
-            capture_stderr=capture_stderr,
-            chdir=chdir,
-            print_cmd=print_cmd,
-        )
-    else:
-        return run_with_ansible_ssh_conf_unix(
-            base_work_dir, cmd,
-            extra_env=extra_env,
-            check=check,
-            capture_stdout=capture_stdout,
-            capture_stderr=capture_stderr,
-            chdir=chdir,
-            print_cmd=print_cmd,
-        )
+    if extra_env is None:
+        extra_env = {}
 
-
-def exists_windows(path):
-    if config.project.get_config("remote_host.run_locally", print=False):
-        return path.exists()
-
-    base_work_dir = prepare()
-
-    ret = run_with_ansible_ssh_conf_windows(
-        base_work_dir,
-        f"Test-Path '{path}'",
-        capture_stdout=True,
-        check=False,
+    run_kwargs = dict(
+        log_command=False,
+        check=check,
+        capture_stdout=capture_stdout,
+        capture_stderr=capture_stderr,
     )
 
-    # PowerShell Test-Path returns "True" or "False" as text
-    return ret.stdout and ret.stdout.strip().lower() == "true"
-
-
-def exists_unix(path):
     if config.project.get_config("remote_host.run_locally", print=False):
-        return path.exists()
+        platform = "Windows" if ConfigManager.is_windows() else "Unix"
+        logging.info(f"Running on the local {platform} host: {cmd}")
+        return run.run(cmd, **run_kwargs)
 
-    base_work_dir = prepare()
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_VARS"]) as f:
+        ansible_ssh_config = yaml.safe_load(f)
 
-    ret = run_with_ansible_ssh_conf_unix(
-        base_work_dir,
-        f"test -e {shlex.quote(str(path))}",
-        capture_stdout=True,
-        check=False,
-    )
+    ssh_flags = ansible_ssh_config["ansible_ssh_common_args"]
+    host = os.environ["TOPSAIL_REMOTE_HOSTNAME"]
+    port = ansible_ssh_config["ansible_port"]
+    user = ansible_ssh_config["ansible_ssh_user"]
+    private_key_path = ansible_ssh_config["ansible_ssh_private_key_file"]
 
-    return ret.returncode == 0
+    with open(os.environ["TOPSAIL_ANSIBLE_PLAYBOOK_EXTRA_ENV"]) as f:
+        ansible_extra_env = yaml.safe_load(f)
+
+    builder = PlatformFactory.create_command_builder()
+    env_vars = ansible_extra_env | extra_env
+
+    env_cmd = builder.build_env_command(env_vars)
+    chdir_cmd = builder.build_chdir_command(chdir)
+    verbose = config.project.get_config("remote_host.verbose_ssh_commands", print=False)
+    entrypoint_script = builder.build_entrypoint_script(env_cmd, chdir_cmd, cmd, verbose)
+
+    logging.info(f"Running on the remote host: {cmd}")
+
+    tmp_file_path, tmp_file = utils.get_tmp_fd()
+
+    with open(tmp_file_path, "w") as f:
+        print(entrypoint_script, file=f)
+    if print_cmd:
+        print(entrypoint_script)
+
+    shell_cmd = builder.get_shell_command()
+    proc = run.run(f"ssh {ssh_flags} -i {private_key_path} {user}@{host} -p {port} -- {shell_cmd}",
+                   **run_kwargs, stdin_file=tmp_file)
+
+    return proc
 
 
 def exists(path):
-    if ConfigManager.is_windows():
-        return exists_windows(path)
-    else:
-        return exists_unix(path)
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return path.exists()
+
+    base_work_dir = prepare()
+    builder = PlatformFactory.create_command_builder()
+
+    ret = run_with_ansible_ssh_conf(
+        base_work_dir,
+        builder.build_exists_command(path),
+        capture_stdout=True,
+        check=False,
+    )
+
+    return builder.check_exists_result(ret)
 
 
 def create_remote_directory(path):
@@ -310,16 +166,25 @@ def create_remote_directory(path):
         return
 
     base_work_dir = prepare()
+    builder = PlatformFactory.create_command_builder()
 
-    if ConfigManager.is_windows():
-        run_with_ansible_ssh_conf_windows(
-            base_work_dir,
-            f"New-Item -ItemType Directory -Path '{path}' -Force",
-            check=True,
-        )
-    else:
-        run_with_ansible_ssh_conf_unix(
-            base_work_dir,
-            f"mkdir -p {shlex.quote(str(path))}",
-            check=True,
-        )
+    run_with_ansible_ssh_conf(
+        base_work_dir,
+        builder.build_mkdir_command(path),
+        check=True,
+    )
+
+
+def remove_remote_file(base_work_dir, file_path, recursive=False):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        path = pathlib.Path(file_path)
+        if path.exists():
+            if recursive and path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink(missing_ok=True)
+        return
+
+    builder = PlatformFactory.create_command_builder()
+    cmd = builder.build_rm_command(file_path, recursive)
+    run_with_ansible_ssh_conf(base_work_dir, cmd)

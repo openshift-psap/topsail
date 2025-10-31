@@ -14,10 +14,11 @@
   loop:
     - binary_path
     - image_name
+    - environment
 
 - name: Set path to directory with images tarfiles
   set_fact:
-    images_path: "{{ '$env:USERPROFILE\\images' if ansible_os_family == 'Windows' else '${HOME}/images' }}"
+    images_path: "{{ vars['environment'][0]['HOME'] + '\\images' if ansible_os_family == 'Windows' else vars['environment'][0]['HOME'] + '/images' }}"
 
 - name: Ensure images directory exists (Unix/Linux/macOS)
   file:

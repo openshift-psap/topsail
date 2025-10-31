@@ -85,6 +85,12 @@ def _separate_benchmark_values_by_platform(benchmark_values):
             platform_config["test.platform"] = platform
             expe_to_run[f"container_bench_{platform}"] = platform_config
 
+    test_config = ConfigManager.get_test_config()
+    for to_skip in (test_config['platforms_to_skip'] or []):
+        key = f"container_bench_{to_skip}"
+        if key in expe_to_run:
+            logging.info(f"Skipping {to_skip} test as per test.platforms_to_skip.")
+            expe_to_run.pop(key)
     return expe_to_run
 
 

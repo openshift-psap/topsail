@@ -17,7 +17,9 @@
   when: ansible_os_family != 'Windows'
 
 - name: Stop all running containers (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} stop $({{ binary_path }} {{ additional_args | default('') }} ps -q) 2>$null || exit 0"
+  ansible.windows.win_shell: |
+    $ids = & {{ binary_path }} {{ additional_args | default('') }} ps -q 2>$null
+    if ($ids) { & {{ binary_path }} {{ additional_args | default('') }} stop $ids 2>$null }
   ignore_errors: true
   changed_when: false
   when: ansible_os_family == 'Windows'
@@ -30,7 +32,9 @@
   when: ansible_os_family != 'Windows'
 
 - name: Remove all containers (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} rm -f $({{ binary_path }} {{ additional_args | default('') }} ps -aq) 2>$null || exit 0"
+  ansible.windows.win_shell: |
+    $ids = & {{ binary_path }} {{ additional_args | default('') }} ps -aq 2>$null
+    if ($ids) { & {{ binary_path }} {{ additional_args | default('') }} rm -f $ids 2>$null }
   ignore_errors: true
   changed_when: false
   when: ansible_os_family == 'Windows'
@@ -43,7 +47,9 @@
   when: ansible_os_family != 'Windows'
 
 - name: Remove all images (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} rmi -f $({{ binary_path }} {{ additional_args | default('') }} images -q) 2>$null || exit 0"
+  ansible.windows.win_shell: |
+    $ids = & {{ binary_path }} {{ additional_args | default('') }} images -q 2>$null
+    if ($ids) { & {{ binary_path }} {{ additional_args | default('') }} rmi -f $ids 2>$null }
   ignore_errors: true
   changed_when: false
   when: ansible_os_family == 'Windows'
@@ -56,20 +62,9 @@
   when: ansible_os_family != 'Windows'
 
 - name: Remove all volumes (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} volume rm -f $({{ binary_path }} {{ additional_args | default('') }} volume ls -q) 2>$null || exit 0"
-  ignore_errors: true
-  changed_when: false
-  when: ansible_os_family == 'Windows'
-
-- name: Remove all networks (Unix/Linux)
-  become: "{{ rootfull | default(false) }}"
-  shell: "{{ binary_path }} {{ additional_args | default('') }} network rm -f $({{ binary_path }} {{ additional_args | default('') }} network ls -q) 2>/dev/null || true"
-  ignore_errors: true
-  changed_when: false
-  when: ansible_os_family != 'Windows'
-
-- name: Remove all networks (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} network rm -f $({{ binary_path }} {{ additional_args | default('') }} network ls -q) 2>$null || exit 0"
+  ansible.windows.win_shell: |
+    $ids = & {{ binary_path }} {{ additional_args | default('') }} volume ls -q 2>$null
+    if ($ids) { & {{ binary_path }} {{ additional_args | default('') }} volume rm -f $ids 2>$null }
   ignore_errors: true
   changed_when: false
   when: ansible_os_family == 'Windows'
