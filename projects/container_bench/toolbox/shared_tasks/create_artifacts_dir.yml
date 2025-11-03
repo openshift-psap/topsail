@@ -1,0 +1,17 @@
+---
+# Shared tasks for creating artifacts directory across platforms
+# Usage:
+# - include_tasks: "../../shared_tasks/create_artifacts_dir.yml"
+
+- name: Create artifacts directory (Unix/Linux/macOS)
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+  when: ansible_os_family != 'Windows'
+
+- name: Create artifacts directory (Windows)
+  ansible.windows.win_file:
+    path: "{{ artifact_extra_logs_dir }}\\artifacts"
+    state: directory
+  when: ansible_os_family == 'Windows'

@@ -52,22 +52,6 @@ CODE_STYLE = {
     'word-break': 'break-all'
 }
 
-TABLE_CONFIG = {
-    'performance': {
-        'headers': ["Configuration", "Execution Time", "Command", "Timestamp"],
-        'title': "Performance Metrics"
-    },
-    'system_usage': {
-        'title': "Average System Usage"
-    },
-    'system_differences': {
-        'title': "Host System Differences"
-    },
-    'engine_differences': {
-        'title': "Container Engine Differences"
-    }
-}
-
 
 def format_field_value(field_key, value):
     if field_key == "Host_memory" and value != "N/A":
@@ -100,18 +84,18 @@ def create_na_cell():
     return html.Td("N/A", style=css.STYLE_TABLE_CELL)
 
 
-def create_execution_time_content(exec_time, runs, is_fastest=False, fastest_style=FASTEST_INDICATOR):
-    if not exec_time:
+def create_execution_time_content(exec_time_95th_percentile, jitter, is_fastest=False, fastest_style=FASTEST_INDICATOR):
+    if not exec_time_95th_percentile:
         return "N/A"
 
     content = [
         html.Span(
-            f"{units.format_duration(exec_time)}",
+            f"{units.format_duration(exec_time_95th_percentile)}",
             style=css.STYLE_INFO_VALUE_HIGHLIGHT
         ),
         html.Br(),
         html.Small(
-            f"(Average of {runs} runs)",
+            f"(Jitter +- {units.format_duration(jitter)})",
             style=css.STYLE_SMALL_TEXT
         )
     ]
@@ -123,31 +107,6 @@ def create_execution_time_content(exec_time, runs, is_fastest=False, fastest_sty
         ])
 
     return content
-
-
-def create_metric_value_cell(value, unit, is_min=False, is_max=False, is_single=False):
-    if value is None:
-        return create_na_cell()
-
-    formatted_value = f"{value:.2f} {unit}"
-
-    if is_single or (not is_min and not is_max):
-        return create_standard_cell(formatted_value)
-
-    if is_min:
-        content = [
-            html.Span(formatted_value, style={'font-weight': 'bold'}),
-            html.Br(),
-            html.Small(LOWEST_INDICATOR, style=HIGHLIGHT_STYLE)
-        ]
-        return create_standard_cell(content, is_highlighted=True)
-    else:
-        content = [
-            html.Span(formatted_value, style={'font-weight': 'bold'}),
-            html.Br(),
-            html.Small(HIGHEST_INDICATOR, style={'color': DANGER_COLOR, 'font-weight': 'bold'})
-        ]
-        return create_standard_cell(content, is_highlighted=True)
 
 
 def create_delta_content(delta_value, delta_percentage, unit="", is_time=False):
@@ -172,19 +131,19 @@ def create_summary_items(info, include_exec_time=True):
     if info.get('timestamp') and info['timestamp'] != 'N/A':
         summary_items.append(("Timestamp", info['timestamp'], False, False))
 
-    if include_exec_time and info.get('exec_time'):
+    if include_exec_time and info.get('execution_time_95th_percentile'):
         exec_time_content = [
             html.Span(
-                f"{units.format_duration(info['exec_time'])}",
+                f"{units.format_duration(info['execution_time_95th_percentile'])}",
                 style=css.STYLE_INFO_VALUE_HIGHLIGHT
             ),
             html.Br(),
             html.Small(
-                f"(Average of {info.get('runs', 1)} runs)",
+                f"(Jitter +- {units.format_duration(info.get('jitter', 0))})",
                 style=css.STYLE_SMALL_TEXT
             )
         ]
-        summary_items.append(("Execution Time", exec_time_content, False, True))
+        summary_items.append(("Execution Time (95th Percentile)", exec_time_content, False, True))
 
     if summary_items:
         last_item = summary_items[-1]
@@ -194,27 +153,32 @@ def create_summary_items(info, include_exec_time=True):
 
 
 def create_summary_info_card(info, title="Benchmark Summary", include_exec_time=True):
+    if not info:
+        return None
+
     summary_items = create_summary_items(info, include_exec_time)
     if summary_items:
         return html_elements.info_card(title, summary_items)
     return None
 
 
-def create_host_info_card(system_info, field_mappings, title="Host System Information"):
+def create_host_info_card(system_info, title="Host System Information", field_mappings=None):
     if not system_info:
         return None
 
-    host_items = create_host_info_items(system_info, field_mappings)
+    mappings = field_mappings or SYSTEM_INFO_FIELD_MAPPINGS
+    host_items = create_host_info_items(system_info, mappings)
     if host_items:
         return html_elements.info_card(title, host_items)
     return None
 
 
-def create_engine_info_card(engine_info, provider_info, field_mappings, title="Container Engine Information"):
+def create_engine_info_card(engine_info, title="Container Engine Information", provider_info=None, field_mappings=None):
     if not engine_info:
         return None
 
-    engine_items = create_engine_info_items(engine_info, provider_info, field_mappings)
+    mappings = field_mappings or ENGINE_INFO_FIELD_MAPPINGS
+    engine_items = create_engine_info_items(engine_info, provider_info, mappings)
     if engine_items:
         return html_elements.info_card(title, engine_items)
     return None
@@ -225,7 +189,7 @@ def format_benchmark_title(benchmark):
 
 
 def has_long_running_benchmarks(configurations):
-    return any(config.get('exec_time', 0) > MIN_PLOT_BENCHMARK_TIME for config in configurations)
+    return any(config.get('execution_time_95th_percentile', 0) > MIN_PLOT_BENCHMARK_TIME for config in configurations)
 
 
 def create_code_cell(command):
@@ -263,13 +227,6 @@ def create_engine_info_items(engine_info, provider_info, field_mappings):
         engine_items.append(("Provider", provider_info, False, False))
 
     return finalize_info_items(engine_items)
-
-
-def create_usage_table_headers(metric_display_config):
-    headers = ["Configuration"]
-    for _, (label, unit) in metric_display_config.items():
-        headers.append(f"{label} ({unit})")
-    return headers
 
 
 def detect_linux_system(system_info):

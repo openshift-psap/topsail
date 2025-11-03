@@ -1,24 +1,10 @@
 import logging
-import shlex
 
 from container_engine import PodmanMachine, ContainerEngine, DockerDesktopMachine
 from config_manager import ConfigManager
 import remote_access
 import install
 import utils
-
-
-def remove_remote_file(base_work_dir, file_path, recursive=False):
-    if ConfigManager.is_windows():
-        flags = "-Force -ErrorAction SilentlyContinue"
-        if recursive:
-            flags += " -Recurse"
-        cmd = f"Remove-Item '{file_path}' {flags}"
-    else:
-        flag = "-rf" if recursive else "-f"
-        cmd = f"rm {flag} {shlex.quote(str(file_path))}"
-
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, cmd)
 
 
 def cleanup():
@@ -30,7 +16,7 @@ def cleanup():
         exec_time_script = utils.get_benchmark_script_path(base_work_dir)
         if remote_access.exists(exec_time_script):
             logging.info(f"Removing {exec_time_script} ...")
-            remove_remote_file(base_work_dir, exec_time_script)
+            remote_access.remove_remote_file(base_work_dir, exec_time_script)
 
     if cleanup_config['files_venv']:
         logging.info("Cleaning up virtual environment")
@@ -38,7 +24,7 @@ def cleanup():
         venv_path = utils.get_benchmark_script_path(base_work_dir).parent / ".venv"
         if remote_access.exists(venv_path):
             logging.info(f"Removing {venv_path} ...")
-            remove_remote_file(base_work_dir, venv_path, recursive=True)
+            remote_access.remove_remote_file(base_work_dir, venv_path, recursive=True)
 
     try:
         cleanup_podman_platform()
@@ -48,6 +34,10 @@ def cleanup():
     if cleanup_config['files_podman']:
         logging.info("Cleaning up Podman files")
         utils.cleanup_podman_files(remote_access.prepare())
+
+    if cleanup_config['container_images']:
+        logging.info("Cleaning up container images")
+        utils.cleanup_container_images(remote_access.prepare())
 
     cleanup_docker_platform()
     return 0
@@ -119,6 +109,7 @@ def prepare_docker_platform():
         docker_desktop.start()
 
     docker = ContainerEngine("docker")
+    docker.store_container_images_as_tar()
     docker.cleanup()
 
 
@@ -162,6 +153,7 @@ def prepare_podman_platform():
 
     logging.info("cleaning up podman")
     podman = ContainerEngine("podman")
+    podman.store_container_images_as_tar()
     podman.cleanup()
 
     return 0

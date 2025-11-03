@@ -1,22 +1,32 @@
 ---
-# Define common command templates (shared across all platforms)
-- name: Set common commands
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_exec_benchmark_exec_time_path is defined
+      - container_bench_exec_benchmark_binary_path is defined
+      - container_bench_exec_benchmark_rootfull is defined
+      - container_bench_exec_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    role_name: "container_bench_exec_benchmark"
+
+- name: Set common commands (shared across all platforms)
   set_fact:
+    image_to_pull: "registry.fedoraproject.org/fedora:latest"
     prepare_commands: |
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} system prune -a -f
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} pull registry.fedoraproject.org/fedora:latest
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
+      {{ binary_path }} {{ additional_args }} run --name benchmark_exec -d registry.fedoraproject.org/fedora:latest sleep infinity
     cleanup_commands: |
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} stop benchmark_exec
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} rm -f benchmark_exec
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} system prune -a -f
+      {{ binary_path }} {{ additional_args }} stop benchmark_exec
+      {{ binary_path }} {{ additional_args }} rm -f benchmark_exec
     benchmark_command: |
-      {{ container_bench_exec_benchmark_binary_path }} {{ container_bench_exec_benchmark_additional_args }} exec benchmark_exec true
+      {{ binary_path }} {{ additional_args }} exec benchmark_exec true
 
 - name: Include Unix/Linux tasks
-  include_tasks: unix.yml
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
   when: ansible_os_family != 'Windows'
 
 - name: Include Windows tasks
-  include_tasks: windows.yml
+  include_tasks: ../../shared_tasks/windows_default_benchmark_body.yml
   when: ansible_os_family == 'Windows'

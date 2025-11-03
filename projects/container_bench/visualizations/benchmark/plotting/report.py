@@ -47,18 +47,16 @@ def generate_host_items(system_info):
 def generate_engine_items(container_engine_info, system_info, provider_info):
     is_linux = detect_linux_system(system_info)
 
+    # Filter out Client_version for Linux systems
+    filtered_engine_mappings = ENGINE_INFO_FIELD_MAPPINGS.copy()
+    if is_linux:
+        filtered_engine_mappings = {k: v for k, v in ENGINE_INFO_FIELD_MAPPINGS.items() if k != "Client_version"}
+
     engine_items = create_engine_info_items(
         container_engine_info,
         provider_info if not is_linux else None,
-        ENGINE_INFO_FIELD_MAPPINGS
+        filtered_engine_mappings
     )
-
-    if not is_linux:
-        client_version_display = ENGINE_INFO_FIELD_MAPPINGS["Client_version"]
-        client_version_value = container_engine_info.get('Client_version', 'N/A')
-
-        if len(engine_items) > 1:
-            engine_items.insert(1, (client_version_display, client_version_value, False, False))
 
     formatted_items = []
     for i, (name, value, is_last, highlight) in enumerate(engine_items):
@@ -108,7 +106,7 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
     ])
 
     body = [info_section]
-    if info.get('exec_time', 0) > MIN_PLOT_BENCHMARK_TIME:  # Only show plots for longer benchmarks
+    if info.get('execution_time_95th_percentile', 0) > MIN_PLOT_BENCHMARK_TIME:  # Only show plots for longer benchmarks
         plot_names = [
             "System CPU Usage",
             "System Memory Usage",

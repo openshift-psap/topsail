@@ -1,0 +1,33 @@
+---
+# Shared task for running benchmarked commands with timing and metrics collection
+# Usage:
+# - include_tasks: "../../shared_tasks/run_benchmark.yml"
+# Requires: exec_time_path, artifact_extra_logs_dir, benchmark_command variables
+
+- name: Validate required benchmark variables
+  fail:
+    msg: "Required variable '{{ item }}' is not defined"
+  when: vars[item] is not defined
+  loop:
+    - exec_time_path
+    - artifact_extra_logs_dir
+    - benchmark_command
+
+- name: Run benchmark commands (Unix/Linux)
+  become: "{{ rootfull | default(omit) }}"
+  shell: |
+    {{ exec_time_path | dirname }}/.venv/bin/python \
+    {{ exec_time_path }} \
+    --output "{{ artifact_extra_logs_dir }}/artifacts/output.log" \
+    --metrics-log-file "{{ artifact_extra_logs_dir }}/artifacts/metrics.json" \
+    {{ benchmark_command }}
+  when: ansible_os_family != 'Windows'
+
+- name: Run benchmark commands (Windows)
+  ansible.windows.win_shell: |
+    & "{{ exec_time_path | dirname }}\.venv\Scripts\python.exe" `
+    "{{ exec_time_path }}" `
+    --output "{{ artifact_extra_logs_dir }}\artifacts\output.log" `
+    --metrics-log-file "{{ artifact_extra_logs_dir }}\artifacts\metrics.json" `
+    {{ benchmark_command }}
+  when: ansible_os_family == 'Windows'

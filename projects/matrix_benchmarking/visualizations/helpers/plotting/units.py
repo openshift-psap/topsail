@@ -10,6 +10,8 @@ def human_readable_size(value):
     Returns:
         str: The human-readable string representation of the byte value.
     """
+    if value is None:
+        return "N/A"
 
     suffix = [" kB", " MB", " GB", " TB", " PB", " EB", " ZB", " YB", " RB", " QB"]
     base = 1000
@@ -32,7 +34,8 @@ def format_duration(seconds):
     Returns:
         str: The human-readable string representation of the duration.
     """
-
+    if seconds is None:
+        return "N/A"
     if seconds < 1e-6:
         return f"{seconds * 1e9:.2f} ns"
     if seconds < 1e-3:

@@ -1,25 +1,77 @@
 ---
-# Define common command templates (shared across all platforms)
-- name: Set common commands
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_image_build_large_build_context_benchmark_exec_time_path is defined
+      - container_bench_image_build_large_build_context_benchmark_binary_path is defined
+      - container_bench_image_build_large_build_context_benchmark_rootfull is defined
+      - container_bench_image_build_large_build_context_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    role_name: "container_bench_image_build_large_build_context_benchmark"
+
+- name: Set common variables
   set_fact:
-    initial_prune_command: "{{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} system prune -a -f"
-    cleanup_commands: |
-      {{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} rmi -f large-build-context-benchmark
-      {{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} system prune -a -f
     dockerfile_content: |
       FROM scratch
       COPY random-1 random-1
       COPY random-10 random-10
     build_context_path: "{{ '$env:USERPROFILE\\large-build-context' if ansible_os_family == 'Windows' else '${HOME}/large-build-context' }}"
 
-- name: Set platform-specific paths
+- name: Set benchmark command
   set_fact:
-    benchmark_command: "{{ container_bench_image_build_large_build_context_benchmark_binary_path }} {{ container_bench_image_build_large_build_context_benchmark_additional_args }} build -t large-build-context-benchmark {{ build_context_path }}"
+    benchmark_command: "{{ binary_path }} {{ additional_args }} build -t large-build-context-benchmark {{ build_context_path }}"
+
+- name: Set Unix/Linux cleanup commands
+  set_fact:
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rmi -f large-build-context-benchmark
+      rm -rf {{ build_context_path }}
+  when: ansible_os_family != 'Windows'
+
+- name: Set Windows cleanup commands
+  set_fact:
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rmi -f large-build-context-benchmark
+      $buildContextDir = "{{ build_context_path }}"
+      if (Test-Path $buildContextDir) { Remove-Item -Recurse -Force $buildContextDir }
+  when: ansible_os_family == 'Windows'
+
+- name: Set Unix/Linux prepare commands
+  set_fact:
+    prepare_commands: |
+      mkdir {{ build_context_path }}
+      cd {{ build_context_path }}
+      cat <<'EOF' > Dockerfile
+      {{ dockerfile_content }}
+      EOF
+      {% for i in range(1, 11) %}
+        dd if=/dev/urandom of=random-{{ i }} bs=1G count=1
+      {% endfor %}
+  when: ansible_os_family != 'Windows'
+
+- name: Set Windows prepare commands
+  set_fact:
+    prepare_commands: |
+      $buildContextDir = "{{ build_context_path }}"
+      if (Test-Path $buildContextDir) { Remove-Item -Recurse -Force $buildContextDir }
+      New-Item -ItemType Directory -Force -Path $buildContextDir
+      $dockerfileContent = @'
+      {{ dockerfile_content }}
+      '@
+      Set-Content -Path "$buildContextDir\Dockerfile" -Value $dockerfileContent
+      for ($i = 1; $i -le 10; $i++) {
+        $randomFile = "$buildContextDir\random-$i"
+        fsutil file createnew $randomFile 1073741824
+      }
+  when: ansible_os_family == 'Windows'
 
 - name: Include Unix/Linux tasks
-  include_tasks: unix.yml
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
   when: ansible_os_family != 'Windows'
 
 - name: Include Windows tasks
-  include_tasks: windows.yml
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
   when: ansible_os_family == 'Windows'

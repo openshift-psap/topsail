@@ -100,6 +100,13 @@ prepare:
       - glibc-static
       - golang
 
+  container_images:
+    pull_images: true
+    dir: "{@remote_host.base_work_dir}/images"
+    images:
+      - "quay.io/podman/hello:latest"
+      - "registry.fedoraproject.org/fedora:latest"
+
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
     custom_binary:
@@ -149,6 +156,7 @@ cleanup:
     podman: true
     exec_time: true
     venv: true
+    container_images: false
 
   podman_machine:
     delete: true
@@ -201,7 +209,6 @@ test:
     # - custom
     runtime: # Linux only
      - crun
-     - krun
      - runc
   capture_metrics:
     enabled: true

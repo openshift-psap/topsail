@@ -57,6 +57,9 @@ class ConfigKeys:
     PREPARE_DNF_INSTALL_DEPENDENCIES = "prepare.dnf.install_dependencies"
     PREPARE_DNF_ENABLE_DOCKER_REPO = "prepare.dnf.enable_docker_repo"
     PREPARE_DNF_DEPENDENCIES = "prepare.dnf.dependencies"
+    PREPARE_CONTAINER_IMAGES_PULL_IMAGES = "prepare.container_images.pull_images"
+    PREPARE_CONTAINER_IMAGES_IMAGES = "prepare.container_images.images"
+    PREPARE_CONTAINER_IMAGES_IMAGES_DIR = "prepare.container_images.dir"
 
     # Additional cleanup configuration
     CLEANUP_FILES_EXEC_TIME = "cleanup.files.exec_time"
@@ -64,6 +67,7 @@ class ConfigKeys:
     CLEANUP_PODMAN_MACHINE_DELETE = "cleanup.podman_machine.delete"
     CLEANUP_DOCKER_SERVICE_STOP = "cleanup.docker_service.stop"
     CLEANUP_DOCKER_DESKTOP_STOP = "cleanup.docker_desktop.stop"
+    CLEANUP_CONTAINER_IMAGES = "cleanup.files.container_images"
 
     # Additional remote host configuration
     REMOTE_HOST_DOCKER_ENABLED = "remote_host.docker.enabled"
@@ -194,6 +198,17 @@ class ConfigManager:
         }
 
     @staticmethod
+    def get_container_images_config():
+        return {
+            'pull_images': config.project.get_config(
+                ConfigKeys.PREPARE_CONTAINER_IMAGES_PULL_IMAGES, print=False),
+            'images': config.project.get_config(
+                ConfigKeys.PREPARE_CONTAINER_IMAGES_IMAGES, print=False),
+            'dir': config.project.get_config(
+                ConfigKeys.PREPARE_CONTAINER_IMAGES_IMAGES_DIR, print=False),
+        }
+
+    @staticmethod
     def get_extended_cleanup_config():
         return {
             'files_exec_time': config.project.get_config(ConfigKeys.CLEANUP_FILES_EXEC_TIME, print=False),
@@ -205,6 +220,8 @@ class ConfigManager:
                 ConfigKeys.CLEANUP_DOCKER_SERVICE_STOP, print=False),
             'docker_desktop_stop': config.project.get_config(
                 ConfigKeys.CLEANUP_DOCKER_DESKTOP_STOP, print=False),
+            'container_images': config.project.get_config(
+                ConfigKeys.CLEANUP_CONTAINER_IMAGES, print=False),
         }
 
     @staticmethod

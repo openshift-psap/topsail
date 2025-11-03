@@ -1,11 +1,7 @@
 ---
-# Create artifacts directory
-- name: Create the artifacts directory
-  ansible.windows.win_file:
-    path: "{{ artifact_extra_logs_dir }}\\artifacts"
-    state: directory
+- name: Include shared artifacts directory creation
+  include_tasks: "../../shared_tasks/create_artifacts_dir.yml"
 
-# Capture container engine information
 - name: Capture the container engine information
   ansible.windows.win_shell: |
     $output = {{ container_info_command }}

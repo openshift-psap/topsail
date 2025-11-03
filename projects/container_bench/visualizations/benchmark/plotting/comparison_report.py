@@ -9,11 +9,6 @@ from .utils.config import (
     get_all_configuration_info,
     generate_display_config_label
 )
-from .utils.metrics import (
-    METRIC_DISPLAY_CONFIG,
-    calculate_config_metrics,
-    calculate_usage_deltas
-)
 
 from .utils.shared import (
     MIN_PLOT_BENCHMARK_TIME,
@@ -24,12 +19,10 @@ from .utils.shared import (
     create_table_header,
     create_config_cell,
     create_execution_time_content,
-    create_metric_value_cell,
     create_delta_content,
     create_code_cell,
     format_benchmark_title,
     has_long_running_benchmarks,
-    create_usage_table_headers,
     create_summary_info_card,
     create_host_info_card,
     create_engine_info_card,
@@ -37,7 +30,11 @@ from .utils.shared import (
 
 
 def create_performance_delta_row(sorted_configurations, fastest_time):
-    valid_times = [c.get("exec_time", 0) for c in sorted_configurations if c.get("exec_time", 0) > 0]
+    valid_times = [
+        c.get("execution_time_95th_percentile", 0)
+        for c in sorted_configurations
+        if c.get("execution_time_95th_percentile", 0) > 0
+    ]
     if len(valid_times) <= 1:
         return None
 
@@ -97,14 +94,26 @@ def create_shared_info_section(shared_info):
     if summary_card:
         cards.append(summary_card)
 
-    host_card = create_host_info_card(shared_info.get("system"), SYSTEM_INFO_FIELD_MAPPINGS)
+    host_card = create_host_info_card(
+        shared_info.get("system"),
+        title="Host System Information",
+        field_mappings=SYSTEM_INFO_FIELD_MAPPINGS
+    )
     if host_card:
         cards.append(host_card)
 
+    # Filter out Client_version for Linux systems
+    system_info = shared_info.get("system", {})
+    is_linux = "linux" in system_info.get("OS_version", "").lower()
+    filtered_engine_mappings = ENGINE_INFO_FIELD_MAPPINGS.copy()
+    if is_linux:
+        filtered_engine_mappings = {k: v for k, v in ENGINE_INFO_FIELD_MAPPINGS.items() if k != "Client_version"}
+
     engine_card = create_engine_info_card(
         shared_info.get("engine"),
-        shared_info.get("container_engine_provider"),
-        ENGINE_INFO_FIELD_MAPPINGS
+        title="Container Engine Information",
+        provider_info=shared_info.get("container_engine_provider") if not is_linux else None,
+        field_mappings=filtered_engine_mappings
     )
     if engine_card:
         cards.append(engine_card)
@@ -119,29 +128,35 @@ def create_performance_comparison_table(configurations):
     if not configurations:
         return None
 
-    sorted_configurations = sorted(configurations, key=lambda config: config.get("exec_time", 0))
+    sorted_configurations = sorted(configurations, key=lambda config: config.get("execution_time_95th_percentile", 0))
 
     rows = []
 
-    headers = ["Configuration", "Execution Time", "Command", "Timestamp"]
+    headers = ["Configuration", "Execution Time (95th Percentile)", "Command", "Timestamp"]
     header_row = create_table_header(headers)
     rows.append(header_row)
 
-    valid_times = [c.get("exec_time", 0) for c in sorted_configurations if c.get("exec_time", 0) > 0]
+    valid_times = [
+        c.get("execution_time_95th_percentile", 0)
+        for c in sorted_configurations
+        if c.get("execution_time_95th_percentile", 0) > 0
+    ]
     fastest_time = min(valid_times) if valid_times else 0
 
     for config in sorted_configurations:
         display_config_label = generate_display_config_label(config, sorted_configurations)
-        exec_time = config.get("exec_time", 0)
-        runs = config.get("runs", 1)
+        exec_time_95th_percentile = config.get("execution_time_95th_percentile", 0)
+        jitter = config.get("jitter", 0)
+        jitter = jitter if jitter is not None else 0
+
         command = config.get("command", "N/A")
         timestamp = config.get("timestamp", "N/A")
 
-        is_fastest = (exec_time == fastest_time and
+        is_fastest = (exec_time_95th_percentile == fastest_time and
                       len(sorted_configurations) > 1 and
-                      exec_time > 0)
+                      exec_time_95th_percentile > 0)
 
-        time_content = create_execution_time_content(exec_time, runs, is_fastest)
+        time_content = create_execution_time_content(exec_time_95th_percentile, jitter, is_fastest)
 
         row_cells = [
             create_config_cell(display_config_label),
@@ -165,95 +180,6 @@ def create_performance_comparison_table(configurations):
     return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
 
-def create_average_usage_comparison_table(configurations):
-    if not configurations:
-        return None
-
-    has_metrics = any(config.get('exec_time', 0) > MIN_PLOT_BENCHMARK_TIME for config in configurations)
-    if not has_metrics:
-        return None
-
-    sorted_configurations = sorted(configurations, key=lambda config: config.get("exec_time", 0))
-
-    config_metrics = {}
-    for config in sorted_configurations:
-        config_label = config.get("config_label", "Unknown")
-        settings = config.get("settings", {})
-        config_metrics[config_label] = calculate_config_metrics(settings)
-
-    if not any(config_metrics.values()):
-        return None
-
-    rows = []
-
-    headers = create_usage_table_headers(METRIC_DISPLAY_CONFIG)
-    header_row = create_table_header(headers)
-    rows.append(header_row)
-
-    metric_ranges = {}
-    for metric_type in METRIC_DISPLAY_CONFIG.keys():
-        values = []
-        for config in sorted_configurations:
-            config_label = config.get("config_label", "Unknown")
-            metrics = config_metrics.get(config_label, {})
-            value = metrics.get(metric_type)
-            if value is not None:
-                values.append(value)
-
-        if values:
-            min_val = min(values)
-            max_val = max(values)
-            metric_ranges[metric_type] = {
-                'min': min_val,
-                'max': max_val,
-                'has_multiple': len(values) > 1 and min_val != max_val  # Check if values are actually different
-            }
-
-    for config in sorted_configurations:
-        config_label = config.get("config_label", "Unknown")
-        display_config_label = generate_display_config_label(config, sorted_configurations)
-        metrics = config_metrics.get(config_label, {})
-
-        row_cells = [create_config_cell(display_config_label)]
-
-        for metric_type, (label, unit) in METRIC_DISPLAY_CONFIG.items():
-            value = metrics.get(metric_type)
-            if value is not None:
-                # Determine if this value is min or max for highlighting
-                metric_range = metric_ranges.get(metric_type, {})
-                is_min = metric_range.get('has_multiple', False) and value == metric_range.get('min')
-                is_max = metric_range.get('has_multiple', False) and value == metric_range.get('max')
-                is_single = len(sorted_configurations) == 1
-
-                metric_cell = create_metric_value_cell(value, unit, is_min, is_max, is_single)
-                row_cells.append(metric_cell)
-            else:
-                row_cells.append(html.Td("N/A", style=css.STYLE_TABLE_CELL))
-
-        rows.append(html.Tr(row_cells))
-
-    if len(sorted_configurations) > 1:
-        usage_deltas = calculate_usage_deltas(sorted_configurations)
-        if usage_deltas:
-            delta_cells = [create_config_cell("Performance Delta")]
-
-            for metric_type, (label, unit) in METRIC_DISPLAY_CONFIG.items():
-                if metric_type in usage_deltas:
-                    delta_info = usage_deltas[metric_type]
-                    delta_content = create_delta_content(
-                        delta_info['delta'],
-                        delta_info['percentage'],
-                        unit
-                    )
-                    delta_cells.append(html.Td(delta_content, style=css.STYLE_TABLE_CELL))
-                else:
-                    delta_cells.append(html.Td("-", style=css.STYLE_TABLE_CELL))
-
-            rows.append(html.Tr(delta_cells))
-
-    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
-
-
 def create_differences_comparison_table(configurations):
     if not configurations or len(configurations) < 2:
         return html.Div("No differences found between configurations")
@@ -265,13 +191,6 @@ def create_differences_comparison_table(configurations):
         tables.append(html.Div([
             html.H4("Performance Metrics", style=css.STYLE_H4),
             perf_table
-        ]))
-
-    usage_table = create_average_usage_comparison_table(configurations)
-    if usage_table:
-        tables.append(html.Div([
-            html.H4("Average System Usage", style=css.STYLE_H4),
-            usage_table
         ]))
 
     if tables:
@@ -321,7 +240,7 @@ def create_plots_section(configurations, args):
 
     plot_sections = []
     for config in configurations:
-        if config.get('exec_time', 0) > MIN_PLOT_BENCHMARK_TIME:
+        if config.get('execution_time_95th_percentile', 0) > MIN_PLOT_BENCHMARK_TIME:
             settings = config.get("settings", {})
 
             plot_cards = [

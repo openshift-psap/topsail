@@ -1,3 +1,4 @@
+import math
 import types
 import yaml
 import json
@@ -86,17 +87,26 @@ def _parse_metrics(dirname):
     if not execution_times:
         return None
 
-    metric.cpu = [sum(cpu) / len(cpu) for cpu in zip(*cpu_usages)]
-    metric.execution_time = sum(execution_times) / len(execution_times)
-    metric.memory = [sum(memory) / len(memory) for memory in zip(*memory_usages)]
+    metric.cpu = [_calculate_usage_metric(cpu) for cpu in zip(*cpu_usages)]
+    metric.execution_time_95th_percentile = _calculate_percentile(execution_times, 95)
+    metric.execution_time_jitter = _calculate_jitter(execution_times)
+    metric.memory = [_calculate_usage_metric(memory) for memory in zip(*memory_usages)]
 
-    network_send_avg = [sum(send) / len(send) for send in zip(*network_send_usages)]
-    network_recv_avg = [sum(recv) / len(recv) for recv in zip(*network_recv_usages)]
-    metric.network = dict(send=network_send_avg, recv=network_recv_avg)
+    network_send = [
+        _calculate_usage_metric(send) for send in zip(*network_send_usages)
+    ]
+    network_recv = [
+        _calculate_usage_metric(recv) for recv in zip(*network_recv_usages)
+    ]
+    metric.network = dict(send=network_send, recv=network_recv)
 
-    disk_read_avg = [sum(read) / len(read) for read in zip(*disk_read_usages)]
-    disk_write_avg = [sum(write) / len(write) for write in zip(*disk_write_usages)]
-    metric.disk = dict(read=disk_read_avg, write=disk_write_avg)
+    disk_read = [
+        _calculate_usage_metric(read) for read in zip(*disk_read_usages)
+    ]
+    disk_write = [
+        _calculate_usage_metric(write) for write in zip(*disk_write_usages)
+    ]
+    metric.disk = dict(read=disk_read, write=disk_write)
     metric.interval = interval
 
     metric.command = command
@@ -131,3 +141,41 @@ def _parse_container_engine_info(dirname):
     ) as f:
         container_engine_info = json.load(f)
     return container_engine_info
+
+
+def _calculate_usage_metric(data):
+    if data is None or len(data) == 0:
+        return None
+    return types.SimpleNamespace(
+        percentile_75th=_calculate_percentile(data, 75),
+        percentile_50th=_calculate_percentile(data, 50),
+        percentile_25th=_calculate_percentile(data, 25),
+    )
+
+
+def _calculate_percentile(data, percentile=95):
+    if data is None or len(data) == 0:
+        return None
+
+    sorted_values = sorted(data)
+    n = len(sorted_values)
+
+    rank = (percentile / 100) * (n - 1)
+
+    if rank.is_integer():
+        return sorted_values[int(rank)]
+    lower_index = math.floor(rank)
+    upper_index = math.ceil(rank)
+    fraction = rank - lower_index
+
+    lower_value = sorted_values[lower_index]
+    upper_value = sorted_values[upper_index]
+
+    return lower_value + fraction * (upper_value - lower_value)
+
+
+def _calculate_jitter(data):
+    if data is None or len(data) < 2:
+        return None
+    differences = [abs(data[i] - data[i-1]) for i in range(1, len(data))]
+    return sum(differences) / len(differences)

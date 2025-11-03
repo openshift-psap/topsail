@@ -1,0 +1,42 @@
+---
+# Default benchmark body for Unix/Linux/Darwin platforms
+# Usage:
+# - include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+# Requires: image_to_pull, prepare_commands, benchmark_command, cleanup_commands variables
+
+- name: Validate required variables
+  fail:
+    msg: "Required variable '{{ item }}' is not defined"
+  when: vars[item] is not defined
+  loop:
+    - prepare_commands
+    - benchmark_command
+    - cleanup_commands
+
+- name: Create benchmark artifacts directory
+  include_tasks: "create_artifacts_dir.yml"
+
+- name: Perform full container resource cleanup before benchmark
+  include_tasks: "cleanup_container_resources.yml"
+
+- name: Pull required container image (with local tarfile optimization)
+  include_tasks: "pull_image.yml"
+  vars:
+    image_name: "{{ image_to_pull }}"
+  when: image_to_pull is defined and image_to_pull | length > 0
+
+- name: Execute benchmark preparation commands
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ prepare_commands }}"
+  when: prepare_commands | length > 0
+
+- name: Execute benchmark measurement
+  include_tasks: "run_benchmark.yml"
+
+- name: Execute benchmark cleanup commands
+  become: "{{ rootfull | default(false) }}"
+  shell: "{{ cleanup_commands }}"
+  when: cleanup_commands | length > 0
+
+- name: Perform full container resource cleanup after benchmark
+  include_tasks: "cleanup_container_resources.yml"

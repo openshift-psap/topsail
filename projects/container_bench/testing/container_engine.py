@@ -1,3 +1,4 @@
+from pathlib import Path
 import remote_access
 import json
 import logging
@@ -75,6 +76,32 @@ class ContainerEngine:
 
         return cmd
 
+    def store_container_images_as_tar(self):
+        container_images_config = ConfigManager.get_container_images_config()
+        pull_images = container_images_config['pull_images']
+        images = container_images_config['images']
+        images_dir = container_images_config['dir']
+        dest = Path(images_dir)
+
+        if not pull_images:
+            logging.info("Skipping pulling container images as per configuration.")
+            return
+
+        if not remote_access.exists(dest):
+            logging.info(f"Creating images directory at {dest} ...")
+            remote_access.create_remote_directory(dest)
+
+        for image in images:
+            logging.info(f"Pulling container image: {image} ...")
+            image_filename = image.replace("/", "_").replace(":", "_").replace(".", "_") + ".tar"
+            if remote_access.exists(dest / image_filename):
+                continue
+            cmd = f"{self.get_command()} pull {image}"
+            remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
+            cmd = f"{self.get_command()} save -o {dest / image_filename} {image}"
+            remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
+        self.rm_images(images)
+
     def is_rootful(self):
         if ConfigManager.is_linux():
             return self.podman_config['linux_rootful']
@@ -100,10 +127,10 @@ class ContainerEngine:
 
         return ret.returncode == 0
 
-    def rm_image(self, image):
+    def rm_images(self, images):
         ret = remote_access.run_with_ansible_ssh_conf(
             self.base_work_dir,
-            f"{self.get_command()} image rm {image}",
+            f"{self.get_command()} image rm {' '.join(images)}",
             check=False,
             capture_stdout=True,
             capture_stderr=True,
