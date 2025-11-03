@@ -50,7 +50,7 @@ remote_host:
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: true
+    enabled: false
     docker_bin: docker
   # Empty environment values are ignored.
   env:
@@ -142,7 +142,7 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 12 # in cores
+        cpus: 8 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
@@ -188,13 +188,20 @@ image_build_large_build_context_benchmark:
     - podman
     - docker
 
+artifact_add_benchmark:
+  runs: 10
+  supported_container_engines:
+    - podman
+
 test:
   platform: *all_platforms
   platforms_to_skip:
+   - docker
   benchmark:
-    - helloworld_benchmark
-    # - exec_benchmark
-    # - image_build_large_build_context_benchmark
+    #- helloworld_benchmark
+    #- exec_benchmark
+    #- image_build_large_build_context_benchmark
+    - artifact_add_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -205,8 +212,8 @@ test:
      - true
      - false
     repo_version:
-     - v5.5.0
-    # - custom
+     - v5.6.0
+     - custom
     runtime: # Linux only
      - crun
      - runc

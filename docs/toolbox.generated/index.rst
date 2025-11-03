@@ -53,6 +53,7 @@ Toolbox Documentation
     
 
                 
+* :doc:`artifact_add_benchmark <Container_Bench.artifact_add_benchmark>`	 Runs the artifact add benchmark with the given runtime
 * :doc:`capture_container_engine_info <Container_Bench.capture_container_engine_info>`	 Captures the info of the container engine
 * :doc:`capture_system_state <Container_Bench.capture_system_state>`	 Captures the state of the remote Mac system
 * :doc:`exec_benchmark <Container_Bench.exec_benchmark>`	 Runs the exec benchmark with the given runtime
