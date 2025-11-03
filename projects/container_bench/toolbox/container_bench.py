@@ -9,6 +9,25 @@ class Container_Bench:
     Commands relating to the performance evaluation
     """
 
+    @AnsibleRole("container_bench_artifact_add_benchmark")
+    @AnsibleMappedParams
+    def artifact_add_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the artifact add benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("container_bench_helloworld_benchmark")
     @AnsibleMappedParams
     def helloworld_benchmark(
