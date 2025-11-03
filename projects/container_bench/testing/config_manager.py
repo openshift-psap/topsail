@@ -57,6 +57,8 @@ class ConfigKeys:
     PREPARE_DNF_INSTALL_DEPENDENCIES = "prepare.dnf.install_dependencies"
     PREPARE_DNF_ENABLE_DOCKER_REPO = "prepare.dnf.enable_docker_repo"
     PREPARE_DNF_DEPENDENCIES = "prepare.dnf.dependencies"
+    PREPARE_CHOCO_INSTALL_DEPENDENCIES = "prepare.choco.install_dependencies"
+    PREPARE_CHOCO_DEPENDENCIES = "prepare.choco.dependencies"
     PREPARE_CONTAINER_IMAGES_PULL_IMAGES = "prepare.container_images.pull_images"
     PREPARE_CONTAINER_IMAGES_IMAGES = "prepare.container_images.images"
     PREPARE_CONTAINER_IMAGES_IMAGES_DIR = "prepare.container_images.dir"
@@ -195,6 +197,14 @@ class ConfigManager:
             'enable_docker_repo': config.project.get_config(
                 ConfigKeys.PREPARE_DNF_ENABLE_DOCKER_REPO, print=False),
             'dependencies': config.project.get_config(ConfigKeys.PREPARE_DNF_DEPENDENCIES, print=False),
+        }
+
+    @staticmethod
+    def get_choco_config():
+        return {
+            'install_dependencies': config.project.get_config(
+                ConfigKeys.PREPARE_CHOCO_INSTALL_DEPENDENCIES, print=False),
+            'dependencies': config.project.get_config(ConfigKeys.PREPARE_CHOCO_DEPENDENCIES, print=False),
         }
 
     @staticmethod

@@ -68,6 +68,11 @@ prepare:
     dependencies:
       - krunkit
 
+  choco:
+    install_dependencies: false
+    dependencies:
+      - podman-cli
+
   dnf:
     install_dependencies: false
     enable_docker_repo: true
