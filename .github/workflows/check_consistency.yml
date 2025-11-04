@@ -11,7 +11,7 @@ on:
     - cron: '0 */8 * * *'
 
 jobs:
-  build:
+  check_topsail_consistency:
     runs-on: ubuntu-latest
 
     steps:

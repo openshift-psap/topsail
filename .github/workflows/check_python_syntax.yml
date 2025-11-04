@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  build:
+  check_python_syntax:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4

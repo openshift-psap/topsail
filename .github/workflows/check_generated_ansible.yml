@@ -11,7 +11,7 @@ on:
     - cron: '0 */8 * * *'
 
 jobs:
-  build:
+  check_generated_ansible:
     runs-on: ubuntu-latest
 
     steps:

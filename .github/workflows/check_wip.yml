@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  check_wip:
     runs-on: ubuntu-latest
 
     steps:
