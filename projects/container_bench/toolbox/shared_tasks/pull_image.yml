@@ -70,7 +70,6 @@
   shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
   when: ansible_os_family != 'Windows' and tarfile_exists
 
-
 - name: Load image from local tarfile (Windows)
   ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
   when: ansible_os_family == 'Windows' and tarfile_exists
@@ -83,4 +82,3 @@
 - name: Pull image from registry (Windows)
   ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} pull {{ image_name }}"
   when: ansible_os_family == 'Windows' and not tarfile_exists
-
