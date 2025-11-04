@@ -390,13 +390,13 @@ def test_skip_list():
     if exec_this_subcommand is False:
         logging.fatal(f"Subcommand '{current_subcommand}' is disabled in the exec list. Stopping happily this execution.")
         with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
-            print("Skipped because part of the \skip list", file=f)
+            print("Skipped because part of the \\skip list", file=f)
         raise SystemExit(0)
 
     if exec_this_subcommand is not True and exec_list.get("_only_", False):
         logging.fatal(f"Only flag is set, and subcommand '{current_subcommand}' is not enabled in the exec list. Stopping happily this execution.")
         with open(env.ARTIFACT_DIR / "SKIPPED", "w") as f:
-            print("Skipped because not part of the \only list", file=f)
+            print("Skipped because not part of the \\only list", file=f)
 
         raise SystemExit(0)
 

@@ -13,13 +13,13 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  check_ansible_lint:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     steps:
     # Important: This sets up your GITHUB_WORKSPACE environment variable
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set ANSIBLE_ROLES_PATH
       run: |
