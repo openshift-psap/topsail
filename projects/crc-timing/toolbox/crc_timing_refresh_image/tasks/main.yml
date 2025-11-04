@@ -97,7 +97,7 @@
         }
       ]
       EOF
-    when: crc_timing_refresh_image_disk_size is not None
+    when: crc_timing_refresh_image_disk_size != None
 
   - name: 3. Launch temporary worker instance
     command:
@@ -108,7 +108,7 @@
             --key-name "{{ crc_timing_refresh_image_key_pair_name }}"
             --placement "AvailabilityZone={{ crc_timing_refresh_image_aws_availability_zone }}"
             --security-group-ids "{{ security_group_id }}"
-            {% if crc_timing_refresh_image_disk_size is not None %}
+            {% if crc_timing_refresh_image_disk_size != None %}
             --block-device-mappings "file://{{ artifact_extra_logs_dir }}/src/block-device-mappings.json"
             {% endif %}
     no_log: true # too verbose
