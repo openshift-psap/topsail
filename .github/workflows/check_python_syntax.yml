@@ -1,0 +1,24 @@
+name: Check the Python syntax
+
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+    steps:
+      - name: Use checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check that all the files can be compiled
+        run: |
+          set -o pipefail
+          set -o errexit
+
+          python -m compileall . | (grep -v -E '(^Listing|^Compiling)' || true)
