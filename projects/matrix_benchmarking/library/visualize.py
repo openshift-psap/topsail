@@ -439,7 +439,8 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     if do_upload_lts:
-        if non_fatal_errors:
+        # don't skip the upload if a regression has been detected
+        if [e for e in non_fatal_errors if e != "regression_detected"]:
             logging.error("Errors have been detected in the post-processing. NOT uploading LTS payload to OpenSearch.")
         else:
             step_idx += 1
