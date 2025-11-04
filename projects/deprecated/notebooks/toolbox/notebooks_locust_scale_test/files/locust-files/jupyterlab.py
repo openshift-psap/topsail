@@ -111,7 +111,7 @@ class JupyterLab(common.ContextBase):
 
         soup = BeautifulSoup(response.text, features="lxml")
         if soup.title and soup.title.text == "JupyterLab":
-            logging.info(f"Reached JupyterLab page \o/")
+            logging.info(f"Reached JupyterLab page \\o/")
 
         elif soup.title and "Log in" in soup.title.text:
             raise common.ScaleTestError(f"JupyterLab home page failed to load properly... (still on the login page)",

@@ -28,7 +28,7 @@ LOCUST_REPORTER_CMD = f"locust-reporter \
     -outfile $ARTIFACT_DIR/{LOCUST_FILE_PREFIX}_report.html \
 "
 
-REMOVE_NA_CMD = "sed -i '/N\/A/d' {file}"
+REMOVE_NA_CMD = r"sed -i '/N\/A/d' {file}"
 
 artifacts_directory = pathlib.Path(os.getenv("ARTIFACT_DIR"))
 

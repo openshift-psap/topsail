@@ -59,7 +59,7 @@ def prepare_user_sutest_namespace(namespace):
         logging.warning(f"Project {namespace} already exists.")
         (env.ARTIFACT_DIR / "PROJECT_ALREADY_EXISTS").touch()
 
-        run.run(f"oc wait --for jsonpath='{{.metadata.labels.topsail\.prepared}}=true' ns {namespace} --timeout=2m")
+        run.run(f"oc wait --for jsonpath='{{.metadata.labels.topsail\\.prepared}}=true' ns {namespace} --timeout=2m")
 
         return
 
