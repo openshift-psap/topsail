@@ -439,10 +439,13 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
     #
 
     if do_upload_lts:
-        # don't skip the upload if a regression has been detected
-        if [e for e in non_fatal_errors if e != "regression_detected"]:
-            logging.error("Errors have been detected in the post-processing. NOT uploading LTS payload to OpenSearch.")
+        if config.project.get_config("matbench.lts.regression_analyses.upload_lts_on_regression", True):
+            skip_upload = non_fatal_errors and list(non_fatal_errors) != ["regression detected"]
         else:
+            # don't skip the upload if a regression has been detected
+            skip_upload = bool(non_fatal_errors)
+
+        if not skip_upload:
             step_idx += 1
             upload_lts_errors = call_upload_lts(step_idx, common_args, common_env_str)
 
@@ -450,6 +453,8 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
                 non_fatal_errors += upload_lts_errors
             elif upload_lts_errors:
                 logging.warning("An error happened during the LTS upload. Ignoring as per matbench.lts.opensearch.export.fail_test_on_fail.")
+        else:
+            logging.error("Errors have been detected in the post-processing. NOT uploading LTS payload to OpenSearch.")
 
     #
     # Generate the visualization reports

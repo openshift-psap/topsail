@@ -614,6 +614,7 @@ matbench:
     regression_analyses:
       enabled: false
       enabled_on_replot: true
+      upload_lts_on_regression: true
       # if the regression analyses fail, mark the test as failed
       fail_test_on_regression: true
       notification:
