@@ -111,6 +111,7 @@ prepare:
     images:
       - "quay.io/podman/hello:latest"
       - "registry.fedoraproject.org/fedora:latest"
+      - "docker.io/zyclonite/sysbench:1.0.21"
 
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
@@ -198,15 +199,22 @@ artifact_add_benchmark:
   supported_container_engines:
     - podman
 
+sysbench_cpu_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
 test:
   platform: *all_platforms
   platforms_to_skip:
    - docker
   benchmark:
-    #- helloworld_benchmark
+    - helloworld_benchmark
     #- exec_benchmark
     #- image_build_large_build_context_benchmark
-    - artifact_add_benchmark
+    #- artifact_add_benchmark
+    - sysbench_cpu_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -230,7 +238,7 @@ test:
     stop_on_error: true
     iterable_test_fields:
      - test.platform
-     - test.podman.repo_version
+    # - test.podman.repo_version
     # - test.podman.rootful
      - test.podman.machine_provider
      - test.podman.runtime

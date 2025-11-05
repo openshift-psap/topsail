@@ -1,0 +1,33 @@
+---
+- name: Map long variable names to short aliases
+  include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    benchmark_role_name: "container_bench_sysbench_cpu_benchmark"
+
+# Reference variables to satisfy validation (they are used dynamically in map_variables.yml)
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_sysbench_cpu_benchmark_exec_time_path is defined
+      - container_bench_sysbench_cpu_benchmark_binary_path is defined
+      - container_bench_sysbench_cpu_benchmark_rootfull is defined
+      - container_bench_sysbench_cpu_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- name: Set benchmark commands
+  set_fact:
+    image_to_pull: "docker.io/zyclonite/sysbench:1.0.21"
+    log_file_name: "cpu_benchmark.log"
+    prepare_commands: ""
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} run --rm docker.io/zyclonite/sysbench:1.0.21 cpu --cpu-max-prime=20000 run
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_synthetic_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'
