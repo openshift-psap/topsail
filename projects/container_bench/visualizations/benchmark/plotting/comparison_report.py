@@ -29,6 +29,99 @@ from .utils.shared import (
 )
 
 
+def _get_fileio_sort_key(config):
+    return (config.get("benchmark_read_throughput") or 0) + \
+           (config.get("benchmark_write_throughput") or 0)
+
+
+def _get_standard_sort_key(config):
+    return config.get("benchmark_value") or 0
+
+
+def _create_fileio_table_rows(sorted_configurations):
+    valid_read_values = [
+        c.get("benchmark_read_throughput")
+        for c in sorted_configurations
+        if c.get("benchmark_read_throughput") is not None
+    ]
+    valid_write_values = [
+        c.get("benchmark_write_throughput")
+        for c in sorted_configurations
+        if c.get("benchmark_write_throughput") is not None
+    ]
+    best_read = max(valid_read_values) if valid_read_values else 0
+    best_write = max(valid_write_values) if valid_write_values else 0
+
+    rows = []
+    for config in sorted_configurations:
+        display_config_label = generate_display_config_label(config, sorted_configurations)
+        read_value = config.get("benchmark_read_throughput")
+        write_value = config.get("benchmark_write_throughput")
+        timestamp = config.get("timestamp", "N/A")
+
+        is_best_read = (read_value == best_read and
+                        len(sorted_configurations) > 1 and
+                        read_value is not None)
+        is_best_write = (write_value == best_write and
+                         len(sorted_configurations) > 1 and
+                         write_value is not None)
+
+        row_cells = [
+            create_config_cell(display_config_label),
+            html.Td(
+                f"{read_value:.2f}" if read_value is not None else "N/A",
+                style=css.STYLE_TABLE_CELL_HIGHLIGHT if is_best_read else css.STYLE_TABLE_CELL
+            ),
+            html.Td(
+                f"{write_value:.2f}" if write_value is not None else "N/A",
+                style=css.STYLE_TABLE_CELL_HIGHLIGHT if is_best_write else css.STYLE_TABLE_CELL
+            ),
+            html.Td(
+                str(timestamp) if timestamp else "N/A",
+                style=css.STYLE_TABLE_CELL
+            )
+        ]
+        rows.append(html.Tr(row_cells))
+
+    return rows
+
+
+def _create_standard_table_rows(sorted_configurations, best_value):
+    rows = []
+    for config in sorted_configurations:
+        display_config_label = generate_display_config_label(config, sorted_configurations)
+        benchmark_value = config.get("benchmark_value")
+        benchmark_unit = config.get("benchmark_unit", "")
+        timestamp = config.get("timestamp", "N/A")
+
+        is_best = (benchmark_value is not None and
+                   benchmark_value == best_value and
+                   len(sorted_configurations) > 1 and
+                   benchmark_value > 0)
+
+        if benchmark_value is not None:
+            value_display = f"{benchmark_value:.2f}"
+            if benchmark_unit:
+                value_display = f"{benchmark_value:.2f} {benchmark_unit}"
+        else:
+            value_display = "N/A"
+
+        row_cells = [
+            create_config_cell(display_config_label),
+            html.Td(
+                value_display,
+                style=css.STYLE_TABLE_CELL_HIGHLIGHT if is_best else css.STYLE_TABLE_CELL
+            ),
+            html.Td(
+                str(timestamp) if timestamp else "N/A",
+                style=css.STYLE_TABLE_CELL
+            )
+        ]
+        rows.append(html.Tr(row_cells))
+
+    return rows
+
+
 def create_performance_delta_row(sorted_configurations, fastest_time):
     valid_times = [
         c.get("execution_time_95th_percentile", 0)
@@ -124,6 +217,41 @@ def create_shared_info_section(shared_info):
         return html.Div("No shared configuration information found")
 
 
+def create_synthetic_benchmark_comparison_table(configurations):
+    if not configurations:
+        return None
+
+    if not configurations[0].get("metric_type") == "synthetic_benchmark":
+        return None
+
+    benchmark_title = configurations[0].get("benchmark_title", "Result")
+    benchmark_type = configurations[0].get("benchmark_type", "")
+
+    is_fileio = benchmark_type == "fileIO"
+
+    if is_fileio:
+        sorted_configurations = sorted(configurations, key=_get_fileio_sort_key, reverse=True)
+        headers = ["Configuration", "Read (MiB/s)", "Write (MiB/s)", "Timestamp"]
+    else:
+        sorted_configurations = sorted(configurations, key=_get_standard_sort_key, reverse=True)
+        headers = ["Configuration", benchmark_title, "Timestamp"]
+
+    rows = [create_table_header(headers)]
+
+    if is_fileio:
+        rows.extend(_create_fileio_table_rows(sorted_configurations))
+    else:
+        valid_values = [
+            c.get("benchmark_value")
+            for c in sorted_configurations
+            if c.get("benchmark_value") is not None and c.get("benchmark_value") > 0
+        ]
+        best_value = max(valid_values) if valid_values else 0
+        rows.extend(_create_standard_table_rows(sorted_configurations, best_value))
+
+    return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
+
+
 def create_performance_comparison_table(configurations):
     if not configurations:
         return None
@@ -186,17 +314,58 @@ def create_differences_comparison_table(configurations):
 
     tables = []
 
-    perf_table = create_performance_comparison_table(configurations)
-    if perf_table:
-        tables.append(html.Div([
-            html.H4("Performance Metrics", style=css.STYLE_H4),
-            perf_table
-        ]))
+    if configurations[0].get("metric_type") == "synthetic_benchmark":
+        synthetic_table = create_synthetic_benchmark_comparison_table(configurations)
+        if synthetic_table:
+            tables.append(html.Div([
+                html.H4("Benchmark Results", style=css.STYLE_H4),
+                synthetic_table
+            ]))
+    else:
+        # Regular container_bench metrics
+        perf_table = create_performance_comparison_table(configurations)
+        if perf_table:
+            tables.append(html.Div([
+                html.H4("Performance Metrics", style=css.STYLE_H4),
+                perf_table
+            ]))
 
     if tables:
         return html.Div([table for table in tables if table], style={'margin-bottom': '1rem'})
     else:
         return html.Div("No differences found between configurations")
+
+
+def create_benchmark_log_section(configurations):
+    if not configurations:
+        return None
+
+    if configurations[0].get("metric_type") != "synthetic_benchmark":
+        return None
+
+    log_sections = []
+    for _, config in enumerate(configurations):
+        benchmark_log = config.get("benchmark_full_log", "")
+        if not benchmark_log:
+            continue
+
+        display_config_label = generate_display_config_label(config, configurations)
+
+        log_sections.append(html.Div([
+            html.H5(f"{display_config_label}", style=css.STYLE_H4),
+            html.Pre(
+                benchmark_log,
+                style=css.STYLE_JSON_PRE
+            )
+        ], style={'margin-bottom': '1rem'}))
+
+    if not log_sections:
+        return None
+
+    return html.Details([
+        html.Summary('Click for Full Benchmark Logs', style=css.STYLE_DETAILS_SUMMARY),
+        html.Div(log_sections, style=css.STYLE_DETAILS_CONTENT)
+    ], style=css.STYLE_DETAILS)
 
 
 def create_technical_details_section(configurations):
@@ -275,6 +444,10 @@ def _create_benchmark_section(benchmark, configurations, args):
         differences_table,
         html.Br()
     ])
+
+    benchmark_logs = create_benchmark_log_section(configurations)
+    if benchmark_logs:
+        section_components.append(benchmark_logs)
 
     shared_section = create_shared_info_section(shared_info)
     section_components.extend([

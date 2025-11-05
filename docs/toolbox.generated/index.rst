@@ -60,6 +60,7 @@ Toolbox Documentation
 * :doc:`helloworld_benchmark <Container_Bench.helloworld_benchmark>`	 Runs the helloworld benchmark with the given runtime
 * :doc:`image_build_large_build_context_benchmark <Container_Bench.image_build_large_build_context_benchmark>`	 Runs the image build large build context benchmark with the given runtime
 * :doc:`prepare_benchmark_script_on_remote <Container_Bench.prepare_benchmark_script_on_remote>`	 Prepares the benchmark script on the remote machine
+* :doc:`sysbench_cpu_benchmark <Container_Bench.sysbench_cpu_benchmark>`	 Runs the sysbench CPU benchmark with the given runtime
 
 ``crc``
 *******

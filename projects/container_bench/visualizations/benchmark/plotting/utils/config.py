@@ -169,13 +169,32 @@ def GetInfo(settings):
         if not metrics:
             continue
 
-        data.update({
-            "execution_time_95th_percentile": metrics.execution_time_95th_percentile,
-            "jitter": metrics.execution_time_jitter,
-            "command": metrics.command,
-            "timestamp": metrics.timestamp,
-            "runs": entry.settings.__dict__.get("benchmark_runs", 1)
-        })
+        metric_type = getattr(metrics, 'type', None)
+        data["metric_type"] = metric_type
+
+        if metric_type == "synthetic_benchmark":
+            data.update({
+                "benchmark_value": getattr(metrics, 'value', None),
+                "benchmark_title": getattr(metrics, 'synthetic_benchmark_title', 'Result'),
+                "benchmark_type": getattr(metrics, 'synthetic_benchmark_type', ''),
+                "benchmark_unit": getattr(metrics, 'unit', ''),
+                "benchmark_full_log": getattr(metrics, 'full_log', ''),
+                "benchmark_read_throughput": getattr(metrics, 'read_throughput', None),
+                "benchmark_write_throughput": getattr(metrics, 'write_throughput', None),
+                "runs": entry.settings.__dict__.get("benchmark_runs", 1),
+                "execution_time_95th_percentile": 0,
+                "jitter": 0,
+                "command": "",
+                "timestamp": getattr(metrics, 'timestamp', None)
+            })
+        else:
+            data.update({
+                "execution_time_95th_percentile": getattr(metrics, 'execution_time_95th_percentile', 0),
+                "jitter": getattr(metrics, 'execution_time_jitter', 0),
+                "command": getattr(metrics, 'command', ''),
+                "timestamp": getattr(metrics, 'timestamp', 0),
+                "runs": entry.settings.__dict__.get("benchmark_runs", 1)
+            })
 
         test_config = entry.results.__dict__.get("test_config", {})
         if test_config:
