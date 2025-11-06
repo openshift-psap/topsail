@@ -39,15 +39,15 @@ BENCHMARK_TYPE_MAPPING = {
         "log_filename": "memory_write_benchmark.log",
         "timestamp_filename": "memory_write_benchmark_ts.yaml",
     },
-    "sysbench_fileIO_container": {
+    "sysbench_fileio_container": {
         "title": f"File I/O Throughput ({UNIT_MIBS})",
-        "log_filename": "fileIO_container.log",
-        "timestamp_filename": "fileIO_container_ts.yaml",
+        "log_filename": "fileio_container.log",
+        "timestamp_filename": "fileio_container_ts.yaml",
     },
-    "sysbench_fileIO_mount": {
+    "sysbench_fileio_mount": {
         "title": f"File I/O Throughput ({UNIT_MIBS})",
-        "log_filename": "fileIO_mount.log",
-        "timestamp_filename": "fileIO_mount_ts.yaml",
+        "log_filename": "fileio_mount.log",
+        "timestamp_filename": "fileio_mount_ts.yaml",
     },
     "iperf_net_bridge_benchmark": {
         "title": f"Network Bitrate ({UNIT_GBITS})",
@@ -75,8 +75,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/cpu_benchmark.log",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_read_benchmark.log",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_write_benchmark.log",
-    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileIO_container.log",
-    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileIO_mount.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_container.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_mount.log",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_bridge.log",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_host.log",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_host_to_container.log",
@@ -84,8 +84,8 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/cpu_benchmark_ts.yaml",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_read_benchmark_ts.yaml",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_write_benchmark_ts.yaml",
-    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileIO_container_ts.yaml",
-    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileIO_mount_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_container_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_mount_ts.yaml",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_bridge_ts.yaml",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_host_ts.yaml",
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_host_to_container_ts.yaml",
@@ -176,8 +176,8 @@ BENCHMARK_PARSERS = {
     'sysbench_cpu_benchmark': _parse_cpu_benchmark,
     'sysbench_memory_read_benchmark': _parse_memory_benchmark,
     'sysbench_memory_write_benchmark': _parse_memory_benchmark,
-    'sysbench_fileIO_container': _parse_fileio_benchmark,
-    'sysbench_fileIO_mount': _parse_fileio_benchmark,
+    'sysbench_fileio_container': _parse_fileio_benchmark,
+    'sysbench_fileio_mount': _parse_fileio_benchmark,
     'iperf_net_bridge_benchmark': _parse_network_benchmark,
     'iperf_net_host_benchmark': _parse_network_benchmark,
     'iperf_host_to_container_benchmark': _parse_network_benchmark,
@@ -215,11 +215,17 @@ def _parse_synthetic_benchmark(dirname):
             log_file_name = config['log_filename']
             break
 
+    # If no matching synthetic benchmark type found, return None
+    if not type_ or not log_file_name:
+        return None
+
     metric.synthetic_benchmark_type = type_
     metric.synthetic_benchmark_title = title_
     metric.timestamp = None
     metric.unit = ""
     metric.value = None
+    metric.read_throughput = None
+    metric.write_throughput = None
 
     for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
         if not Path(benchmark_path / "artifacts" / log_file_name).exists():
