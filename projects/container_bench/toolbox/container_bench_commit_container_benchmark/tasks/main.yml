@@ -1,0 +1,33 @@
+---
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_commit_container_benchmark_exec_time_path is defined
+      - container_bench_commit_container_benchmark_binary_path is defined
+      - container_bench_commit_container_benchmark_rootfull is defined
+      - container_bench_commit_container_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- name: Map long variable names to short aliases
+  include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    benchmark_role_name: "container_bench_commit_container_benchmark"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    image_to_pull: "registry.fedoraproject.org/fedora:42"
+    prepare_commands: |
+      {{ binary_path }} {{ additional_args }} run --name=c-bench registry.fedoraproject.org/fedora:42 bash -c 'dd if=/dev/urandom of=1G-file bs=1G count=1'
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rm -f c-bench
+      {{ binary_path }} {{ additional_args }} rmi -f new-image-with-file:latest
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} commit c-bench new-image-with-file:latest
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

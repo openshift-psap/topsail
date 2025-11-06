@@ -9,6 +9,196 @@ class Container_Bench:
     Commands relating to the performance evaluation
     """
 
+    @AnsibleRole("container_bench_create_container_benchmark")
+    @AnsibleMappedParams
+    def create_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the create benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_start_container_benchmark")
+    @AnsibleMappedParams
+    def start_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the start benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_remove_container_benchmark")
+    @AnsibleMappedParams
+    def remove_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the remove container benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_pull_image_benchmark")
+    @AnsibleMappedParams
+    def pull_image_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the pull image benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_list_images_benchmark")
+    @AnsibleMappedParams
+    def list_images_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the list images benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_remove_image_benchmark")
+    @AnsibleMappedParams
+    def remove_image_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the remove image benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_commit_container_benchmark")
+    @AnsibleMappedParams
+    def commit_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the commit container benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_load_image_benchmark")
+    @AnsibleMappedParams
+    def load_image_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the load image benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_save_image_benchmark")
+    @AnsibleMappedParams
+    def save_image_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the save image benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_parallel_remove_image_benchmark")
+    @AnsibleMappedParams
+    def parallel_remove_image_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the parallel remove image benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("container_bench_sysbench_cpu_benchmark")
     @AnsibleMappedParams
     def sysbench_cpu_benchmark(
@@ -133,7 +323,7 @@ class Container_Bench:
             additional_args="",
     ):
         """
-        Runs the iperf3 benchmark using network host network between containers with the given runtime
+        Runs the iperf3 benchmark using host network between containers with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
           binary_path: path to the container engine binary (e.g., docker, podman)
@@ -152,7 +342,7 @@ class Container_Bench:
             additional_args="",
     ):
         """
-        Runs the iperf3 benchmark using from host to container with the given runtime
+        Runs the iperf3 benchmark from host to container with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
           binary_path: path to the container engine binary (e.g., docker, podman)
@@ -180,9 +370,9 @@ class Container_Bench:
         """
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("container_bench_helloworld_benchmark")
+    @AnsibleRole("container_bench_run_container_benchmark")
     @AnsibleMappedParams
-    def helloworld_benchmark(
+    def run_container_benchmark(
             self,
             exec_time_path,
             binary_path,
@@ -190,7 +380,7 @@ class Container_Bench:
             additional_args="",
     ):
         """
-        Runs the helloworld benchmark with the given runtime
+        Runs the run container benchmark with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
           binary_path: path to the container engine binary (e.g., docker, podman)
@@ -199,9 +389,9 @@ class Container_Bench:
         """
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("container_bench_exec_benchmark")
+    @AnsibleRole("container_bench_exec_container_benchmark")
     @AnsibleMappedParams
-    def exec_benchmark(
+    def exec_container_benchmark(
             self,
             exec_time_path,
             binary_path,
@@ -209,7 +399,7 @@ class Container_Bench:
             additional_args="",
     ):
         """
-        Runs the exec benchmark with the given runtime
+        Runs the exec container benchmark with the given runtime
         Args:
           exec_time_path: path to the exec_time.py script
           binary_path: path to the container engine binary (e.g., docker, podman)

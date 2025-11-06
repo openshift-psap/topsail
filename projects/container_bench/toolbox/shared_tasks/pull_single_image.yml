@@ -1,0 +1,54 @@
+---
+# Internal task for pulling/loading a single image
+# Called from pull_image.yml with loop
+# Requires: binary_path, additional_args, current_image_name, images_path variables
+
+- name: Set image tarfile path (Unix/Linux/macOS)
+  set_fact:
+    image_tarfile: "{{ images_path }}/{{ current_image_name | regex_replace('[^a-zA-Z0-9_-]', '_') }}.tar"
+  when: ansible_os_family != 'Windows'
+
+- name: Set image tarfile path (Windows)
+  set_fact:
+    image_tarfile: "{{ images_path }}\\{{ current_image_name | regex_replace('[^a-zA-Z0-9_-]', '_') }}.tar"
+  when: ansible_os_family == 'Windows'
+
+- name: Check if image tarfile exists (Unix/Linux/macOS)
+  stat:
+    path: "{{ image_tarfile }}"
+  register: tarfile_stat_unix
+  when: ansible_os_family != 'Windows'
+
+- name: Check if image tarfile exists (Windows)
+  ansible.windows.win_stat:
+    path: "{{ image_tarfile }}"
+  register: tarfile_stat_windows
+  when: ansible_os_family == 'Windows'
+
+- name: Set unified tarfile status (Unix)
+  set_fact:
+    tarfile_exists: "{{ tarfile_stat_unix.stat.exists | default(false) }}"
+  when: ansible_os_family != 'Windows'
+
+- name: Set unified tarfile status (Windows)
+  set_fact:
+    tarfile_exists: "{{ tarfile_stat_windows.stat.exists | default(false) }}"
+  when: ansible_os_family == 'Windows'
+
+- name: Load image from local tarfile (Unix/Linux/macOS)
+  become: "{{ rootfull | default(omit) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
+  when: ansible_os_family != 'Windows' and tarfile_exists
+
+- name: Load image from local tarfile (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
+  when: ansible_os_family == 'Windows' and tarfile_exists
+
+- name: Pull image from registry (Unix/Linux/macOS)
+  become: "{{ rootfull | default(omit) }}"
+  shell: "{{ binary_path }} {{ additional_args | default('') }} pull {{ current_image_name }}"
+  when: ansible_os_family != 'Windows' and not tarfile_exists
+
+- name: Pull image from registry (Windows)
+  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} pull {{ current_image_name }}"
+  when: ansible_os_family == 'Windows' and not tarfile_exists

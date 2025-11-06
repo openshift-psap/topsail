@@ -22,6 +22,7 @@
       {{ binary_path }} {{ additional_args }} network create iperf-test
       {{ binary_path }} {{ additional_args }} run -d --network iperf-test --name iperf3-server docker.io/mlabbe/iperf3:3.17.1-r0 -s -d
     cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} stop iperf3-server
       {{ binary_path }} {{ additional_args }} rm -f iperf3-server
       {{ binary_path }} {{ additional_args }} network rm iperf-test
       {{ binary_path }} {{ additional_args }} rmi -f docker.io/mlabbe/iperf3:3.17.1-r0

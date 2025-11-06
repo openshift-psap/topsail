@@ -1,0 +1,22 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.remove_container_benchmark
+
+# Parameters
+# path to the exec_time.py script
+# Mandatory value
+container_bench_remove_container_benchmark_exec_time_path:
+
+# path to the container engine binary (e.g., docker, podman)
+# Mandatory value
+container_bench_remove_container_benchmark_binary_path:
+
+# whether to run the benchmark as root user
+container_bench_remove_container_benchmark_rootfull: false
+
+# additional arguments to pass to the container engine binary
+container_bench_remove_container_benchmark_additional_args:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

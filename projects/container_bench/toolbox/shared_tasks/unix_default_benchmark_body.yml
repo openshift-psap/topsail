@@ -23,7 +23,7 @@
   include_tasks: "pull_image.yml"
   vars:
     image_name: "{{ image_to_pull }}"
-  when: image_to_pull is defined and image_to_pull | length > 0
+  when: (image_to_pull is defined and image_to_pull | length > 0) or (images_to_pull is defined and images_to_pull | length > 0)
 
 - name: Execute benchmark preparation commands
   become: "{{ rootfull | default(false) }}"

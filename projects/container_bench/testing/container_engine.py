@@ -258,6 +258,9 @@ class PodmanMachine:
 
     def stop(self):
         cmd = f"{self.get_cmd_env()} {get_podman_binary(self.base_work_dir)} machine stop {self.machine_name}"
+        if ConfigManager.is_windows():
+            # Immediate end of ssh session may lead to machine not stopping properly on Windows.
+            cmd = f"{cmd}; Start-Sleep -Seconds 30"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
 
     def rm(self):
@@ -334,6 +337,9 @@ class DockerDesktopMachine:
 
     def stop(self):
         cmd = "docker desktop stop"
+        if ConfigManager.is_windows():
+            # Immediate end of ssh session may lead to machine not stopping properly on Windows.
+            cmd = f"{cmd}; Start-Sleep -Seconds 30"
         remote_access.run_with_ansible_ssh_conf(self.base_work_dir, cmd)
         if ConfigManager.is_windows():
             cmd = "Remove-Item $env:USERPROFILE\\docker_script_log.txt -Force -ErrorAction SilentlyContinue"

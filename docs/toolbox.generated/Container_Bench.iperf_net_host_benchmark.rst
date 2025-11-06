@@ -9,7 +9,7 @@
 container_bench iperf_net_host_benchmark
 ========================================
 
-Runs the iperf3 benchmark using network host network between containers with the given runtime
+Runs the iperf3 benchmark using host network between containers with the given runtime
 
 
 

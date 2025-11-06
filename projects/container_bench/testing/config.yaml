@@ -110,9 +110,14 @@ prepare:
     dir: "{@remote_host.base_work_dir}/images"
     images:
       - "quay.io/podman/hello:latest"
-      - "registry.fedoraproject.org/fedora:latest"
       - "docker.io/zyclonite/sysbench:1.0.21"
       - "docker.io/mlabbe/iperf3:3.17.1-r0"
+      - "registry.fedoraproject.org/fedora:42"
+      - "docker.io/library/registry:2"
+      - "docker.io/tensorflow/tensorflow:latest-gpu"
+      - "docker.io/library/alpine:3.22.2"
+      - "docker.io/library/golang:1.24"
+      - "docker.io/library/nginx:1.29.3-perl"
 
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
@@ -177,26 +182,86 @@ cleanup:
 export_artifacts:
   enabled: false
 
-helloworld_benchmark:
+run_container_benchmark:
   runs: 1
   supported_container_engines:
     - podman
     - docker
 
-exec_benchmark:
-  runs: 5
+exec_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+commit_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+create_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+list_images_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+pull_image_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+remove_image_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+remove_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+load_image_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+save_image_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+start_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+parallel_remove_image_benchmark:
+  runs: 1
   supported_container_engines:
     - podman
     - docker
 
 image_build_large_build_context_benchmark:
-  runs: 10
+  runs: 1
   supported_container_engines:
     - podman
     - docker
 
 artifact_add_benchmark:
-  runs: 10
+  runs: 1
   supported_container_engines:
     - podman
 
@@ -254,10 +319,10 @@ test:
   platform: *all_platforms
   platforms_to_skip:
   benchmark:
-    # - helloworld_benchmark
-    # - exec_benchmark
-    # - image_build_large_build_context_benchmark
-    - artifact_add_benchmark
+    - run_container_benchmark
+    - exec_container_benchmark
+    - image_build_large_build_context_benchmark
+    # - artifact_add_benchmark
     - sysbench_cpu_benchmark
     - sysbench_memory_read_benchmark
     - sysbench_memory_write_benchmark
@@ -266,6 +331,16 @@ test:
     - iperf_net_bridge_benchmark
     - iperf_net_host_benchmark
     - iperf_host_to_container_benchmark
+    - commit_container_benchmark
+    - create_container_benchmark
+    - list_images_benchmark
+    - pull_image_benchmark
+    - remove_image_benchmark
+    - remove_container_benchmark
+    - start_container_benchmark
+    - load_image_benchmark
+    - save_image_benchmark
+    - parallel_remove_image_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -277,7 +352,8 @@ test:
      - false
     repo_version:
      - v5.6.0
-     - custom
+     - v5.2.0
+     # - custom
     runtime: # Linux only
      - crun
      - runc
