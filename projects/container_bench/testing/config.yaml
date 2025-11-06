@@ -50,7 +50,7 @@ remote_host:
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: false
+    enabled: true
     docker_bin: docker
   # Empty environment values are ignored.
   env:
@@ -112,6 +112,7 @@ prepare:
       - "quay.io/podman/hello:latest"
       - "registry.fedoraproject.org/fedora:latest"
       - "docker.io/zyclonite/sysbench:1.0.21"
+      - "docker.io/mlabbe/iperf3:3.17.1-r0"
 
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
@@ -177,7 +178,7 @@ export_artifacts:
   enabled: false
 
 helloworld_benchmark:
-  runs: 3
+  runs: 1
   supported_container_engines:
     - podman
     - docker
@@ -199,7 +200,51 @@ artifact_add_benchmark:
   supported_container_engines:
     - podman
 
+
+# Synthetic Benchmarks
 sysbench_cpu_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+sysbench_memory_read_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+sysbench_memory_write_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+sysbench_fileio_container_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+sysbench_fileio_mount_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+iperf_net_bridge_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+iperf_net_host_benchmark:
+  runs: 1
+  supported_container_engines:
+    - podman
+    - docker
+
+iperf_host_to_container_benchmark:
   runs: 1
   supported_container_engines:
     - podman
@@ -208,13 +253,19 @@ sysbench_cpu_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
-   - docker
   benchmark:
-    - helloworld_benchmark
-    #- exec_benchmark
-    #- image_build_large_build_context_benchmark
-    #- artifact_add_benchmark
+    # - helloworld_benchmark
+    # - exec_benchmark
+    # - image_build_large_build_context_benchmark
+    - artifact_add_benchmark
     - sysbench_cpu_benchmark
+    - sysbench_memory_read_benchmark
+    - sysbench_memory_write_benchmark
+    - sysbench_fileio_container_benchmark
+    - sysbench_fileio_mount_benchmark
+    - iperf_net_bridge_benchmark
+    - iperf_net_host_benchmark
+    - iperf_host_to_container_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -240,8 +291,8 @@ test:
      - test.platform
     # - test.podman.repo_version
     # - test.podman.rootful
-     - test.podman.machine_provider
-     - test.podman.runtime
+    # - test.podman.machine_provider
+    # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version

@@ -28,6 +28,139 @@ class Container_Bench:
         """
         return RunAnsibleRole(locals())
 
+    @AnsibleRole("container_bench_sysbench_memory_read_benchmark")
+    @AnsibleMappedParams
+    def sysbench_memory_read_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the sysbench memory read benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_sysbench_memory_write_benchmark")
+    @AnsibleMappedParams
+    def sysbench_memory_write_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the sysbench memory write benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_sysbench_fileio_container_benchmark")
+    @AnsibleMappedParams
+    def sysbench_fileio_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the sysbench fileIO container benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_sysbench_fileio_mount_benchmark")
+    @AnsibleMappedParams
+    def sysbench_fileio_mount_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the sysbench fileIO mount benchmark with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_iperf_net_bridge_benchmark")
+    @AnsibleMappedParams
+    def iperf_net_bridge_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the iperf3 benchmark using network bridge between containers with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_iperf_net_host_benchmark")
+    @AnsibleMappedParams
+    def iperf_net_host_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the iperf3 benchmark using network host network between containers with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("container_bench_iperf_host_to_container_benchmark")
+    @AnsibleMappedParams
+    def iperf_host_to_container_benchmark(
+            self,
+            exec_time_path,
+            binary_path,
+            rootfull=False,
+            additional_args="",
+    ):
+        """
+        Runs the iperf3 benchmark using from host to container with the given runtime
+        Args:
+          exec_time_path: path to the exec_time.py script
+          binary_path: path to the container engine binary (e.g., docker, podman)
+          rootfull: whether to run the benchmark as root user
+          additional_args: additional arguments to pass to the container engine binary
+        """
+        return RunAnsibleRole(locals())
+
     @AnsibleRole("container_bench_artifact_add_benchmark")
     @AnsibleMappedParams
     def artifact_add_benchmark(

@@ -1,7 +1,8 @@
 ---
-- include_tasks: "../../shared_tasks/map_variables.yml"
+- name: Map long variable names to short aliases
+  include_tasks: "../../shared_tasks/map_variables.yml"
   vars:
-    role_name: "container_bench_artifact_add_benchmark"
+    benchmark_role_name: "container_bench_artifact_add_benchmark"
 
 # Reference variables to satisfy validation (they are used dynamically in map_variables.yml)
 - name: Validate required variables are defined

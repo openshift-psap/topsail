@@ -178,7 +178,7 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
         write_throughput = info.get('benchmark_write_throughput')
         timestamp = info.get('timestamp')
 
-        if benchmark_type == 'fileIO' and read_throughput is not None and write_throughput is not None:
+        if 'fileio' in benchmark_type and read_throughput is not None and write_throughput is not None:
             card_content = _create_fileio_card_content(benchmark_title, read_throughput, write_throughput)
         elif benchmark_value is not None:
             card_content = _create_standard_card_content(benchmark_title, benchmark_value, benchmark_unit)

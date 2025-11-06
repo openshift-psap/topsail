@@ -227,7 +227,7 @@ def create_synthetic_benchmark_comparison_table(configurations):
     benchmark_title = configurations[0].get("benchmark_title", "Result")
     benchmark_type = configurations[0].get("benchmark_type", "")
 
-    is_fileio = benchmark_type == "fileIO"
+    is_fileio = 'fileio' in benchmark_type
 
     if is_fileio:
         sorted_configurations = sorted(configurations, key=_get_fileio_sort_key, reverse=True)
