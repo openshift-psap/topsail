@@ -222,7 +222,7 @@ def GetInfo(settings):
                 if detect_windows_system(data.get("system", {})):
                     data["container_engine_provider"] = "wsl"
                 else:
-                    data["container_engine_provider"] = "N/A (Docker)"
+                    data["container_engine_provider"] = "applehv"
                 data["container_engine_info"] = _extract_docker_engine_info(container_engine_info, is_linux)
 
         if is_linux:

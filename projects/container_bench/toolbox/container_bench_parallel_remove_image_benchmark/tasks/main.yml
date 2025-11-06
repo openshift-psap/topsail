@@ -1,0 +1,46 @@
+---
+- name: Validate required variables are defined
+  assert:
+    that:
+      - container_bench_parallel_remove_image_benchmark_exec_time_path is defined
+      - container_bench_parallel_remove_image_benchmark_binary_path is defined
+      - container_bench_parallel_remove_image_benchmark_rootfull is defined
+      - container_bench_parallel_remove_image_benchmark_additional_args is defined
+  when: false  # This task never runs but validates variable definitions
+
+- name: Map long variable names to short aliases
+  include_tasks: "../../shared_tasks/map_variables.yml"
+  vars:
+    benchmark_role_name: "container_bench_parallel_remove_image_benchmark"
+
+- name: Set common commands
+  set_fact:
+    images_to_pull:
+      - "docker.io/tensorflow/tensorflow:latest-gpu"
+      - "registry.fedoraproject.org/fedora:42"
+      - "docker.io/library/alpine:3.22.2"
+      - "quay.io/podman/hello:latest"
+      - "docker.io/library/golang:1.24"
+      - "docker.io/library/nginx:1.29.3-perl"
+    prepare_commands: ""
+    cleanup_commands: ""
+
+- name: Set common commands (Unix/Linux)
+  set_fact:
+    benchmark_command: >-
+      sh -c '{{ binary_path }} {{ additional_args }} rmi -f docker.io/tensorflow/tensorflow:latest-gpu > /dev/null 2>&1 & sleep 0.1; {{ binary_path }} {{ additional_args }} images'
+  when: ansible_os_family != 'Windows'
+
+- name: Set common commands (Windows)
+  set_fact:
+    benchmark_command: >-
+      powershell -Command "Start-Job -ScriptBlock { {{ binary_path }} {{ additional_args }} rmi -f docker.io/tensorflow/tensorflow:latest-gpu } | Out-Null; Start-Sleep -Milliseconds 100; {{ binary_path }} {{ additional_args }} images"
+  when: ansible_os_family == 'Windows'
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

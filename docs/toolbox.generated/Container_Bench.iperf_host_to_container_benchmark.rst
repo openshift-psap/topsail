@@ -9,7 +9,7 @@
 container_bench iperf_host_to_container_benchmark
 =================================================
 
-Runs the iperf3 benchmark using from host to container with the given runtime
+Runs the iperf3 benchmark from host to container with the given runtime
 
 
 
