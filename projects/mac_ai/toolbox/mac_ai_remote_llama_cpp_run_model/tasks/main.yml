@@ -35,6 +35,7 @@
       cd "{{ mac_ai_remote_llama_cpp_run_model_base_work_dir }}";
       echo Starting llama-server ...;
       nohup {{ mac_ai_remote_llama_cpp_run_model_prefix }} {{ mac_ai_remote_llama_cpp_run_model_path }} \
+        -kvu \
         --model {{ mac_ai_remote_llama_cpp_run_model_name }} \
         --host 0.0.0.0 \
         --port {{ mac_ai_remote_llama_cpp_run_model_port }} \
