@@ -273,19 +273,31 @@ def call_analyze_lts(step_idx, common_args, common_env_str):
         regression_detected = False
     elif retcode < 100:
         logging.warning("A regression was detected.")
-        regression_detected = True
+        regression_detected = "regression detected"
     else:
         logging.warning("An error happened while analyzing the LTS payload ...")
         errors.append(log_file.name)
-        regression_detected = None
+        regression_detected = None # use the errors list
 
     env_file.unlink()
 
+    regression_summary_path = env.ARTIFACT_DIR / "regression_summary.yaml"
+
     run.run_toolbox(
         "repo", "send_cpt_notification",
-        regression_summary_path=(env.ARTIFACT_DIR / "regression_summary.yaml"),
+        regression_summary_path=regression_summary_path,
         title=config.project.get_config("matbench.lts.regression_analyses.notification.title"),
     )
+
+    if regression_detected and regression_summary_path.exists() :
+        with open(regression_summary_path) as f:
+            regression_summary = yaml.safe_load(f)
+
+        if regression_summary.get("significant_performance_increase", 0):
+            regression_detected = "performance boost"
+        else:
+            regression_detected = "performance regression"
+
 
     return errors, regression_detected
 
@@ -430,7 +442,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
         if regression_detected:
             if config.project.get_config("matbench.lts.regression_analyses.fail_test_on_regression"):
-                non_fatal_errors += ["regression detected"]
+                non_fatal_errors += [regression_detected]
             else:
                 logging.warning("A regression has been detected, but ignored as per matbench.lts.regression_analyses.fail_test_on_regression")
 
