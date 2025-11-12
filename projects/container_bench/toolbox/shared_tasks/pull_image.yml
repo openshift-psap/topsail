@@ -3,8 +3,12 @@
 # Usage:
 # - include_tasks: "../../shared_tasks/pull_image.yml"
 #   vars:
-#     image_name: "quay.io/example/image:tag"
-# Requires: binary_path, additional_args, image_name variables
+#     image_name: "quay.io/example/image:tag"  # Single image
+# OR
+# - include_tasks: "../../shared_tasks/pull_image.yml"
+#   vars:
+#     images_to_pull: ["image1:tag", "image2:tag"]  # Multiple images
+# Requires: binary_path, additional_args, and either image_name or images_to_pull variables
 # Note: Image names are sanitized by replacing all special characters with '_'
 
 - name: Validate required variables for image pulling
@@ -13,8 +17,16 @@
   when: vars[item] is not defined
   loop:
     - binary_path
-    - image_name
     - environment
+
+- name: Validate at least one image source is defined
+  fail:
+    msg: "Either 'image_name' or 'images_to_pull' must be defined"
+  when: (image_name is not defined or image_name | length == 0) and (images_to_pull is not defined or images_to_pull | length == 0)
+
+- name: Convert single image_name to list
+  set_fact:
+    images_list: "{{ [image_name] if (image_name is defined and image_name | length > 0) else images_to_pull }}"
 
 - name: Set path to directory with images tarfiles
   set_fact:
@@ -33,52 +45,9 @@
     state: directory
   when: ansible_os_family == 'Windows'
 
-- name: Set image tarfile path (Unix/Linux/macOS)
-  set_fact:
-    image_tarfile: "{{ images_path }}/{{ image_name | regex_replace('[^a-zA-Z0-9_-]', '_') }}.tar"
-  when: ansible_os_family != 'Windows'
-
-- name: Set image tarfile path (Windows)
-  set_fact:
-    image_tarfile: "{{ images_path }}\\{{ image_name | regex_replace('[^a-zA-Z0-9_-]', '_') }}.tar"
-  when: ansible_os_family == 'Windows'
-
-- name: Check if image tarfile exists (Unix/Linux/macOS)
-  stat:
-    path: "{{ image_tarfile }}"
-  register: tarfile_stat_unix
-  when: ansible_os_family != 'Windows'
-
-- name: Check if image tarfile exists (Windows)
-  ansible.windows.win_stat:
-    path: "{{ image_tarfile }}"
-  register: tarfile_stat_windows
-  when: ansible_os_family == 'Windows'
-
-- name: Set unified tarfile status (Unix)
-  set_fact:
-    tarfile_exists: "{{ tarfile_stat_unix.stat.exists | default(false) }}"
-  when: ansible_os_family != 'Windows'
-
-- name: Set unified tarfile status (Windows)
-  set_fact:
-    tarfile_exists: "{{ tarfile_stat_windows.stat.exists | default(false) }}"
-  when: ansible_os_family == 'Windows'
-
-- name: Load image from local tarfile (Unix/Linux/macOS)
-  become: "{{ rootfull | default(omit) }}"
-  shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
-  when: ansible_os_family != 'Windows' and tarfile_exists
-
-- name: Load image from local tarfile (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} load -i {{ image_tarfile }}"
-  when: ansible_os_family == 'Windows' and tarfile_exists
-
-- name: Pull image from registry (Unix/Linux/macOS)
-  become: "{{ rootfull | default(omit) }}"
-  shell: "{{ binary_path }} {{ additional_args | default('') }} pull {{ image_name }}"
-  when: ansible_os_family != 'Windows' and not tarfile_exists
-
-- name: Pull image from registry (Windows)
-  ansible.windows.win_shell: "{{ binary_path }} {{ additional_args | default('') }} pull {{ image_name }}"
-  when: ansible_os_family == 'Windows' and not tarfile_exists
+- name: Process each image
+  include_tasks: pull_single_image.yml
+  loop: "{{ images_list }}"
+  loop_control:
+    loop_var: current_image_name
+    label: "{{ current_image_name }}"

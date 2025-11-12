@@ -1,0 +1,27 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_remove_container_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    image_to_pull: "quay.io/podman/hello:latest"
+    prepare_commands: "{{ binary_path }} {{ additional_args }} create --name=benchmark quay.io/podman/hello:latest podman_hello_world"
+    cleanup_commands: ""  # Cleanup handled by shared tasks
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} rm -f benchmark
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

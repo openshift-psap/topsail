@@ -1,0 +1,30 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_sysbench_fileio_container_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set benchmark commands
+  set_fact:
+    image_to_pull: "docker.io/zyclonite/sysbench:1.0.21"
+    log_file_name: "fileio_container.log"
+    prepare_commands: ""
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+    benchmark_command: >-
+      {{ binary_path }} {{ additional_args }} run --rm --entrypoint="sh" docker.io/zyclonite/sysbench:1.0.21 -c
+      "sysbench fileio --file-total-size=64G prepare && sysbench fileio --file-total-size=64G --file-test-mode=rndrw run && sysbench fileio --file-total-size=64G cleanup"
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_synthetic_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

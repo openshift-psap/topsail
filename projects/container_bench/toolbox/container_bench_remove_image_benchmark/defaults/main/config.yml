@@ -1,0 +1,12 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Container_Bench.remove_image_benchmark
+
+# Parameters
+# dict containing execution properties (binary_path, rootfull, additional_args, exec_time_path)
+# Mandatory value
+container_bench_remove_image_benchmark_exec_props:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

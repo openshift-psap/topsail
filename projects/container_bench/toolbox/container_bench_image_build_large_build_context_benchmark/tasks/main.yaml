@@ -1,17 +1,14 @@
 ---
-- name: Validate required variables are defined
-  assert:
-    that:
-      - container_bench_image_build_large_build_context_benchmark_exec_time_path is defined
-      - container_bench_image_build_large_build_context_benchmark_binary_path is defined
-      - container_bench_image_build_large_build_context_benchmark_rootfull is defined
-      - container_bench_image_build_large_build_context_benchmark_additional_args is defined
-  when: false  # This task never runs but validates variable definitions
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_image_build_large_build_context_benchmark_exec_props }}"
 
-- name: Map long variable names to short aliases
-  include_tasks: "../../shared_tasks/map_variables.yml"
-  vars:
-    benchmark_role_name: "container_bench_image_build_large_build_context_benchmark"
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
 
 - name: Set common variables
   set_fact:

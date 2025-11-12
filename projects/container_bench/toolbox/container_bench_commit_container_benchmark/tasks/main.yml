@@ -1,0 +1,30 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_commit_container_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    image_to_pull: "registry.fedoraproject.org/fedora:42"
+    prepare_commands: |
+      {{ binary_path }} {{ additional_args }} run --name=c-bench registry.fedoraproject.org/fedora:42 bash -c 'dd if=/dev/urandom of=1G-file bs=1G count=1'
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rm -f c-bench
+      {{ binary_path }} {{ additional_args }} rmi -f new-image-with-file:latest
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} commit c-bench new-image-with-file:latest
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

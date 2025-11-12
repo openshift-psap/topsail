@@ -68,6 +68,11 @@ prepare:
     dependencies:
       - krunkit
 
+  choco:
+    install_dependencies: false
+    dependencies:
+      - podman-cli
+
   dnf:
     install_dependencies: false
     enable_docker_repo: true
@@ -105,7 +110,14 @@ prepare:
     dir: "{@remote_host.base_work_dir}/images"
     images:
       - "quay.io/podman/hello:latest"
-      - "registry.fedoraproject.org/fedora:latest"
+      - "docker.io/zyclonite/sysbench:1.0.21"
+      - "docker.io/mlabbe/iperf3:3.17.1-r0"
+      - "registry.fedoraproject.org/fedora:42"
+      - "docker.io/library/registry:2"
+      - "docker.io/tensorflow/tensorflow:latest-gpu"
+      - "docker.io/library/alpine:3.22.2"
+      - "docker.io/library/golang:1.24"
+      - "docker.io/library/nginx:1.29.3-perl"
 
   podman:
     # Custom binary or repo version must be disabled for matbenchmarking
@@ -142,7 +154,7 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 12 # in cores
+        cpus: 8 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
@@ -170,31 +182,109 @@ cleanup:
 export_artifacts:
   enabled: false
 
-helloworld_benchmark:
-  runs: 3
-  supported_container_engines:
-    - podman
-    - docker
+# Container Benchmarks
+#
+# Each benchmark can define:
+#   supported_container_engines: List of container engines that support the benchmark
+#   runs: Number of times to run the benchmark
+# If supported_container_engines is not defined, it defaults to ["podman", "docker"]
 
-exec_benchmark:
-  runs: 5
-  supported_container_engines:
-    - podman
-    - docker
+run_container_benchmark:
+  runs: 1
+
+exec_container_benchmark:
+  runs: 1
+
+commit_container_benchmark:
+  runs: 1
+
+create_container_benchmark:
+  runs: 1
+
+list_images_benchmark:
+  runs: 1
+
+pull_image_benchmark:
+  runs: 1
+
+remove_image_benchmark:
+  runs: 1
+
+remove_container_benchmark:
+  runs: 1
+
+load_image_benchmark:
+  runs: 1
+
+save_image_benchmark:
+  runs: 1
+
+start_container_benchmark:
+  runs: 1
+
+parallel_remove_image_benchmark:
+  runs: 1
 
 image_build_large_build_context_benchmark:
-  runs: 10
+  runs: 1
+
+artifact_add_benchmark:
+  runs: 1
   supported_container_engines:
     - podman
-    - docker
+
+
+# Synthetic Benchmarks
+sysbench_cpu_benchmark:
+  runs: 1
+
+sysbench_memory_read_benchmark:
+  runs: 1
+
+sysbench_memory_write_benchmark:
+  runs: 1
+
+sysbench_fileio_container_benchmark:
+  runs: 1
+
+sysbench_fileio_mount_benchmark:
+  runs: 1
+
+iperf_net_bridge_benchmark:
+  runs: 1
+
+iperf_net_host_benchmark:
+  runs: 1
+
+iperf_host_to_container_benchmark:
+  runs: 1
 
 test:
   platform: *all_platforms
   platforms_to_skip:
   benchmark:
-    - helloworld_benchmark
-    # - exec_benchmark
-    # - image_build_large_build_context_benchmark
+    - run_container_benchmark
+    - exec_container_benchmark
+    - image_build_large_build_context_benchmark
+    # - artifact_add_benchmark
+    - sysbench_cpu_benchmark
+    - sysbench_memory_read_benchmark
+    - sysbench_memory_write_benchmark
+    - sysbench_fileio_container_benchmark
+    - sysbench_fileio_mount_benchmark
+    - iperf_net_bridge_benchmark
+    - iperf_net_host_benchmark
+    - iperf_host_to_container_benchmark
+    - commit_container_benchmark
+    - create_container_benchmark
+    - list_images_benchmark
+    - pull_image_benchmark
+    - remove_image_benchmark
+    - remove_container_benchmark
+    - start_container_benchmark
+    - load_image_benchmark
+    - save_image_benchmark
+    - parallel_remove_image_benchmark
   podman:
     machine_provider:
      - libkrun
@@ -205,8 +295,9 @@ test:
      - true
      - false
     repo_version:
-     - v5.5.0
-    # - custom
+     - v5.6.0
+     - v5.2.0
+     # - custom
     runtime: # Linux only
      - crun
      - runc
@@ -218,10 +309,10 @@ test:
     stop_on_error: true
     iterable_test_fields:
      - test.platform
-     - test.podman.repo_version
+    # - test.podman.repo_version
     # - test.podman.rootful
-     - test.podman.machine_provider
-     - test.podman.runtime
+    # - test.podman.machine_provider
+    # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version

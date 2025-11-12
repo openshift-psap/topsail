@@ -1,0 +1,33 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_remove_image_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    images_to_pull:
+      - "docker.io/tensorflow/tensorflow:latest-gpu"
+      - "registry.fedoraproject.org/fedora:42"
+      - "docker.io/library/alpine:3.22.2"
+      - "quay.io/podman/hello:latest"
+      - "docker.io/library/golang:1.24"
+      - "docker.io/library/nginx:1.29.3-perl"
+    prepare_commands: "" # Image is pulled using shared pull_image task below
+    cleanup_commands: "" # Cleanup handled by shared tasks
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/tensorflow/tensorflow:latest-gpu
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

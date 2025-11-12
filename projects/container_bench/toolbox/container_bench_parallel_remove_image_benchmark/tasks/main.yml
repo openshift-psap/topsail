@@ -1,0 +1,43 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_parallel_remove_image_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set common commands
+  set_fact:
+    images_to_pull:
+      - "docker.io/tensorflow/tensorflow:latest-gpu"
+      - "registry.fedoraproject.org/fedora:42"
+      - "docker.io/library/alpine:3.22.2"
+      - "quay.io/podman/hello:latest"
+      - "docker.io/library/golang:1.24"
+      - "docker.io/library/nginx:1.29.3-perl"
+    prepare_commands: ""
+    cleanup_commands: ""
+
+- name: Set common commands (Unix/Linux)
+  set_fact:
+    benchmark_command: >-
+      sh -c '{{ binary_path }} {{ additional_args }} rmi -f docker.io/tensorflow/tensorflow:latest-gpu > /dev/null 2>&1 & sleep 0.1; {{ binary_path }} {{ additional_args }} images'
+  when: ansible_os_family != 'Windows'
+
+- name: Set common commands (Windows)
+  set_fact:
+    benchmark_command: >-
+      powershell -Command "Start-Job -ScriptBlock { {{ binary_path }} {{ additional_args }} rmi -f docker.io/tensorflow/tensorflow:latest-gpu } | Out-Null; Start-Sleep -Milliseconds 100; {{ binary_path }} {{ additional_args }} images"
+  when: ansible_os_family == 'Windows'
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

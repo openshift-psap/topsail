@@ -1,0 +1,36 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_save_image_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    image_to_pull: "docker.io/tensorflow/tensorflow:latest-gpu"
+    prepare_commands: ""
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} save docker.io/tensorflow/tensorflow:latest-gpu -o tensorflow.tar
+
+- name: Set Unix/Linux cleanup commands
+  set_fact:
+    cleanup_commands: "rm -rf tensorflow.tar"
+  when: ansible_os_family != 'Windows'
+
+- name: Set Windows cleanup commands
+  set_fact:
+    cleanup_commands: "Remove-Item -Recurse -Force tensorflow.tar"
+  when: ansible_os_family == 'Windows'
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

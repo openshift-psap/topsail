@@ -1,0 +1,64 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_artifact_add_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set benchmark variables
+  set_fact:
+    image_to_pull: ""
+    artifact_name: "quay.io/myartifact/benchmark:latest"
+    artifact_dir: "{{ '$env:USERPROFILE\\artifacts' if ansible_os_family == 'Windows' else '${HOME}/artifacts' }}"
+
+- name: Set benchmark command
+  set_fact:
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} artifact add {{ artifact_name }} {{ artifact_dir }}/random-file
+
+- name: Set Unix/Linux cleanup commands
+  set_fact:
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} artifact rm {{ artifact_name }}
+      rm -rf {{ artifact_dir }}
+  when: ansible_os_family != 'Windows'
+
+- name: Set Windows cleanup commands
+  set_fact:
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} artifact rm {{ artifact_name }}
+      $buildContextDir = "{{ artifact_dir }}"
+      if (Test-Path $buildContextDir) { Remove-Item -Recurse -Force $buildContextDir }
+  when: ansible_os_family == 'Windows'
+
+- name: Set Unix/Linux prepare commands
+  set_fact:
+    prepare_commands: |
+      mkdir {{ artifact_dir }}
+      cd {{ artifact_dir }}
+      dd if=/dev/urandom of=random-file bs=1G count=5
+  when: ansible_os_family != 'Windows'
+
+- name: Set Windows prepare commands
+  set_fact:
+    prepare_commands: |
+      $artifactDir = "{{ artifact_dir }}"
+      if (Test-Path $artifactDir) { Remove-Item -Recurse -Force $artifactDir }
+      New-Item -ItemType Directory -Force -Path $artifactDir
+      $randomFile = "$artifactDir\random-file"
+      fsutil file createnew $randomFile 5368709120
+  when: ansible_os_family == 'Windows'
+
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_default_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_default_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

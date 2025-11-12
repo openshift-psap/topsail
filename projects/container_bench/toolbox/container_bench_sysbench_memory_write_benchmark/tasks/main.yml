@@ -1,0 +1,29 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_sysbench_memory_write_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set benchmark commands
+  set_fact:
+    image_to_pull: "docker.io/zyclonite/sysbench:1.0.21"
+    log_file_name: "memory_write_benchmark.log"
+    prepare_commands: ""
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} run --rm docker.io/zyclonite/sysbench:1.0.21 memory --memory-total-size=100G --memory-oper=write run
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_synthetic_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

@@ -282,11 +282,15 @@ def capture_metrics(platform):
 
 def prepare_benchmark_args(platform, benchmark, base_work_dir):
     c = ContainerEngine(platform.container_engine)
-    benchmark_kwargs = dict(
-        binary_path=c.engine_binary,
+    exec_props = dict(
+        binary_path=str(c.engine_binary),
         rootfull=c.is_rootful(),
         additional_args=c.additional_args(),
-        exec_time_path=utils.get_benchmark_script_path(base_work_dir),
+        exec_time_path=str(utils.get_benchmark_script_path(base_work_dir)),
+    )
+
+    benchmark_kwargs = dict(
+        exec_props=exec_props,
         artifact_dir_suffix="_run_metrics"
     )
 

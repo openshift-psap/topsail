@@ -2,6 +2,7 @@ import math
 import types
 import yaml
 import json
+from pathlib import Path
 
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
@@ -17,11 +18,77 @@ artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO = "*__container_bench__capture_c
 
 artifact_paths = types.SimpleNamespace()  # will be dynamically populated
 
+UNIT_MIBS = "MiB/s"
+UNIT_MIBSEC = "MiB/sec"
+UNIT_GBITS = "Gbits/sec"
+UNIT_EVENTS = "events/sec"
+
+BENCHMARK_TYPE_MAPPING = {
+    "sysbench_cpu_benchmark": {
+        "title": f"CPU ({UNIT_EVENTS})",
+        "log_filename": "cpu_benchmark.log",
+        "timestamp_filename": "cpu_benchmark_ts.yaml",
+    },
+    "sysbench_memory_read_benchmark": {
+        "title": f"Memory READ ({UNIT_MIBSEC})",
+        "log_filename": "memory_read_benchmark.log",
+        "timestamp_filename": "memory_read_benchmark_ts.yaml",
+    },
+    "sysbench_memory_write_benchmark": {
+        "title": f"Memory WRITE ({UNIT_MIBSEC})",
+        "log_filename": "memory_write_benchmark.log",
+        "timestamp_filename": "memory_write_benchmark_ts.yaml",
+    },
+    "sysbench_fileio_container": {
+        "title": f"File I/O Throughput ({UNIT_MIBS})",
+        "log_filename": "fileio_container.log",
+        "timestamp_filename": "fileio_container_ts.yaml",
+    },
+    "sysbench_fileio_mount": {
+        "title": f"File I/O Throughput ({UNIT_MIBS})",
+        "log_filename": "fileio_mount.log",
+        "timestamp_filename": "fileio_mount_ts.yaml",
+    },
+    "iperf_net_bridge_benchmark": {
+        "title": f"Network Bitrate ({UNIT_GBITS})",
+        "log_filename": "iperf_net_bridge.log",
+        "timestamp_filename": "iperf_net_bridge_ts.yaml",
+    },
+    "iperf_net_host_benchmark": {
+        "title": f"Network Bitrate ({UNIT_GBITS})",
+        "log_filename": "iperf_net_host.log",
+        "timestamp_filename": "iperf_net_host_ts.yaml",
+    },
+    "iperf_host_to_container_benchmark": {
+        "title": f"Network Bitrate ({UNIT_GBITS})",
+        "log_filename": "iperf_host_to_container.log",
+        "timestamp_filename": "iperf_host_to_container_ts.yaml",
+    },
+}
+
 IMPORTANT_FILES = [
     "config.yaml",
     ".uuid",
 
     f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/metrics.json",
+
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/cpu_benchmark.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_read_benchmark.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_write_benchmark.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_container.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_mount.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_bridge.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_host.log",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_host_to_container.log",
+
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/cpu_benchmark_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_read_benchmark_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/memory_write_benchmark_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_container_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/fileio_mount_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_bridge_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_net_host_ts.yaml",
+    f"{artifact_dirnames.RUN_BENCHMARK}/artifacts/iperf_host_to_container_ts.yaml",
 
     f"{artifact_dirnames.CAPTURE_SYSTEM_STATE}/artifacts/system_info.txt",
     f"{artifact_dirnames.CAPTURE_CONTAINER_ENGINE_INFO}/artifacts/container_engine_info.json",
@@ -43,14 +110,148 @@ def parse_once(results, dirname):
     results.from_env = helpers_store_parsers.parse_env(dirname, results.test_config, capture_state_dir)
 
     results.metrics = _parse_metrics(dirname)
+    if results.metrics is None:
+        results.metrics = _parse_synthetic_benchmark(dirname)
 
     results.system_state = _parse_system_state(dirname)
     results.container_engine_info = _parse_container_engine_info(dirname)
 
 
+def _parse_cpu_benchmark(line, metric):
+    if "events per second:" in line:
+        metric.value = float(line.split(":")[1].strip())
+        metric.unit = UNIT_EVENTS
+        return True
+    return False
+
+
+def _parse_memory_benchmark(line, metric):
+    if "MiB transferred" in line:
+        parts = line.split("(")
+        if len(parts) >= 2:
+            speed_part = parts[1].split(")")[0]
+            metric.value = float(speed_part.split()[0])
+            metric.unit = UNIT_MIBSEC
+            return True
+    return False
+
+
+def _parse_fileio_benchmark(line, metric):
+    if "read, MiB/s:" in line:
+        metric.read_throughput = float(line.split(":")[1].strip())
+        metric.unit = UNIT_MIBS
+        return True
+    elif "written, MiB/s:" in line:
+        metric.write_throughput = float(line.split(":")[1].strip())
+        metric.unit = UNIT_MIBS
+        return True
+    return False
+
+
+def _parse_network_benchmark(line, metric):
+    if "receiver" not in line:
+        return False
+
+    parts = line.split()
+    if len(parts) < 7:
+        return False
+
+    for i, part in enumerate(parts):
+        if "bits/sec" in part:
+            try:
+                bitrate_value = float(parts[i-1])
+                if "Gbits/sec" in part:
+                    metric.value = bitrate_value
+                    metric.unit = UNIT_GBITS
+                elif "Mbits/sec" in part:
+                    metric.value = bitrate_value / 1000.0
+                    metric.unit = UNIT_GBITS
+                return True
+            except (ValueError, IndexError):
+                pass
+    return False
+
+
+BENCHMARK_PARSERS = {
+    'sysbench_cpu_benchmark': _parse_cpu_benchmark,
+    'sysbench_memory_read_benchmark': _parse_memory_benchmark,
+    'sysbench_memory_write_benchmark': _parse_memory_benchmark,
+    'sysbench_fileio_container': _parse_fileio_benchmark,
+    'sysbench_fileio_mount': _parse_fileio_benchmark,
+    'iperf_net_bridge_benchmark': _parse_network_benchmark,
+    'iperf_net_host_benchmark': _parse_network_benchmark,
+    'iperf_host_to_container_benchmark': _parse_network_benchmark,
+}
+
+
+def _read_timestamp_from_file(dirname, benchmark_path, log_file_name):
+    timestamp_file = benchmark_path / "artifacts" / log_file_name.replace('.log', '_ts.yaml')
+    if not timestamp_file.exists():
+        return None
+    try:
+        with open(register_important_file(dirname, timestamp_file)) as f:
+            timestamp_data = yaml.safe_load(f)
+            return timestamp_data.get('start_time')
+    except Exception:
+        return None
+
+
+@helpers_store_parsers.ignore_file_not_found
+def _parse_synthetic_benchmark(dirname):
+    metric = types.SimpleNamespace()
+    metric.type = "synthetic_benchmark"
+
+    if not artifact_paths.RUN_BENCHMARK:
+        return None
+
+    type_ = ""
+    title_ = ""
+    log_file_name = ""
+
+    for key, config in BENCHMARK_TYPE_MAPPING.items():
+        if key in dirname.name:
+            type_ = key
+            title_ = config['title']
+            log_file_name = config['log_filename']
+            break
+
+    # If no matching synthetic benchmark type found, return None
+    if not type_ or not log_file_name:
+        return None
+
+    metric.synthetic_benchmark_type = type_
+    metric.synthetic_benchmark_title = title_
+    metric.timestamp = None
+    metric.unit = ""
+    metric.value = None
+    metric.read_throughput = None
+    metric.write_throughput = None
+
+    for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
+        if not Path(benchmark_path / "artifacts" / log_file_name).exists():
+            continue
+
+        with open(
+            register_important_file(dirname, benchmark_path / "artifacts" / log_file_name)
+        ) as f:
+            lines = f.readlines()
+
+            parser = BENCHMARK_PARSERS.get(type_)
+            if parser:
+                for line in lines:
+                    parser(line, metric)
+
+            metric.full_log = "".join(lines)
+
+        metric.timestamp = _read_timestamp_from_file(dirname, benchmark_path, log_file_name)
+
+    return metric
+
+
 @helpers_store_parsers.ignore_file_not_found
 def _parse_metrics(dirname):
     metric = types.SimpleNamespace()
+    metric.type = "container_bench"
 
     if not artifact_paths.RUN_BENCHMARK:
         return None
@@ -66,6 +267,8 @@ def _parse_metrics(dirname):
     timestamp = 0
     memory_usages = []
     for benchmark_path in dirname.glob(RUN_BENCHMARK_DIR):
+        if not Path(benchmark_path / "artifacts" / "metrics.json").exists():
+            continue
         with open(
             register_important_file(dirname, benchmark_path / "artifacts" / "metrics.json")
         ) as f:

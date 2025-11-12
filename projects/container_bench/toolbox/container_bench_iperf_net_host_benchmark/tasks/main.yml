@@ -1,0 +1,31 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_iperf_net_host_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+
+- name: Set benchmark commands
+  set_fact:
+    image_to_pull: "docker.io/mlabbe/iperf3:3.17.1-r0"
+    log_file_name: "iperf_net_host.log"
+    prepare_commands: |
+       {{ binary_path }} {{ additional_args }} run -d --network=host --name iperf3-server docker.io/mlabbe/iperf3:3.17.1-r0 -s -d
+    cleanup_commands: |
+      {{ binary_path }} {{ additional_args }} stop iperf3-server
+      {{ binary_path }} {{ additional_args }} rm -f iperf3-server
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/mlabbe/iperf3:3.17.1-r0
+    benchmark_command: |
+      {{ binary_path }} {{ additional_args }} run --rm --network=host docker.io/mlabbe/iperf3:3.17.1-r0 -c 127.0.0.1
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_synthetic_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'

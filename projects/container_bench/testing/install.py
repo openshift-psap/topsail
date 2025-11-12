@@ -38,5 +38,17 @@ def dependencies(base_work_dir, capture_stderr=False):
             f"sudo dnf install -y {dependencies}",
             capture_stderr=capture_stderr,
         )
+    if system_type == SystemType.WINDOWS:
+        choco_config = ConfigManager.get_choco_config()
+        if not choco_config['install_dependencies']:
+            return None
+
+        dependencies = " ".join(choco_config['dependencies'])
+
+        return remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            f"choco install -y {dependencies}",
+            capture_stderr=capture_stderr,
+        )
 
     return None

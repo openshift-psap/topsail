@@ -19,6 +19,55 @@ from .utils.shared import (
     detect_windows_system
 )
 
+STYLE_TITLE = {
+    'font-weight': '600',
+    'color': '#6c757d',
+    'margin-bottom': '0.5rem'
+}
+
+STYLE_VALUE = {
+    'font-size': '2rem',
+    'font-weight': '300',
+    'color': '#007BFF'
+}
+
+STYLE_FILEIO_VALUE = {
+    'font-size': '1.5rem',
+    'font-weight': '300',
+    'color': '#007BFF',
+    'margin': '0.3rem 0'
+}
+
+STYLE_FILEIO_LABEL = {
+    'font-size': '0.9rem',
+    'font-weight': '600',
+    'color': '#6c757d',
+    'text-transform': 'uppercase',
+    'letter-spacing': '0.05em'
+}
+
+STYLE_ERROR = {
+    'font-size': '1.5rem',
+    'font-weight': '300',
+    'color': '#dc3545'
+}
+
+STYLE_TIMESTAMP = {
+    'font-size': '0.875rem',
+    'color': '#6c757d',
+    'margin-top': '0.5rem'
+}
+
+STYLE_CARD = {
+    'background': 'white',
+    'padding': '1.5rem',
+    'border-radius': '8px',
+    'box-shadow': '0 2px 8px rgba(0,0,0,0.08)',
+    'text-align': 'center'
+}
+
+STYLE_FILEIO_SECTION = {'margin-bottom': '0.5rem'}
+
 
 def register():
     BenchmarkReport()
@@ -72,6 +121,40 @@ def generate_engine_items(container_engine_info, system_info, provider_info):
     return formatted_items
 
 
+def _create_fileio_card_content(benchmark_title, read_throughput, write_throughput):
+    return [
+        html.Div(benchmark_title, style=STYLE_TITLE),
+        html.Div([
+            html.Div([
+                html.Div("Read", style=STYLE_FILEIO_LABEL),
+                html.Div(f"{read_throughput:.2f} MiB/s", style=STYLE_FILEIO_VALUE)
+            ], style=STYLE_FILEIO_SECTION),
+            html.Div([
+                html.Div("Write", style=STYLE_FILEIO_LABEL),
+                html.Div(f"{write_throughput:.2f} MiB/s", style=STYLE_FILEIO_VALUE)
+            ])
+        ])
+    ]
+
+
+def _create_standard_card_content(benchmark_title, benchmark_value, benchmark_unit):
+    value_display = f"{benchmark_value:.2f}"
+    if benchmark_unit:
+        value_display = f"{benchmark_value:.2f} {benchmark_unit}"
+
+    return [
+        html.Div(benchmark_title, style=STYLE_TITLE),
+        html.Div(value_display, style=STYLE_VALUE)
+    ]
+
+
+def _create_error_card_content(benchmark_title):
+    return [
+        html.Div(benchmark_title, style=STYLE_TITLE),
+        html.Div("No result available", style=STYLE_ERROR)
+    ]
+
+
 def generate_one_benchmark_report(report_components, settings, benchmark, args):
     info = GetInfo(settings)
     if not info:
@@ -84,6 +167,52 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
         html.H2(f"Benchmark: {format_benchmark_title(benchmark)}", style=css.STYLE_H2_SECTION),
     ])
 
+    body = []
+
+    if info.get('metric_type') == 'synthetic_benchmark':
+        benchmark_value = info.get('benchmark_value')
+        benchmark_title = info.get('benchmark_title', 'Result')
+        benchmark_type = info.get('benchmark_type', '')
+        benchmark_unit = info.get('benchmark_unit', '')
+        read_throughput = info.get('benchmark_read_throughput')
+        write_throughput = info.get('benchmark_write_throughput')
+        timestamp = info.get('timestamp')
+
+        if 'fileio' in benchmark_type and read_throughput is not None and write_throughput is not None:
+            card_content = _create_fileio_card_content(benchmark_title, read_throughput, write_throughput)
+        elif benchmark_value is not None:
+            card_content = _create_standard_card_content(benchmark_title, benchmark_value, benchmark_unit)
+        else:
+            card_content = _create_error_card_content(benchmark_title)
+
+        if timestamp:
+            card_content.append(
+                html.Div(f"Timestamp: {timestamp}", style=STYLE_TIMESTAMP)
+            )
+
+        result_card = html.Div([
+            html.Div(card_content, style=STYLE_CARD)
+        ], style={'margin-bottom': '2rem'})
+        body.append(result_card)
+
+    if info.get('metric_type') == 'synthetic_benchmark':
+        benchmark_log = info.get('benchmark_full_log', '')
+        if benchmark_log:
+            log_section = html.Details([
+                html.Summary(
+                    'Click for Full Benchmark Log',
+                    style=css.STYLE_DETAILS_SUMMARY
+                ),
+                html.Div([
+                    html.H4("Benchmark Output", style=css.STYLE_H4),
+                    html.Pre(
+                        benchmark_log,
+                        style=css.STYLE_JSON_PRE
+                    )
+                ], style=css.STYLE_DETAILS_CONTENT)
+            ], style=css.STYLE_DETAILS)
+            body.append(log_section)
+
     host_items = generate_host_items(system)
     engine_items = generate_engine_items(
         container_engine_info,
@@ -91,21 +220,22 @@ def generate_one_benchmark_report(report_components, settings, benchmark, args):
         info.get('container_engine_provider', 'N/A')
     )
 
-    summary_row = html.Div([
-        create_summary_info_card(info, "Benchmark Summary")
-    ], style=css.STYLE_INFO_ROW)
+    info_section_parts = []
+    if info.get('metric_type') == 'container_bench':
+        summary_row = html.Div([
+            create_summary_info_card(info, "Benchmark Summary")
+        ], style=css.STYLE_INFO_ROW)
+        info_section_parts.append(summary_row)
 
     system_row = html.Div([
         html_elements.info_card("Host System Information", host_items),
         html_elements.info_card("Container Engine Information", engine_items)
     ], style=css.STYLE_INFO_ROW)
+    info_section_parts.append(system_row)
 
-    info_section = html.Div([
-        summary_row,
-        system_row
-    ])
+    info_section = html.Div(info_section_parts)
+    body.append(info_section)
 
-    body = [info_section]
     if info.get('execution_time_95th_percentile', 0) > MIN_PLOT_BENCHMARK_TIME:  # Only show plots for longer benchmarks
         plot_names = [
             "System CPU Usage",
