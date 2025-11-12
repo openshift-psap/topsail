@@ -3,19 +3,9 @@
 # Source component: Container_Bench.iperf_net_host_benchmark
 
 # Parameters
-# path to the exec_time.py script
+# dict containing execution properties (binary_path, rootfull, additional_args, exec_time_path)
 # Mandatory value
-container_bench_iperf_net_host_benchmark_exec_time_path:
-
-# path to the container engine binary (e.g., docker, podman)
-# Mandatory value
-container_bench_iperf_net_host_benchmark_binary_path:
-
-# whether to run the benchmark as root user
-container_bench_iperf_net_host_benchmark_rootfull: false
-
-# additional arguments to pass to the container engine binary
-container_bench_iperf_net_host_benchmark_additional_args:
+container_bench_iperf_net_host_benchmark_exec_props:
 
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone

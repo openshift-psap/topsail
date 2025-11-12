@@ -182,83 +182,51 @@ cleanup:
 export_artifacts:
   enabled: false
 
+# Container Benchmarks
+#
+# Each benchmark can define:
+#   supported_container_engines: List of container engines that support the benchmark
+#   runs: Number of times to run the benchmark
+# If supported_container_engines is not defined, it defaults to ["podman", "docker"]
+
 run_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 exec_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 commit_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 create_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 list_images_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 pull_image_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 remove_image_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 remove_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 load_image_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 save_image_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 start_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 parallel_remove_image_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 image_build_large_build_context_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 artifact_add_benchmark:
   runs: 1
@@ -269,51 +237,27 @@ artifact_add_benchmark:
 # Synthetic Benchmarks
 sysbench_cpu_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 sysbench_memory_read_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 sysbench_memory_write_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 sysbench_fileio_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 sysbench_fileio_mount_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 iperf_net_bridge_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 iperf_net_host_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 iperf_host_to_container_benchmark:
   runs: 1
-  supported_container_engines:
-    - podman
-    - docker
 
 test:
   platform: *all_platforms

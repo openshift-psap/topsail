@@ -173,7 +173,7 @@ class ConfigManager:
     def get_benchmark_config(benchmark_name):
         return {
             'supported_container_engines': config.project.get_config(
-                f"{benchmark_name}.supported_container_engines", print=False),
+                f"{benchmark_name}.supported_container_engines", default_value=["podman", "docker"], print=False),
             'runs': config.project.get_config(f"{benchmark_name}.runs", print=False),
         }
 

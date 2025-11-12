@@ -9,7 +9,7 @@
 container_bench sysbench_memory_write_benchmark
 ===============================================
 
-Runs the sysbench memory write benchmark with the given runtime
+Runs the sysbench memory write benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script
 
 
 
@@ -18,22 +18,7 @@ Parameters
 ----------
 
 
-``exec_time_path``  
+``exec_props``  
 
-* Path to the exec_time.py script
-
-
-``binary_path``  
-
-* Path to the container engine binary (e.g., docker, podman)
-
-
-``rootfull``  
-
-* Whether to run the benchmark as root user
-
-
-``additional_args``  
-
-* Additional arguments to pass to the container engine binary
+* Dict containing execution properties (binary_path, rootfull, additional_args, exec_time_path)
 
