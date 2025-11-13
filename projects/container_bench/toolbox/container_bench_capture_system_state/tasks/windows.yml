@@ -16,7 +16,7 @@
     $uptime = (Get-Date) - $os.ConvertToDateTime($os.LastBootUpTime)
 
     # Format software information like macOS
-    "      System Version: $($computerInfo.WindowsProductName) $($computerInfo.WindowsVersion) (Build $($computerInfo.WindowsBuildLabEx))" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
+    "      System Version: $($computerInfo.OsName) $($computerInfo.OsVersion) (Build $($computerInfo.WindowsBuildLabEx))" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
     "      Computer Name: $($computerInfo.CsName)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
     "      User Name: $($env:USERNAME)" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
     "      Time since boot: $($uptime.Days) days, $($uptime.Hours) hours, $($uptime.Minutes) minutes" | Out-File -FilePath "{{ artifact_extra_logs_dir }}\artifacts\system_info.txt" -Append -Encoding UTF8
