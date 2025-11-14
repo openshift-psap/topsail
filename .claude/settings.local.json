@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(topsail-ci)",
+      "WebFetch(domain:gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
