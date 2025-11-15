@@ -111,7 +111,7 @@ prepare:
     images:
       - "quay.io/podman/hello:latest"
       - "docker.io/zyclonite/sysbench:1.0.21"
-      - "docker.io/mlabbe/iperf3:3.17.1-r0"
+      - "docker.io/networkstatic/iperf3:latest"
       - "registry.fedoraproject.org/fedora:42"
       - "docker.io/library/registry:2"
       - "docker.io/tensorflow/tensorflow:latest-gpu"

@@ -10,16 +10,21 @@
     exec_time_path: "{{ exec_props.exec_time_path }}"
     rootfull: "{{ exec_props.rootfull }}"
 
+- name: Set sleep command
+  set_fact:
+    sleep_cmd: "{{ 'Start-Sleep -Seconds 5' if ansible_os_family == 'Windows' else 'sleep 5' }}"
+
 - name: Set benchmark commands
   set_fact:
-    image_to_pull: "docker.io/mlabbe/iperf3:3.17.1-r0"
+    image_to_pull: "docker.io/networkstatic/iperf3:latest"
     log_file_name: "iperf_host_to_container.log"
     prepare_commands: |
-      {{ binary_path }} {{ additional_args }} run -d -p 5201:5201 --name iperf3-server docker.io/mlabbe/iperf3:3.17.1-r0 -s -d
+      {{ binary_path }} {{ additional_args }} run -d -p 5201:5201 --name iperf3-server docker.io/networkstatic/iperf3:latest -s -d
+      {{ sleep_cmd }}
     cleanup_commands: |
       {{ binary_path }} {{ additional_args }} stop iperf3-server
       {{ binary_path }} {{ additional_args }} rm -f iperf3-server
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/mlabbe/iperf3:3.17.1-r0
+      {{ binary_path }} {{ additional_args }} rmi -f docker.io/networkstatic/iperf3:latest
     benchmark_command: |
       iperf3 -c 127.0.0.1
 
