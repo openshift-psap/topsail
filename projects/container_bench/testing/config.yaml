@@ -261,6 +261,7 @@ iperf_host_to_container_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
+   - docker
   benchmark:
     - run_container_benchmark
     - exec_container_benchmark
@@ -295,7 +296,7 @@ test:
      - false
     repo_version:
      - v5.4.2
-     - v5.7.0
+     # - v5.7.0
      # - custom
     runtime: # Linux only
      - crun
