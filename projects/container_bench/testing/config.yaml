@@ -264,7 +264,7 @@ iperf_host_to_container_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
-    - docker
+    - podman
   benchmark:
     - run_container_benchmark
     - exec_container_benchmark
@@ -312,7 +312,7 @@ test:
     stop_on_error: true
     iterable_test_fields:
      - test.platform
-     - test.podman.repo_version
+    # - test.podman.repo_version
     # - test.podman.rootful
     # - test.podman.machine_provider
     # - test.podman.runtime
