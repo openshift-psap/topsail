@@ -298,8 +298,8 @@ test:
      - true
      - false
     repo_version:
-     - v5.4.2
-     # - v5.7.0
+     # - v5.4.2
+     - v5.7.0
      # - custom
     runtime: # Linux only
      - crun
