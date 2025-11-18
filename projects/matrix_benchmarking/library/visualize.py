@@ -452,7 +452,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
     if do_upload_lts:
         if config.project.get_config("matbench.lts.regression_analyses.upload_lts_on_regression", True):
-            skip_upload = non_fatal_errors and list(non_fatal_errors) != ["regression detected"]
+            skip_upload = (non_fatal_errors
+                           and list(non_fatal_errors) != ["regression detected"]
+                           and list(non_fatal_errors) != ["performance regression"]
+                           and list(non_fatal_errors) != ["performance boost"])
         else:
             # don't skip the upload if a regression has been detected
             skip_upload = bool(non_fatal_errors)
