@@ -195,6 +195,16 @@ ci_presets:
     - macos/llama_cpp/vulkan
     prepare.platforms.to_build: null # use test.platform
 
+  vulkan-regression:
+    extends: [inference_only]
+    test.platform:
+    - macos/llama_cpp/vulkan
+    prepare.platforms.to_build: null # use test.platform
+    test.matbenchmarking.enabled: true
+    prepare.llama_cpp.source.repo.version:
+    - b6924
+    - b6927
+
   # ---
   micro_bench:
     test.inference_server.benchmark.llama_cpp.backend_ops_perf: true
