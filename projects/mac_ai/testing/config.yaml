@@ -37,6 +37,12 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
     remote_host.description: "kpouget's MacBook M4 Pro"
 
+  kpouget-atuona:
+    secrets.hostname: mac_ai__hostname.kpouget-atuona
+    secrets.username: mac_ai__username.kpouget-atuona
+    secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
+    remote_host.description: "kpouget's Atuona system"
+
   # ---
 
   use_intlab_os:
