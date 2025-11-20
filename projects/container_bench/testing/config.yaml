@@ -111,7 +111,7 @@ prepare:
     images:
       - "quay.io/podman/hello:latest"
       - "docker.io/zyclonite/sysbench:1.0.21"
-      - "docker.io/mlabbe/iperf3:3.17.1-r0"
+      - "docker.io/networkstatic/iperf3:latest"
       - "registry.fedoraproject.org/fedora:42"
       - "docker.io/library/registry:2"
       - "docker.io/tensorflow/tensorflow:latest-gpu"
@@ -154,7 +154,7 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 8 # in cores
+        cpus: 12 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
@@ -190,49 +190,48 @@ export_artifacts:
 # If supported_container_engines is not defined, it defaults to ["podman", "docker"]
 
 run_container_benchmark:
-  runs: 1
+  runs: 10
 
 exec_container_benchmark:
-  runs: 1
+  runs: 10
 
 commit_container_benchmark:
-  runs: 1
+  runs: 10
 
 create_container_benchmark:
-  runs: 1
+  runs: 10
 
 list_images_benchmark:
-  runs: 1
+  runs: 10
 
 pull_image_benchmark:
-  runs: 1
+  runs: 10
 
 remove_image_benchmark:
-  runs: 1
+  runs: 10
 
 remove_container_benchmark:
-  runs: 1
+  runs: 10
 
 load_image_benchmark:
-  runs: 1
+  runs: 10
 
 save_image_benchmark:
-  runs: 1
+  runs: 10
 
 start_container_benchmark:
-  runs: 1
+  runs: 10
 
 parallel_remove_image_benchmark:
-  runs: 1
+  runs: 10
 
 image_build_large_build_context_benchmark:
-  runs: 1
+  runs: 10
 
 artifact_add_benchmark:
-  runs: 1
+  runs: 10
   supported_container_engines:
     - podman
-
 
 # Synthetic Benchmarks
 sysbench_cpu_benchmark:
@@ -295,8 +294,8 @@ test:
      - true
      - false
     repo_version:
-     - v5.6.0
-     - v5.2.0
+     - v5.4.2
+     - v5.7.0
      # - custom
     runtime: # Linux only
      - crun
@@ -309,7 +308,7 @@ test:
     stop_on_error: true
     iterable_test_fields:
      - test.platform
-    # - test.podman.repo_version
+     - test.podman.repo_version
     # - test.podman.rootful
     # - test.podman.machine_provider
     # - test.podman.runtime
