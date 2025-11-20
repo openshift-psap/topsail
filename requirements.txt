@@ -10,7 +10,7 @@ jsonpath_ng
 state-signals==0.5.2
 kopf
 pyjwt
-slack_sdk==3.35.0
+slack_sdk==3.39.0
 setuptools
 pandas
 opensearch-py
