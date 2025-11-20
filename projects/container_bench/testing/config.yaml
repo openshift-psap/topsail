@@ -56,6 +56,9 @@ remote_host:
   env:
     # Default PATH value is configured from secrets:
     PATH: "" # This is set from machine info secret
+  # To run Docker Desktop on a remote host, either the base_work_dir
+  # must be set to the same path as the home directory,
+  # or home_is_base_work_dir must be set to false.
   home_is_base_work_dir: true
   verbose_ssh_commands: true
   exec_file_extension: "" # This is set from machine info secret
@@ -344,4 +347,5 @@ exec_list:
   test_ci: null
   post_cleanup_ci: null
   matbench_run: true
+
   generate_plots_from_pr_args: true
