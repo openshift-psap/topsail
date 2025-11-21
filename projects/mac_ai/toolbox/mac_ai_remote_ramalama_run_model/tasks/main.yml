@@ -34,9 +34,15 @@
          --ngl {{ mac_ai_remote_ramalama_run_model_ngl }} \
          --port {{ mac_ai_remote_ramalama_run_model_port }} \
          --host 0.0.0.0 \
+      {% for k, v in  mac_ai_remote_ramalama_run_model_pod_env.items() -%}
+         --env {{ k }}={{ v }} \
+      {% endfor -%}
          --name {{ container_name }} \
       {% if mac_ai_remote_ramalama_run_model_device -%}
          --device {{ mac_ai_remote_ramalama_run_model_device }} \
+      {% endif -%}
+      {% if mac_ai_remote_ramalama_run_model_oci_runtime -%}
+         --oci-runtime {{ mac_ai_remote_ramalama_run_model_oci_runtime }} \
       {% endif -%}
          --detach
     environment:
