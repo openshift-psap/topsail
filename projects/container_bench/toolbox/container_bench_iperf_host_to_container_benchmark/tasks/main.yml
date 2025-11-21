@@ -16,15 +16,15 @@
 
 - name: Set benchmark commands
   set_fact:
-    image_to_pull: "docker.io/networkstatic/iperf3:latest"
+    image_to_pull: "quay.io/jrodak/iperf3:latest"
     log_file_name: "iperf_host_to_container.log"
     prepare_commands: |
-      {{ binary_path }} {{ additional_args }} run -d -p 5201:5201 --name iperf3-server docker.io/networkstatic/iperf3:latest -s -d
+      {{ binary_path }} {{ additional_args }} run -d -p 5201:5201 --name iperf3-server quay.io/jrodak/iperf3:latest -s -d
       {{ sleep_cmd }}
     cleanup_commands: |
       {{ binary_path }} {{ additional_args }} stop iperf3-server
       {{ binary_path }} {{ additional_args }} rm -f iperf3-server
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/networkstatic/iperf3:latest
+      {{ binary_path }} {{ additional_args }} rmi -f quay.io/jrodak/iperf3:latest
     benchmark_command: |
       iperf3 -c 127.0.0.1
 
