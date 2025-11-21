@@ -111,7 +111,7 @@ def test():
     finally:
         exc = None
         if config.project.get_config("matbench.enabled"):
-            exc = generate_visualization(env.ARTIFACT_DIR)
+            exc = generate_visualization(env.ARTIFACT_DIR, failed)
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
 
@@ -360,11 +360,16 @@ def matbench_run_one():
         test_inference(utils.parse_platform(platform_str))
 
 
-def generate_visualization(test_artifact_dir):
+def generate_visualization(test_artifact_dir, test_failed):
     exc = None
 
     with env.NextArtifactDir("plots"):
-        exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+        exc = run.run_and_catch(
+            exc,
+            visualize.generate_from_dir,
+            test_artifact_dir,
+            test_failed=test_failed
+        )
 
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
