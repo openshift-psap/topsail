@@ -46,6 +46,21 @@ def prepare_gv_from_gh_binary(base_work_dir):
         artifact_dir_suffix="__gvproxy",
     )
 
+
+def which_podman(base_work_dir, podman_path):
+    ret = remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            f"which '{podman_path}'",
+            capture_stdout=True,
+            check=False,
+        )
+
+    if ret.returncode != 0:
+        return None
+
+    return ret.stdout.strip()
+
+
 def prepare_from_gh_binary(base_work_dir):
     arch = config.project.get_config("remote_host.arch")
     system = config.project.get_config("remote_host.system")
@@ -54,6 +69,18 @@ def prepare_from_gh_binary(base_work_dir):
 
     if remote_access.exists(podman_path):
         logging.info(f"podman {version} already exists, not downloading it.")
+        return podman_path
+
+    if not config.project.get_config(f"prepare.podman.repo.enabled", False):
+        # already exists as a file covered above
+
+        if not which_podman(base_work_dir, podman_path):
+            msg = f"podman repo not enabled, but not found in the system ({podman_path}) :/"
+            logging.error(msg)
+            raise ValueError(msg)
+
+        logging.info("podman found in the system, not downloading it")
+
         return podman_path
 
     zip_file = config.project.get_config(f"prepare.podman.repo.{system}.file")
@@ -90,7 +117,13 @@ def get_podman_binary(base_work_dir):
     if config.project.get_config("prepare.podman.repo.enabled", print=False):
         podman_bin, _ = _get_repo_podman_path(base_work_dir)
     else:
-        podman_bin = config.project.get_config("remote_host.podman_bin", print=False) or "podman"
+        podman_bin = config.project.get_config("remote_host.podman_bin", print=False)
+        if not podman_bin:
+            podman_bin = shutil.which("podman")
+            if not podman_bin:
+                raise ValueError("podman not found in the PATH")
+
+        podman_bin = pathlib.Path(podman_bin)
 
     return podman_bin
 
