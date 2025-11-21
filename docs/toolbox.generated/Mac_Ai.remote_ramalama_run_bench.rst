@@ -56,3 +56,13 @@ Parameters
 
 * default value: ``quay.io/ramalama/ramalama:latest``
 
+
+``oci_runtime``  
+
+* Optional OCI runtime flag to pass to ramalama
+
+
+``pod_env``  
+
+* Optional env flags to pass to the Pod
+

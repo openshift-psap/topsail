@@ -14,6 +14,12 @@
        --image {{ mac_ai_remote_ramalama_run_bench_image }} \
         {{ mac_ai_remote_ramalama_run_bench_model_name }} \
         --ngl {{ mac_ai_remote_ramalama_run_bench_ngl }} \
+    {% if mac_ai_remote_ramalama_run_bench_oci_runtime -%}
+         --oci-runtime {{ mac_ai_remote_ramalama_run_bench_oci_runtime }} \
+    {% endif -%}
+      {% for k, v in  mac_ai_remote_ramalama_run_bench_pod_env.items() -%}
+         --env "{{ k }}={{ v }}" \
+      {% endfor -%}
     {% if mac_ai_remote_ramalama_run_bench_device -%}
          --device {{ mac_ai_remote_ramalama_run_bench_device }} \
     {% endif -%}

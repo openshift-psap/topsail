@@ -28,6 +28,12 @@ mac_ai_remote_ramalama_run_bench_device: null
 # the image to use to run ramalama
 mac_ai_remote_ramalama_run_bench_image: quay.io/ramalama/ramalama:latest
 
+# optional OCI runtime flag to pass to ramalama
+mac_ai_remote_ramalama_run_bench_oci_runtime: null
+
+# optional env flags to pass to the Pod
+mac_ai_remote_ramalama_run_bench_pod_env: {}
+
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone
 ansible_os_family: Linux
