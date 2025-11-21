@@ -157,7 +157,7 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 12 # in cores
+        cpus: 8 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
@@ -264,7 +264,6 @@ iperf_host_to_container_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
-   - podman
   benchmark:
     - run_container_benchmark
     - exec_container_benchmark
@@ -314,7 +313,7 @@ test:
      - test.platform
     # - test.podman.repo_version
     # - test.podman.rootful
-    # - test.podman.machine_provider
+     - test.podman.machine_provider
     # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
