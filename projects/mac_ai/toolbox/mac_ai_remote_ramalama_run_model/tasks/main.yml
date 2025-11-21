@@ -50,7 +50,7 @@
 
   - name: Wait for ramalama to start responding correctly
     command:
-      curl -sSf localhost:{{ mac_ai_remote_ramalama_run_model_port }}/models
+      curl -sSf http://127.0.0.1:{{ mac_ai_remote_ramalama_run_model_port }}/models
     register: ramalama_running_cmd
     until: ramalama_running_cmd.rc == 0
     retries: 2
