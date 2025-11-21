@@ -42,6 +42,13 @@ ci_presets:
     secrets.username: mac_ai__username.kpouget-atuona
     secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
     remote_host.description: "kpouget's Atuona system"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+    prepare.llama_cpp.source.cmake.openmp.enabled: false
+    prepare.virglrenderer.repo.branch: apir
+    prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
 
   # ---
 
@@ -124,6 +131,20 @@ ci_presets:
     prepare.ramalama.repo.version: v0.14.0-apir.rc1
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
+  remoting_linux:
+    extends: [remoting]
+    test.platform:
+    - podman/ramalama/remoting
+    - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
+    - linux/llama_cpp/vulkan
+    prepare.llama_cpp.source.repo.version: remoting
+    prepare.llama_cpp.source.repo.url: https://github.com/kpouget/crc-llama.cpp
+    prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
+    prepare.ramalama.repo.version: linux
+    prepare.virglrenderer.repo.branch: apir
+    test.model.name: smollm:135m
+    test.capture_metrics.enabled: false
 
   remoting_bench:
     extends: [remoting, benchmark]
