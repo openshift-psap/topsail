@@ -167,8 +167,8 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     )
 
 
-def prepare_from_release(base_work_dir, platform):
-    error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin")
+def prepare_from_release(base_work_dir, platform, expected_system):
+    error_msg = utils.check_expected_platform(platform, system=expected_system, inference_server_name="llama_cpp", inference_server_flavor="upstream_bin")
     if error_msg:
         raise ValueError(f"prepare_llama_cpp.prepare_from_release: unexpected platform: {error_msg} :/")
 
@@ -263,7 +263,12 @@ def prepare_from_source(base_work_dir, platform):
         return llama_cpp_server_path
 
     cmake_flags = config.project.get_config("prepare.llama_cpp.source.cmake.common")
-    cmake_flags += " " + flavors_cmake_flags[inference_server_flavor]
+    flavor_flags = flavors_cmake_flags[inference_server_flavor]
+    if isinstance(flavor_flags, str):
+        cmake_flags += " " + flavor_flags
+    else:
+        cmake_flags += " " + flavor_flags.get("common", "")
+        cmake_flags += " " + flavor_flags.get(config.project.get_config("remote_host.system"), "")
 
     if config.project.get_config("prepare.llama_cpp.source.cmake.openmp.enabled"):
         cmake_flags += " " + config.project.get_config("prepare.llama_cpp.source.cmake.openmp.flags")
@@ -321,6 +326,20 @@ def prepare_from_source(base_work_dir, platform):
     return llama_cpp_server_path
 
 
+def prepare_for_linux(base_work_dir, platform):
+    error_msg = utils.check_expected_platform(platform, system="linux", inference_server_name="llama_cpp")
+    if error_msg:
+        raise ValueError(f"prepare_for_linux: unexpected platform: {error_msg} :/")
+
+    if not platform.inference_server_flavor:
+        raise ValueError(f"Platform {platform} doesn't have a flavor :/")
+
+    if platform.inference_server_flavor == "upstream_bin":
+        return prepare_from_release(base_work_dir, platform, expected_system="linux")
+    else:
+        return prepare_from_source(base_work_dir, platform)
+
+
 def prepare_for_macos(base_work_dir, platform):
     error_msg = utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp")
     if error_msg:
@@ -330,7 +349,7 @@ def prepare_for_macos(base_work_dir, platform):
         raise ValueError(f"Platform {platform} doesn't have a flavor :/")
 
     if platform.inference_server_flavor == "upstream_bin":
-        return prepare_from_release(base_work_dir, platform)
+        return prepare_from_release(base_work_dir, platform, expected_system="macos")
     else:
         return prepare_from_source(base_work_dir, platform)
 
@@ -338,13 +357,16 @@ def prepare_for_macos(base_work_dir, platform):
 def prepare_binary(base_work_dir, platform):
     fetch_latest_version(base_work_dir)
 
+    if platform.system == "linux":
+        return prepare_for_linux(base_work_dir, platform)
+
     if platform.system == "macos":
         return prepare_for_macos(base_work_dir, platform)
 
     if platform.system == "podman":
         return prepare_for_podman(base_work_dir, platform)
 
-    raise ValueError(f"Invalid platform.system to prepare: {platform.system}. Expected one of [macos, podman].")
+    raise ValueError(f"Invalid platform.system to prepare: {platform.system}. Expected one of [macos, podman, linux].")
 
 
 def _get_binary_path(base_work_dir, platform, for_release=False):
@@ -357,20 +379,22 @@ def _get_binary_path(base_work_dir, platform, for_release=False):
 
     version = config.project.get_config(f"prepare.llama_cpp.{'release' if for_release else 'source'}.repo.version", print=False)
 
-    if not utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin"):
-        file_name = config.project.get_config("prepare.llama_cpp.release.file")
+    if (utils.check_expected_platform(platform, system="macos", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin") == "" or
+        utils.check_expected_platform(platform, system="linux", inference_server_name="llama_cpp", inference_server_flavor="upstream_bin") == ""):
+        arch = config.project.get_config("remote_host.system")
+        file_name = config.project.get_config(f"prepare.llama_cpp.release.file.{arch}")
 
         dest = base_work_dir / "llama_cpp" / f"release-{platform.system}-{version}" / file_name
         llama_cpp_path = str(dest.parent / "build" / "bin" / "llama-server")
 
         return llama_cpp_path, dest, file_name, version
-    elif platform.system == "macos":
+    elif platform.system == "macos" or  platform.system == "linux":
         llama_cpp_path = str(base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server")
         return llama_cpp_path, None, None, version
     else:
         pass
 
-    raise ValueError(f"Invalid platform: {platform}. Expected macos/llama_cpp/upstream_bin, podman/llama_cpp/*, macos/llama_cpp/*")
+    raise ValueError(f"Invalid platform: {platform}. Expected macos/llama_cpp/upstream_bin, podman/llama_cpp/*, macos/llama_cpp/*, linux/llama_cpp/upstream_bin")
 
 
 def get_binary_path(base_work_dir, platform):

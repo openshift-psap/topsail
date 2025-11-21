@@ -449,3 +449,36 @@ EOF
         podman.push_image(base_work_dir, image_fullname, image_fullname)
         image_latest = f"{image_name}:latest"
         podman.push_image(base_work_dir, image_fullname, image_latest)
+
+
+def get_linux_remoting_pod_env(base_work_dir):
+    pod_env = {}
+
+    VIRGL_BUILD_DIR = f"{base_work_dir}/virglrenderer/apir/build"
+    LLAMA_CPP_BUILD_DIR = f"{base_work_dir}/llama_cpp/build-linux-llama_cpp-remoting-remoting" # should be improved ...
+
+    pod_env["RENDER_SERVER_EXEC_PATH"] = f"{VIRGL_BUILD_DIR}/server/virgl_render_server"
+
+    pod_env["VIRGL_APIR_BACKEND_LIBRARY"] = f"{LLAMA_CPP_BUILD_DIR}/bin/libggml-remotingbackend.so"
+    pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = f"{LLAMA_CPP_BUILD_DIR}/bin/libggml-vulkan.so"
+
+    pod_env["VIRGL_APIR_LOG_TO_FILE"] = "/tmp/apir_virglrenderer.log"
+    pod_env["APIR_LLAMA_CPP_LOG_TO_FILE"] = "/tmp/apir_llama_cpp.log"
+
+    pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_REG"] = "ggml_backend_vk_reg"
+    pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_INIT"] = "ggml_backend_vk_init"
+
+    pod_env["GGML_VK_DISABLE_INTEGER_DOT_PRODUCT"] = "123"
+
+    return pod_env
+
+
+def get_linux_remoting_host_env(base_work_dir):
+    env = {}
+
+    VIRGL_BUILD_DIR = f"{base_work_dir}/virglrenderer/apir/build"
+    LLAMA_CPP_BUILD_DIR = f"{base_work_dir}/llama_cpp/build-linux-llama_cpp-remoting-remoting" # should be improved ...
+
+    env["LD_LIBRARY_PATH"] = f"{VIRGL_BUILD_DIR}/src:{LLAMA_CPP_BUILD_DIR}/bin"
+
+    return env

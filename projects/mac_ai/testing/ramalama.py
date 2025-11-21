@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pathlib
 import logging
 import tempfile
@@ -8,7 +8,8 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import utils
+import utils, prepare_release
+
 from projects.remote.lib import remote_access
 
 def prepare_test(base_work_dir, platform):
@@ -242,10 +243,26 @@ def run_benchmark(base_work_dir, platform, ramalama_path, model):
 
 
 def _get_env(base_work_dir, ramalama_path):
-    return dict(
+    env = dict(
         PYTHONPATH=ramalama_path.parent.parent,
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
     ) | podman_mod.get_podman_env(base_work_dir)
+
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and sys.platform == "linux":
+        env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
+
+    return env
+
+
+def _get_pod_env(base_work_dir):
+    if not config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+        return {}
+
+    if sys.platform != "linux":
+        logging.warning("prepare.podman.machine.remoting_env.enabled is true but platform is not Linux; ignoring remoting pod_env.")
+        return {}
+
+    return prepare_release.get_linux_remoting_pod_env(base_work_dir)
 
 
 def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
@@ -276,15 +293,20 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     else:
         image = None
 
+    extra_extra_kwargs = {} # don't modify extra_kwargs here
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+        extra_extra_kwargs["oci_runtime"] = "krun"
+
     run.run_toolbox(
         "mac_ai", f"remote_ramalama_{ramalama_cmd}",
         base_work_dir=base_work_dir,
         path=ramalama_path,
         device=device,
         env=env_str,
+        pod_env=_get_pod_env(base_work_dir),
         model_name=model,
         image=image,
-        **extra_kwargs,
+        **(extra_kwargs | extra_extra_kwargs),
     )
 
 
