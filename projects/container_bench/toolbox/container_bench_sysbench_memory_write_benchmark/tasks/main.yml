@@ -12,13 +12,13 @@
 
 - name: Set benchmark commands
   set_fact:
-    image_to_pull: "docker.io/zyclonite/sysbench:1.0.21"
+    image_to_pull: "quay.io/jrodak/sysbench:latest"
     log_file_name: "memory_write_benchmark.log"
     prepare_commands: ""
     cleanup_commands: |
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+      {{ binary_path }} {{ additional_args }} rmi -f quay.io/jrodak/sysbench:latest
     benchmark_command: |
-      {{ binary_path }} {{ additional_args }} run --rm docker.io/zyclonite/sysbench:1.0.21 memory --memory-total-size=100G --memory-oper=write run
+      {{ binary_path }} {{ additional_args }} run --rm quay.io/jrodak/sysbench:latest memory --memory-total-size=100G --memory-oper=write run
 
 - name: Include Unix/Linux tasks
   include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"

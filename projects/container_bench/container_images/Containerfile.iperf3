@@ -1,0 +1,17 @@
+FROM registry.fedoraproject.org/fedora:42
+
+LABEL name="iperf3" \
+      version="1.0" \
+      description="iperf3 network performance testing tool"
+
+RUN dnf install -y \
+    iperf3 \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+EXPOSE 5201
+
+WORKDIR /workspace
+
+ENTRYPOINT ["iperf3"]
+CMD ["--help"]

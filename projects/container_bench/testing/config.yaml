@@ -113,8 +113,8 @@ prepare:
     dir: "{@remote_host.base_work_dir}/images"
     images:
       - "quay.io/podman/hello:latest"
-      - "docker.io/zyclonite/sysbench:1.0.21"
-      - "docker.io/networkstatic/iperf3:latest"
+      - "quay.io/jrodak/sysbench:latest"
+      - "quay.io/jrodak/iperf3:latest"
       - "registry.fedoraproject.org/fedora:42"
       - "docker.io/library/registry:2"
       - "docker.io/tensorflow/tensorflow:latest-gpu"
