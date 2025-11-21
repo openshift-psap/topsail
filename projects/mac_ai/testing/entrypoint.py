@@ -41,6 +41,8 @@ def apply_preset_from_kubeconfig():
             logging.info(f"Kubeconfig preset to apply: {content['preset_name']}")
             config.project.apply_preset(content['preset_name'])
 
+    os.environ["TOPSAIL_REMOTE_OS"] = sys.platform
+
 
 def apply_foreign_config():
     name = os.environ.get("OPENSHIFT_CI_TOPSAIL_FOREIGN_TESTING")

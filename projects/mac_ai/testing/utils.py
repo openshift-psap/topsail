@@ -1,6 +1,8 @@
+import sys
 import types
 import pathlib
 import requests
+import logging
 
 from projects.core.library import env, config, run, configure_logging, export
 
@@ -32,6 +34,9 @@ def parse_platform(platform_str):
     else:
         platform.needs_podman = platform.system == "podman"
         platform.needs_podman_machine = platform.needs_podman
+
+    if sys.platform == "linux":
+        platform.needs_podman_machine = False
 
     inference_server_has_flavors = config.project.get_config("__platform_check.flavors", print=False).get(platform.inference_server_name)
 
@@ -72,6 +77,7 @@ def parse_platform(platform_str):
     return platform
 
 
+# returns an empty string if matching
 def check_expected_platform(
         platform,
         system=None,
@@ -87,6 +93,10 @@ def check_expected_platform(
         inference_server_name=inference_server_name,
         inference_server_flavor=inference_server_flavor,
     )
+
+    if sys.platform == "linux":
+        # no podman machine on Linux, what's so ever
+        kwargs.pop("needs_podman_machine")
 
     errors = []
     for k, v in kwargs.items():

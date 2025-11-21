@@ -6,7 +6,7 @@ ARG MESA_VERSION=25.2.3-101.fc42
 
 RUN echo "BUILD_FLAVOR: $BUILD_FLAVOR"
 
-RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
+RUN  \
     dnf update -y && \
     dnf install -y --quiet python3-dnf-plugin-versionlock && \
     dnf copr enable -y slp/mesa-libkrun-vulkan && \
@@ -14,8 +14,8 @@ RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
     dnf versionlock add mesa-vulkan-drivers-${MESA_VERSION} && \
     dnf install -y --quiet vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
-    dnf install -y --quiet glslc; \
- fi
+    dnf install -y --quiet glslc;
+
 
 # for API Remoting
 
@@ -48,6 +48,8 @@ RUN mkdir -p build \
  && set -o pipefail \
  && cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} | tee ../build/build.prepare.log \
  && cmake --build ../build/ ${LLAMA_CPP_CMAKE_BUILD_FLAGS} | tee ../build/build.compile.log
+
+RUN touch /usr/libexec/virgl_render_server
 
 USER 1001
 

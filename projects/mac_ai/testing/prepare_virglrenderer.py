@@ -62,6 +62,9 @@ def prepare(base_work_dir):
 
 
 def configure(base_work_dir, use_custom):
+    if config.project.get_config("remote_host.system") != "darwin":
+        return
+
     BREW_CUSTOM_DIR = pathlib.Path("/opt/homebrew/Cellar/virglrenderer/0.10.4d/lib/custom")
     BREW_CUSTOM_LIB = BREW_CUSTOM_DIR / "libvirglrenderer.1.dylib.current"
 

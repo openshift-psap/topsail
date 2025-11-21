@@ -42,3 +42,11 @@ jobs:
               "
               exit  1
           fi
+
+      - name: Fail if there are untracked files
+        run: |
+          if git ls-files --others --exclude-standard | grep .; then
+            echo "---"
+            echo "Found untracked files. Make sure to include them in the commit."
+            exit 1
+          fi
