@@ -186,6 +186,12 @@ def prepare_from_release(base_work_dir, platform, expected_system):
         platform_file,
     ])
 
+    if tarball and platform_file.endswith(".zip"):
+        tarball=False
+        zip=True
+    else:
+        zip=False
+
     if remote_access.exists(llama_cpp_path):
         logging.info(f"llama_cpp {platform} already exists, not downloading it.")
         return llama_cpp_path
@@ -195,6 +201,7 @@ def prepare_from_release(base_work_dir, platform, expected_system):
         source=source,
         dest=dest,
         tarball=tarball,
+        zip=zip,
     )
 
     return llama_cpp_path
