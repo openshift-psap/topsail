@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pathlib
 import logging
 import subprocess
@@ -29,23 +29,29 @@ INFERENCE_SERVERS = dict(
 
 
 REMOTING_FRONTEND_PLATFORM = "podman/llama_cpp/remoting"
-REMOTING_BACKEND_PLATFORM = "macos/llama_cpp/remoting"
+REMOTING_BACKEND_PLATFORM = {
+    "darwin": "macos/llama_cpp/remoting",
+    "linux": "linux/llama_cpp/remoting",
+}
 RAMALAMA_REMOTING_PLATFORM = "podman/ramalama/remoting"
 
 def cleanup():
     base_work_dir = remote_access.prepare()
 
     if config.project.get_config("cleanup.images.llama_cpp"):
-        is_running = podman_machine.is_running(base_work_dir)
-        if is_running is None:
-            logging.warning("Podman machine doesn't exist.")
-        elif not is_running:
-            try:
-                podman_machine.start(base_work_dir, use_remoting=False)
-                is_running = True
-            except subprocess.CalledProcessError:
-                logging.warning("Could not start podman machine, cannot cleanup the llama_cpp images ...")
-                is_running = None
+        if config.project.get_config("prepare.podman.machine.enabled"):
+            is_running = podman_machine.is_running(base_work_dir)
+            if is_running is None:
+                logging.warning("Podman machine doesn't exist.")
+            elif not is_running:
+                try:
+                    podman_machine.start(base_work_dir, use_remoting=False)
+                    is_running = True
+                except subprocess.CalledProcessError:
+                    logging.warning("Could not start podman machine, cannot cleanup the llama_cpp images ...")
+                    is_running = None
+        else:
+            is_running = True
 
         if is_running:
             prepare_llama_cpp.cleanup_image(base_work_dir)
@@ -126,7 +132,8 @@ def prepare():
 
         prepare_virglrenderer.prepare(base_work_dir)
 
-        podman_machine.configure_and_start(base_work_dir, force_restart=True)
+        if config.project.get_config("prepare.podman.machine.enabled"):
+            podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
     if not platforms_to_build_str:
@@ -137,7 +144,7 @@ def prepare():
 
     if (REMOTING_FRONTEND_PLATFORM in platforms_to_build_str and
         REMOTING_BACKEND_PLATFORM not in platforms_to_build_str):
-        platforms_to_build_str.append(REMOTING_BACKEND_PLATFORM)
+        platforms_to_build_str.append(REMOTING_BACKEND_PLATFORM[sys.platform])
 
     puller_platforms = []
     platforms_to_build = [

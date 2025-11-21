@@ -69,6 +69,9 @@ def safety_checks():
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
+    if sys.platform == "linux" and isinstance(all_platforms, (list, tuple)):
+        all_platforms = [p for p in all_platforms if not p.startswith("macos")]
+
     multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
     if not multi_test:
         return # safe
@@ -199,17 +202,18 @@ def test_inference(platform):
 
     brew.capture_dependencies_version(base_work_dir)
 
-    if platform.needs_podman_machine:
-        if not podman_machine.is_running(base_work_dir):
-            podman_machine.start(base_work_dir)
+    if config.project.get_config("prepare.podman.machine.enabled"):
+        if platform.needs_podman_machine:
+            if not podman_machine.is_running(base_work_dir):
+                podman_machine.start(base_work_dir)
 
-        if platform.needs_podman:
-            inference_server_port = config.project.get_config("test.inference_server.port")
-            podman.start(base_work_dir, inference_server_port)
+        elif podman_machine.is_running(base_work_dir):
+            podman.stop(base_work_dir)
+            podman_machine.stop(base_work_dir)
 
-    elif podman_machine.is_running(base_work_dir):
-        podman.stop(base_work_dir)
-        podman_machine.stop(base_work_dir)
+    if platform.needs_podman:
+        inference_server_port = config.project.get_config("test.inference_server.port")
+        podman.start(base_work_dir, inference_server_port)
 
     inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
