@@ -69,7 +69,8 @@ def run_model(base_work_dir, platform, llama_cpp_path, model):
 
 
 def unload_model(base_work_dir, platform, llama_cpp_path, model):
-    if sys.platform == "linux":
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
         logging.info("Can't *unload* the model on linux/krun ...")
         return
 

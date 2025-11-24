@@ -69,7 +69,8 @@ def safety_checks():
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
-    if sys.platform == "linux" and isinstance(all_platforms, (list, tuple)):
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and isinstance(all_platforms, (list, tuple)):
         all_platforms = [p for p in all_platforms if not p.startswith("macos")]
 
     multi_test = do_matbenchmarking or not isinstance(all_platforms, str)

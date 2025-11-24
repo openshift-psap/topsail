@@ -1,4 +1,4 @@
-import os, sys
+import os
 import pathlib
 import logging
 import tempfile
@@ -248,7 +248,8 @@ def _get_env(base_work_dir, ramalama_path):
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
     ) | podman_mod.get_podman_env(base_work_dir)
 
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and sys.platform == "linux":
+    system = config.project.get_config("remote_host.system")
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
         env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
 
     return env
@@ -258,7 +259,8 @@ def _get_pod_env(base_work_dir):
     if not config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         return {}
 
-    if sys.platform != "linux":
+    system = config.project.get_config("remote_host.system")
+    if system != "linux":
         logging.warning("prepare.podman.machine.remoting_env.enabled is true but platform is not Linux; ignoring remoting pod_env.")
         return {}
 
@@ -294,7 +296,9 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
         image = None
 
     extra_extra_kwargs = {} # don't modify extra_kwargs here
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         extra_extra_kwargs["oci_runtime"] = "krun"
 
     run.run_toolbox(

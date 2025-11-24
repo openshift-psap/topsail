@@ -119,7 +119,8 @@ def get_podman_binary(base_work_dir):
     else:
         podman_bin = config.project.get_config("remote_host.podman_bin", print=False)
         if not podman_bin:
-            podman_bin = shutil.which("podman")
+            podman_bin = remote_access.run_with_ansible_ssh_conf(
+                base_work_dir, "which podman", capture_stdout=True, check=False).stdout.strip()
             if not podman_bin:
                 raise ValueError("podman not found in the PATH")
 
@@ -234,8 +235,8 @@ def run_container(base_work_dir, image, volumes=None, user=":", command=""):
 
 def start(base_work_dir, port, get_command=None):
     container_name = config.project.get_config("prepare.podman.container.name", print=False)
-
-    if sys.platform == "linux" and get_command is None:
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and get_command is None:
         logging.info("Can't *start* podman on linux/krun ...")
         return
 
@@ -257,11 +258,11 @@ def start(base_work_dir, port, get_command=None):
         logging.warn(f"podman.start: No GPU device configured")
 
     env_str = ""
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and sys.platform == "linux":
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
         env_str += " ".join([f"-e {k}={v}" for k, v in prepare_release.get_linux_remoting_pod_env(base_work_dir).items()])
 
     remoting_opts = ""
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+    if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         remoting_opts = "--runtime krun -v /home/topsail/remoting-linux/virglrenderer/build/server:/home/topsail/remoting-linux/virglrenderer/build/server"
 
     command = (
@@ -304,8 +305,8 @@ def stop(base_work_dir, check=False):
 def get_exec_command_prefix():
     container_name = config.project.get_config("prepare.podman.container.name", print=False)
     podman_cmd = get_podman_command()
-
-    if sys.platform == "linux":
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
         return _get_krun_exec_command_prefix()
 
     return f"{podman_cmd} exec -it {container_name}"

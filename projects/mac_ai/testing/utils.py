@@ -1,4 +1,3 @@
-import sys
 import types
 import pathlib
 import requests
@@ -35,7 +34,8 @@ def parse_platform(platform_str):
         platform.needs_podman = platform.system == "podman"
         platform.needs_podman_machine = platform.needs_podman
 
-    if sys.platform == "linux":
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
         platform.needs_podman_machine = False
 
     inference_server_has_flavors = config.project.get_config("__platform_check.flavors", print=False).get(platform.inference_server_name)
@@ -94,7 +94,8 @@ def check_expected_platform(
         inference_server_flavor=inference_server_flavor,
     )
 
-    if sys.platform == "linux":
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
         # no podman machine on Linux, what's so ever
         kwargs.pop("needs_podman_machine")
 
