@@ -292,8 +292,8 @@ test:
     machine_provider:
      - libkrun
      - applehv
-     # - wsl
-     - hyperv
+     - wsl
+     # - hyperv
     rootful:
      - true
      - false
