@@ -23,7 +23,6 @@
     {% if mac_ai_remote_ramalama_run_bench_device -%}
          --device {{ mac_ai_remote_ramalama_run_bench_device }} \
     {% endif -%}
-        2> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.stderr.log" \
-        > "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
+        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
   environment:
     HOME: "{{ mac_ai_remote_ramalama_run_bench_base_work_dir }}"
