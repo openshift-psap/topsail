@@ -71,7 +71,7 @@ def prepare_from_gh_binary(base_work_dir):
         logging.info(f"podman {version} already exists, not downloading it.")
         return podman_path
 
-    if not config.project.get_config(f"prepare.podman.repo.enabled", False):
+    if not config.project.get_config("prepare.podman.repo.enabled", False):
         # already exists as a file covered above
 
         if not which_podman(base_work_dir, podman_path):
@@ -263,7 +263,10 @@ def start(base_work_dir, port, get_command=None):
 
     remoting_opts = ""
     if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
-        remoting_opts = "--runtime krun -v /home/topsail/remoting-linux/virglrenderer/build/server:/home/topsail/remoting-linux/virglrenderer/build/server"
+        import prepare_virglrenderer
+        virgl_server_dir = prepare_virglrenderer.get_virgl_render_server_path(base_work_dir).parent
+        remoting_opts += f"-v {virgl_server_dir}:{virgl_server_dir}"
+        remoting_opts += "--runtime krun "
 
     command = (
         f"{podman_cmd} run "

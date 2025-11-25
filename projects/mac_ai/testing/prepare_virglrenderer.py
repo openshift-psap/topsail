@@ -20,6 +20,10 @@ def get_dyld_library_path(base_work_dir, with_lib=False):
     return path
 
 
+def get_virgl_render_server_path(base_work_dir):
+    return get_build_dir(base_work_dir) / "server/virgl_render_server"
+
+
 def prepare(base_work_dir):
     if not config.project.get_config("prepare.virglrenderer.enabled"):
         logging.info("Custom virglrenderer not enabled, not preparing it.")

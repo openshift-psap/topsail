@@ -50,6 +50,8 @@ def start(base_work_dir, use_remoting=None):
         env["VIRGL_APIR_BACKEND_LIBRARY"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[0]")
         env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]")
         env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
+        env |= config.project.get_config("prepare.podman.machine.remoting_env.env_extra")
+
         prepare_virglrenderer.configure(base_work_dir, use_custom=True)
     else:
         prepare_virglrenderer.configure(base_work_dir, use_custom=False)
