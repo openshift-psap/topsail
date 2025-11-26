@@ -103,7 +103,7 @@
   command:
     oc get DSCInitialization -oname
   register: has_dsci_cmd
-  until: has_dsci_cmd.stdout
+  until: has_dsci_cmd.stdout | length > 0
   retries: 60
   delay: 10
 
