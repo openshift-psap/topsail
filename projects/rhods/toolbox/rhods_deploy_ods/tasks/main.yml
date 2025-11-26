@@ -7,17 +7,17 @@
     oc create ns redhat-ods-monitoring --dry-run=client -oyaml | oc apply -f-
 
 - name: Deploy in ODH mode
-  when: rhods_deploy_ods_opendatahub
+  when: rhods_deploy_ods_opendatahub | bool
   set_fact:
     catalog_name: "opendatahub-catalog"
 
 - name: Deploy in managed mode
-  when: not rhods_deploy_ods_opendatahub and rhods_deploy_ods_managed_rhoai
+  when: not (rhods_deploy_ods_opendatahub | bool) and (rhods_deploy_ods_managed_rhoai | bool)
   set_fact:
     catalog_name: "addon-managed-odh-catalog"
 
 - name: Deploy in self-managed mode
-  when: not rhods_deploy_ods_managed_rhoai and not rhods_deploy_ods_opendatahub
+  when: not (rhods_deploy_ods_managed_rhoai | bool) and not (rhods_deploy_ods_opendatahub | bool)
   set_fact:
     catalog_name: "custom-odh-catalog"
 
