@@ -80,10 +80,14 @@ def build_container_image(base_work_dir, ramalama_path):
         return image_fullname
 
     chdir = ramalama_path.parent.parent
-
+    system = config.project.get_config("remote_host.system")
     logging.info("Building the ramalama image ...")
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
+
+        if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+            cmd += f" RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND={config.project.get_config('prepare.ramalama.remoting.backend')}"
+
         cmd += f" time ./container_build.sh -s build {image_name}"
         cmd += " 2>&1"
 
@@ -255,18 +259,6 @@ def _get_env(base_work_dir, ramalama_path):
     return env
 
 
-def _get_pod_env(base_work_dir):
-    if not config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
-        return {}
-
-    system = config.project.get_config("remote_host.system")
-    if system != "linux":
-        logging.warning("prepare.podman.machine.remoting_env.enabled is true but platform is not Linux; ignoring remoting pod_env.")
-        return {}
-
-    return prepare_release.get_linux_remoting_pod_env(base_work_dir)
-
-
 def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
     extra_env = _get_env(base_work_dir, ramalama_path)
 
@@ -307,7 +299,6 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
         path=ramalama_path,
         device=device,
         env=env_str,
-        pod_env=_get_pod_env(base_work_dir),
         model_name=model,
         image=image,
         **(extra_kwargs | extra_extra_kwargs),

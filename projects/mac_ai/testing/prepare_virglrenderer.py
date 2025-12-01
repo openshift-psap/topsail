@@ -24,6 +24,21 @@ def get_virgl_render_server_path(base_work_dir):
     return get_build_dir(base_work_dir) / "server/virgl_render_server"
 
 
+def get_build_flags():
+    all_build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
+    system = config.project.get_config("remote_host.system")
+
+    build_flags_lst = []
+    build_flags_lst.append(all_build_flags["common"])
+    if system_flags := all_build_flags.get(system):
+        build_flags_lst.append(system_flags)
+
+    if config.project.get_config("prepare.virglrenderer.debug.enabled"):
+        build_flags_lst.append(config.project.get_config('prepare.virglrenderer.debug.flags'))
+
+    return " ".join(build_flags_lst)
+
+
 def prepare(base_work_dir):
     if not config.project.get_config("prepare.virglrenderer.enabled"):
         logging.info("Custom virglrenderer not enabled, not preparing it.")
@@ -32,10 +47,8 @@ def prepare(base_work_dir):
     # don't check if already exists, always build it
 
     repo_url = config.project.get_config("prepare.virglrenderer.repo.url")
-    build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
 
-    if config.project.get_config("prepare.virglrenderer.debug.enabled"):
-        build_flags += " " + config.project.get_config("prepare.virglrenderer.debug.flags")
+    build_flags = get_build_flags()
 
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
     refspec = None

@@ -103,7 +103,7 @@ def run_benchmark(base_work_dir, platform, llama_cpp_path, model):
 
     run.run_toolbox(
         "mac_ai", "remote_llama_cpp_run_bench",
-        path=path,
+        path=path.rstrip("/"),
         prefix=prefix,
         model_name=model_fname,
         llama_bench=do_llama_bench,

@@ -454,13 +454,13 @@ EOF
 def get_linux_remoting_pod_env(base_work_dir):
     pod_env = {}
 
-    LLAMA_CPP_BUILD_DIR = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
+    LLAMA_CPP_BUILD_DIR = pathlib.Path("/app/llama.cpp/build") # inside the container!
 
-    pod_env["RENDER_SERVER_EXEC_PATH"] = str(prepare_virglrenderer.get_virgl_render_server_path(base_work_dir))
+    pod_env["RENDER_SERVER_EXEC_PATH"] = "/usr/libexec/virgl_render_server"
     pod_env["VIRGL_APIR_BACKEND_LIBRARY"] = str(LLAMA_CPP_BUILD_DIR / \
         "bin" / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[0]"))
     pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = str(LLAMA_CPP_BUILD_DIR / \
-        config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]"))
+        "bin" / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]"))
 
     pod_env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
     pod_env |= config.project.get_config("prepare.podman.machine.remoting_env.env_extra")
@@ -470,9 +470,8 @@ def get_linux_remoting_pod_env(base_work_dir):
 
 def get_linux_remoting_host_env(base_work_dir):
     VIRGL_BUILD_DIR = prepare_virglrenderer.get_build_dir(base_work_dir)
-    LLAMA_CPP_BUILD_DIR = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
 
     env = {}
-    env["LD_LIBRARY_PATH"] = f"{VIRGL_BUILD_DIR / 'src'}:{LLAMA_CPP_BUILD_DIR / 'bin'}"
+    env["LD_LIBRARY_PATH"] = f"{VIRGL_BUILD_DIR / 'src'}"
 
     return env

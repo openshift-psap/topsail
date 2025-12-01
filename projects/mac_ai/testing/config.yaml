@@ -149,6 +149,7 @@ ci_presets:
 
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_vk_reg"
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
+    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
     prepare.podman.machine.remoting_env.env_extra:
       GGML_VK_DISABLE_INTEGER_DOT_PRODUCT: "1"
@@ -465,6 +466,8 @@ prepare:
       publish:
         enabled: false
         credentials: "*$@secrets.image_registry"
+    remoting:
+      backend: vulkan
   brew:
     install_dependencies: false
     capture_dependencies: false
@@ -492,7 +495,9 @@ prepare:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
     build:
-      flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
+      flags:
+        common: -Dapir=true
+        darwin: -Dc_link_args=-L/opt/homebrew/lib/
     debug:
       enabled: false
       flags: --buildtype=debug

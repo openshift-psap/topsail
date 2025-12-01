@@ -263,22 +263,19 @@ def start(base_work_dir, port, get_command=None):
 
     remoting_opts = ""
     if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
-        import prepare_virglrenderer
-        virgl_server_dir = prepare_virglrenderer.get_virgl_render_server_path(base_work_dir).parent
-        remoting_opts += f"-v {virgl_server_dir}:{virgl_server_dir}"
         remoting_opts += "--runtime krun "
 
     command = (
         f"{podman_cmd} run "
         f"--user root:root --cgroupns host --security-opt label=disable "
-        f"-v{base_work_dir}:{base_work_dir} "
+        f"-v {base_work_dir}:{base_work_dir} "
         f"-w {base_work_dir} "
         f"--name {container_name} "
         f"--env 'HOME={base_work_dir}' "
-        + env_str + " " +
+        f"{env_str}  "
         f"-p {port}:{port} "
-        + podman_device_cmd
-        + remoting_opts + " " +
+        f"{podman_device_cmd} "
+        f"{remoting_opts}  "
         "--detach --replace --rm --entrypoint= "
         f"{image}"
     )

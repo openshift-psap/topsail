@@ -49,7 +49,35 @@ RUN mkdir -p build \
  && cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} | tee ../build/build.prepare.log \
  && cmake --build ../build/ ${LLAMA_CPP_CMAKE_BUILD_FLAGS} | tee ../build/build.compile.log
 
-RUN touch /usr/libexec/virgl_render_server
+# --- VIRGLRENDERER --- #
+
+WORKDIR /app/virglrenderer
+
+ARG VIRGLRENDERER_ENABLED=n
+ARG VIRGLRENDERER_REPO=https://gitlab.freedesktop.org/kpouget/virglrenderer
+ARG VIRGLRENDERER_COMMIT=main-linux
+ARG VIRGLRENDERER_MESON_FLAGS="-Dapir=true --buildtype=release --prefix=/usr"
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+      dnf install --quiet -y libepoxy-devel meson python3-yaml; \
+    fi
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+ git clone "${VIRGLRENDERER_REPO}" src \
+ && git -C src fetch origin ${VIRGLRENDERER_COMMIT} \
+ && git -C src reset --hard FETCH_HEAD; \
+ fi
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+ mkdir -p build \
+ && echo "Version: ${VIRGLRENDERER_COMMIT}" > build/build.flags.log \
+ && echo "meson flags: $VIRGLRENDERER_MESON_FLAGS" >> build/build.flags.log \
+ && cd src \
+ && set -o pipefail \
+ && meson setup ./build ${VIRGLRENDERER_MESON_FLAGS} --prefix=/usr | tee ../build/build.prepare.log \
+ && ninja -C ./build | tee ../build/build.compile.log \
+ && ninja -C ./build install; \
+ fi
 
 USER 1001
 

@@ -7,7 +7,7 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import utils, prepare_mac_ai
+import utils, prepare_mac_ai, prepare_virglrenderer
 from projects.remote.lib import remote_access
 
 
@@ -116,6 +116,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     local_image_name = __get_local_image_name_from_local_container_file(platform)
     container_file = TESTING_THIS_DIR / config.project.get_config("prepare.llama_cpp.source.podman.local_container_file.path")
     build_args = config.project.get_config("prepare.llama_cpp.source.podman.local_container_file.build_args").copy()
+    system = config.project.get_config("remote_host.system")
 
     if podman_mod.has_image(base_work_dir, local_image_name):
         logging.info(f"Image {local_image_name} already exists, not rebuilding it.")
@@ -135,6 +136,18 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     cmake_flags = build_args["LLAMA_CPP_CMAKE_FLAGS"] or ""
     cmake_flags += " " + flavor_cmake_flags.get("common", "")
     cmake_flags += " " + flavor_cmake_flags.get(config.project.get_config("remote_host.system"), "")
+
+
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+        cmake_flags += " "
+        cmake_flags += config.project.get_config('prepare.llama_cpp.source.cmake.flavors.remoting.common')
+        cmake_flags += " "
+        cmake_flags += config.project.get_config('prepare.llama_cpp.source.cmake.flavors.remoting.linux')
+
+        build_args["VIRGLRENDERER_ENABLED"] = "y"
+        build_args["VIRGLRENDERER_REPO"] = config.project.get_config("prepare.virglrenderer.repo.url")
+        build_args["VIRGLRENDERER_COMMIT"] = config.project.get_config("prepare.virglrenderer.repo.branch")
+        build_args["VIRGLRENDERER_MESON_FLAGS"] = prepare_virglrenderer.get_build_flags()
 
     cmake_parallel = config.project.get_config("prepare.llama_cpp.source.cmake.parallel")
     cmake_build_flags = f"--parallel {cmake_parallel}"
@@ -166,7 +179,6 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
         build_args=build_args,
         artifact_dir_suffix=artifact_dir_suffix,
     )
-
 
 def prepare_from_release(base_work_dir, platform, expected_system):
     error_msg = utils.check_expected_platform(platform, system=expected_system, inference_server_name="llama_cpp", inference_server_flavor="upstream_bin")

@@ -142,8 +142,8 @@ def prepare():
     if not isinstance(platforms_to_build_str, list):
         platforms_to_build_str = [platforms_to_build_str]
 
-    if REMOTING_FRONTEND_PLATFORM in platforms_to_build_str:
-        system = config.project.get_config("remote_host.system")
+    system = config.project.get_config("remote_host.system")
+    if REMOTING_FRONTEND_PLATFORM in platforms_to_build_str and system == "darwin":
         backend_platform = REMOTING_BACKEND_PLATFORM[system]
         if backend_platform not in platforms_to_build_str:
             platforms_to_build_str.append(backend_platform)
