@@ -13,8 +13,7 @@
     {% if mac_ai_remote_llama_cpp_run_bench_verbose -%}
         --verbose \
     {% endif -%}
-        2> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.stderr.log" \
-        > "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
+        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log" \
   when: mac_ai_remote_llama_cpp_run_bench_llama_bench | bool
 
 - name: Run the test-backend-ops perf benchmark
