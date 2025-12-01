@@ -1,4 +1,3 @@
-import time
 import pathlib
 import logging
 import os
@@ -143,25 +142,46 @@ def open_tunnel(
     if verbose:
         logging.info(cmd)
 
-    proc = subprocess.Popen(cmd, shell=True)
-
-    if not keep_open:
-        atexit.register(proc.kill)
-
     RETRIES = 150
     DELAY = 5
+    recreate_count_down = RECREATED_TUNNEL_COUNT_DOWN = 5 # recreate the SSH tunnel every 5 attempts
+
+    def create_tunnel():
+        _proc = subprocess.Popen(cmd, shell=True)
+        if not keep_open:
+            atexit.register(_proc.kill)
+
+        time.sleep(DELAY)
+
+        return _proc
+
+    proc = create_tunnel()
+
     logging.info("Waiting for the SSH connection to work ...")
-    time.sleep(3)
     for i in range(RETRIES):
         try:
             probe_ssh_endpoint(bastion_user, "localhost", local_host_port, private_key_path, ssh_flags, verbose)
-            logging.info(f"SSH connection working!")
+            logging.info("SSH connection working!")
             break
         except subprocess.CalledProcessError:
-            logging.info(f"Attempt {i+1}/{RETRIES} failed ...")
-            if i == (RETRIES - 1):
-                raise Exception("SSH connection probe failed :/")
-            time.sleep(DELAY)
+            pass
+        recreate_count_down -= 1
+
+        logging.info(f"Attempt {i+1}/{RETRIES} failed ...")
+        if i == (RETRIES - 1):
+            raise Exception("SSH connection probe failed :/")
+
+        if recreate_count_down == 0:
+            logging.info("Killing the non-working SSH tunnel ...")
+            proc.kill()
+
+            if not keep_open:
+                atexit.unregister(proc.kill)
+            logging.info("Creating a new SSH tunnel ...")
+            proc = create_tunnel()
+            recreate_count_down = RECREATED_TUNNEL_COUNT_DOWN
+
+        time.sleep(DELAY)
 
     return
 
