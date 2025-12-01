@@ -136,6 +136,7 @@ class Rhods:
                                   name=None,
                                   enable: list = [],
                                   show_all=False,
+                                  extra_settings: dict = {},
                                   ):
         """
         Update RHOAI datasciencecluster resource
