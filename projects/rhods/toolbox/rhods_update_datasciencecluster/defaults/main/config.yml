@@ -15,7 +15,7 @@ rhods_update_datasciencecluster_show_all: false
 
 # dict of key:value to set manually in the DSC, using JSON dot notation.
 # # Type: Dict
-rhods_update_datasciencecluster_extra_settings: null
+rhods_update_datasciencecluster_extra_settings: []
 
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone
