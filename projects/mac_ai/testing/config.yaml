@@ -130,18 +130,11 @@ ci_presets:
 
   remoting_wip:
     extends: [remoting]
-    # prepare.llama_cpp.source.repo.url: https://github.com/kpouget/crc-llama.cpp
-    # prepare.llama_cpp.source.repo.version: apir
-
-    test.platform:
-    - podman/llama_cpp/remoting
-    - macos/llama_cpp/metal
-
-    test.model.name: granite3.2
-    test.capture_metrics.enabled: false
-
+    prepare.llama_cpp.source.repo.url: https://github.com/kpouget/crc-llama.cpp
+    prepare.llama_cpp.source.repo.version: linux
 
   remoting_linux:
+    extends: [remoting]
     prepare.virglrenderer.repo.branch: main-linux
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
     prepare.ramalama.repo.version: linux
@@ -151,17 +144,15 @@ ci_presets:
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
     prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
-    prepare.podman.machine.remoting_env.env_extra:
-      GGML_VK_DISABLE_INTEGER_DOT_PRODUCT: "1"
+    test.capture_metrics.enabled: false
     test.platform:
+    - linux/llama_cpp/vulkan
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
-    - linux/llama_cpp/vulkan
-    test.model.name: smollm:135m
 
   remoting_mac:
-    extends: [remoting_wip]
+    extends: [remoting]
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
