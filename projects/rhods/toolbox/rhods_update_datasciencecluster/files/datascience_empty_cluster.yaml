@@ -12,8 +12,6 @@ spec:
       managementState: Removed
     kserve:
       managementState: Removed
-    modelmeshserving:
-      managementState: Removed
     ray:
       managementState: Removed
     workbenches:
