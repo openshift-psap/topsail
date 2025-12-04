@@ -63,7 +63,7 @@ def prepare_binary(base_work_dir, platform):
     return ollama_path
 
 
-def has_model(base_work_dir, ollama_path, model_name):
+def has_model(base_work_dir, platform, ollama_path, model_name):
     # tell if the model is available locally
 
     ret = remote_access.run_with_ansible_ssh_conf(
@@ -75,14 +75,14 @@ def has_model(base_work_dir, ollama_path, model_name):
     return ret.returncode == 0
 
 
-def pull_model(base_work_dir, ollama_path, model_name):
+def pull_model(base_work_dir, platform, ollama_path, model_name):
     remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
         f"{ollama_path} pull {model_name} 2>/dev/null"
     )
 
 
-def start_server(base_work_dir, ollama_path, stop=False):
+def start_server(base_work_dir, platform, ollama_path, stop=False):
     artifact_dir_suffix = None
     if stop:
         logging.info("Stopping the ollama server ...")
@@ -99,8 +99,8 @@ def start_server(base_work_dir, ollama_path, stop=False):
     )
 
 
-def stop_server(base_work_dir, ollama_path):
-    start_server(base_work_dir, ollama_path, stop=True)
+def stop_server(base_work_dir, platform, ollama_path):
+    start_server(base_work_dir, platform, ollama_path, stop=True)
 
 
 def run_model(base_work_dir, platform, ollama_path, model, unload=False):
