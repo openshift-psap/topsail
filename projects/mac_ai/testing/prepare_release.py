@@ -14,20 +14,26 @@ import llama_cpp, ollama, ramalama
 
 def create_remoting_tarball(base_work_dir):
     package_libs = []
-    virglrenderer_lib = prepare_virglrenderer.get_dyld_library_path(base_work_dir, with_lib=True)
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        virglrenderer_libs = prepare_virglrenderer.get_linux_libraries(base_work_dir)
+    else:
+        virglrenderer_libs = [prepare_virglrenderer.get_dyld_library_path(base_work_dir, with_lib=True)]
 
-    if not remote_access.exists(virglrenderer_lib):
-        raise ValueError(f"Cannot publish the remoting libraries, {virglrenderer_lib} does not exist")
-    package_libs.append(virglrenderer_lib)
+    for lib in virglrenderer_libs:
+        if not remote_access.exists(lib):
+            raise ValueError(f"Cannot publish the remoting libraries, {lib} does not exist")
+        package_libs.append(lib)
 
     llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
 
-    ggml_backend_libs = config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs")
-    for libname in ggml_backend_libs:
-        backend_lib = llama_remoting_backend_build_dir / libname
-        if not remote_access.exists(backend_lib):
-            raise ValueError(f"Cannot publish the remoting libraries, {backend_lib} does not exist")
-        package_libs.append(backend_lib)
+    if system == "darwin":
+        ggml_backend_libs = config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs")
+        for libname in ggml_backend_libs:
+            backend_lib = llama_remoting_backend_build_dir / libname
+            if not remote_access.exists(backend_lib):
+                raise ValueError(f"Cannot publish the remoting libraries, {backend_lib} does not exist")
+            package_libs.append(backend_lib)
 
     with env.NextArtifactDir("build_remoting_tarball"):
         return build_remoting_tarball(base_work_dir, package_libs)
@@ -115,17 +121,26 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     llama_cpp_version_link = get_version_link(llama_cpp_url, llama_cpp_version, llama_cpp_git_rev, github=True)
 
+    system = config.project.get_config("remote_host.system")
+    if system == "darwin":
+        machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/podman_start_machine.api_remoting.sh")
+        add_local_file(machine_script_file, tarball_dir / machine_script_file.name)
+
+
+        krunkit_script_file = pathlib.Path("projects/mac_ai/testing/scripts/update_krunkit.sh")
+        add_local_file(krunkit_script_file, tarball_dir / krunkit_script_file.name)
+
+        check_podman_machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/check_podman_machine_status.sh")
+        add_local_file(check_podman_machine_script_file, tarball_dir / check_podman_machine_script_file.name)
+
+        entitlement_dir = tarball_dir / "entitlement"
+        entitlement_dir.mkdir()
+
+        entitlement_file = pathlib.Path("projects/mac_ai/testing/scripts/krunkit.entitlements")
+        add_local_file(entitlement_file, entitlement_dir / entitlement_file.name)
+
     for backend_lib in package_libs:
         add_remote_file(base_work_dir, backend_lib, bin_dir / backend_lib.name)
-
-    machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/podman_start_machine.api_remoting.sh")
-    add_local_file(machine_script_file, tarball_dir / machine_script_file.name)
-
-    krunkit_script_file = pathlib.Path("projects/mac_ai/testing/scripts/update_krunkit.sh")
-    add_local_file(krunkit_script_file, tarball_dir / krunkit_script_file.name)
-
-    check_podman_machine_script_file = pathlib.Path("projects/mac_ai/testing/scripts/check_podman_machine_status.sh")
-    add_local_file(check_podman_machine_script_file, tarball_dir / check_podman_machine_script_file.name)
 
     import prepare_mac_ai
     if config.project.get_config("prepare.ramalama.build_image.publish.enabled"):
@@ -146,12 +161,6 @@ def build_remoting_tarball(base_work_dir, package_libs):
     ramalama_version_link = get_version_link(ramalama_repo_url, ramalama_version, ramalama_git_revparse, github=True)
 
     add_string_file(src_info_dir / "ramalama.image-info.txt", ramalama_image + "\n")
-
-    entitlement_dir = tarball_dir / "entitlement"
-    entitlement_dir.mkdir()
-
-    entitlement_file = pathlib.Path("projects/mac_ai/testing/scripts/krunkit.entitlements")
-    add_local_file(entitlement_file, entitlement_dir / entitlement_file.name)
 
     # ---
 
@@ -178,193 +187,24 @@ def build_remoting_tarball(base_work_dir, package_libs):
     build_system_description = config.project.get_config("remote_host.description") or "<not available>"
     build_date = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
 
-    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}.tar"
+    tarball_file = env.ARTIFACT_DIR / f"llama_cpp-api_remoting-{build_version}-{system}.tar"
     tarball_content_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_dir.name
 
     tarball_path = pathlib.Path(env.ARTIFACT_DIR.name) / tarball_file.name
-    add_string_file(tarball_dir / "INSTALL.md", f"""\
-llama.cpp API remoting GPU acceleration for MacOS
-=================================================
 
-Prerequisites
--------------
+    import prepare_release_common
+    if system == "darwin":
+        import prepare_release_mac
+        sys_release = prepare_release_mac
+    else:
+        import prepare_release_linux
+        sys_release = prepare_release_linux
 
-* Make sure that the following dependencies are installed
+    add_string_file(tarball_dir / "INSTALL.md", sys_release.get_install_md(locals()))
+    add_string_file(tarball_dir / "TROUBLESHOOTING.md", sys_release.get_troubleshooting_md(locals()))
 
-```
-brew tap slp/krunkit
-brew install krunkit
-
-brew install podman ramalama molten-vk
-```
-
-* Make sure that a libkrun Podman machine exists
-```
-export CONTAINERS_MACHINE_PROVIDER=libkrun
-
-podman machine ls
-
-# if you don't have a libkrun machine:
-podman machine init
-```
-
-Setup
------
-
-* download and extract the tarball and enter its directory
-```
-curl -Ssf "{ci_build_link}/{tarball_path}" | tar xv
-cd "{tarball_dir.name}"
-```
-
-* from inside the tarball directory, run this command once to create a copy of krunkit/libkrun that will be allowed to run our virglrenderer/llama.cpp libraries
-```
-bash ./{krunkit_script_file.name}
-```
-
-* run this command to restart the libkrun podman machine with our libraries
-```
-bash ./{machine_script_file.name}
-```
-
-Try it
-------
-
-* run ramalama with our custom image.
-```
-export CONTAINERS_MACHINE_PROVIDER=libkrun
-ramalama run --image {ramalama_image} llama3.2
-```
-
-""")
-
-    add_string_file(tarball_dir / "RELEASE.md", f"""\
-CI build
---------
-
-* Build system:  `{build_system_description}`
-* Build date:    `{build_date}`
-* Build version: `{build_version}`
-
-* [INSTALL]({ci_build_link}/{tarball_content_path}/INSTALL.md)
-* [BENCHMARKING]({ci_build_link}/{tarball_content_path}/BENCHMARKING.md)
-* [TROUBLESHOOTING]({ci_build_link}/{tarball_content_path}/TROUBLESHOOTING.md)
-* [tarball]({ci_build_link}/{tarball_path})
-* [build logs]({ci_build_link})
-
-Sources
--------
-
-* virglrenderer source: {virglrenderer_version_link}
-* llama.cpp source    : {llama_cpp_version_link}
-* ramalama source     : {ramalama_version_link}
-
-Ramalama image
---------------
-`{ramalama_image}`
-
-Podman Desktop extension
-------------------------
-`{pde_image_fullname}`
-
-CI performance test
---------
-
-* [release performance test]({ci_perf_link or '(Not running in a CI environment)'})
-""")
-
-    add_string_file(tarball_dir / "TROUBLESHOOTING.md", f"""\
-Troubleshooting
-===============
-
-Before anything, double check that your `podman` is using the `libkrun` VM provider:
-```
-> export CONTAINERS_MACHINE_PROVIDER=libkrun
-```
-and to validate it:
-```
-> podman machine info -format json | jq -r .Host.VMType
-libkrun
-```
-
-Without this, `podman` tries to communicate with `vfkit` VMs, which is not supported.
-
-Running without RamaLama
-------------------------
-
-```
-podman run -it --rm --device /dev/dri "{ramalama_image}" llama-run --verbose --ngl 99 ollama://smollm:135m
-```
-
-Reviewing the container logs
-----------------------------
-
-When ramalama is launched, check the container logs with this command:
-```
-podman logs -f $(podman ps --filter label=ai.ramalama -n1  --format="{{{{.ID}}}}")
-```
-
-Look for these line to confirm that the API Remoting is active (or look for errors in the first lines of the logs)
-```
-load_tensors: offloading 28 repeating layers to GPU
-load_tensors: offloading output layer to GPU
-load_tensors: offloaded 29/29 layers to GPU
-load_tensors:   CPU_Mapped model buffer size =   308.23 MiB
-load_tensors:        Metal model buffer size =  1918.35 MiB
-```
-
-Reviewing the host-side logs
-----------------------------
-
-```
-cat /tmp/apir_virglrenderer.log
-cat /tmp/apir_llama_cpp.log
-```
-
-Reporting an issue
-------------------
-
-Open issues in {llama_cpp_url}/issues
-
-Please share:
-- the content of the logs mentioned above
-- the name of the tarball (`{tarball_file.name}`)
-- the name of the container image (`{ramalama_image}`)
-- the output of this command:
-```
-system_profiler SPSoftwareDataType SPHardwareDataType
-```
-""")
-
-    add_string_file(tarball_dir / "BENCHMARKING.md", f"""\
-Benchmarking
-============
-
-* API Remoting Performance
-```
-ramalama bench --image {ramalama_image} llama3.2 # API Remoting performance
-```
-
-* Native Performance
-```
-brew install llama.cpp
-ramalama --nocontainer bench llama3.2 # native Metal performance
-```
-
-* Vulkan/Venus Performance
-```
-ramalama bench llama3.2 # Venus/Vulkan performance
-```
-
-If you want to share your performance, please also include:
-Please share:
-- the name of the tarball (`{tarball_file.name}`)
-- the name of the container image (`{ramalama_image}`)
-- the output of this command:
-```
-system_profiler SPSoftwareDataType SPHardwareDataType
-```
-""")
+    add_string_file(tarball_dir / "RELEASE.md", prepare_release_common.get_release_md(locals()))
+    add_string_file(tarball_dir / "BENCHMARKING.md", prepare_release_common.get_benchmarking_md(locals()))
 
     with tarfile.open(tarball_file, "w") as tar:
         tar.add(tarball_dir, tarball_dir.relative_to(env.ARTIFACT_DIR))
@@ -376,6 +216,10 @@ system_profiler SPSoftwareDataType SPHardwareDataType
 
 
 def get_podman_desktop_extension_image_name(build_version):
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        return "<no image for linux>", "<no podman desktop extension image for Linux>"
+
     ext_version = config.project.get_config("prepare.remoting.podman_desktop_extension.repo.version")
     image_name = config.project.get_config("prepare.remoting.podman_desktop_extension.image.dest")
     return image_name, f"{image_name}:{ext_version}_{build_version}" # will add the ext release tag here when relevant
