@@ -69,6 +69,10 @@ def safety_checks():
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and isinstance(all_platforms, (list, tuple)):
+        all_platforms = [p for p in all_platforms if not p.startswith("macos")]
+
     multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
     if not multi_test:
         return # safe
@@ -108,7 +112,7 @@ def test():
     finally:
         exc = None
         if config.project.get_config("matbench.enabled"):
-            exc = generate_visualization(env.ARTIFACT_DIR)
+            exc = generate_visualization(env.ARTIFACT_DIR, failed)
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
 
@@ -199,17 +203,18 @@ def test_inference(platform):
 
     brew.capture_dependencies_version(base_work_dir)
 
-    if platform.needs_podman_machine:
-        if not podman_machine.is_running(base_work_dir):
-            podman_machine.start(base_work_dir)
+    if config.project.get_config("prepare.podman.machine.enabled"):
+        if platform.needs_podman_machine:
+            if not podman_machine.is_running(base_work_dir):
+                podman_machine.start(base_work_dir)
 
-        if platform.needs_podman:
-            inference_server_port = config.project.get_config("test.inference_server.port")
-            podman.start(base_work_dir, inference_server_port)
+        elif podman_machine.is_running(base_work_dir):
+            podman.stop(base_work_dir)
+            podman_machine.stop(base_work_dir)
 
-    elif podman_machine.is_running(base_work_dir):
-        podman.stop(base_work_dir)
-        podman_machine.stop(base_work_dir)
+    if platform.needs_podman:
+        inference_server_port = config.project.get_config("test.inference_server.port")
+        podman.start(base_work_dir, inference_server_port)
 
     inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
@@ -356,11 +361,16 @@ def matbench_run_one():
         test_inference(utils.parse_platform(platform_str))
 
 
-def generate_visualization(test_artifact_dir):
+def generate_visualization(test_artifact_dir, test_failed):
     exc = None
 
     with env.NextArtifactDir("plots"):
-        exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+        exc = run.run_and_catch(
+            exc,
+            visualize.generate_from_dir,
+            test_artifact_dir,
+            test_failed=test_failed
+        )
 
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 

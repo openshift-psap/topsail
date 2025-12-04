@@ -6,7 +6,7 @@ ARG MESA_VERSION=25.2.3-101.fc42
 
 RUN echo "BUILD_FLAVOR: $BUILD_FLAVOR"
 
-RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
+RUN  \
     dnf update -y && \
     dnf install -y --quiet python3-dnf-plugin-versionlock && \
     dnf copr enable -y slp/mesa-libkrun-vulkan && \
@@ -14,8 +14,8 @@ RUN if [[ "${BUILD_FLAVOR}" != remoting ]]; then \
     dnf versionlock add mesa-vulkan-drivers-${MESA_VERSION} && \
     dnf install -y --quiet vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
-    dnf install -y --quiet glslc; \
- fi
+    dnf install -y --quiet glslc;
+
 
 # for API Remoting
 
@@ -48,6 +48,36 @@ RUN mkdir -p build \
  && set -o pipefail \
  && cmake -S . -B ../build ${LLAMA_CPP_CMAKE_FLAGS} | tee ../build/build.prepare.log \
  && cmake --build ../build/ ${LLAMA_CPP_CMAKE_BUILD_FLAGS} | tee ../build/build.compile.log
+
+# --- VIRGLRENDERER --- #
+
+WORKDIR /app/virglrenderer
+
+ARG VIRGLRENDERER_ENABLED=n
+ARG VIRGLRENDERER_REPO=https://gitlab.freedesktop.org/kpouget/virglrenderer
+ARG VIRGLRENDERER_COMMIT=main-linux
+ARG VIRGLRENDERER_MESON_FLAGS="-Dapir=true --buildtype=release --prefix=/usr"
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+      dnf install --quiet -y libepoxy-devel meson python3-yaml; \
+    fi
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+ git clone "${VIRGLRENDERER_REPO}" src \
+ && git -C src fetch origin ${VIRGLRENDERER_COMMIT} \
+ && git -C src reset --hard FETCH_HEAD; \
+ fi
+
+RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
+ mkdir -p build \
+ && echo "Version: ${VIRGLRENDERER_COMMIT}" > build/build.flags.log \
+ && echo "meson flags: $VIRGLRENDERER_MESON_FLAGS" >> build/build.flags.log \
+ && cd src \
+ && set -o pipefail \
+ && meson setup ./build ${VIRGLRENDERER_MESON_FLAGS} --prefix=/usr | tee ../build/build.prepare.log \
+ && ninja -C ./build | tee ../build/build.compile.log \
+ && ninja -C ./build install; \
+ fi
 
 USER 1001
 

@@ -80,6 +80,9 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     apply_preset_from_kubeconfig()
     apply_foreign_config()
 
+    system = config.project.get_config("remote_host.system")
+    os.environ["TOPSAIL_REMOTE_OS"] = system
+
     if not ignore_secret_path:
         if not CRC_MAC_AI_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (CRC_MAC_AI_SECRET_PATH={CRC_MAC_AI_SECRET_PATH}) does not exists.")

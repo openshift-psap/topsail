@@ -69,6 +69,11 @@ def run_model(base_work_dir, platform, llama_cpp_path, model):
 
 
 def unload_model(base_work_dir, platform, llama_cpp_path, model):
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        logging.info("Can't *unload* the model on linux/krun ...")
+        return
+
     if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
         command = f"{podman_prefix} pkill python"
@@ -98,7 +103,7 @@ def run_benchmark(base_work_dir, platform, llama_cpp_path, model):
 
     run.run_toolbox(
         "mac_ai", "remote_llama_cpp_run_bench",
-        path=path,
+        path=path.rstrip("/"),
         prefix=prefix,
         model_name=model_fname,
         llama_bench=do_llama_bench,

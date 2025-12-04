@@ -8,7 +8,8 @@ from projects.core.library import env, config, run, configure_logging, export
 from projects.matrix_benchmarking.library import visualize
 
 import podman as podman_mod
-import utils
+import utils, prepare_release
+
 from projects.remote.lib import remote_access
 
 def prepare_test(base_work_dir, platform):
@@ -79,10 +80,14 @@ def build_container_image(base_work_dir, ramalama_path):
         return image_fullname
 
     chdir = ramalama_path.parent.parent
-
+    system = config.project.get_config("remote_host.system")
     logging.info("Building the ramalama image ...")
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
+
+        if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+            cmd += f" RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND={config.project.get_config('prepare.ramalama.remoting.backend')}"
+
         cmd += f" time ./container_build.sh -s build {image_name}"
         cmd += " 2>&1"
 
@@ -242,10 +247,16 @@ def run_benchmark(base_work_dir, platform, ramalama_path, model):
 
 
 def _get_env(base_work_dir, ramalama_path):
-    return dict(
+    env = dict(
         PYTHONPATH=ramalama_path.parent.parent,
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
     ) | podman_mod.get_podman_env(base_work_dir)
+
+    system = config.project.get_config("remote_host.system")
+    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+        env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
+
+    return env
 
 
 def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
@@ -276,6 +287,12 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     else:
         image = None
 
+    extra_extra_kwargs = {} # don't modify extra_kwargs here
+
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
+        extra_extra_kwargs["oci_runtime"] = "krun"
+
     run.run_toolbox(
         "mac_ai", f"remote_ramalama_{ramalama_cmd}",
         base_work_dir=base_work_dir,
@@ -284,7 +301,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
         env=env_str,
         model_name=model,
         image=image,
-        **extra_kwargs,
+        **(extra_kwargs | extra_extra_kwargs),
     )
 
 
