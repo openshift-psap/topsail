@@ -163,7 +163,16 @@ def prepare():
             platforms_to_build.append(puller_platform)
 
     platform_binaries = {}
+    system = config.project.get_config("remote_host.system")
     for platform in platforms_to_build:
+        ignore = False
+        ignore |= (platform.system == "macos" and system == "linux")
+        ignore |= (platform.system == "linux" and system == "darwin")
+
+        if ignore:
+            logging.warning(f"Ignoring platform {platform} on {system}.")
+            continue
+
         inference_server_config = config.project.get_config(f"prepare.{platform.inference_server_name}", None, print=False)
         if not inference_server_config:
             raise ValueError(f"Cannot prepare the {platform.inference_server_name} inference server: no configuration available :/")
