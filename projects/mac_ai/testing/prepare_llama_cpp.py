@@ -138,7 +138,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
     cmake_flags += " " + flavor_cmake_flags.get(config.project.get_config("remote_host.system"), "")
 
 
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+    if system == "linux" and platform.inference_server_flavor == "remoting":
         cmake_flags += " "
         cmake_flags += config.project.get_config('prepare.llama_cpp.source.cmake.flavors.remoting.common')
         cmake_flags += " "
