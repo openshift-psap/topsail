@@ -47,6 +47,16 @@ ci_presets:
     prepare.podman.repo.enabled: false # no linux binary in GH ...
     prepare.podman.machine.enabled: false
 
+  kpouget-laptop:
+    secrets.hostname: mac_ai__hostname.kpouget-laptop
+    secrets.username: mac_ai__username.kpouget-laptop
+    secrets.base_work_dir: mac_ai__base_work_dir.kpouget-laptop
+    remote_host.description: "kpouget's laptop system"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+
   # ---
 
   use_intlab_os:
