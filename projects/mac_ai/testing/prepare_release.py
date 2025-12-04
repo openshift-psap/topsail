@@ -382,6 +382,11 @@ def get_podman_desktop_extension_image_name(build_version):
 
 
 def prepare_podman_desktop_extension_image(base_work_dir, tarball_dir, build_version):
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        logging.warning("Not building the Podman Desktop Extension for Linux for the time being.")
+        return
+
     image_name, image_fullname = get_podman_desktop_extension_image_name(build_version)
 
     # copy the build directory to the remote system
