@@ -70,7 +70,7 @@ def download_ramalama(base_work_dir, dest, version):
                                         chdir=dest)
 
 
-def build_container_image(base_work_dir, ramalama_path):
+def build_container_image(base_work_dir, ramalama_path, platform):
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
     registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_fullname = get_local_image_name()
@@ -85,7 +85,7 @@ def build_container_image(base_work_dir, ramalama_path):
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
 
-        if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+        if system == "linux" and platform.inference_server_flavor == "remoting":
             cmd += f" RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND={config.project.get_config('prepare.ramalama.remoting.backend')}"
 
         cmd += f" time ./container_build.sh -s build {image_name}"
@@ -172,7 +172,7 @@ def prepare_binary(base_work_dir, platform):
 
     build_image_enabled = config.project.get_config("prepare.ramalama.build_image.enabled")
     if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:
-        build_container_image(base_work_dir, ramalama_path)
+        build_container_image(base_work_dir, ramalama_path, platform)
     else:
         logging.info(f"ramalama image build not requested.")
 
@@ -253,7 +253,9 @@ def _get_env(base_work_dir, ramalama_path):
     ) | podman_mod.get_podman_env(base_work_dir)
 
     system = config.project.get_config("remote_host.system")
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+    platform = utils.parse_platform(config.project.get_config("test.platform"))
+
+    if system == "linux" and platform.inference_server_flavor == "remoting":
         env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
 
     return env
@@ -290,6 +292,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     extra_extra_kwargs = {} # don't modify extra_kwargs here
 
     system = config.project.get_config("remote_host.system")
+    # if remoting is enabled, always use the krun flavor (not only for the remoting platform)
     if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         extra_extra_kwargs["oci_runtime"] = "krun"
 
