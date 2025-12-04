@@ -138,6 +138,10 @@ def get_release_image_name(base_work_dir, platform, build_version):
     if config.project.get_config("prepare.ramalama.build_image.debug"):
         dest_image_name += "-debug"
 
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        dest_image_name += "-linux"
+
     return dest_image_name
 
 
@@ -175,7 +179,7 @@ def prepare_binary(base_work_dir, platform):
     if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:
         build_container_image(base_work_dir, ramalama_path, platform)
     else:
-        logging.info(f"ramalama image build not requested.")
+        logging.info("ramalama image build not requested.")
 
     return ramalama_path
 

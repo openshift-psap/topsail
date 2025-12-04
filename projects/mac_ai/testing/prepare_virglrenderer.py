@@ -19,6 +19,20 @@ def get_dyld_library_path(base_work_dir, with_lib=False):
 
     return path
 
+def get_linux_libraries(base_work_dir):
+    libraries = []
+    libraries.append(get_build_dir(base_work_dir) / "src" / "libvirglrenderer.so")
+
+    while True:
+        try:
+            link = remote_access.readlink(libraries[-1])
+            if not link: break # end of the symlink chain
+            libraries.append(libraries[-1].parent / link)
+        except (FileNotFoundError, OSError):
+            break # end of the symlink chain
+
+    return libraries
+
 
 def get_virgl_render_server_path(base_work_dir):
     return get_build_dir(base_work_dir) / "server/virgl_render_server"
