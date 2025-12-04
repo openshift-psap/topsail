@@ -180,9 +180,9 @@ def prepare_binary(base_work_dir, platform):
     return ramalama_path
 
 
-def has_model(base_work_dir, ramalama_path, model_name):
+def has_model(base_work_dir, platform, ramalama_path, model_name):
     # tell if the model is available locally
-    ret = _run(base_work_dir, ramalama_path, "ls --json", check=False, capture_stdout=True)
+    ret = _run(base_work_dir, platform, ramalama_path, "ls --json", check=False, capture_stdout=True)
 
     if ret.returncode != 0:
         raise ValueError("Ramalama couldn't list the model :/")
@@ -199,15 +199,15 @@ def has_model(base_work_dir, ramalama_path, model_name):
     return False
 
 
-def pull_model(base_work_dir, ramalama_path, model_name):
-    _run(base_work_dir, ramalama_path, f"pull {model_name} 2>/dev/null")
+def pull_model(base_work_dir, platform, ramalama_path, model_name):
+    _run(base_work_dir, platform, ramalama_path, f"pull {model_name} 2>/dev/null")
 
 
-def start_server(base_work_dir, ramalama_path, stop=False):
+def start_server(base_work_dir, platform, ramalama_path, stop=False):
     return # nothing to do
 
 
-def stop_server(base_work_dir, ramalama_path):
+def stop_server(base_work_dir, platform, ramalama_path):
     return # nothing to do
 
 
@@ -247,14 +247,13 @@ def run_benchmark(base_work_dir, platform, ramalama_path, model):
     return _run_from_toolbox("run_bench", base_work_dir, platform, ramalama_path, model)
 
 
-def _get_env(base_work_dir, ramalama_path):
+def _get_env(base_work_dir, platform, ramalama_path):
     env = dict(
         PYTHONPATH=ramalama_path.parent.parent,
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
     ) | podman_mod.get_podman_env(base_work_dir)
 
     system = config.project.get_config("remote_host.system")
-    platform = utils.parse_platform(config.project.get_config("test.platform"))
 
     if system == "linux" and platform.inference_server_flavor == "remoting":
         env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
@@ -262,8 +261,8 @@ def _get_env(base_work_dir, ramalama_path):
     return env
 
 
-def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
-    extra_env = _get_env(base_work_dir, ramalama_path)
+def _run(base_work_dir, platform, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
+    extra_env = _get_env(base_work_dir, platform, ramalama_path)
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
@@ -274,7 +273,7 @@ def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_std
 
 
 def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, model, extra_kwargs={}):
-    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
+    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, platform, ramalama_path).items()])
 
     want_gpu = platform.want_gpu
     device = config.project.get_config("prepare.podman.container.device") \

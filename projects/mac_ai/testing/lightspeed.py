@@ -79,11 +79,11 @@ def installer_run(base_work_dir, command):
     return bin_dir
 
 
-def has_model(base_work_dir, lightspeed_path, model_name):
+def has_model(base_work_dir, platform, lightspeed_path, model_name):
     return True
 
 
-def pull_model(base_work_dir, lightspeed_path, model_name):
+def pull_model(base_work_dir, platform, lightspeed_path, model_name):
     if not model_name.startswith("/models/"):
         raise ValueError("Lightspeed can only be tested with the lightspeed model")
 
@@ -92,7 +92,7 @@ def pull_model(base_work_dir, lightspeed_path, model_name):
     return
 
 
-def start_server(base_work_dir, lightspeed_path):
+def start_server(base_work_dir, platform, lightspeed_path):
     with env.NextArtifactDir("lightspeed_start_server"):
         creds = config.project.get_config("prepare.lightspeed.installer.credentials", handled_secretly=True)
         podman_mod.write_authfile(base_work_dir, creds)
@@ -104,7 +104,7 @@ def start_server(base_work_dir, lightspeed_path):
         remote_access.run_with_ansible_ssh_conf(base_work_dir, f"bash {lightspeed_path} start")
 
 
-def stop_server(base_work_dir, lightspeed_path):
+def stop_server(base_work_dir, platform, lightspeed_path):
     remote_access.run_with_ansible_ssh_conf(base_work_dir, f"bash {lightspeed_path} stop")
 
 

@@ -189,18 +189,18 @@ def prepare():
 
         inference_server_binary = platform_binaries[puller_platform.name]
         try:
-            puller_platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.start_server(base_work_dir, puller_platform, inference_server_binary)
             for model in models if isinstance(models, list) else [models]:
                 config.project.set_config("test.model.name", model)
 
-                if puller_platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model):
+                if puller_platform.inference_server_mod.has_model(base_work_dir, puller_platform, inference_server_binary, model):
                     continue
 
-                puller_platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model)
+                puller_platform.inference_server_mod.pull_model(base_work_dir, puller_platform, inference_server_binary, model)
 
                 platforms_pulled.add(puller_platform.name)
         finally:
-            puller_platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.stop_server(base_work_dir, puller_platform, inference_server_binary)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)
