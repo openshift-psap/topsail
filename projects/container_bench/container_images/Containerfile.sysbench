@@ -1,0 +1,15 @@
+FROM registry.fedoraproject.org/fedora:42
+
+LABEL name="sysbench" \
+      version="1.0" \
+      description="Sysbench benchmarking tool for CPU, memory, and I/O performance testing"
+
+RUN dnf install -y \
+    sysbench \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+WORKDIR /workspace
+
+ENTRYPOINT ["sysbench"]
+CMD ["--help"]

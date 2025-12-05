@@ -12,18 +12,18 @@
 
 - name: Set benchmark commands
   set_fact:
-    image_to_pull: "docker.io/zyclonite/sysbench:1.0.21"
+    image_to_pull: "quay.io/jrodak/sysbench:latest"
     log_file_name: "fileio_mount.log"
     benchmark_command: >-
       {{ binary_path }} {{ additional_args }} run --rm -v="${PWD}/test:/test:Z" --entrypoint="sh"
-      docker.io/zyclonite/sysbench:1.0.21 -c
+      quay.io/jrodak/sysbench:latest -c
       "cd /test && sysbench fileio --file-total-size=64G prepare && sysbench fileio --file-total-size=64G --file-test-mode=rndrw run && sysbench fileio --file-total-size=64G cleanup"
 
 - name: Set benchmark commands (Unix/Linux)
   set_fact:
     prepare_commands: "mkdir test"
     cleanup_commands: |
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+      {{ binary_path }} {{ additional_args }} rmi -f quay.io/jrodak/sysbench:latest
       rm -rf test
   when: ansible_os_family != 'Windows'
 
@@ -31,7 +31,7 @@
   set_fact:
     prepare_commands: "New-Item -ItemType Directory -Force -Path test"
     cleanup_commands: |
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/zyclonite/sysbench:1.0.21
+      {{ binary_path }} {{ additional_args }} rmi -f quay.io/jrodak/sysbench:latest
       Remove-Item -Recurse -Force test
   when: ansible_os_family == 'Windows'
 
