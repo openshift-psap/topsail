@@ -70,7 +70,7 @@ def download_ramalama(base_work_dir, dest, version):
                                         chdir=dest)
 
 
-def build_container_image(base_work_dir, ramalama_path):
+def build_container_image(base_work_dir, ramalama_path, platform):
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
     registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_fullname = get_local_image_name()
@@ -85,7 +85,7 @@ def build_container_image(base_work_dir, ramalama_path):
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
 
-        if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+        if system == "linux" and platform.inference_server_flavor == "remoting":
             cmd += f" RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND={config.project.get_config('prepare.ramalama.remoting.backend')}"
 
         cmd += f" time ./container_build.sh -s build {image_name}"
@@ -138,6 +138,10 @@ def get_release_image_name(base_work_dir, platform, build_version):
     if config.project.get_config("prepare.ramalama.build_image.debug"):
         dest_image_name += "-debug"
 
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        dest_image_name += "-linux"
+
     return dest_image_name
 
 
@@ -168,20 +172,21 @@ def prepare_binary(base_work_dir, platform):
     else:
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
 
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, "python3 -m pip install --user --break-system-packages jinja2 jsonschema")
+
+    remote_access.run_with_ansible_ssh_conf(base_work_dir, "python3 -m pip install --user --break-system-packages jinja2 jsonschema", check=False)
 
     build_image_enabled = config.project.get_config("prepare.ramalama.build_image.enabled")
     if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:
-        build_container_image(base_work_dir, ramalama_path)
+        build_container_image(base_work_dir, ramalama_path, platform)
     else:
-        logging.info(f"ramalama image build not requested.")
+        logging.info("ramalama image build not requested.")
 
     return ramalama_path
 
 
-def has_model(base_work_dir, ramalama_path, model_name):
+def has_model(base_work_dir, platform, ramalama_path, model_name):
     # tell if the model is available locally
-    ret = _run(base_work_dir, ramalama_path, "ls --json", check=False, capture_stdout=True)
+    ret = _run(base_work_dir, platform, ramalama_path, "ls --json", check=False, capture_stdout=True)
 
     if ret.returncode != 0:
         raise ValueError("Ramalama couldn't list the model :/")
@@ -198,15 +203,15 @@ def has_model(base_work_dir, ramalama_path, model_name):
     return False
 
 
-def pull_model(base_work_dir, ramalama_path, model_name):
-    _run(base_work_dir, ramalama_path, f"pull {model_name} 2>/dev/null")
+def pull_model(base_work_dir, platform, ramalama_path, model_name):
+    _run(base_work_dir, platform, ramalama_path, f"pull {model_name} 2>/dev/null")
 
 
-def start_server(base_work_dir, ramalama_path, stop=False):
+def start_server(base_work_dir, platform, ramalama_path, stop=False):
     return # nothing to do
 
 
-def stop_server(base_work_dir, ramalama_path):
+def stop_server(base_work_dir, platform, ramalama_path):
     return # nothing to do
 
 
@@ -246,21 +251,22 @@ def run_benchmark(base_work_dir, platform, ramalama_path, model):
     return _run_from_toolbox("run_bench", base_work_dir, platform, ramalama_path, model)
 
 
-def _get_env(base_work_dir, ramalama_path):
+def _get_env(base_work_dir, platform, ramalama_path):
     env = dict(
         PYTHONPATH=ramalama_path.parent.parent,
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
     ) | podman_mod.get_podman_env(base_work_dir)
 
     system = config.project.get_config("remote_host.system")
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+
+    if system == "linux" and platform.inference_server_flavor == "remoting":
         env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
 
     return env
 
 
-def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
-    extra_env = _get_env(base_work_dir, ramalama_path)
+def _run(base_work_dir, platform, ramalama_path, ramalama_cmd, *, check=False, capture_stdout=False, capture_stderr=False):
+    extra_env = _get_env(base_work_dir, platform, ramalama_path)
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
@@ -271,7 +277,7 @@ def _run(base_work_dir, ramalama_path, ramalama_cmd, *, check=False, capture_std
 
 
 def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, model, extra_kwargs={}):
-    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, ramalama_path).items()])
+    env_str = " ".join([f"{k}='{v}'" for k, v in _get_env(base_work_dir, platform, ramalama_path).items()])
 
     want_gpu = platform.want_gpu
     device = config.project.get_config("prepare.podman.container.device") \
@@ -290,6 +296,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
     extra_extra_kwargs = {} # don't modify extra_kwargs here
 
     system = config.project.get_config("remote_host.system")
+    # if remoting is enabled, always use the krun flavor (not only for the remoting platform)
     if system == "linux" and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         extra_extra_kwargs["oci_runtime"] = "krun"
 
