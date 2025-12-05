@@ -2,7 +2,7 @@
 #
 # This file serves as entrypoint to the CI testing
 
-if [[ "$JOB_TYPE" == periodic ]] || [[ "$PULL_NUMBER" == 882 ]]; then
+if [[ "$JOB_TYPE" == periodic ]] || [[ "$PULL_NUMBER" == 883 ]]; then
     echo "RUNNING THE PING TEST"
     if [[ "$JOB_TYPE" == periodic ]]; then
         timeout=12342 # 205m, or 24/7 h
@@ -30,8 +30,18 @@ import time
 previous_state = ""
 while True:
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  sock.settimeout(2) # don't block for more than 2s
+
   result = sock.connect_ex(('$dest',22))
-  state = "OPEN" if result == 0 else "CLOSED"
+  if result == 0:
+    state = "OPEN"
+  elif result == 111:
+    state = "CLOSED"
+  elif result == 114:
+    state = "UNREACHABLE"
+  else:
+    state = f"UNKNOWN ({result})"
+
   sock.close()
 
   if state != previous_state:
