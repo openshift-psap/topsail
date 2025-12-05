@@ -157,7 +157,7 @@ prepare:
       name: podman-machine-default
       use_configuration: true
       configuration:
-        cpus: 12 # in cores
+        cpus: 8 # in cores
         memory: 8116 # in MB
         rootful: false
       # Empty environment values are ignored.
@@ -264,43 +264,43 @@ iperf_host_to_container_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
-   - podman
+   - docker
   benchmark:
-    - run_container_benchmark
-    - exec_container_benchmark
-    - image_build_large_build_context_benchmark
-    # - artifact_add_benchmark
-    - sysbench_cpu_benchmark
-    - sysbench_memory_read_benchmark
-    - sysbench_memory_write_benchmark
-    - sysbench_fileio_container_benchmark
-    - sysbench_fileio_mount_benchmark
-    - iperf_net_bridge_benchmark
-    - iperf_net_host_benchmark
-    - iperf_host_to_container_benchmark
-    - commit_container_benchmark
-    - create_container_benchmark
-    - list_images_benchmark
-    - pull_image_benchmark
-    - remove_image_benchmark
-    - remove_container_benchmark
-    - start_container_benchmark
-    - load_image_benchmark
-    - save_image_benchmark
-    - parallel_remove_image_benchmark
+    # - run_container_benchmark
+    # - exec_container_benchmark
+    # - image_build_large_build_context_benchmark
+    - artifact_add_benchmark
+    # - sysbench_cpu_benchmark
+    # - sysbench_memory_read_benchmark
+    # - sysbench_memory_write_benchmark
+    # - sysbench_fileio_container_benchmark
+    # - sysbench_fileio_mount_benchmark
+    # - iperf_net_bridge_benchmark
+    # - iperf_net_host_benchmark
+    # - iperf_host_to_container_benchmark
+    # - commit_container_benchmark
+    # - create_container_benchmark
+    # - list_images_benchmark
+    # - pull_image_benchmark
+    # - remove_image_benchmark
+    # - remove_container_benchmark
+    # - start_container_benchmark
+    # - load_image_benchmark
+    # - save_image_benchmark
+    # - parallel_remove_image_benchmark
   podman:
     machine_provider:
      - libkrun
      - applehv
      - wsl
-     - hyperv
+     # - hyperv
     rootful:
      - true
      - false
     repo_version:
      # - v5.4.2
-      - v5.7.0
-     # - custom
+      - v5.6.2
+      - custom
     runtime: # Linux only
      - crun
      - runc
@@ -312,9 +312,9 @@ test:
     stop_on_error: true
     iterable_test_fields:
      - test.platform
-    # - test.podman.repo_version
+     - test.podman.repo_version
     # - test.podman.rootful
-    # - test.podman.machine_provider
+     - test.podman.machine_provider
     # - test.podman.runtime
     map_iterable_test_fields:
       test.platform: test.platform
