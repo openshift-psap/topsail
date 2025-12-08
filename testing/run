@@ -2,61 +2,6 @@
 #
 # This file serves as entrypoint to the CI testing
 
-if [[ "$JOB_TYPE" == periodic ]] || [[ "$PULL_NUMBER" == 883 ]]; then
-    echo "RUNNING THE PING TEST"
-    if [[ "$JOB_TYPE" == periodic ]]; then
-        timeout=12342 # 205m, or 24/7 h
-    else
-        timeout=60 # just to test ...
-    fi
-
-    POD_NAME=$(cat /proc/sys/kernel/hostname)
-    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-    APISERVER=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
-
-    NODE_NAME=$(curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
-         -H "Authorization: Bearer $TOKEN" \
-         $APISERVER/api/v1/namespaces/$NAMESPACE/pods/$POD_NAME | \
-        jq -r '.spec.nodeName')
-
-    echo "$(date) Running with a timeout of ${timeout}s on node $NODE_NAME"
-
-    dest="$(cat "$CRC_MAC_AI_SECRET_PATH/jumpci_jump_host" | cut -d@ -f2)"
-    timeout "$timeout" python3 <<EOF
-import socket
-import datetime
-import time
-previous_state = ""
-while True:
-  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  sock.settimeout(2) # don't block for more than 2s
-
-  result = sock.connect_ex(('$dest',22))
-  if result == 0:
-    state = "OPEN"
-  elif result == 111:
-    state = "CLOSED"
-  elif result == 114:
-    state = "UNREACHABLE"
-  else:
-    state = f"UNKNOWN ({result})"
-
-  sock.close()
-
-  if state != previous_state:
-    print()
-    print(f"{datetime.datetime.now()} --> port is {state}")
-  else:
-    print(".", end="", flush=True)
-  previous_state = state
-  time.sleep(5)
-EOF
-    echo
-    echo "$(date) All done, bye."
-    exit 0
-fi
-
 set -o pipefail
 set -o errexit
 set -o nounset
