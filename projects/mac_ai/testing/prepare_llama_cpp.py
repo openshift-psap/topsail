@@ -408,7 +408,7 @@ def _get_binary_path(base_work_dir, platform, for_release=False):
         llama_cpp_path = str(dest.parent / "build" / "bin" / "llama-server")
 
         return llama_cpp_path, dest, file_name, version
-    elif platform.system == "macos" or  platform.system == "linux":
+    elif platform.system == "macos" or platform.system == "linux":
         llama_cpp_path = str(base_work_dir / "llama_cpp" / f"build-{platform.name.replace('/', '-')}-{version}" / "bin" / "llama-server")
         return llama_cpp_path, None, None, version
     else:

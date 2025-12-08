@@ -69,10 +69,6 @@ def safety_checks():
     do_matbenchmarking = config.project.get_config("test.matbenchmarking.enabled")
     all_platforms = config.project.get_config("test.platform")
 
-    system = config.project.get_config("remote_host.system")
-    if system == "linux" and isinstance(all_platforms, (list, tuple)):
-        all_platforms = [p for p in all_platforms if not p.startswith("macos")]
-
     multi_test = do_matbenchmarking or not isinstance(all_platforms, str)
     if not multi_test:
         return # safe
@@ -128,8 +124,19 @@ def test_all_platforms():
         test_inference(utils.parse_platform(all_platforms_str))
         return
 
+    system = config.project.get_config("remote_host.system")
     for platform_str in all_platforms_str:
         if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
+            continue
+
+        platform = utils.parse_platform(platform_str)
+
+        ignore = False
+        ignore |= (platform.system == "macos" and system == "linux")
+        ignore |= (platform.system == "linux" and system == "darwin")
+
+        if ignore:
+            logging.warning(f"Ignoring platform {platform_str} on {system}.")
             continue
 
         config.project.set_config("test.platform", platform_str) # for the post-processing
@@ -138,7 +145,6 @@ def test_all_platforms():
             with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
                 yaml.dump(dict(platform=platform_str), f)
 
-            platform = utils.parse_platform(platform_str)
             test_inference(platform)
 
 
