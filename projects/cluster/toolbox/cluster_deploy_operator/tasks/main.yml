@@ -278,8 +278,8 @@
   - name: Fail if there is already an operatorgroup in the namespace
     fail: msg="There is already an operatorgroup in {{ cluster_deploy_operator_namespace }} ({{ has_operatorgroup_cmd.stdout }})"
     when:
-    - has_operatorgroup_cmd.stdout
-    - not has_our_operatorgroup_cmd.stdout
+    - has_operatorgroup_cmd.stdout | length > 0
+    - has_our_operatorgroup_cmd.stdout | length == 0
 
   - name: Instantiate the OperatorHub OperatorGroup resource
     command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_operator_group.yaml"

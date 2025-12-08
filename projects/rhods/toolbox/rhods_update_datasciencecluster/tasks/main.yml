@@ -124,8 +124,6 @@
       # see RHOAIENG-2618 for which is mapping is necessary
       declare -A INSTALLED_COMPONENT_NAME;
 
-      INSTALLED_COMPONENT_NAME["datasciencepipelines"]="data-science-pipelines-operator"
-
       installed_component_name="${INSTALLED_COMPONENT_NAME['{{ component }}']}"
       if [[ -z "$installed_component_name" ]]; then
         installed_component_name="{{ component }}"
