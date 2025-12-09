@@ -163,7 +163,16 @@ def prepare():
             platforms_to_build.append(puller_platform)
 
     platform_binaries = {}
+    system = config.project.get_config("remote_host.system")
     for platform in platforms_to_build:
+        ignore = False
+        ignore |= (platform.system == "macos" and system == "linux")
+        ignore |= (platform.system == "linux" and system == "darwin")
+
+        if ignore:
+            logging.warning(f"Ignoring platform {platform} on {system}.")
+            continue
+
         inference_server_config = config.project.get_config(f"prepare.{platform.inference_server_name}", None, print=False)
         if not inference_server_config:
             raise ValueError(f"Cannot prepare the {platform.inference_server_name} inference server: no configuration available :/")
@@ -189,18 +198,18 @@ def prepare():
 
         inference_server_binary = platform_binaries[puller_platform.name]
         try:
-            puller_platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.start_server(base_work_dir, puller_platform, inference_server_binary)
             for model in models if isinstance(models, list) else [models]:
                 config.project.set_config("test.model.name", model)
 
-                if puller_platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model):
+                if puller_platform.inference_server_mod.has_model(base_work_dir, puller_platform, inference_server_binary, model):
                     continue
 
-                puller_platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model)
+                puller_platform.inference_server_mod.pull_model(base_work_dir, puller_platform, inference_server_binary, model)
 
                 platforms_pulled.add(puller_platform.name)
         finally:
-            puller_platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.stop_server(base_work_dir, puller_platform, inference_server_binary)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)

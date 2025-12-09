@@ -34,7 +34,7 @@
          --ngl {{ mac_ai_remote_ramalama_run_model_ngl }} \
          --port {{ mac_ai_remote_ramalama_run_model_port }} \
          --host 0.0.0.0 \
-      {% for k, v in  mac_ai_remote_ramalama_run_model_pod_env.items() -%}
+      {% for k, v in mac_ai_remote_ramalama_run_model_pod_env.items() -%}
          --env {{ k }}={{ v }} \
       {% endfor -%}
          --name {{ container_name }} \

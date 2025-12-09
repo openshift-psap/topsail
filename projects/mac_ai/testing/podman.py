@@ -258,7 +258,7 @@ def start(base_work_dir, port, get_command=None):
         logging.warn(f"podman.start: No GPU device configured")
 
     env_str = ""
-    if config.project.get_config("prepare.podman.machine.remoting_env.enabled") and system == "linux":
+    if system == "linux" and platform.inference_server_flavor == "remoting":
         env_str += " ".join([f"-e {k}={v}" for k, v in prepare_release.get_linux_remoting_pod_env(base_work_dir).items()])
 
     remoting_opts = ""
