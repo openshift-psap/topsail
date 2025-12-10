@@ -1,8 +1,8 @@
-FROM quay.io/fedora/fedora:42
+FROM quay.io/fedora/fedora:43
 USER 0
 
 ARG BUILD_FLAVOR="default"
-ARG MESA_VERSION=25.2.3-101.fc42
+ARG MESA_VERSION=25.2.3-101.fc43
 
 RUN echo "BUILD_FLAVOR: $BUILD_FLAVOR"
 
