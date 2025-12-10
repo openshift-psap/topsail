@@ -92,6 +92,8 @@ export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed s+/usr/local/cuda/compat++)
 echo "STARTING TORCHRUN | $(date)"
 SECONDS=0
 ret=0
+mkdir -p /mnt/output/model/
+mkdir -p /mnt/storage/
 if ! torchrun \
     --node_rank "${RANK}" \
     --rdzv_endpoint "${MASTER_ADDR}:${MASTER_PORT}" \
@@ -101,5 +103,10 @@ then
     echo "TORCHRUN FAILED :/ (retcode=$ret)"
 fi
 echo "TORCHRUN FINISHED after $SECONDS seconds | $(date)"
+
+#if [[ -n "${RETRIEVE:-}" ]] && [[ "$RANK" -eq 0 ]]; then
+#    # NOTE: Write here the code to copy any file you want to export to the test artifacts
+#    cp /mnt/output/model/training_params_and_metrics_global0.jsonl "$RETRIEVE"
+#fi
 
 exit $ret
