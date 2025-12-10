@@ -579,7 +579,7 @@ test:
         llama_bench: true
         backend_ops_perf: false
   model:
-    name: ollama://granite4
+    name: ollama://llama3.2
     size: small
     gguf_dir: models
 
