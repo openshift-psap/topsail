@@ -37,6 +37,26 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
     remote_host.description: "kpouget's MacBook M4 Pro"
 
+  kpouget-atuona:
+    secrets.hostname: mac_ai__hostname.kpouget-atuona
+    secrets.username: mac_ai__username.kpouget-atuona
+    secrets.base_work_dir: mac_ai__base_work_dir.kpouget-atuona
+    remote_host.description: "kpouget's Atuona system"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+
+  kpouget-laptop:
+    secrets.hostname: mac_ai__hostname.kpouget-laptop
+    secrets.username: mac_ai__username.kpouget-laptop
+    secrets.base_work_dir: mac_ai__base_work_dir.kpouget-laptop
+    remote_host.description: "kpouget's laptop system"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+
   # ---
 
   use_intlab_os:
@@ -110,13 +130,42 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b6945-remoting-0.1.6
-    prepare.virglrenderer.repo.branch: v1.1.1-remoting-0.1.4
+    prepare.llama_cpp.source.repo.version: b7003-remoting-0.2.1
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.14.0-apir.rc1
+    prepare.ramalama.repo.version: v0.15.0-apir.0.1.2
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
+
+  remoting_wip:
+    extends: []
+
+  remoting_linux:
+    extends: [remoting]
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6-linux
+    prepare.llama_cpp.source.cmake.openmp.enabled: false
+    prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
+
+    prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_vk_reg"
+    prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
+    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
+    prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
+    test.capture_metrics.enabled: false
+    test.platform:
+    - linux/llama_cpp/vulkan
+    - podman/ramalama/remoting
+    - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
+
+  remoting_mac:
+    extends: [remoting]
+    test.platform:
+    - podman/ramalama/remoting
+    - podman/llama_cpp/remoting
+    - podman/llama_cpp/vulkan
+    - macos/llama_cpp/metal
+    - macos/llama_cpp/vulkan
 
 
   remoting_bench:
@@ -129,14 +178,6 @@ ci_presets:
 
     test.platforms_to_skip:
     - podman/llama_cpp/remoting # build it but don't test it
-
-  remoting_wip:
-    extends: [remoting]
-    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: main
-    test.platform:
-    - podman/llama_cpp/remoting
-    - macos/llama_cpp/metal
 
   remoting_publish:
     extends: [remoting, use_intlab_os]
@@ -152,6 +193,7 @@ ci_presets:
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
+    - linux/llama_cpp/vulkan
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
@@ -351,9 +393,11 @@ prepare:
     release:
       repo:
         url: https://github.com/ggml-org/llama.cpp
-        version: b5648
+        version: b7003
 
-      file: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
+      file:
+        darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
+        linux: llama-{@prepare.llama_cpp.release.repo.version}-bin-ubuntu-vulkan-x64.zip
       tarball: true
 
     source:
@@ -365,15 +409,21 @@ prepare:
         parallel: 5
         openmp:
           enabled: true
-          flags: -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
+          flags:
+            -DGGML_OPENMP=ON -DOpenMP_C_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_C_LIB_NAMES=omp -DOpenMP_omp_LIBRARY={@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/lib/libomp.dylib -DOpenMP_CXX_FLAGS="-I{@prepare.brew._libomp.location}/{@prepare.brew._libomp.version}/include/" -DOpenMP_CXX_LIB_NAMES=omp
         common: -DGGML_CPU_ARM_ARCH=native -DLLAMA_CURL=OFF
         debug:
           enabled: false
           flags: -DCMAKE_BUILD_TYPE=Debug
         flavors:
           metal: -DGGML_NATIVE=ON -DGGML_VULKAN=OFF
-          vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
-          remoting: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
+          vulkan:
+            common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
+            darwin: -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
+          remoting:
+            common: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON
+            darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
+            linux: -DGGML_VULKAN=ON
       podman:
         build_from: local_container_file
         command: # will be set in prepare_test
@@ -389,8 +439,10 @@ prepare:
             LLAMA_CPP_CMAKE_FLAGS: -DLLAMA_CURL=OFF
             BUILD_FLAVOR: # set at runtime with the name of the flavor (one from below)
           flavors:
-            vulkan: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
-            remoting: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
+            vulkan:
+              common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
+            remoting:
+              common: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
 
   ollama:
     repo:
@@ -413,6 +465,8 @@ prepare:
       publish:
         enabled: false
         credentials: "*$@secrets.image_registry"
+    remoting:
+      backend: vulkan
   brew:
     install_dependencies: false
     capture_dependencies: false
@@ -440,7 +494,9 @@ prepare:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
     build:
-      flags: -Dapir=true -Dc_link_args=-L/opt/homebrew/lib/
+      flags:
+        common: -Dapir=true
+        darwin: -Dc_link_args=-L/opt/homebrew/lib/
     debug:
       enabled: false
       flags: --buildtype=debug
@@ -491,6 +547,7 @@ prepare:
           APIR_LLAMA_CPP_GGML_LIBRARY_INIT: ggml_backend_metal_init
           VIRGL_APIR_LOG_TO_FILE: /tmp/topsail_apir_virglrenderer.log
           APIR_LLAMA_CPP_LOG_TO_FILE: /tmp/topsail_apir_llama_cpp.log
+        env_extra: {}
   remoting:
     podman_desktop_extension:
       enabled: false
@@ -522,7 +579,7 @@ test:
         llama_bench: true
         backend_ops_perf: false
   model:
-    name: ollama://llama3.2
+    name: ollama://granite4
     size: small
     gguf_dir: models
 
@@ -530,7 +587,7 @@ test:
     enabled: true
 
     args:
-      host: localhost
+      host: 127.0.0.1
       port: "@test.inference_server.port"
       duration: 60
       concurrency: 1
@@ -642,7 +699,7 @@ exec_list:
   generate_plots_from_pr_args: true
 
 __platform_check:
-  system: [macos, podman]
+  system: [macos, podman, linux]
   inference_server: [llama_cpp, ollama, ramalama, lightspeed]
 
   options:

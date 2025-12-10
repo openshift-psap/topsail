@@ -84,14 +84,11 @@ def prepare_matbench():
 
 
 @entrypoint()
-def generate_visualizations(results_dirname, generate_lts=None):
+def generate_visualizations(results_dirname, generate_lts=None, test_failed=None):
     visualizations = matbench_config.get_config("visualize")
-    plotting_failed = False
-    for idx in range(len(visualizations)):
-        generate_visualization(results_dirname, idx, generate_lts=generate_lts)
 
-    if plotting_failed:
-        raise RuntimeError("Som of visualization failed")
+    for idx in range(len(visualizations)):
+        generate_visualization(results_dirname, idx, generate_lts=generate_lts, test_failed=test_failed)
 
 
 def call_parse(step_idx, common_args, common_env):
@@ -353,7 +350,7 @@ def call_visualize(step_idx, common_env_str, common_args, filters_to_apply, gene
     return errors
 
 
-def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=None, analyze_lts=None):
+def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=None, analyze_lts=None, test_failed=None):
     generate_list = matbench_config.get_config(f"visualize[{idx}].generate")
     if not generate_list:
         raise ValueError(f"Couldn't get the configuration #{idx} ...")
@@ -489,6 +486,12 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
     if non_fatal_errors:
         msg = f"An error happened during the visualization post-processing ... ({', '.join(non_fatal_errors)} in {env.ARTIFACT_DIR})"
+        if test_failed:
+            msg += ". Mind that the test that was processed FAILED."
+        elif test_failed is False:
+            msg += ". The test that was processed SUCCEEDED."
+        # if None, ignore
+
         logging.error(msg)
         with open(env.ARTIFACT_DIR / "FAILURE", "w") as f:
             print(msg, file=f)
@@ -496,10 +499,10 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
 
 
 @entrypoint()
-def generate_from_dir(results_dirname, generate_lts=None):
+def generate_from_dir(results_dirname, generate_lts=None, test_failed=None):
     logging.info(f"Generating the visualization from '{results_dirname}' ...")
 
-    generate_visualizations(results_dirname, generate_lts=generate_lts)
+    generate_visualizations(results_dirname, generate_lts=generate_lts, test_failed=test_failed)
 
 
 def get_common_matbench_args_env(results_dirname):

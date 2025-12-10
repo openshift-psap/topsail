@@ -219,6 +219,21 @@ def mkdir(path, handled_secretly=False):
         handled_secretly=handled_secretly,
     )
 
+def readlink(path, handled_secretly=False):
+    if config.project.get_config("remote_host.run_locally", print=False):
+        return str(pathlib.Path(path).readlink())
+    base_work_dir = prepare()
+
+    ret = run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"readlink '{path}'",
+        handled_secretly=handled_secretly,
+        capture_stdout=True,
+        check=False,
+    )
+
+    return ret.stdout.strip()
+
 
 def write(path, content, handled_secretly=False):
     if config.project.get_config("remote_host.run_locally", print=False):

@@ -22,21 +22,21 @@ TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 def _model_name(model):
     return model.split("/")[-1]
 
-def start_server(base_work_dir, llama_cpp_path):
+def start_server(base_work_dir, platform, llama_cpp_path):
     pass # nothing to start
 
 
-def stop_server(base_work_dir, llama_cpp_path):
+def stop_server(base_work_dir, platform, llama_cpp_path):
     pass # nothing to stop
 
 
-def has_model(base_work_dir, llama_cpp_path, model):
+def has_model(base_work_dir, platform, llama_cpp_path, model):
     model_fname = utils.model_to_fname(_model_name(model))
 
     return remote_access.exists(model_fname)
 
 
-def pull_model(base_work_dir, llama_cpp_path, model):
+def pull_model(base_work_dir, platform, llama_cpp_path, model):
     llama_cpp_path = llama_cpp_path.replace("llama-server", "llama-run")
     model_name = _model_name(model)
     model_fname = utils.model_to_fname(model_name)
@@ -69,6 +69,11 @@ def run_model(base_work_dir, platform, llama_cpp_path, model):
 
 
 def unload_model(base_work_dir, platform, llama_cpp_path, model):
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        logging.info("Can't *unload* the model on linux/krun ...")
+        return
+
     if platform.needs_podman:
         podman_prefix = podman_mod.get_exec_command_prefix()
         command = f"{podman_prefix} pkill python"
@@ -98,7 +103,7 @@ def run_benchmark(base_work_dir, platform, llama_cpp_path, model):
 
     run.run_toolbox(
         "mac_ai", "remote_llama_cpp_run_bench",
-        path=path,
+        path=path.rstrip("/"),
         prefix=prefix,
         model_name=model_fname,
         llama_bench=do_llama_bench,

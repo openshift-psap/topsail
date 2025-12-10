@@ -162,6 +162,8 @@ class Mac_Ai:
             device=None,
             unload=False,
             image="quay.io/ramalama/ramalama:latest",
+            oci_runtime=None,
+            pod_env={},
     ):
         """
         Runs a model with ramalama, on a remote host
@@ -177,6 +179,8 @@ class Mac_Ai:
           device: name of the device to pass to the container
           unload: if True, unloads (stops serving) this model
           image: the image to use to run ramalama
+          oci_runtime: optional OCI runtime flag to pass to ramalama
+          pod_env: optional env flags to pass to the Pod
         """
 
         return RunAnsibleRole(locals())
@@ -192,6 +196,8 @@ class Mac_Ai:
             ngl=99,
             device=None,
             image="quay.io/ramalama/ramalama:latest",
+            oci_runtime=None,
+            pod_env={},
     ):
         """
         Benchmark a model with ramalama, on a remote host
@@ -204,6 +210,8 @@ class Mac_Ai:
           ngl: number of layers to store in VRAM
           device: name of the device to pass to the container
           image: the image to use to run ramalama
+          oci_runtime: optional OCI runtime flag to pass to ramalama
+          pod_env: optional env flags to pass to the Pod
         """
 
         return RunAnsibleRole(locals())

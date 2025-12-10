@@ -100,11 +100,11 @@ def generate_lts_settings(lts_metadata, results, import_settings):
     lts_settings.hardware = ""
     try: lts_settings.hardware += results.system_state["Hardware"]["Hardware Overview"]["Chip"] + " "
     except Exception:
-        logging.error("Couldn't find the system chip name")
+        logging.warning("Couldn't find the system chip name")
 
     try: lts_settings.hardware += results.system_state["Hardware"]["Hardware Overview"]["Memory"] + " "
     except Exception:
-        logging.error("Couldn't find the system memory")
+        logging.warning("Couldn't find the system memory")
 
     lts_settings.hardware = lts_settings.hardware.strip()
     if not lts_settings.hardware:
@@ -112,7 +112,7 @@ def generate_lts_settings(lts_metadata, results, import_settings):
 
     try: lts_settings.os = results.system_state["Software"]["System Software Overview"]["System Version"].split(" (")[0]
     except Exception:
-        logging.error("Couldn't find the system OS")
+        logging.warning("Couldn't find the system OS")
         lts_settings.os = "Unknown"
 
     lts_settings.urls = results.from_env.test.urls

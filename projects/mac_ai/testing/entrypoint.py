@@ -80,11 +80,22 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     apply_preset_from_kubeconfig()
     apply_foreign_config()
 
+    system = config.project.get_config("remote_host.system")
+    os.environ["TOPSAIL_REMOTE_OS"] = system
+
     if not ignore_secret_path:
         if not CRC_MAC_AI_SECRET_PATH.exists():
             raise RuntimeError(f"Path with the secrets (CRC_MAC_AI_SECRET_PATH={CRC_MAC_AI_SECRET_PATH}) does not exists.")
 
         run.run(f'sha256sum "$CRC_MAC_AI_SECRET_PATH"/* > "{env.ARTIFACT_DIR}/secrets.sha256sum"')
+
+    hostname = config.project.get_config("remote_host.hostname", handled_secretly=True)
+    username = config.project.get_config("remote_host.username", handled_secretly=True)
+
+    if (hostname == "localhost" or hostname.startswith("127.0.0.")) and username != os.environ["USER"]:
+        logging.warning("Localhost, multi-user environment detected.")
+        logging.warning("Setting umask 0o000 to avoid conflicts in the shared /tmp/topsail_xxx directory")
+        os.umask(0o000)
 
 
 def entrypoint(ignore_secret_path=False, apply_preset_from_pr_args=True):

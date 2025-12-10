@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pathlib
 import logging
 import subprocess
@@ -29,23 +29,29 @@ INFERENCE_SERVERS = dict(
 
 
 REMOTING_FRONTEND_PLATFORM = "podman/llama_cpp/remoting"
-REMOTING_BACKEND_PLATFORM = "macos/llama_cpp/remoting"
+REMOTING_BACKEND_PLATFORM = {
+    "darwin": "macos/llama_cpp/remoting",
+    "linux": "linux/llama_cpp/remoting",
+}
 RAMALAMA_REMOTING_PLATFORM = "podman/ramalama/remoting"
 
 def cleanup():
     base_work_dir = remote_access.prepare()
 
     if config.project.get_config("cleanup.images.llama_cpp"):
-        is_running = podman_machine.is_running(base_work_dir)
-        if is_running is None:
-            logging.warning("Podman machine doesn't exist.")
-        elif not is_running:
-            try:
-                podman_machine.start(base_work_dir, use_remoting=False)
-                is_running = True
-            except subprocess.CalledProcessError:
-                logging.warning("Could not start podman machine, cannot cleanup the llama_cpp images ...")
-                is_running = None
+        if config.project.get_config("prepare.podman.machine.enabled"):
+            is_running = podman_machine.is_running(base_work_dir)
+            if is_running is None:
+                logging.warning("Podman machine doesn't exist.")
+            elif not is_running:
+                try:
+                    podman_machine.start(base_work_dir, use_remoting=False)
+                    is_running = True
+                except subprocess.CalledProcessError:
+                    logging.warning("Could not start podman machine, cannot cleanup the llama_cpp images ...")
+                    is_running = None
+        else:
+            is_running = True
 
         if is_running:
             prepare_llama_cpp.cleanup_image(base_work_dir)
@@ -126,7 +132,8 @@ def prepare():
 
         prepare_virglrenderer.prepare(base_work_dir)
 
-        podman_machine.configure_and_start(base_work_dir, force_restart=True)
+        if config.project.get_config("prepare.podman.machine.enabled"):
+            podman_machine.configure_and_start(base_work_dir, force_restart=True)
 
     platforms_to_build_str = config.project.get_config("prepare.platforms.to_build")
     if not platforms_to_build_str:
@@ -135,9 +142,11 @@ def prepare():
     if not isinstance(platforms_to_build_str, list):
         platforms_to_build_str = [platforms_to_build_str]
 
-    if (REMOTING_FRONTEND_PLATFORM in platforms_to_build_str and
-        REMOTING_BACKEND_PLATFORM not in platforms_to_build_str):
-        platforms_to_build_str.append(REMOTING_BACKEND_PLATFORM)
+    system = config.project.get_config("remote_host.system")
+    if REMOTING_FRONTEND_PLATFORM in platforms_to_build_str and system == "darwin":
+        backend_platform = REMOTING_BACKEND_PLATFORM[system]
+        if backend_platform not in platforms_to_build_str:
+            platforms_to_build_str.append(backend_platform)
 
     puller_platforms = []
     platforms_to_build = [
@@ -154,7 +163,16 @@ def prepare():
             platforms_to_build.append(puller_platform)
 
     platform_binaries = {}
+    system = config.project.get_config("remote_host.system")
     for platform in platforms_to_build:
+        ignore = False
+        ignore |= (platform.system == "macos" and system == "linux")
+        ignore |= (platform.system == "linux" and system == "darwin")
+
+        if ignore:
+            logging.warning(f"Ignoring platform {platform} on {system}.")
+            continue
+
         inference_server_config = config.project.get_config(f"prepare.{platform.inference_server_name}", None, print=False)
         if not inference_server_config:
             raise ValueError(f"Cannot prepare the {platform.inference_server_name} inference server: no configuration available :/")
@@ -180,18 +198,18 @@ def prepare():
 
         inference_server_binary = platform_binaries[puller_platform.name]
         try:
-            puller_platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.start_server(base_work_dir, puller_platform, inference_server_binary)
             for model in models if isinstance(models, list) else [models]:
                 config.project.set_config("test.model.name", model)
 
-                if puller_platform.inference_server_mod.has_model(base_work_dir, inference_server_binary, model):
+                if puller_platform.inference_server_mod.has_model(base_work_dir, puller_platform, inference_server_binary, model):
                     continue
 
-                puller_platform.inference_server_mod.pull_model(base_work_dir, inference_server_binary, model)
+                puller_platform.inference_server_mod.pull_model(base_work_dir, puller_platform, inference_server_binary, model)
 
                 platforms_pulled.add(puller_platform.name)
         finally:
-            puller_platform.inference_server_mod.stop_server(base_work_dir, inference_server_binary)
+            puller_platform.inference_server_mod.stop_server(base_work_dir, puller_platform, inference_server_binary)
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         podman_machine.configure_and_start(base_work_dir, force_restart=False)

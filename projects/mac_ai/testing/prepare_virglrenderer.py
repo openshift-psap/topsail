@@ -19,6 +19,39 @@ def get_dyld_library_path(base_work_dir, with_lib=False):
 
     return path
 
+def get_linux_libraries(base_work_dir):
+    libraries = []
+    libraries.append(get_build_dir(base_work_dir) / "src" / "libvirglrenderer.so")
+
+    while True:
+        try:
+            link = remote_access.readlink(libraries[-1])
+            if not link: break # end of the symlink chain
+            libraries.append(libraries[-1].parent / link)
+        except (FileNotFoundError, OSError):
+            break # end of the symlink chain
+
+    return libraries
+
+
+def get_virgl_render_server_path(base_work_dir):
+    return get_build_dir(base_work_dir) / "server/virgl_render_server"
+
+
+def get_build_flags():
+    all_build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
+    system = config.project.get_config("remote_host.system")
+
+    build_flags_lst = []
+    build_flags_lst.append(all_build_flags["common"])
+    if system_flags := all_build_flags.get(system):
+        build_flags_lst.append(system_flags)
+
+    if config.project.get_config("prepare.virglrenderer.debug.enabled"):
+        build_flags_lst.append(config.project.get_config('prepare.virglrenderer.debug.flags'))
+
+    return " ".join(build_flags_lst)
+
 
 def prepare(base_work_dir):
     if not config.project.get_config("prepare.virglrenderer.enabled"):
@@ -28,10 +61,8 @@ def prepare(base_work_dir):
     # don't check if already exists, always build it
 
     repo_url = config.project.get_config("prepare.virglrenderer.repo.url")
-    build_flags = config.project.get_config("prepare.virglrenderer.build.flags")
 
-    if config.project.get_config("prepare.virglrenderer.debug.enabled"):
-        build_flags += " " + config.project.get_config("prepare.virglrenderer.debug.flags")
+    build_flags = get_build_flags()
 
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
     refspec = None
@@ -62,6 +93,9 @@ def prepare(base_work_dir):
 
 
 def configure(base_work_dir, use_custom):
+    if config.project.get_config("remote_host.system") != "darwin":
+        return
+
     BREW_CUSTOM_DIR = pathlib.Path("/opt/homebrew/Cellar/virglrenderer/0.10.4d/lib/custom")
     BREW_CUSTOM_LIB = BREW_CUSTOM_DIR / "libvirglrenderer.1.dylib.current"
 

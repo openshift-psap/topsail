@@ -108,7 +108,7 @@ def test():
     finally:
         exc = None
         if config.project.get_config("matbench.enabled"):
-            exc = generate_visualization(env.ARTIFACT_DIR)
+            exc = generate_visualization(env.ARTIFACT_DIR, failed)
             if exc:
                 logging.error(f"Test visualization failed :/ {exc}")
 
@@ -124,8 +124,19 @@ def test_all_platforms():
         test_inference(utils.parse_platform(all_platforms_str))
         return
 
+    system = config.project.get_config("remote_host.system")
     for platform_str in all_platforms_str:
         if platform_str in config.project.get_config("test.platforms_to_skip", print=False):
+            continue
+
+        platform = utils.parse_platform(platform_str)
+
+        ignore = False
+        ignore |= (platform.system == "macos" and system == "linux")
+        ignore |= (platform.system == "linux" and system == "darwin")
+
+        if ignore:
+            logging.warning(f"Ignoring platform {platform_str} on {system}.")
             continue
 
         config.project.set_config("test.platform", platform_str) # for the post-processing
@@ -134,7 +145,6 @@ def test_all_platforms():
             with open(env.ARTIFACT_DIR / "settings.platform.yaml", "w") as f:
                 yaml.dump(dict(platform=platform_str), f)
 
-            platform = utils.parse_platform(platform_str)
             test_inference(platform)
 
 
@@ -199,17 +209,18 @@ def test_inference(platform):
 
     brew.capture_dependencies_version(base_work_dir)
 
-    if platform.needs_podman_machine:
-        if not podman_machine.is_running(base_work_dir):
-            podman_machine.start(base_work_dir)
+    if config.project.get_config("prepare.podman.machine.enabled"):
+        if platform.needs_podman_machine:
+            if not podman_machine.is_running(base_work_dir):
+                podman_machine.start(base_work_dir)
 
-        if platform.needs_podman:
-            inference_server_port = config.project.get_config("test.inference_server.port")
-            podman.start(base_work_dir, inference_server_port)
+        elif podman_machine.is_running(base_work_dir):
+            podman.stop(base_work_dir)
+            podman_machine.stop(base_work_dir)
 
-    elif podman_machine.is_running(base_work_dir):
-        podman.stop(base_work_dir)
-        podman_machine.stop(base_work_dir)
+    if platform.needs_podman:
+        inference_server_port = config.project.get_config("test.inference_server.port")
+        podman.start(base_work_dir, inference_server_port)
 
     inference_server_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, platform)
 
@@ -217,12 +228,12 @@ def test_inference(platform):
     pull_platform = utils.parse_platform(model_puller_str)
     inference_server_pull_binary = platform.prepare_inference_server_mod.get_binary_path(base_work_dir, pull_platform)
     try:
-        pull_platform.inference_server_mod.start_server(base_work_dir, inference_server_pull_binary)
+        pull_platform.inference_server_mod.start_server(base_work_dir, pull_platform, inference_server_pull_binary)
 
-        if not pull_platform.inference_server_mod.has_model(base_work_dir, inference_server_pull_binary, model_name):
-            pull_platform.inference_server_mod.pull_model(base_work_dir, inference_server_pull_binary, model_name)
+        if not pull_platform.inference_server_mod.has_model(base_work_dir, pull_platform, inference_server_pull_binary, model_name):
+            pull_platform.inference_server_mod.pull_model(base_work_dir, pull_platform, inference_server_pull_binary, model_name)
     finally:
-        pull_platform.inference_server_mod.stop_server(base_work_dir, inference_server_pull_binary)
+        pull_platform.inference_server_mod.stop_server(base_work_dir, pull_platform, inference_server_pull_binary)
 
     llm_load_test_enabled = config.project.get_config("test.llm_load_test.enabled")
     server_benchmark_enabled = config.project.get_config("test.inference_server.benchmark.enabled")
@@ -235,7 +246,7 @@ def test_inference(platform):
     exit_code = 1
 
     try:
-        platform.inference_server_mod.start_server(base_work_dir, inference_server_binary)
+        platform.inference_server_mod.start_server(base_work_dir, platform, inference_server_binary)
 
         if server_benchmark_enabled:
             platform.inference_server_mod.run_benchmark(
@@ -265,7 +276,7 @@ def test_inference(platform):
 
         if config.project.get_config("test.inference_server.stop_on_exit"):
             exc = run.run_and_catch(exc, platform.inference_server_mod.stop_server,
-                                    base_work_dir, inference_server_binary)
+                                    base_work_dir, platform, inference_server_binary)
 
         if platform.needs_podman and config.project.get_config("prepare.podman.stop_on_exit"):
             exc = run.run_and_catch(exc, podman.stop, base_work_dir)
@@ -356,11 +367,16 @@ def matbench_run_one():
         test_inference(utils.parse_platform(platform_str))
 
 
-def generate_visualization(test_artifact_dir):
+def generate_visualization(test_artifact_dir, test_failed):
     exc = None
 
     with env.NextArtifactDir("plots"):
-        exc = run.run_and_catch(exc, visualize.generate_from_dir, test_artifact_dir)
+        exc = run.run_and_catch(
+            exc,
+            visualize.generate_from_dir,
+            test_artifact_dir,
+            test_failed=test_failed
+        )
 
         logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
 
