@@ -393,7 +393,7 @@ prepare:
     release:
       repo:
         url: https://github.com/ggml-org/llama.cpp
-        version: b7003
+        version: b7356
 
       file:
         darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
