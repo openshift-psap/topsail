@@ -5,6 +5,7 @@ import tempfile
 import os
 
 from projects.core.library import env, config
+import utils_gethostname
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -39,6 +40,13 @@ def init(ignore_secret_path=False, apply_preset_from_pr_args=True):
     apply_preset_by_jobname()
     config.project.apply_config_overrides(ignore_not_found=True)
     config.test_skip_list()
+
+    node_name = utils_gethostname.get_kubernetes_node_name()
+    if node_name:
+        logging.warning(f"JumpCI Pod is running on node/{node_name}")
+    else:
+        logging.warning("Could not determine Node Name (Check if you are running inside a properly configured K8s Pod).")
+
 
 
 def entrypoint(ignore_secret_path=False):
