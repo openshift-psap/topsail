@@ -16,19 +16,19 @@
 
 - name: Set benchmark commands
   set_fact:
-    image_to_pull: "docker.io/networkstatic/iperf3:latest"
+    image_to_pull: "quay.io/jrodak/iperf3:latest"
     log_file_name: "iperf_net_bridge.log"
     prepare_commands: |
       {{ binary_path }} {{ additional_args }} network create iperf-test
-      {{ binary_path }} {{ additional_args }} run -d --network iperf-test --name iperf3-server docker.io/networkstatic/iperf3:latest -s -d
+      {{ binary_path }} {{ additional_args }} run -d --network iperf-test --name iperf3-server quay.io/jrodak/iperf3:latest -s -d
       {{ sleep_cmd }}
     cleanup_commands: |
       {{ binary_path }} {{ additional_args }} stop iperf3-server
       {{ binary_path }} {{ additional_args }} rm -f iperf3-server
       {{ binary_path }} {{ additional_args }} network rm iperf-test
-      {{ binary_path }} {{ additional_args }} rmi -f docker.io/networkstatic/iperf3:latest
+      {{ binary_path }} {{ additional_args }} rmi -f quay.io/jrodak/iperf3:latest
     benchmark_command: |
-      {{ binary_path }} {{ additional_args }} run --rm --network iperf-test docker.io/networkstatic/iperf3:latest -c iperf3-server
+      {{ binary_path }} {{ additional_args }} run --rm --network iperf-test quay.io/jrodak/iperf3:latest -c iperf3-server
 
 - name: Include Unix/Linux tasks
   include_tasks: "../../shared_tasks/unix_synthetic_benchmark_body.yml"
