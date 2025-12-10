@@ -33,6 +33,7 @@ def lock_cluster(cluster=None):
 
     run.run_toolbox("jump_ci", "take_lock", cluster=cluster, owner=utils.get_lock_owner())
 
+    tunnelling.run_with_ansible_ssh_conf(f"podman container rm --force 'topsail-on-{cluster}'")
 
 
 @utils.entrypoint()
@@ -48,6 +49,8 @@ def unlock_cluster(cluster=None):
 
     if cluster is None:
         cluster = config.project.get_config("cluster.name")
+
+    tunnelling.run_with_ansible_ssh_conf(f"podman container rm --force 'topsail-on-{cluster}'")
 
     run.run_toolbox("jump_ci", "release_lock", cluster=cluster, owner=utils.get_lock_owner())
 
