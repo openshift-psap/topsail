@@ -311,6 +311,8 @@ def get_linux_remoting_pod_env(base_work_dir):
     pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = str(LLAMA_CPP_BUILD_DIR / \
         "bin" / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]"))
 
+    pod_env["GGML_DISABLE_VULKAN"] = "1" # force disable Vulkan in the frontend-side
+
     pod_env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
     pod_env |= config.project.get_config("prepare.podman.machine.remoting_env.env_extra")
 
