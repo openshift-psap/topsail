@@ -280,5 +280,58 @@ def cleanup_gguf_models(base_work_dir):
         logging.info(f"{dest} does not exists, nothing to remove.")
         return
 
-    logging.info(f"Removing {dest} ...")
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -r {dest}")
+    # Get the current model(s) to preserve them
+    current_model = config.project.get_config("test.model.name")
+    current_models_fnames = []
+
+    # `test.model.name` can be a string or a list; normalize to a list.
+    if current_model is None:
+        current_models = None
+    elif isinstance(current_model, list):
+        current_models = current_model
+    else:
+        current_models = [current_model]
+
+    if current_models:
+        for model in current_models:
+            model_fname = utils.model_to_fname(llama_cpp._model_name(model))
+            if remote_access.exists(model_fname):
+                current_models_fnames.append(model_fname)
+                logging.info(f"Preserving current model: {model_fname}")
+            else:
+                logging.info(f"Current model not found, won't preserve: {model_fname}")
+
+    # List all files in the GGUF directory
+    try:
+        files_output = remote_access.run_with_ansible_ssh_conf(base_work_dir, "ls", chdir=dest, capture_stdout=True).stdout.strip()
+        if files_output:
+            files_to_remove = []
+            for file_path in files_output.split('\n'):
+                if not file_path.strip():
+                    continue
+                file_full_path = dest / file_path
+                if any(file_full_path == current_fname for current_fname in current_models_fnames):
+                    logging.info(f"Skipping current model: {file_path}")
+                    continue
+                files_to_remove.append(file_path)
+
+            if files_to_remove:
+                logging.info(f"Removing {len(files_to_remove)} GGUF model files...")
+                for file_path in files_to_remove:
+                    remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -f '{dest / file_path}'")
+            else:
+                logging.info("No GGUF files to remove.")
+        else:
+            logging.info("No GGUF files found in the directory.")
+
+        # Remove empty directories if any
+        remote_access.run_with_ansible_ssh_conf(base_work_dir, f"find {dest} -type d -empty -delete", capture_stdout=True)
+
+    except subprocess.CalledProcessError:
+        # If find command fails, fall back to removing the entire directory
+        # (unless we have current models to preserve)
+        if current_models_fnames:
+            logging.warning(f"Could not list GGUF files, but preserving current models: {[str(fname) for fname in current_models_fnames]}")
+        else:
+            logging.info(f"Removing entire directory {dest} ...")
+            remote_access.run_with_ansible_ssh_conf(base_work_dir, f"rm -rf {dest}")

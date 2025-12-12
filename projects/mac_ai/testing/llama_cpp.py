@@ -70,13 +70,15 @@ def run_model(base_work_dir, platform, llama_cpp_path, model):
 
 def unload_model(base_work_dir, platform, llama_cpp_path, model):
     system = config.project.get_config("remote_host.system")
-    if system == "linux":
-        logging.info("Can't *unload* the model on linux/krun ...")
-        return
 
     if platform.needs_podman:
-        podman_prefix = podman_mod.get_exec_command_prefix()
-        command = f"{podman_prefix} pkill python"
+        if system == "linux":
+            logging.info("Can't *unload* the model on linux/krun. Stopping the container.")
+            podman_mod.stop(base_work_dir)
+            return
+        else:
+            podman_prefix = podman_mod.get_exec_command_prefix()
+            command = f"{podman_prefix} pkill python"
     else:
         command = f"pkill llama-server"
 
