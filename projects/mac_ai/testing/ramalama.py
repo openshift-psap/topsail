@@ -100,6 +100,9 @@ def build_container_image(base_work_dir, ramalama_path, platform):
             if version.startswith("pr-"):
                 pr_number = version.removeprefix("pr-")
                 version = f"refs/pull/{pr_number}/head"
+            elif version.startswith("sha-"):
+                version = version[4:]
+
             extra_env["LLAMA_CPP_PULL_REF"] = version
 
             extra_env["LLAMA_CPP_REPO"] = config.project.get_config("prepare.llama_cpp.source.repo.url")
