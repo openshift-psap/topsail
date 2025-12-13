@@ -95,6 +95,10 @@ def build_remoting_tarball(base_work_dir, package_libs):
     ramalama_version = config.project.get_config("prepare.ramalama.repo.version")
 
     virglrenderer_version = config.project.get_config("prepare.virglrenderer.repo.branch")
+
+    if virglrenderer_suffix := config.project.get_config("prepare.virglrenderer.repo.linux_suffix"):
+        virglrenderer_version += virglrenderer_suffix
+
     virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")
 
     logging.info(f"Preparing the API remoting data into {env.ARTIFACT_DIR} ...")

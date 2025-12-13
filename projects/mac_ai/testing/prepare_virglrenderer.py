@@ -8,6 +8,11 @@ from projects.remote.lib import remote_access
 
 def get_build_dir(base_work_dir):
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
+    system = config.project.get_config("remote_host.system")
+    if system == "linux":
+        suffix = config.project.get_config("prepare.virglrenderer.repo.linux_suffix")
+        if suffix:
+            version += suffix
 
     return base_work_dir / "virglrenderer" / version / "build"
 
@@ -70,6 +75,10 @@ def prepare(base_work_dir):
         pr_number = version.removeprefix("pr-")
         refspec = f"refs/merge-requests/{pr_number}/head"
         version = None
+    else:
+        system = config.project.get_config("remote_host.system")
+        if system == "linux" and (suffix := config.project.get_config("prepare.virglrenderer.repo.linux_suffix")):
+            version += suffix
 
     build_dir = get_build_dir(base_work_dir)
     src_dir = build_dir.parent / "src"

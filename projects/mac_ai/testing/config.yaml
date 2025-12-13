@@ -143,7 +143,6 @@ ci_presets:
 
   remoting_linux:
     extends: [remoting]
-    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6-linux
     prepare.llama_cpp.source.cmake.openmp.enabled: false
     prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
 
@@ -485,6 +484,7 @@ prepare:
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
+      linux_suffix: -linux
     build:
       flags:
         common: -Dapir=true
