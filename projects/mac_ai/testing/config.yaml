@@ -187,14 +187,6 @@ ci_presets:
     prepare.remoting.podman_desktop_extension.enabled: true
     prepare.remoting.podman_desktop_extension.image.publish.enabled: true
 
-    test.platform:
-    - podman/ramalama/remoting
-    - podman/llama_cpp/remoting
-    - podman/llama_cpp/vulkan
-    - macos/llama_cpp/metal
-    - macos/llama_cpp/vulkan
-    - linux/llama_cpp/vulkan
-
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
     prepare.virglrenderer.debug.enabled: true
