@@ -130,12 +130,12 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b7003-remoting-0.2.1
+    prepare.llama_cpp.source.repo.version: b7356-remoting-0.3.0
     prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.15.0-apir.0.1.2
+    prepare.ramalama.repo.version: v0.15.0-apir.0.1.3
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
   remoting_wip:
@@ -143,7 +143,6 @@ ci_presets:
 
   remoting_linux:
     extends: [remoting]
-    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6-linux
     prepare.llama_cpp.source.cmake.openmp.enabled: false
     prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
 
@@ -186,14 +185,6 @@ ci_presets:
     prepare.ramalama.build_image.registry_path: quay.io/crcont
     prepare.remoting.podman_desktop_extension.enabled: true
     prepare.remoting.podman_desktop_extension.image.publish.enabled: true
-
-    test.platform:
-    - podman/ramalama/remoting
-    - podman/llama_cpp/remoting
-    - podman/llama_cpp/vulkan
-    - macos/llama_cpp/metal
-    - macos/llama_cpp/vulkan
-    - linux/llama_cpp/vulkan
 
   debug:
     prepare.llama_cpp.source.cmake.debug.enabled: true
@@ -493,6 +484,7 @@ prepare:
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
+      linux_suffix: -linux
     build:
       flags:
         common: -Dapir=true

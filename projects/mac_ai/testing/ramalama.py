@@ -120,6 +120,18 @@ def build_container_image(base_work_dir, ramalama_path, platform):
 
         logging.info(f"ramalama image build logs saved into {build_log}")
 
+        build_image_name = image_fullname.partition(":")[0] + ":latest"
+        logging.info(f"renaming the image from {build_image_name} to {image_fullname} ...")
+
+        remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            f"{podman_mod.get_podman_binary(base_work_dir)} tag '{build_image_name}' '{image_fullname}'"
+        )
+        remote_access.run_with_ansible_ssh_conf(
+            base_work_dir,
+            f"{podman_mod.get_podman_binary(base_work_dir)} image rm '{build_image_name}'"
+        )
+
     return image_fullname
 
 
@@ -127,7 +139,9 @@ def get_local_image_name():
     registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
 
-    return f"{registry_path}/{image_name}:latest"
+    version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+
+    return f"{registry_path}/{image_name}:{version}"
 
 
 def get_release_image_name(base_work_dir, platform, build_version):
@@ -287,9 +301,7 @@ def _run_from_toolbox(ramalama_cmd, base_work_dir, platform, ramalama_path, mode
         if want_gpu else "none"
 
     if config.project.get_config("prepare.ramalama.build_image.enabled"):
-        image_name = config.project.get_config("prepare.ramalama.build_image.name")
-        registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
-        image = f"{registry_path}/{image_name}:latest"
+        image = get_local_image_name()
     elif version := config.project.get_config("prepare.ramalama.repo.version"):
         version = version.removeprefix("v")
         image = f"quay.io/ramalama/ramalama:{version}"
