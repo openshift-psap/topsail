@@ -121,16 +121,18 @@ def build_container_image(base_work_dir, ramalama_path, platform):
         logging.info(f"ramalama image build logs saved into {build_log}")
 
         build_image_name = image_fullname.partition(":")[0] + ":latest"
-        logging.info(f"renaming the image from {build_image_name} to {image_fullname} ...")
 
-        remote_access.run_with_ansible_ssh_conf(
-            base_work_dir,
-            f"{podman_mod.get_podman_binary(base_work_dir)} tag '{build_image_name}' '{image_fullname}'"
-        )
-        remote_access.run_with_ansible_ssh_conf(
-            base_work_dir,
-            f"{podman_mod.get_podman_binary(base_work_dir)} image rm '{build_image_name}'"
-        )
+        if build_image_name != image_fullname:
+            logging.info(f"renaming the image from {build_image_name} to {image_fullname} ...")
+
+            remote_access.run_with_ansible_ssh_conf(
+                base_work_dir,
+                f"{podman_mod.get_podman_binary(base_work_dir)} tag '{build_image_name}' '{image_fullname}'"
+            )
+            remote_access.run_with_ansible_ssh_conf(
+                base_work_dir,
+                f"{podman_mod.get_podman_binary(base_work_dir)} image rm '{build_image_name}'"
+            )
 
     return image_fullname
 
