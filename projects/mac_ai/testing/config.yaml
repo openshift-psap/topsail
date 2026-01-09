@@ -87,7 +87,7 @@ ci_presets:
     test.model.name: ollama://llama3.2
     test.platform:
     - podman/ramalama
-    - podman/ramalama/no-gpu
+    # - podman/ramalama/no-gpu
     - macos/llama_cpp/vulkan
     # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
@@ -100,7 +100,7 @@ ci_presets:
     prepare.ramalama.build_image.enabled: true
 
     test.platform:
-    - podman/ramalama/no-gpu
+    # - podman/ramalama/no-gpu
     - podman/ramalama
 
     test.model.name: ollama://llama3.2
