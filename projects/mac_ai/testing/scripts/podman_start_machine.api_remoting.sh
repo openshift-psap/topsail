@@ -89,6 +89,10 @@ echo "INFO: Setting APIR_LLAMA_CPP_LOG_TO_FILE=$APIR_LLAMA_CPP_LOG_TO_FILE"
 
 export CONTAINERS_HELPER_BINARY_DIR="$SCRIPT_DIR/bin/"
 
+export VIRGL_ROUTE_VENUS_TO_APIR=1
+echo ""
+echo "INFO: Setting VIRGL_ROUTE_VENUS_TO_APIR=1 to be able to use an unpatched hypervisor."
+
 echo ""
 echo "INFO: Restarting podman machine ..."
 

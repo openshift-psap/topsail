@@ -130,12 +130,12 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b7356-remoting-0.3.0
-    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6
+    prepare.llama_cpp.source.repo.version: b7755-remoting-0.4.4
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.5
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.15.0-apir.0.1.3
+    prepare.ramalama.repo.version: v0.16.0-apir.0.1.4-rc4
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
   remoting_wip:
@@ -145,7 +145,6 @@ ci_presets:
     extends: [remoting]
     prepare.llama_cpp.source.cmake.openmp.enabled: false
     prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
-
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_vk_reg"
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
     prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
@@ -179,7 +178,7 @@ ci_presets:
     - podman/llama_cpp/remoting # build it but don't test it
 
   remoting_publish:
-    extends: [remoting, use_intlab_os]
+    extends: [use_intlab_os]
     prepare.remoting.publish: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
@@ -487,7 +486,7 @@ prepare:
       linux_suffix: -linux
     build:
       flags:
-        common: -Dapir=true
+        common: -Dapir=true -Dvenus=true
         darwin: -Dc_link_args=-L/opt/homebrew/lib/
     debug:
       enabled: false
