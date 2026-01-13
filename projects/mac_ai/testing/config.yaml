@@ -483,7 +483,9 @@ prepare:
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
-      linux_suffix: -linux
+      suffix:
+        linux: -linux
+        darwin: -macos
     build:
       flags:
         common: -Dapir=true -Dvenus=true

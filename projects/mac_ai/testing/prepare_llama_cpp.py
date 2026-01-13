@@ -149,7 +149,7 @@ def prepare_podman_image_from_local_container_file(base_work_dir, platform):
         build_args["VIRGLRENDERER_COMMIT"] = config.project.get_config("prepare.virglrenderer.repo.branch")
         build_args["VIRGLRENDERER_MESON_FLAGS"] = prepare_virglrenderer.get_build_flags()
 
-        if suffix := config.project.get_config("prepare.virglrenderer.repo.linux_suffix"):
+        if suffix := config.project.get_config("prepare.virglrenderer.repo.suffix.linux"):
             build_args["VIRGLRENDERER_COMMIT"] += suffix
 
     cmake_parallel = config.project.get_config("prepare.llama_cpp.source.cmake.parallel")
