@@ -151,10 +151,10 @@ ci_presets:
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
     test.capture_metrics.enabled: false
     test.platform:
-    - linux/llama_cpp/vulkan
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
+    - linux/llama_cpp/vulkan
 
   remoting_mac:
     extends: [remoting]
@@ -483,7 +483,9 @@ prepare:
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
-      linux_suffix: -linux
+      suffix:
+        linux: -linux
+        darwin: -macos
     build:
       flags:
         common: -Dapir=true -Dvenus=true

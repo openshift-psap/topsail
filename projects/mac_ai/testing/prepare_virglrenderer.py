@@ -10,9 +10,12 @@ def get_build_dir(base_work_dir):
     version = config.project.get_config("prepare.virglrenderer.repo.branch")
     system = config.project.get_config("remote_host.system")
     if system == "linux":
-        suffix = config.project.get_config("prepare.virglrenderer.repo.linux_suffix")
-        if suffix:
-            version += suffix
+        suffix = config.project.get_config("prepare.virglrenderer.repo.suffix.linux")
+    else:
+        suffix = config.project.get_config("prepare.virglrenderer.repo.suffix.darwin")
+
+    if suffix:
+        version += suffix
 
     return base_work_dir / "virglrenderer" / version / "build"
 
@@ -77,7 +80,7 @@ def prepare(base_work_dir):
         version = None
     else:
         system = config.project.get_config("remote_host.system")
-        if system == "linux" and (suffix := config.project.get_config("prepare.virglrenderer.repo.linux_suffix")):
+        if suffix := config.project.get_config(f"prepare.virglrenderer.repo.suffix.{system}"):
             version += suffix
 
     build_dir = get_build_dir(base_work_dir)
