@@ -44,6 +44,7 @@ Running without RamaLama
 ------------------------
 
 ```
+export VIRGL_ROUTE_VENUS_TO_APIR=1
 export LD_LIBRARY_PATH=$PWD/bin
 podman run --oci-runtime krun -it --rm --device /dev/dri "{kwargs['ramalama_image']}" llama-run --verbose --ngl 99 ollama://smollm:135m
 ```

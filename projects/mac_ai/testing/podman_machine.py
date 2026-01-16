@@ -49,6 +49,8 @@ def start(base_work_dir, use_remoting=None):
         llama_remoting_backend_build_dir = prepare_llama_cpp.get_remoting_build_dir(base_work_dir)
         env["VIRGL_APIR_BACKEND_LIBRARY"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[0]")
         env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = llama_remoting_backend_build_dir / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]")
+        env["VIRGL_ROUTE_VENUS_TO_APIR"] = "1"
+
         env |= config.project.get_config("prepare.podman.machine.remoting_env.env")
         env |= config.project.get_config("prepare.podman.machine.remoting_env.env_extra")
 

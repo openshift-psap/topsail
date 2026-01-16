@@ -96,7 +96,8 @@ def build_remoting_tarball(base_work_dir, package_libs):
 
     virglrenderer_version = config.project.get_config("prepare.virglrenderer.repo.branch")
 
-    if virglrenderer_suffix := config.project.get_config("prepare.virglrenderer.repo.linux_suffix"):
+    system = config.project.get_config("remote_host.system")
+    if virglrenderer_suffix := config.project.get_config(f"prepare.virglrenderer.repo.suffix.{system}"):
         virglrenderer_version += virglrenderer_suffix
 
     virglrenderer_url = config.project.get_config("prepare.virglrenderer.repo.url")
@@ -314,6 +315,7 @@ def get_linux_remoting_pod_env(base_work_dir):
         "bin" / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[0]"))
     pod_env["APIR_LLAMA_CPP_GGML_LIBRARY_PATH"] = str(LLAMA_CPP_BUILD_DIR / \
         "bin" / config.project.get_config("prepare.podman.machine.remoting_env.ggml_libs[1]"))
+    pod_env["VIRGL_ROUTE_VENUS_TO_APIR"] = "1"
 
     pod_env["GGML_DISABLE_VULKAN"] = "1" # force disable Vulkan in the frontend-side
 
