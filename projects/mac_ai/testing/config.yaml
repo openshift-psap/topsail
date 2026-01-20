@@ -411,9 +411,9 @@ prepare:
             common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             darwin: -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
           remoting:
-            common: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON
-            darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
-            linux: -DGGML_VULKAN=ON
+            common: -DGGML_NATIVE=OFF -DGGML_VIRTGPU=ON
+            darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 -DGGML_VIRTGPU_BACKEND=ONLY # backend
+            linux: -DGGML_VULKAN=ON -DGGML_VIRTGPU_BACKEND=ON
       podman:
         build_from: local_container_file
         command: # will be set in prepare_test
@@ -432,7 +432,7 @@ prepare:
             vulkan:
               common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             remoting:
-              common: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
+              common: -DGGML_VIRTGPU=ON -DGGML_CPU_ARM_ARCH=native
 
   ollama:
     repo:
