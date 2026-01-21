@@ -141,7 +141,7 @@ def get_local_image_name():
     registry_path = config.project.get_config("prepare.ramalama.build_image.registry_path")
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
 
-    version = config.project.get_config("prepare.llama_cpp.source.repo.version")
+    version = config.project.get_config("prepare.ramalama.repo.version")
 
     return f"{registry_path}/{image_name}:{version}"
 
