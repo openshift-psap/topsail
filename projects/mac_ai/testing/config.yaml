@@ -86,11 +86,11 @@ ci_presets:
     matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp"
     test.model.name: ollama://llama3.2
     test.platform:
+    - podman/llama_cpp/vulkan
     - podman/ramalama
-    # - podman/ramalama/no-gpu
     - macos/llama_cpp/vulkan
-    # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
+    # - podman/ramalama/no-gpu
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
