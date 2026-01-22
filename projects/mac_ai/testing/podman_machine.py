@@ -3,16 +3,25 @@ import pathlib
 import logging
 import json, yaml
 
-from projects.core.library import env, config, run, configure_logging, export
+from projects.core.library import config, run, configure_logging, export
 import podman, prepare_virglrenderer, prepare_llama_cpp
 from projects.remote.lib import remote_access
 
-def _run(base_work_dir, cmd, env={}, check=True, capture_stdout=False, machine=True, get_command=False, print_cmd=False):
+def _run(base_work_dir, cmd, env={}, check=True, capture_stdout=False, machine=True, get_command=False, print_cmd=False, log_dirname=None):
     podman_cmd = podman.get_podman_command()
 
     cmd = f"{podman_cmd} {'machine' if machine else ''} {cmd}"
     if get_command:
         return cmd
+
+    if log_dirname:
+        with env.NextArtifactDir(log_dirname):
+            with open(env.ARTIFACT_DIR / "command.txt", "w") as f:
+                print(cmd, file=f)
+                print("", file=f)
+
+                for k, v in env:
+                    print(f"{k}={v}", file=f)
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
@@ -58,7 +67,7 @@ def start(base_work_dir, use_remoting=None):
     else:
         prepare_virglrenderer.configure(base_work_dir, use_custom=False)
 
-    ret = _run(base_work_dir, f"start {name} --no-info", env, print_cmd=True)
+    ret = _run(base_work_dir, f"start {name} --no-info", env, print_cmd=True, log_dirname="start_podman_machine")
 
     if use_remoting and config.project.get_config("prepare.podman.machine.remoting_env.enabled"):
         if not config.project.get_config("prepare.virglrenderer.enabled"):
