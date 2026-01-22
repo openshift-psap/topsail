@@ -3,7 +3,8 @@ import pathlib
 import logging
 import json, yaml
 
-from projects.core.library import config, run, configure_logging, export
+from projects.core.library import env, config, run, configure_logging, export
+from projects.core.library import env as env_mod
 import podman, prepare_virglrenderer, prepare_llama_cpp
 from projects.remote.lib import remote_access
 
@@ -15,12 +16,12 @@ def _run(base_work_dir, cmd, env={}, check=True, capture_stdout=False, machine=T
         return cmd
 
     if log_dirname:
-        with env.NextArtifactDir(log_dirname):
-            with open(env.ARTIFACT_DIR / "command.txt", "w") as f:
+        with env_mod.NextArtifactDir(log_dirname):
+            with open(env_mod.ARTIFACT_DIR / "command.txt", "w") as f:
                 print(cmd, file=f)
                 print("", file=f)
 
-                for k, v in env:
+                for k, v in env.items():
                     print(f"{k}={v}", file=f)
 
     return remote_access.run_with_ansible_ssh_conf(
