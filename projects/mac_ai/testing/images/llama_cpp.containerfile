@@ -79,6 +79,11 @@ RUN if [[ "${VIRGLRENDERER_ENABLED}" == y ]]; then \
  && ninja -C ./build install; \
  fi
 
+# install virglrenderer for krun anyway
+RUN if [[ "${VIRGLRENDERER_ENABLED}" != y ]]; then \
+    dnf install -y virglrenderer; \
+  fi
+
 USER 1001
 
 WORKDIR /app/llama.cpp/build/bin
