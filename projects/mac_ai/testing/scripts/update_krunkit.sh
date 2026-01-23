@@ -86,11 +86,11 @@ update_llama_cpp_libs() {
     # libggml-metal -> libggml-base
     install_name_tool -change "@rpath/libggml-base.dylib" "$PWD/libggml-base.dylib" ./libggml-metal.dylib
 
-    # libggml-remotingbackend -> self
-    install_name_tool -id "$PWD/libggml-remotingbackend.dylib" ./libggml-remotingbackend.dylib
+    # libggml-virtgpu-backend -> self
+    install_name_tool -id "$PWD/libggml-virtgpu-backend.dylib" ./libggml-virtgpu-backend.dylib
 
-    # libggml-remotingbackend -> libggml-base
-    install_name_tool -change "@rpath/libggml-base.dylib" "$PWD/libggml-base.dylib" ./libggml-remotingbackend.dylib
+    # libggml-virtgpu-backend -> libggml-base
+    install_name_tool -change "@rpath/libggml-base.dylib" "$PWD/libggml-base.dylib" ./libggml-virtgpu-backend.dylib
 
     # libggml-base ->self
     install_name_tool -id "$PWD/libggml-base.dylib" ./libggml-base.dylib

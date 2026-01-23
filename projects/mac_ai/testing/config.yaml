@@ -147,7 +147,7 @@ ci_presets:
     prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_vk_reg"
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
-    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
+    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-virtgpu-backend.so"
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
     test.capture_metrics.enabled: false
     test.platform:
@@ -532,7 +532,7 @@ prepare:
       remoting_env:
         enabled: false
         ggml_libs:
-        - libggml-remotingbackend.dylib # keep the APIR backend first
+        - libggml-virtgpu-backend.dylib # keep the APIR backend first
         - libggml-metal.dylib # keep the GGML backend second
         - libggml-base.dylib
         env:
