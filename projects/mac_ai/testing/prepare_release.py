@@ -330,5 +330,7 @@ def get_linux_remoting_host_env(base_work_dir):
 
     env = {}
     env["LD_LIBRARY_PATH"] = f"{VIRGL_BUILD_DIR / 'src'}"
+    env["VIRGL_ROUTE_VENUS_TO_APIR"] = "1"
+    env["RENDER_SERVER_EXEC_PATH"] = "/usr/libexec/virgl_render_server"
 
     return env
