@@ -83,10 +83,8 @@ def build_container_image(base_work_dir, ramalama_path, platform):
     system = config.project.get_config("remote_host.system")
     logging.info("Building the ramalama image ...")
     with env.NextArtifactDir(f"build_ramalama_{image_name}_image"):
+        # don't put this in 'extra_env', we want to be able to *extend* the path
         cmd = f"env PATH=$PATH:{podman_mod.get_podman_binary(base_work_dir).parent}"
-
-        if system == "linux" and platform.inference_server_flavor == "remoting":
-            cmd += f" RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND={config.project.get_config('prepare.ramalama.remoting.backend')}"
 
         cmd += f" time ./container_build.sh -s build {image_name}"
         cmd += " 2>&1"
@@ -94,6 +92,9 @@ def build_container_image(base_work_dir, ramalama_path, platform):
         extra_env = dict(
             REGISTRY_PATH=registry_path,
         )
+
+        if system == "linux" and platform.inference_server_flavor == "remoting":
+            extra_env["RAMALAMA_IMAGE_BUILD_REMOTING_BACKEND"] = config.project.get_config('prepare.ramalama.remoting.backend')
 
         if config.project.get_config("prepare.ramalama.build_image.name") == "remoting":
             version = config.project.get_config("prepare.llama_cpp.source.repo.version")
@@ -274,7 +275,7 @@ def _get_env(base_work_dir, platform, ramalama_path):
     env = dict(
         PYTHONPATH=ramalama_path.parent.parent,
         RAMALAMA_CONTAINER_ENGINE=podman_mod.get_podman_binary(base_work_dir),
-    ) | podman_mod.get_podman_env(base_work_dir)
+    ) | podman_mod.get_podman_env(base_work_dir, platform)
 
     system = config.project.get_config("remote_host.system")
 
