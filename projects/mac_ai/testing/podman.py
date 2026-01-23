@@ -129,20 +129,24 @@ def get_podman_binary(base_work_dir):
     return podman_bin
 
 
-def get_podman_env(base_work_dir):
+def get_podman_env(base_work_dir, platform):
     podman_env = dict(HOME=base_work_dir)
 
     if config.project.get_config("prepare.podman.machine.enabled", print=False):
         podman_env |= config.project.get_config("prepare.podman.machine.env", print=False)
 
+    system = config.project.get_config("remote_host.system")
+    if system == "linux" and platform and platform.inference_server_flavor == "remoting":
+        podman_env |= prepare_release.get_linux_remoting_host_env(base_work_dir)
+
     return podman_env
 
 
-def get_podman_command():
+def get_podman_command(platform=None):
     base_work_dir = remote_access.prepare()
 
     podman_cmd = get_podman_binary(base_work_dir)
-    podman_env = get_podman_env(base_work_dir)
+    podman_env = get_podman_env(base_work_dir, platform)
 
     if config.project.get_config("prepare.podman.machine.enabled", print=False):
         machine_name = config.project.get_config("prepare.podman.machine.name", print=False)
@@ -243,9 +247,8 @@ def start(base_work_dir, port, get_command=None):
     stop(base_work_dir)
 
     image = config.project.get_config("prepare.podman.container.image")
-    podman_cmd = get_podman_command()
-
     platform = utils.parse_platform(config.project.get_config("test.platform"))
+    podman_cmd = get_podman_command(platform)
 
     podman_device_cmd = ""
     if not platform.want_gpu:
