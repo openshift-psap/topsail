@@ -58,22 +58,22 @@ echo "INFO: # for krunkit to load the custom virglrenderer library"
 echo "INFO: Setting DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH"
 echo
 
-# for Virglrenderer to load the ggml-remotingbackend library
+# for Virglrenderer to load the ggml-virtgpu-backend library
 echo ""
-echo "INFO: # for Virglrenderer to load the ggml-remotingbackend library"
-export VIRGL_APIR_BACKEND_LIBRARY="$SCRIPT_DIR/bin/libggml-remotingbackend.dylib"
+echo "INFO: # for Virglrenderer to load the ggml-virtgpu-backend library"
+export VIRGL_APIR_BACKEND_LIBRARY="$SCRIPT_DIR/bin/libggml-virtgpu-backend.dylib"
 echo "INFO: Setting VIRGL_APIR_BACKEND_LIBRARY=$VIRGL_APIR_BACKEND_LIBRARY"
 echo
 
-# for llama.cpp remotingbackend to load the ggml-metal backend
+# for llama.cpp virtgpu-backend to load the ggml-metal backend
 echo ""
 export APIR_LLAMA_CPP_GGML_LIBRARY_PATH="$SCRIPT_DIR/bin/libggml-metal.dylib"
-echo "INFO: # for llama.cpp remotingbackend to load the ggml-metal backend"
+echo "INFO: # for llama.cpp virtgpu-backend to load the ggml-metal backend"
 echo "INFO: Setting APIR_LLAMA_CPP_GGML_LIBRARY_PATH=$APIR_LLAMA_CPP_GGML_LIBRARY_PATH"
 echo
 
 echo ""
-echo "INFO: # for llama.cpp remotingbackend to lookup the ggml-metal entrypoints"
+echo "INFO: # for llama.cpp virtgpu-backend to lookup the ggml-metal entrypoints"
 export APIR_LLAMA_CPP_GGML_LIBRARY_REG=ggml_backend_metal_reg
 export APIR_LLAMA_CPP_GGML_LIBRARY_INIT=ggml_backend_metal_init
 echo "INFO: Setting APIR_LLAMA_CPP_GGML_LIBRARY_REG=$APIR_LLAMA_CPP_GGML_LIBRARY_REG"
@@ -88,6 +88,10 @@ echo "INFO: Setting VIRGL_APIR_LOG_TO_FILE=$VIRGL_APIR_LOG_TO_FILE"
 echo "INFO: Setting APIR_LLAMA_CPP_LOG_TO_FILE=$APIR_LLAMA_CPP_LOG_TO_FILE"
 
 export CONTAINERS_HELPER_BINARY_DIR="$SCRIPT_DIR/bin/"
+
+export VIRGL_ROUTE_VENUS_TO_APIR=1
+echo ""
+echo "INFO: Setting VIRGL_ROUTE_VENUS_TO_APIR=1 to be able to use an unpatched hypervisor."
 
 echo ""
 echo "INFO: Restarting podman machine ..."

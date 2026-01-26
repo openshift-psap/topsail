@@ -211,8 +211,11 @@ def test_inference(platform):
 
     if config.project.get_config("prepare.podman.machine.enabled"):
         if platform.needs_podman_machine:
-            if not podman_machine.is_running(base_work_dir):
-                podman_machine.start(base_work_dir)
+            if podman_machine.is_running(base_work_dir):
+                podman_machine.stop(base_work_dir)
+
+            use_remoting = (platform.inference_server_flavor == "remoting")
+            podman_machine.start(base_work_dir, use_remoting=use_remoting)
 
         elif podman_machine.is_running(base_work_dir):
             podman.stop(base_work_dir)

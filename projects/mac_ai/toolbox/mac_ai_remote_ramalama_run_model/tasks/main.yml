@@ -53,7 +53,7 @@
       curl -sSf http://127.0.0.1:{{ mac_ai_remote_ramalama_run_model_port }}/models
     register: ramalama_running_cmd
     until: ramalama_running_cmd.rc == 0
-    retries: 2
+    retries: 20
     delay: 5
 
   always:

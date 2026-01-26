@@ -130,12 +130,12 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b7356-remoting-0.3.0
-    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.1.6
+    prepare.llama_cpp.source.repo.version: b7755-remoting-0.4.4
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.5
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.15.0-apir.0.1.3
+    prepare.ramalama.repo.version: v0.16.0-apir.0.1.4-rc4
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
   remoting_wip:
@@ -145,17 +145,16 @@ ci_presets:
     extends: [remoting]
     prepare.llama_cpp.source.cmake.openmp.enabled: false
     prepare.platforms.model_pullers.llama_cpp: linux/llama_cpp/upstream_bin
-
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_vk_reg"
     prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_vk_init"
-    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-remotingbackend.so"
+    prepare.podman.machine.remoting_env.ggml_libs[0]: "libggml-virtgpu-backend.so"
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
     test.capture_metrics.enabled: false
     test.platform:
-    - linux/llama_cpp/vulkan
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
+    - linux/llama_cpp/vulkan
 
   remoting_mac:
     extends: [remoting]
@@ -179,7 +178,7 @@ ci_presets:
     - podman/llama_cpp/remoting # build it but don't test it
 
   remoting_publish:
-    extends: [remoting, use_intlab_os]
+    extends: [use_intlab_os]
     prepare.remoting.publish: true
     prepare.ramalama.build_image.publish.enabled: true
     prepare.ramalama.build_image.registry_path: quay.io/crcont
@@ -412,9 +411,9 @@ prepare:
             common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             darwin: -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
           remoting:
-            common: -DGGML_NATIVE=OFF -DGGML_REMOTINGBACKEND=ON
-            darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 # backend
-            linux: -DGGML_VULKAN=ON
+            common: -DGGML_NATIVE=OFF -DGGML_VIRTGPU=ON
+            darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 -DGGML_VIRTGPU_BACKEND=ONLY # backend
+            linux: -DGGML_VULKAN=ON -DGGML_VIRTGPU_BACKEND=ON
       podman:
         build_from: local_container_file
         command: # will be set in prepare_test
@@ -433,7 +432,7 @@ prepare:
             vulkan:
               common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             remoting:
-              common: -DGGML_REMOTINGFRONTEND=ON -DGGML_CPU_ARM_ARCH=native
+              common: -DGGML_VIRTGPU=ON -DGGML_CPU_ARM_ARCH=native
 
   ollama:
     repo:
@@ -484,10 +483,12 @@ prepare:
     repo:
       url: https://gitlab.freedesktop.org/kpouget/virglrenderer
       branch: main
-      linux_suffix: -linux
+      suffix:
+        linux: -linux
+        darwin: -macos
     build:
       flags:
-        common: -Dapir=true
+        common: -Dapir=true -Dvenus=true
         darwin: -Dc_link_args=-L/opt/homebrew/lib/
     debug:
       enabled: false
@@ -531,7 +532,7 @@ prepare:
       remoting_env:
         enabled: false
         ggml_libs:
-        - libggml-remotingbackend.dylib # keep the APIR backend first
+        - libggml-virtgpu-backend.dylib # keep the APIR backend first
         - libggml-metal.dylib # keep the GGML backend second
         - libggml-base.dylib
         env:
