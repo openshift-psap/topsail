@@ -30,7 +30,7 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac5
     remote_host.description: "crc-lab-mac5"
     prepare.cleanup_on_exit: true
-
+    remote_host.env.PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
@@ -86,11 +86,11 @@ ci_presets:
     matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp"
     test.model.name: ollama://llama3.2
     test.platform:
+    - podman/llama_cpp/vulkan
     - podman/ramalama
-    # - podman/ramalama/no-gpu
     - macos/llama_cpp/vulkan
-    # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
+    # - podman/ramalama/no-gpu
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
