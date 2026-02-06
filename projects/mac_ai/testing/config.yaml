@@ -159,12 +159,11 @@ ci_presets:
   remoting_mac:
     extends: [remoting]
     test.platform:
-    - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
-
+    - podman/ramalama/remoting
 
   remoting_bench:
     extends: [remoting, benchmark]
