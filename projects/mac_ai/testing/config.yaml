@@ -385,8 +385,8 @@ prepare:
         version: b7944
 
       file:
-        darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
-        linux: llama-{@prepare.llama_cpp.release.repo.version}-bin-ubuntu-vulkan-x64.zip
+        darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.tar.gz
+        linux: llama-{@prepare.llama_cpp.release.repo.version}-bin-ubuntu-vulkan-x64.tar.gz
       tarball: true
 
     source:
