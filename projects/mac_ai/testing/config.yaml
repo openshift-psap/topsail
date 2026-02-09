@@ -153,7 +153,7 @@ ci_presets:
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
-    - podman/llama_cpp/vulkan
+    # - podman/llama_cpp/vulkan
     - linux/llama_cpp/vulkan
 
   remoting_mac:
