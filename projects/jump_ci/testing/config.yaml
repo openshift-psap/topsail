@@ -72,9 +72,11 @@ foreign_testing: # used only when testing from another repo that TOPSAIL itself
       branch: main
 ssh:
   flags:
-  - -oStrictHostKeyChecking=no
-  - -oUserKnownHostsFile=/dev/null
+  - -o StrictHostKeyChecking=no
+  - -o UserKnownHostsFile=/dev/null
   - -o LogLevel=ERROR
+  - -o ServerAliveInterval=60
+  - -o ServerAliveCountMax=3
 env:
   pass_lists:
     OPENSHIFT_CI_job: [JOB_TYPE, ENTRYPOINT_OPTIONS, JOB_NAME, JOB_SPEC, OPENSHIFT_CI, JOB_NAME_SAFE, BUILD_ID]

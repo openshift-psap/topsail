@@ -41,7 +41,8 @@ Benchmarking
 
 * API Remoting Performance
 ```
-ramalama bench --image {kwargs['ramalama_image']} llama3.2 # API Remoting performance
+ramalama bench  --image {kwargs['ramalama_image']} llama3.2 # API Remoting performance
+# add '--oci-runtime krun' on linux to run in the krun VM
 ```
 
 * Native Performance
@@ -56,6 +57,7 @@ ramalama --nocontainer bench llama3.2 # native Metal performance
 * Vulkan/Venus Performance
 ```
 ramalama bench llama3.2 # Venus/Vulkan performance
+# add '--oci-runtime krun' on linux to have the VM performance
 ```
 
 If you want to share your performance, please also include:

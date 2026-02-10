@@ -193,7 +193,7 @@ def prepare_binary(base_work_dir, platform):
         logging.info(f"ramalama {platform.name} already exists, not downloading it.")
 
 
-    remote_access.run_with_ansible_ssh_conf(base_work_dir, "python3 -m pip install --user --break-system-packages jinja2 jsonschema", check=False)
+    #remote_access.run_with_ansible_ssh_conf(base_work_dir, "python3 -m pip install --user --break-system-packages jinja2 jsonschema", check=False)
 
     build_image_enabled = config.project.get_config("prepare.ramalama.build_image.enabled")
     if build_image_enabled is True or build_image_enabled == platform.inference_server_flavor:

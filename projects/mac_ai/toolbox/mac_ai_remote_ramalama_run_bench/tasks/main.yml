@@ -9,7 +9,7 @@
   shell: |
     export {{ mac_ai_remote_ramalama_run_bench_env }}
 
-    {{ mac_ai_remote_ramalama_run_bench_path }} \
+    $timeout {{ mac_ai_remote_ramalama_run_bench_path }} \
        bench \
        --image {{ mac_ai_remote_ramalama_run_bench_image }} \
         {{ mac_ai_remote_ramalama_run_bench_model_name }} \
@@ -23,6 +23,25 @@
     {% if mac_ai_remote_ramalama_run_bench_device -%}
          --device {{ mac_ai_remote_ramalama_run_bench_device }} \
     {% endif -%}
-        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log"
+        &> "{{ artifact_extra_logs_dir }}/artifacts/llama-bench.log" &
+
+    TASK_PID=$!
+    ( sleep $((60*25)); kill $TASK_PID 2>/dev/null ) &
+    TIMER_PID=$!
+
+    wait $TASK_PID 2>/dev/null
+    RESULT=$?
+
+    kill $TIMER_PID 2>/dev/null
+
+    if [ $RESULT -eq 143 ] || [ $RESULT -eq 137 ]; then
+      echo "Task timed out!"
+      exit 1
+    elif [ ! $RESULT -eq 0 ]]; then
+      echo "Task failed ($RESULT) :/"
+      exit 1
+    else
+      echo "Task completed successfully."
+    fi
   environment:
     HOME: "{{ mac_ai_remote_ramalama_run_bench_base_work_dir }}"

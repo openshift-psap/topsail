@@ -217,6 +217,7 @@ def prepare_from_release(base_work_dir, platform, expected_system):
         dest=dest,
         tarball=tarball,
         zip=zip,
+        artifact_dir_suffix="_llama_cpp_release",
     )
 
     return llama_cpp_path

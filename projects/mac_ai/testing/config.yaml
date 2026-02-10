@@ -30,7 +30,7 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac5
     remote_host.description: "crc-lab-mac5"
     prepare.cleanup_on_exit: true
-
+    remote_host.env.PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
@@ -86,11 +86,11 @@ ci_presets:
     matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp"
     test.model.name: ollama://llama3.2
     test.platform:
+    - podman/llama_cpp/vulkan
     - podman/ramalama
-    # - podman/ramalama/no-gpu
     - macos/llama_cpp/vulkan
-    # - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
+    # - podman/ramalama/no-gpu
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
 
@@ -129,13 +129,13 @@ ci_presets:
   remoting:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
-    prepare.llama_cpp.source.repo.url: https://github.com/crc-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b7755-remoting-0.4.4
-    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.5
+    prepare.llama_cpp.source.repo.url: https://github.com/ggml-org/llama.cpp
+    prepare.llama_cpp.source.repo.version: b7944
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.6
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.16.0-apir.0.1.4-rc4
+    prepare.ramalama.repo.version: v0.17.0-apir.0.1.4-rc10
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
   remoting_wip:
@@ -153,18 +153,17 @@ ci_presets:
     test.platform:
     - podman/ramalama/remoting
     - podman/llama_cpp/remoting
-    - podman/llama_cpp/vulkan
+    # - podman/llama_cpp/vulkan
     - linux/llama_cpp/vulkan
 
   remoting_mac:
     extends: [remoting]
     test.platform:
-    - podman/ramalama/remoting
     - podman/llama_cpp/remoting
     - podman/llama_cpp/vulkan
     - macos/llama_cpp/metal
     - macos/llama_cpp/vulkan
-
+    - podman/ramalama/remoting
 
   remoting_bench:
     extends: [remoting, benchmark]
@@ -383,11 +382,11 @@ prepare:
     release:
       repo:
         url: https://github.com/ggml-org/llama.cpp
-        version: b7356
+        version: b7944
 
       file:
-        darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.zip
-        linux: llama-{@prepare.llama_cpp.release.repo.version}-bin-ubuntu-vulkan-x64.zip
+        darwin: llama-{@prepare.llama_cpp.release.repo.version}-bin-macos-{@remote_host.arch}.tar.gz
+        linux: llama-{@prepare.llama_cpp.release.repo.version}-bin-ubuntu-vulkan-x64.tar.gz
       tarball: true
 
     source:
