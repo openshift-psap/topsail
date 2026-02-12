@@ -4,6 +4,7 @@ json_input=$(cat ${1})
 instance_type=${2}
 machinesetname=${3}
 taint=${4}
+instance_type_field=${5}
 
 set -x
 
@@ -28,7 +29,7 @@ fi
 # Change the values for instance type and machine set name
 # Clean the status key=value
 echo ${json_input} \
-    | jq --arg instance_type "${instance_type}" '.spec.template.spec.providerSpec.value.instanceType = $instance_type' \
+    | jq --arg instance_type "${instance_type}" '.spec.template.spec.providerSpec.value.'$instance_type_field' = $instance_type' \
     | jq --arg machinesetname "${machinesetname}" '.metadata.name = $machinesetname' \
     | jq --arg machinesetname "${machinesetname}" '.spec.selector.matchLabels."machine.openshift.io/cluster-api-machineset" = $machinesetname' \
     | jq -c --arg machinesetname "${machinesetname}" '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machineset" = $machinesetname' \
