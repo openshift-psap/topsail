@@ -1,7 +1,7 @@
 - name: Ensure that NFD labeled some nodes
   block:
   - name: Ensure that NFD labeled some nodes
-    command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos
+    command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhel
     register: has_nfd_nodes
     failed_when: has_nfd_nodes.stdout == ""
 

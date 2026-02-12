@@ -59,7 +59,7 @@ Parameters
 
 ``deploy_cr``  
 
-* If set, deploy the first example CR found in the CSV.
+* If set, deploy the first example CR found in the CSV (or the nth, if an int)
 * type: Bool
 
 

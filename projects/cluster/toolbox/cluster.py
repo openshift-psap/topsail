@@ -101,7 +101,7 @@ class Cluster:
             channel: Channel to deploy from. If unspecified, deploys the CSV's default channel. Use '?' to list the available channels for the given package manifest.
             version: Version to deploy. If unspecified, deploys the latest version available in the selected channel.
             installplan_approval: InstallPlan approval mode (Automatic or Manual).
-            deploy_cr: If set, deploy the first example CR found in the CSV.
+            deploy_cr: If set, deploy the first example CR found in the CSV (or the nth, if an int)
             namespace_monitoring: If set, enable OpenShift namespace monitoring.
             all_namespaces: If set, deploy the CSV in all the namespaces.
             catalog_namespace: Namespace in which the CatalogSource will be deployed
@@ -141,7 +141,12 @@ class Cluster:
         print(f"Deploying the operator using InstallPlan approval mode '{installplan_approval}'.")
 
         if deploy_cr:
-            print("Deploying the operator default CR.")
+            if deploy_cr is True:
+                print("Deploying the operator default CR.")
+            elif isinstance(deploy_cr, int):
+                print(f"Deploying the operator {deploy_cr}th CR.")
+            else:
+                raise ValueError("--deploy_cr should be a bool or an int")
 
         print("Deploying the operator.")
 

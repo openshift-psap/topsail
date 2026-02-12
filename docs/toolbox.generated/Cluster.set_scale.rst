@@ -68,3 +68,8 @@ Parameters
 
 * Size of the EBS volume to request for the root partition
 
+
+``ibm``  
+
+* Set to true if running in an IBMCloud. Assumes AWS otherwise.
+
