@@ -88,7 +88,7 @@
        -n openshift-nfd
        -ojson
     | jq -r '.metadata.annotations."alm-examples"'
-    | jq .[0]
+    | jq .[1]
     | jq --arg  ns openshift-nfd '.metadata.namespace = $ns'
     | jq --arg  ns openshift-nfd '.spec.namespace = $ns'
     > {{ artifact_extra_logs_dir }}/nfd_cr.json

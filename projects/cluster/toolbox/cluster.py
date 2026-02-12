@@ -14,7 +14,7 @@ class Cluster:
     """
 
     @AnsibleRole("cluster_set_scale")
-    def set_scale(self, instance_type, scale, base_machineset="", force=False, taint="", name="", spot=False, disk_size=None):
+    def set_scale(self, instance_type, scale, base_machineset="", force=False, taint="", name="", spot=False, disk_size=None, ibm=None):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -39,6 +39,7 @@ class Cluster:
             name: Name to give to the new machineset.
             spot: Set to true to request spot instances from AWS. Set to false (default) to request on-demand instances.
             disk_size: Size of the EBS volume to request for the root partition
+            ibm: set to true if running in an IBMCloud. Assumes AWS otherwise.
         """
         opts = {
             "machineset_instance_type": instance_type,
@@ -49,6 +50,7 @@ class Cluster:
             "force_scale": force,
             "cluster_ensure_machineset_spot": spot or False,
             "cluster_ensure_machineset_disk_size": disk_size,
+            "cluster_ensure_machineset_ibm": ibm or False
         }
 
         return RunAnsibleRole(opts)
@@ -99,7 +101,7 @@ class Cluster:
             channel: Channel to deploy from. If unspecified, deploys the CSV's default channel. Use '?' to list the available channels for the given package manifest.
             version: Version to deploy. If unspecified, deploys the latest version available in the selected channel.
             installplan_approval: InstallPlan approval mode (Automatic or Manual).
-            deploy_cr: If set, deploy the first example CR found in the CSV.
+            deploy_cr: If set, deploy the first example CR found in the CSV (or the nth, if an int)
             namespace_monitoring: If set, enable OpenShift namespace monitoring.
             all_namespaces: If set, deploy the CSV in all the namespaces.
             catalog_namespace: Namespace in which the CatalogSource will be deployed
@@ -139,7 +141,12 @@ class Cluster:
         print(f"Deploying the operator using InstallPlan approval mode '{installplan_approval}'.")
 
         if deploy_cr:
-            print("Deploying the operator default CR.")
+            if deploy_cr is True:
+                print("Deploying the operator default CR.")
+            elif isinstance(deploy_cr, int):
+                print(f"Deploying the operator {deploy_cr}th CR.")
+            else:
+                raise ValueError("--deploy_cr should be a bool or an int")
 
         print("Deploying the operator.")
 

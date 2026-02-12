@@ -37,6 +37,16 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
     remote_host.description: "kpouget's MacBook M4 Pro"
 
+  ibm_vm:
+    secrets.hostname: mac_ai__hostname.ibmCloud
+    secrets.username: mac_ai__username.ibmCloud
+    secrets.base_work_dir: mac_ai__base_work_dir.ibmCloud
+    remote_host.description: "L4 VM on IBM"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+
   kpouget-atuona:
     secrets.hostname: mac_ai__hostname.kpouget-atuona
     secrets.username: mac_ai__username.kpouget-atuona
