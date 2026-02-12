@@ -14,7 +14,7 @@ class Cluster:
     """
 
     @AnsibleRole("cluster_set_scale")
-    def set_scale(self, instance_type, scale, base_machineset="", force=False, taint="", name="", spot=False, disk_size=None):
+    def set_scale(self, instance_type, scale, base_machineset="", force=False, taint="", name="", spot=False, disk_size=None, ibm=None):
         """
         Ensures that the cluster has exactly `scale` nodes with instance_type `instance_type`
 
@@ -39,6 +39,7 @@ class Cluster:
             name: Name to give to the new machineset.
             spot: Set to true to request spot instances from AWS. Set to false (default) to request on-demand instances.
             disk_size: Size of the EBS volume to request for the root partition
+            ibm: set to true if running in an IBMCloud. Assumes AWS otherwise.
         """
         opts = {
             "machineset_instance_type": instance_type,
@@ -49,6 +50,7 @@ class Cluster:
             "force_scale": force,
             "cluster_ensure_machineset_spot": spot or False,
             "cluster_ensure_machineset_disk_size": disk_size,
+            "cluster_ensure_machineset_ibm": ibm or False
         }
 
         return RunAnsibleRole(opts)
