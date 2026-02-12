@@ -1,5 +1,5 @@
 ---
-- name: Set the instance type file
+- name: Set the instance type field
   set_fact:
     instance_type_field: "{% if cluster_ensure_machineset_ibm %}profile{% else %}instanceType{% endif %}"
 
