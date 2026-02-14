@@ -27,7 +27,7 @@
     if [ $RESULT -eq 143 ] || [ $RESULT -eq 137 ]; then
       echo "Task timed out!"
       exit 1
-    elif [ ! $RESULT -eq 0 ]]; then
+    elif [ ! $RESULT -eq 0 ]; then
       echo "Task failed ($RESULT) :/"
       exit 1
     else

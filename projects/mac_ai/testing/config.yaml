@@ -37,6 +37,16 @@ ci_presets:
     secrets.base_work_dir: mac_ai__base_work_dir.mac-m4
     remote_host.description: "kpouget's MacBook M4 Pro"
 
+  ibm_vm:
+    secrets.hostname: mac_ai__hostname.ibmCloud
+    secrets.username: mac_ai__username.ibmCloud
+    secrets.base_work_dir: mac_ai__base_work_dir.ibmCloud
+    remote_host.description: "L4 VM on IBM"
+    remote_host.system: linux
+    remote_host.arch: x86_64
+    prepare.podman.repo.enabled: false # no linux binary in GH ...
+    prepare.podman.machine.enabled: false
+
   kpouget-atuona:
     secrets.hostname: mac_ai__hostname.kpouget-atuona
     secrets.username: mac_ai__username.kpouget-atuona
@@ -141,6 +151,19 @@ ci_presets:
   remoting_wip:
     extends: []
 
+  remoting_cuda:
+    extends: [remoting_linux]
+    test.platform:
+    - podman/llama_cpp/remoting
+    - linux/llama_cpp/cuda
+    # - podman/ramalama/remoting
+    prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_REG: "ggml_backend_cuda_reg"
+    prepare.podman.machine.remoting_env.env.APIR_LLAMA_CPP_GGML_LIBRARY_INIT: "ggml_backend_cuda_init"
+    prepare.podman.machine.remoting_env.ggml_libs[1]: "/usr/bin/libggml-cuda.so"
+    prepare.llama_cpp.source.cmake.flavors.remoting.linux: "-DGGML_VIRTGPU_BACKEND=ON"
+    prepare.ramalama.remoting.backend: cuda
+    prepare.podman.container.device: "nvidia.com/gpu=all"
+    prepare.llama_cpp.source.podman.local_container_file.path: "images/llama_cpp.cuda.containerfile"
   remoting_linux:
     extends: [remoting]
     prepare.llama_cpp.source.cmake.openmp.enabled: false
@@ -409,6 +432,8 @@ prepare:
           vulkan:
             common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             darwin: -DVulkan_INCLUDE_DIR=/opt/homebrew/include/ -DVulkan_LIBRARY=/opt/homebrew/lib/libMoltenVK.dylib
+          cuda:
+            common: "-DGGML_CUDA=ON -DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.1/bin/nvcc"
           remoting:
             common: -DGGML_NATIVE=OFF -DGGML_VIRTGPU=ON
             darwin: -DGGML_METAL=ON -DGGML_METAL_MACOSX_VERSION_MIN=14.0 -DGGML_VIRTGPU_BACKEND=ONLY # backend
@@ -432,6 +457,8 @@ prepare:
               common: -DGGML_VULKAN=ON -DGGML_NATIVE=OFF -DGGML_METAL=OFF
             remoting:
               common: -DGGML_VIRTGPU=ON -DGGML_CPU_ARM_ARCH=native
+            cuda:
+              common: "@prepare.llama_cpp.source.cmake.flavors.cuda.common"
 
   ollama:
     repo:
@@ -698,5 +725,5 @@ __platform_check:
     no_gpu: no-gpu
 
   flavors:
-    llama_cpp: [metal, vulkan, upstream_bin, remoting]
+    llama_cpp: [metal, vulkan, upstream_bin, remoting, cuda]
     ramalama: [remoting, no-gpu, null]
