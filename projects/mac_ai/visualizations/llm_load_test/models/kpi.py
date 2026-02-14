@@ -29,7 +29,8 @@ def tg_throughput(lts_payload):
 def llm_load_test_ttft(lts_payload):
     if not lts_payload.results.llm_load_test:
         return None
-
+    if not lts_payload.results.llm_load_test.ttft:
+        return None
     return lts_payload.results.llm_load_test.ttft.median
 
 
@@ -37,6 +38,8 @@ def llm_load_test_ttft(lts_payload):
 @matbench_models.KPIMetadata(help="Median iter-token latency", unit="ms")
 def llm_load_test_itl(lts_payload):
     if not lts_payload.results.llm_load_test:
+        return None
+    if not lts_payload.results.llm_load_test.itl:
         return None
 
     return lts_payload.results.llm_load_test.itl.median
