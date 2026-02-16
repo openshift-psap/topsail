@@ -8,11 +8,7 @@ spec:
       managementState: Removed
     dashboard:
       managementState: Removed
-    datasciencepipelines:
-      managementState: Removed
     kserve:
-      managementState: Removed
-    modelmeshserving:
       managementState: Removed
     ray:
       managementState: Removed

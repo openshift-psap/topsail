@@ -136,7 +136,7 @@ class Rhods:
                                   name=None,
                                   enable: list = [],
                                   show_all=False,
-                                  extra_settings: dict = {"spec.components.kserve.serving.managementState": "Removed"},
+                                  extra_settings: dict = {},
                                   ):
         """
         Update RHOAI datasciencecluster resource
