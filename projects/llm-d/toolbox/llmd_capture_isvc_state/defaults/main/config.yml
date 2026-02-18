@@ -1,0 +1,15 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llmd.capture_isvc_state
+
+# Parameters
+# Name of the LLMInferenceService to capture
+# Mandatory value
+llmd_capture_isvc_state_llmisvc_name:
+
+# Namespace of the LLMInferenceService (empty string auto-detects current namespace)
+llmd_capture_isvc_state_namespace:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

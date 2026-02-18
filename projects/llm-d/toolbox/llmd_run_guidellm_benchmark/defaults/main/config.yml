@@ -1,0 +1,39 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llmd.run_guidellm_benchmark
+
+# Parameters
+# Name of the LLMInferenceService to benchmark (in same namespace)
+# Mandatory value
+llmd_run_guidellm_benchmark_llmisvc_name:
+
+# Name of the benchmark job
+llmd_run_guidellm_benchmark_name: guidellm-benchmark
+
+# Namespace to run the benchmark job in (empty string auto-detects current namespace)
+llmd_run_guidellm_benchmark_namespace:
+
+# Container image for the benchmark
+llmd_run_guidellm_benchmark_image: ghcr.io/vllm-project/guidellm
+
+# Version tag for the benchmark image
+llmd_run_guidellm_benchmark_version: v0.5.3
+
+# Timeout in seconds to wait for job completion
+llmd_run_guidellm_benchmark_timeout: 900
+
+# Guidellm profile to use
+llmd_run_guidellm_benchmark_profile: sweep
+
+# Maximum seconds to run benchmark
+llmd_run_guidellm_benchmark_max_seconds: 30
+
+# Model processor name
+llmd_run_guidellm_benchmark_processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
+
+# Data configuration
+llmd_run_guidellm_benchmark_data: prompt_tokens=256,output_tokens=128
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

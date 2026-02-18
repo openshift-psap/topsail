@@ -1,0 +1,20 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llmd.deploy_llm_inference_service
+
+# Parameters
+# Name of the inference service to deploy
+# Mandatory value
+llmd_deploy_llm_inference_service_name:
+
+# Namespace to deploy the inference service in
+# Mandatory value
+llmd_deploy_llm_inference_service_namespace:
+
+# Path to the YAML file containing the LLMInferenceService
+# Mandatory value
+llmd_deploy_llm_inference_service_yaml_file:
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

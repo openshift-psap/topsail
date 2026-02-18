@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: "{{ llmd_deploy_gateway_name }}"
+  namespace: "{{ llmd_deploy_gateway_namespace }}"
+spec:
+  gatewayClassName: "{{ llmd_deploy_gateway_gateway_class }}"
+  listeners:
+    - name: http
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All

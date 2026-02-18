@@ -177,6 +177,21 @@ Toolbox Documentation
                 
 * :doc:`run <Llm_Load_Test.run>`	 Load test the wisdom model
 
+``llmd``
+********
+
+::
+
+    Commands relating to RHODS
+    
+
+                
+* :doc:`capture_isvc_state <Llmd.capture_isvc_state>`	 Captures all relevant objects and state for an LLMInferenceService
+* :doc:`deploy_gateway <Llmd.deploy_gateway>`	 Deploys a GatewayClass and Gateway object
+* :doc:`deploy_llm_inference_service <Llmd.deploy_llm_inference_service>`	 Deploys an LLM InferenceService from a YAML file
+* :doc:`run_guidellm_benchmark <Llmd.run_guidellm_benchmark>`	 Runs a Guidellm benchmark job against the LLM inference service
+* :doc:`run_multiturn_benchmark <Llmd.run_multiturn_benchmark>`	 Runs a multi-turn benchmark job against the LLM inference service
+
 ``local_ci``
 ************
 

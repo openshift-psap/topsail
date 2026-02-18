@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ llmd_run_guidellm_benchmark_name }}"
+  namespace: "{{ target_namespace }}"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: default
+      restartPolicy: Never
+      containers:
+        - name: guidellm
+          image: "{{ llmd_run_guidellm_benchmark_image }}:{{ llmd_run_guidellm_benchmark_version }}"
+          command:
+            - /opt/app-root/bin/guidellm
+          args:
+            - benchmark
+            - run
+            - --target={{ benchmark_endpoint_url }}
+            - --profile={{ llmd_run_guidellm_benchmark_profile }}
+            - --max-seconds={{ llmd_run_guidellm_benchmark_max_seconds }}
+            - --processor={{ llmd_run_guidellm_benchmark_processor }}
+            - --data={{ llmd_run_guidellm_benchmark_data }}
+          volumeMounts:
+            - name: home
+              mountPath: /home/guidellm
+            - name: results
+              mountPath: /results
+      volumes:
+        - name: home
+          emptyDir: {}
+        - name: results
+          emptyDir: {}
