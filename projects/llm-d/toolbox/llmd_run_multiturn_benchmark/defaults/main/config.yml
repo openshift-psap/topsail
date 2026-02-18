@@ -1,0 +1,30 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llmd.run_multiturn_benchmark
+
+# Parameters
+# Name of the LLMInferenceService to benchmark (in same namespace)
+# Mandatory value
+llmd_run_multiturn_benchmark_llmisvc_name:
+
+# Name of the benchmark job
+llmd_run_multiturn_benchmark_name: multi-turn-benchmark
+
+# Namespace to run the benchmark job in (empty string auto-detects current namespace)
+llmd_run_multiturn_benchmark_namespace:
+
+# Container image for the benchmark
+llmd_run_multiturn_benchmark_image: quay.io/hayesphilip/multi-turn-benchmark
+
+# Version tag for the benchmark image
+llmd_run_multiturn_benchmark_version: 0.0.1
+
+# Timeout in seconds to wait for job completion
+llmd_run_multiturn_benchmark_timeout: 900
+
+# Number of parallel connections
+llmd_run_multiturn_benchmark_parallel: 9
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

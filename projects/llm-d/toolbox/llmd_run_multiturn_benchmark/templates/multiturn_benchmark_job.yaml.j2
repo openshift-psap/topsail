@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ llmd_run_multiturn_benchmark_name }}"
+  namespace: "{{ target_namespace }}"
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: benchmark
+          image: "{{ llmd_run_multiturn_benchmark_image }}:{{ llmd_run_multiturn_benchmark_version }}"
+          args:
+            - "{{ benchmark_endpoint_url }}"
+            - --parallel={{ llmd_run_multiturn_benchmark_parallel }}

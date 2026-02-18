@@ -1,0 +1,1 @@
+guidellm_benchmark_job_template: templates/guidellm_benchmark_job.yaml.j2

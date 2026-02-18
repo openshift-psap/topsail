@@ -1,0 +1,1 @@
+multiturn_benchmark_job_template: templates/multiturn_benchmark_job.yaml.j2
