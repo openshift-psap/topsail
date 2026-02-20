@@ -20,6 +20,7 @@ Toolbox Documentation
 * :doc:`destroy_ocp <Cluster.destroy_ocp>`	 Destroy an OpenShift cluster
 * :doc:`destroy_osd <Cluster.destroy_osd>`	 Destroy an OpenShift Dedicated cluster.
 * :doc:`dump_prometheus_db <Cluster.dump_prometheus_db>`	 Dump Prometheus database into a file
+* :doc:`enable_userworkload_monitoring <Cluster.enable_userworkload_monitoring>`	 Enables user workload monitoring for OpenShift
 * :doc:`fill_workernodes <Cluster.fill_workernodes>`	 Fills the worker nodes with place-holder Pods with the maximum available amount of a given resource name.
 * :doc:`preload_image <Cluster.preload_image>`	 Preload a container image on all the nodes of a cluster.
 * :doc:`query_prometheus_db <Cluster.query_prometheus_db>`	 Query Prometheus with a list of PromQueries read in a file
@@ -182,7 +183,7 @@ Toolbox Documentation
 
 ::
 
-    Commands relating to RHODS
+    Commands and utilities for the LLM-D toolbox
     
 
                 
