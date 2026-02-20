@@ -1,0 +1,335 @@
+#!/usr/bin/env python
+
+import pathlib
+import logging
+import datetime
+import time
+import uuid
+import os
+import json
+
+import yaml
+
+from projects.core.library import env, config, run
+from projects.cluster.library import prom
+
+TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
+
+def test():
+    """
+    Runs the main LLM-D test
+    """
+
+    if config.project.get_config("tests.llmd.skip"):
+        logging.info("LLM-D test skipped")
+        return False
+
+    logging.info("Running LLM-D test")
+
+    failed = False
+
+    with env.NextArtifactDir("llm_d_testing"):
+        try:
+            # Reset Prometheus before testing
+            logging.info("Resetting Prometheus database before testing")
+            prom_start_ts = prom.reset_prometheus()
+
+            # Ensure GPU nodes are available
+            ensure_gpu_nodes_available()
+
+            # Deploy LLM inference service
+            deploy_llm_inference_service()
+
+            # Run benchmarks
+            if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
+                failed |= run_multiturn_benchmark()
+
+            if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
+                failed |= run_guidellm_benchmark()
+
+            # Capture state for analysis
+            capture_llm_inference_service_state()
+
+        except Exception as e:
+            logging.exception(f"Test failed :/")
+            failed = True
+
+        finally:
+            # Always dump Prometheus data after testing (success or failure)
+            logging.info("Dumping Prometheus database after testing")
+            namespace = config.project.get_config("tests.llmd.namespace")
+            prom.dump_prometheus(prom_start_ts, namespace)
+
+        # Generate test metadata files
+        _generate_test_metadata(failed)
+
+    return failed
+
+
+def _generate_test_metadata(failed):
+    """
+    Generate metadata files for the test execution
+    """
+    logging.info("Generating test metadata files")
+
+    # Write exit code file
+    exit_code = "1" if failed else "0"
+    exit_code_path = env.ARTIFACT_DIR / "exit_code"
+    with open(exit_code_path, 'w') as f:
+        f.write(exit_code)
+
+    logging.info(f"Written exit code: {exit_code} to {exit_code_path}")
+
+    # Write settings file
+    settings_path = env.ARTIFACT_DIR / "settings.yaml"
+    with open(settings_path, 'w') as f:
+        f.write("llm-d: true\n")
+
+    logging.info(f"Written settings to {settings_path}")
+
+
+def deploy_llm_inference_service():
+    """
+    Deploys the LLM inference service
+    """
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+
+    # Convert relative path to absolute
+    if not os.path.isabs(llmisvc_file):
+        llmisvc_file = str(TESTING_THIS_DIR / "llmisvcs" / llmisvc_file)
+
+    logging.info(f"Deploying LLM inference service {llmisvc_name} in namespace {namespace}")
+
+    # Deploy the inference service
+    run.run_toolbox("llmd", "deploy_llm_inference_service",
+                   name=llmisvc_name,
+                   namespace=namespace,
+                   yaml_file=llmisvc_file)
+
+    # Wait for the service to be ready
+    timeout = config.project.get_config("tests.llmd.inference_service.timeout")
+    logging.info(f"Waiting up to {timeout}s for LLM inference service to be ready")
+
+    run.run(f"oc wait --for=condition=Ready llminferenceservice/{llmisvc_name} "
+           f"-n {namespace} --timeout={timeout}s")
+
+    # Get and log the service URL
+    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
+                        f"-o jsonpath='{{.status.url}}'", capture_stdout=True)
+
+    if url_result.returncode == 0:
+        logging.info(f"LLM inference service URL: {url_result.stdout.strip()}")
+
+    return llmisvc_name, namespace
+
+
+def run_multiturn_benchmark():
+    """
+    Runs the multi-turn benchmark
+    """
+
+    if not config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
+        return False
+
+    logging.info("Running multi-turn benchmark")
+
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    namespace = config.project.get_config("tests.llmd.namespace")
+
+    benchmark_name = config.project.get_config("tests.llmd.benchmarks.multiturn.name")
+    parallel = config.project.get_config("tests.llmd.benchmarks.multiturn.parallel")
+    timeout = config.project.get_config("tests.llmd.benchmarks.multiturn.timeout")
+
+    failed = False
+
+    try:
+        run.run_toolbox("llmd", "run_multiturn_benchmark",
+                       llmisvc_name=llmisvc_name,
+                       name=benchmark_name,
+                       namespace=namespace,
+                       parallel=parallel,
+                       timeout=timeout)
+
+        logging.info("Multi-turn benchmark completed successfully")
+
+    except Exception as e:
+        logging.error(f"Multi-turn benchmark failed: {e}")
+        failed = True
+
+    return failed
+
+
+def run_guidellm_benchmark():
+    """
+    Runs the Guidellm benchmark
+    """
+
+    if not config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
+        return False
+
+    logging.info("Running Guidellm benchmark")
+
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    namespace = config.project.get_config("tests.llmd.namespace")
+
+    benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
+    profile = config.project.get_config("tests.llmd.benchmarks.guidellm.profile")
+    max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
+    timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
+    processor = config.project.get_config("tests.llmd.benchmarks.guidellm.processor")
+    data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
+
+    failed = False
+
+    try:
+        run.run_toolbox("llmd", "run_guidellm_benchmark",
+                       llmisvc_name=llmisvc_name,
+                       name=benchmark_name,
+                       namespace=namespace,
+                       profile=profile,
+                       max_seconds=max_seconds,
+                       timeout=timeout,
+                       processor=processor,
+                       data=data)
+
+        logging.info("Guidellm benchmark completed successfully")
+
+    except Exception as e:
+        logging.error(f"Guidellm benchmark failed: {e}")
+        failed = True
+
+    return failed
+
+
+def capture_llm_inference_service_state():
+    """
+    Captures the state of the LLM inference service
+    """
+
+    logging.info("Capturing LLM inference service state")
+
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    namespace = config.project.get_config("tests.llmd.namespace")
+
+    try:
+        run.run_toolbox("llmd", "capture_isvc_state",
+                       llmisvc_name=llmisvc_name,
+                       namespace=namespace, mute=True)
+
+        logging.info("LLM inference service state captured successfully")
+
+    except Exception as e:
+        logging.error(f"Failed to capture LLM inference service state: {e}")
+
+
+def ensure_gpu_nodes_available():
+    """
+    Ensures that there are GPU nodes available in the cluster
+    """
+
+    logging.info("Checking for GPU nodes in the cluster")
+
+    try:
+        result = run.run("oc get nodes -l nvidia.com/gpu.present=true --no-headers", capture_stdout=True)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to check GPU nodes: {result.stderr}")
+
+        gpu_nodes = result.stdout.strip().split('\n') if result.stdout.strip() else []
+
+        if not gpu_nodes or (len(gpu_nodes) == 1 and gpu_nodes[0] == ''):
+            raise RuntimeError("No GPU nodes found in the cluster. GPU nodes are required for LLM inference testing.")
+
+        logging.info(f"Found {len(gpu_nodes)} GPU node(s) in the cluster")
+        for node in gpu_nodes:
+            node_name = node.split()[0]
+            logging.info(f"  - {node_name}")
+
+    except Exception as e:
+        logging.error(f"GPU node validation failed: {e}")
+        raise
+
+
+def test_llm_inference_simple():
+    """
+    Runs a simple test against the LLM inference service
+    """
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+
+    logging.info("Running simple LLM inference test")
+
+    # Get the service URL
+    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
+                        f"-o jsonpath='{{.status.url}}'", capture_stdout=True)
+
+    if url_result.returncode != 0:
+        logging.error("Failed to get LLM inference service URL")
+        return True
+
+    url = url_result.stdout.strip()
+    if not url:
+        logging.error("LLM inference service URL is empty")
+        return True
+
+    # Test with a simple completion request
+    test_payload = {
+        "model": "llama-3-1-8b-instruct-fp8",
+        "prompt": "San Francisco is a",
+        "max_tokens": 50,
+        "temperature": 0.7
+    }
+
+    try:
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(test_payload, f)
+            payload_file = f.name
+
+        # Make the request
+        result = run.run(f"""
+curl -s "{url}/v1/completions" \\
+  -H "Content-Type: application/json" \\
+  -d @{payload_file}
+""", capture_stdout=True)
+
+        os.unlink(payload_file)
+
+        if result.returncode == 0:
+            response = json.loads(result.stdout)
+            if "choices" in response and len(response["choices"]) > 0:
+                completion = response["choices"][0].get("text", "")
+                logging.info(f"Simple LLM test successful. Completion: {completion[:100]}...")
+                return False
+            else:
+                logging.error(f"Invalid response format: {result.stdout}")
+                return True
+        else:
+            logging.error(f"Request failed: {result.stderr}")
+            return True
+
+    except Exception as e:
+        logging.error(f"Simple LLM test failed: {e}")
+        return True
+
+
+def matbench_run_one():
+    """
+    Runs one test as part of a MatrixBenchmark benchmark
+    """
+
+    logging.info("Running MatrixBenchmark test")
+
+    # Deploy and test
+    failed = test()
+
+    if not failed:
+        logging.info("MatrixBenchmark test completed successfully")
+    else:
+        logging.error("MatrixBenchmark test failed")
+
+    return failed

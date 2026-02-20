@@ -1,0 +1,8 @@
+
+cluster reset_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
+
+cluster dump_prometheus_db/uwm:
+  label: app.kubernetes.io/instance=user-workload,app.kubernetes.io/component=prometheus
+  namespace: openshift-user-workload-monitoring
