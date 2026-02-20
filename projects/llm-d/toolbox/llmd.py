@@ -23,6 +23,7 @@ class Llmd:
         Args:
           name: Name of the gateway to deploy
           gateway_class: Name of the gateway class to deploy
+          namespace: Namespace where the gateway will be deployed
         """
 
         if name != "openshift-ai-inference":
