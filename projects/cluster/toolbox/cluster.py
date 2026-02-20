@@ -528,3 +528,18 @@ class Cluster:
         """
 
         return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_enable_userworkload_monitoring")
+    @AnsibleMappedParams
+    def enable_userworkload_monitoring(self, namespaces: list = []):
+        """
+        Enables user workload monitoring for OpenShift
+
+        Creates the necessary ConfigMaps to enable user workload monitoring
+        and labels the specified namespaces for monitoring.
+
+        Args:
+            namespaces: List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
+        """
+
+        return RunAnsibleRole(locals())

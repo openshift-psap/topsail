@@ -1,0 +1,40 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the openshift-user-workload-monitoring namespace if it doesn't exist
+  shell: set -o pipefail; oc create namespace openshift-user-workload-monitoring --dry-run=client -oyaml | oc apply -f-
+
+- name: Generate monitoring configuration YAML
+  template:
+    src: monitoring-config.yaml
+    dest: "{{ artifact_extra_logs_dir }}/src/monitoring-config.yaml"
+    mode: '0644'
+
+- name: Enable user workload monitoring in OpenShift
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/monitoring-config.yaml"
+
+- name: Wait for user workload monitoring to be ready
+  shell: |
+    set -o pipefail;
+    oc get pod -n openshift-user-workload-monitoring --no-headers 2>/dev/null | grep -q prometheus-user-workload
+  register: uwm_ready
+  until: uwm_ready.rc == 0
+  retries: 30
+  delay: 10
+  failed_when: false
+
+- name: Debug user workload monitoring readiness
+  debug:
+    msg: "User workload monitoring pods status: {{ 'Ready' if uwm_ready.rc == 0 else 'Not ready after 5 minutes' }}"
+
+- name: Enable monitoring for specified namespaces
+  when: cluster_enable_userworkload_monitoring_namespaces | length > 0
+  block:
+    - name: Label namespaces for monitoring
+      command: oc label namespace {{ item }} openshift.io/cluster-monitoring=true --overwrite
+      loop: "{{ cluster_enable_userworkload_monitoring_namespaces }}"
+      register: label_result
