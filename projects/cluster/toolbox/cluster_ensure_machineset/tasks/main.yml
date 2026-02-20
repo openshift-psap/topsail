@@ -1,12 +1,16 @@
 ---
+- name: Set the instance type field
+  set_fact:
+    instance_type_field: "{% if cluster_ensure_machineset_ibm %}profile{% else %}instanceType{% endif %}"
+
 - name: Check if the cluster already has a machineset of type {{ machineset_instance_type }}
   shell:
     set -o pipefail;
     oc get machineset -n openshift-machine-api
     {% if machineset_name | length > 0 %}
-      -ojson | jq '.items[] | select(.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}" and .metadata.name=="{{ machineset_name }}") | .metadata.name' -r
+      -ojson | jq '.items[] | select(.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}" and .metadata.name=="{{ machineset_name }}") | .metadata.name' -r
     {% else %}
-      -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")].metadata.name}'
+      -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}")].metadata.name}'
     {% endif %}
   register: cluster_has_machineset
 

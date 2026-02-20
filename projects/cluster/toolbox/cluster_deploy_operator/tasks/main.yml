@@ -378,4 +378,4 @@
 
 - name: Deploy the operator CustomResource from its ClusterServiceVersion
   include_tasks: deploy_cr.yml
-  when: cluster_deploy_operator_deploy_cr | bool
+  when: cluster_deploy_operator_deploy_cr is not sameas false

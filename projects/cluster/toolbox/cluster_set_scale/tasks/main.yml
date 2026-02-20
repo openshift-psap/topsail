@@ -4,10 +4,16 @@
   fail: msg="Bailing out. This role requires 'machineset_instance_type' to be defined"
   when: not machineset_instance_type
 
+- name: Set the instance type file
+  set_fact:
+    instance_type_field: "{% if cluster_ensure_machineset_ibm %}profile{% else %}instanceType{% endif %}"
+
 - name: Ensure that the named machineset has the right instance type
   when: machineset_name | length > 0
   command:
-    oc get machineset {{ machineset_name }} -ojsonpath={.spec.template.spec.providerSpec.value.instanceType} --ignore-not-found
+    oc get machineset {{ machineset_name }} --ignore-not-found -n openshift-machine-api
+      -ojsonpath={'.spec.template.spec.providerSpec.value.{{ instance_type_field }}'}
+
   register: named_machineset_instance_type_cmd
 
 - name: Delete the existing named machineset if the instance type is incorrect
@@ -24,7 +30,7 @@
     {% if machineset_name | length > 0 %}
       {{ machineset_name }} -o=jsonpath='{.spec.replicas}{"\n"}'
     {% else %}
-      -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
+      -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}")]}{.spec.replicas}{"\n"}{end}'
     {% endif %}
   register: machineset_replicas
 
@@ -43,7 +49,7 @@
            "{{ machineset_name }}"
            -ojsonpath={.metadata.name}
     {% else %}
-       -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
+       -o=jsonpath='{range .items[?(@.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}")]}{.metadata.name}{"\n"}{end}'
     {% endif %}
   register: oc_get_machinesets
   failed_when: not oc_get_machinesets.stdout
@@ -98,7 +104,7 @@
       {% if machineset_name | length > 0 %}
              "{{ machineset_name }}" -ojson \
       {% else %}
-              -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.instanceType=="{{ machineset_instance_type }}")]}' \
+              -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}")]}' \
       {% endif %}
       | jq 'if .status | has("availableReplicas") then . else . * {"status": {"availableReplicas": 0 }} end' \
       | jq 'select(.status.availableReplicas != .spec.replicas or .status.replicas != .spec.replicas)' \

@@ -1,4 +1,8 @@
 ---
+- name: Set the instance type field
+  set_fact:
+    instance_type_field: "{% if cluster_ensure_machineset_ibm %}profile{% else %}instanceType{% endif %}"
+
 - name: Get the names of an existing worker machinesets (of any instance type)
   command:
     oc get machinesets -n openshift-machine-api -o
@@ -27,15 +31,25 @@
        > {{ artifact_extra_logs_dir }}/source_machineset.json
 
 - name: Update and store in a file the MachineSet with the requested instance type {{ machineset_instance_type }}
-  shell:
-    "{{ reconfigure_machineset }}
-      {{ artifact_extra_logs_dir }}/source_machineset.json
-      {{ machineset_instance_type }}
-      {{ machineset_name }}
-      {{ machineset_taint }}
-      > {{ artifact_extra_logs_dir }}/new_machineset.json"
+  shell: |
+    "{{ reconfigure_machineset }}" \
+      "{{ artifact_extra_logs_dir }}/source_machineset.json" \
+      "{{ machineset_instance_type }}" \
+      "{{ machineset_name }}" \
+      "{{ machineset_taint }}" \
+      "{{ instance_type_field }}" \
+      > "{{ artifact_extra_logs_dir }}/new_machineset.json"
+
+- name: Update the IBM spot instance
+  when:
+  - cluster_ensure_machineset_spot
+  - cluster_ensure_machineset_ibm
+  fail:
+    msg: "spot instance not supported on IBMCloud"
 
 - name: Update the MachineSet spotMarketOptions spec to be {% if cluster_ensure_machineset_spot %}added{% else %}deleted{% endif %}
+  when:
+  - not cluster_ensure_machineset_ibm
   shell:
     set -o pipefail;
 
@@ -48,8 +62,17 @@
         'del(.spec.template.spec.providerSpec.value.spotMarketOptions)'
     {% endif %}
 
+- name: Update the IBM disk size
+  when:
+  - cluster_ensure_machineset_disk_size != None
+  - cluster_ensure_machineset_ibm
+  fail:
+    msg: "disk size not supported on IBMCloud"
+
 - name: Update the EBS disk size
-  when: cluster_ensure_machineset_disk_size != None
+  when:
+  - cluster_ensure_machineset_disk_size != None
+  - not cluster_ensure_machineset_ibm
   shell:
     set -e;
     set -o pipefail;

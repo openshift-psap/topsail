@@ -2,7 +2,7 @@
 - name: Ensure that NFD labels are set
   block:
   - name: Ensure that NFD labels are set by querying a common label
-    command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhcos
+    command: oc get nodes -lfeature.node.kubernetes.io/system-os_release.ID=rhel
     register: has_nfd_labels
     until: has_nfd_labels.stdout != ""
     retries: 10

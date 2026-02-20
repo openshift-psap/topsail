@@ -27,7 +27,7 @@ cluster_deploy_operator_installplan_approval: Manual
 # Namespace in which the CatalogSource will be deployed
 cluster_deploy_operator_catalog_namespace: openshift-marketplace
 
-# If set, deploy the first example CR found in the CSV.
+# If set, deploy the first example CR found in the CSV (or the nth, if an int)
 # Type: Bool
 cluster_deploy_operator_deploy_cr: false
 
