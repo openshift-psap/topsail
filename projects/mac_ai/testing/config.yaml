@@ -164,6 +164,7 @@ ci_presets:
     prepare.ramalama.remoting.backend: cuda
     prepare.podman.container.device: "nvidia.com/gpu=all"
     prepare.llama_cpp.source.podman.local_container_file.path: "images/llama_cpp.cuda.containerfile"
+
   remoting_linux:
     extends: [remoting]
     prepare.llama_cpp.source.cmake.openmp.enabled: false
@@ -174,10 +175,11 @@ ci_presets:
     prepare.podman.machine.remoting_env.ggml_libs[1]: "libggml-vulkan.so"
     test.capture_metrics.enabled: false
     test.platform:
-    - podman/ramalama/remoting
-    - podman/llama_cpp/remoting
+    #- podman/ramalama/remoting
+    #- podman/llama_cpp/remoting
     # - podman/llama_cpp/vulkan
     - linux/llama_cpp/vulkan
+    - linux/llama_cpp/cuda
 
   remoting_mac:
     extends: [remoting]
