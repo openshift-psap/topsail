@@ -26,6 +26,15 @@ def test():
 
     logging.info("Running LLM-D test")
 
+    # Handle conditional GPU scaling before test
+    conditional_scale_up()
+
+    # Ensure GPU nodes are available before running test
+    ensure_gpu_nodes_available()
+
+    # Preload LLM model image on GPU nodes
+    preload_llm_model_image()
+
     failed = False
 
     with env.NextArtifactDir("llm_d_testing"):
@@ -33,9 +42,6 @@ def test():
             # Reset Prometheus before testing
             logging.info("Resetting Prometheus database before testing")
             prom_start_ts = prom.reset_prometheus()
-
-            # Ensure GPU nodes are available
-            ensure_gpu_nodes_available()
 
             # Deploy LLM inference service
             deploy_llm_inference_service()
@@ -62,6 +68,9 @@ def test():
 
         # Generate test metadata files
         _generate_test_metadata(failed)
+
+    # Handle conditional GPU scaling after test completion
+    conditional_scale_down()
 
     return failed
 
@@ -227,10 +236,11 @@ def capture_llm_inference_service_state():
 
 def ensure_gpu_nodes_available():
     """
-    Ensures that there are GPU nodes available in the cluster
+    Ensures that there are GPU nodes available in the cluster.
+    This function assumes prepare_gpu() has already been called.
     """
 
-    logging.info("Checking for GPU nodes in the cluster")
+    logging.info("Verifying GPU nodes are available in the cluster")
 
     try:
         result = run.run("oc get nodes -l nvidia.com/gpu.present=true --no-headers", capture_stdout=True)
@@ -239,17 +249,89 @@ def ensure_gpu_nodes_available():
             raise RuntimeError(f"Failed to check GPU nodes: {result.stderr}")
 
         gpu_nodes = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        has_gpu_nodes = gpu_nodes and not (len(gpu_nodes) == 1 and gpu_nodes[0] == '')
 
-        if not gpu_nodes or (len(gpu_nodes) == 1 and gpu_nodes[0] == ''):
-            raise RuntimeError("No GPU nodes found in the cluster. GPU nodes are required for LLM inference testing.")
-
-        logging.info(f"Found {len(gpu_nodes)} GPU node(s) in the cluster")
-        for node in gpu_nodes:
-            node_name = node.split()[0]
-            logging.info(f"  - {node_name}")
+        if not has_gpu_nodes:
+            raise RuntimeError("No GPU nodes found in the cluster. GPU nodes are required for LLM inference testing. Ensure prepare_gpu() was called.")
+        else:
+            logging.info(f"Found {len(gpu_nodes)} GPU node(s) in the cluster")
+            for node in gpu_nodes:
+                node_name = node.split()[0]
+                logging.info(f"  - {node_name}")
 
     except Exception as e:
         logging.error(f"GPU node validation failed: {e}")
+        raise
+
+
+def preload_llm_model_image():
+    """
+    Preloads the LLM model image on GPU nodes to reduce startup time
+    """
+
+    logging.info("Preloading LLM model image on GPU nodes")
+
+    try:
+        # Get the model image URI from the YAML file
+        yaml_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        namespace = config.project.get_config("tests.llmd.namespace")
+
+        # Extract the model URI using yq
+        image_result = run.run(f"cat {yaml_file} | yq .spec.model.uri", capture_stdout=True)
+
+        if image_result.returncode != 0:
+            raise RuntimeError(f"Failed to extract model URI from {yaml_file}: {image_result.stderr}")
+
+        model_image = image_result.stdout.strip().strip('"')
+        logging.info(f"Preloading model image: {model_image}")
+
+        # Get additional images from RHODS operator CSV
+        csv_result = run.run("oc get csv rhods-operator.3.3.0 -ojson | jq '.spec.relatedImages | .[]'", capture_stdout=True)
+
+        if csv_result.returncode != 0:
+            logging.warning(f"Failed to get RHODS operator related images: {csv_result.stderr}")
+            additional_images = []
+        else:
+            # Parse the JSON output to get specific images
+            import json
+            related_images = []
+            for line in csv_result.stdout.strip().split('\n'):
+                if line.strip():
+                    try:
+                        img_data = json.loads(line)
+                        related_images.append(img_data)
+                    except json.JSONDecodeError:
+                        continue
+
+            # Extract the specific images we need
+            target_image_names = [
+                "rhaiis_vllm_cuda_image",
+                "odh_llm_d_inference_scheduler_image",
+                "odh_llm_d_routing_sidecar_image"
+            ]
+
+            additional_images = []
+            for img in related_images:
+                if img.get("name") in target_image_names:
+                    additional_images.append(img.get("image"))
+                    logging.info(f"Found additional image to preload: {img.get('name')} = {img.get('image')}")
+
+        # Preload all images on GPU nodes
+        all_images = [model_image] + additional_images
+
+        for image in all_images:
+            if image:
+                logging.info(f"Preloading image: {image}")
+                run.run_toolbox("cluster", "preload_image",
+                               namespace=namespace,
+                               node_selector_key="nvidia.com/gpu.present",
+                               node_selector_value="true",
+                               image=image)
+
+        logging.info("LLM model and related images preloading completed successfully")
+
+    except Exception as e:
+        logging.error(f"Failed to preload LLM model image: {e}")
         raise
 
 
@@ -317,6 +399,69 @@ curl -s "{url}/v1/completions" \\
         return True
 
 
+def conditional_scale_up():
+    """
+    Conditionally scales up GPU nodes if scale_up preset is enabled and no GPU nodes exist
+    """
+    auto_scale = config.project.get_config("prepare.cluster.nodes.auto_scale")
+    if not auto_scale:
+        return
+
+    logging.info("Auto scale enabled, checking for existing GPU nodes")
+
+    try:
+        result = run.run("oc get nodes -l nvidia.com/gpu.present=true --no-headers", capture_stdout=True)
+        gpu_nodes = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        has_gpu_nodes = gpu_nodes and not (len(gpu_nodes) == 1 and gpu_nodes[0] == '')
+
+        if not has_gpu_nodes:
+            logging.info("No GPU nodes found, scaling up cluster")
+
+            node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+            node_count = config.project.get_config("prepare.cluster.nodes.count")
+
+            if node_instance_type and node_count:
+                logging.info(f"Scaling cluster to {node_count} {node_instance_type} instances")
+                run.run_toolbox("cluster", "set_scale",
+                               instance_type=node_instance_type,
+                               scale=node_count)
+
+                # Wait for GPU nodes to be ready
+                logging.info("Waiting for GPU nodes to be ready...")
+                run.run_toolbox("nfd", "wait_gpu_nodes")
+                run.run_toolbox("gpu-operator", "wait_stack_deployed")
+        else:
+            logging.info(f"Found {len(gpu_nodes)} existing GPU node(s), skipping scale up")
+
+    except Exception as e:
+        logging.error(f"Failed to check/scale GPU nodes: {e}")
+        raise
+
+
+def conditional_scale_down():
+    """
+    Conditionally scales down GPU nodes if scale_up preset is enabled
+    """
+    auto_scale_down = config.project.get_config("prepare.cluster.nodes.auto_scale_down_on_exit")
+    if not auto_scale_down:
+        return
+
+    node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+    if not node_instance_type:
+        logging.warning("Node instance type not configured, skipping scale down")
+        return
+
+    logging.info("Auto scale down enabled, scaling down GPU nodes to 0")
+
+    try:
+        run.run_toolbox("cluster", "set_scale",
+                       instance_type=node_instance_type,
+                       scale=0)
+        logging.info("GPU nodes scaled down successfully")
+    except Exception as e:
+        logging.error(f"Failed to scale down GPU nodes: {e}")
+
+
 def matbench_run_one():
     """
     Runs one test as part of a MatrixBenchmark benchmark
@@ -324,7 +469,7 @@ def matbench_run_one():
 
     logging.info("Running MatrixBenchmark test")
 
-    # Deploy and test
+    # Deploy and test (test() now handles its own GPU scaling)
     failed = test()
 
     if not failed:
