@@ -1,4 +1,12 @@
----
-# List of namespaces to enable monitoring for
-# Each namespace will get the openshift.io/cluster-monitoring=true label
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.enable_userworkload_monitoring
+
+# Parameters
+# List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
+# Type: List
 cluster_enable_userworkload_monitoring_namespaces: []
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux
