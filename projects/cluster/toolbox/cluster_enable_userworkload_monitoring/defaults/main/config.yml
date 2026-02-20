@@ -1,0 +1,4 @@
+---
+# List of namespaces to enable monitoring for
+# Each namespace will get the openshift.io/cluster-monitoring=true label
+cluster_enable_userworkload_monitoring_namespaces: []
