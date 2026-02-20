@@ -1,0 +1,6 @@
+visualize:
+- id: llmd_inference
+  generate:
+  - "report: LLM-D Inference Error Report"
+  - "report: GuideLLM Results Table"
+  - "report: Multi-turn Results Table"
