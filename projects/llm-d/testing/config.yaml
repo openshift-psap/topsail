@@ -5,6 +5,11 @@ ci_presets:
   names: null
   local_config: null
 
+  # Preset that automatically scales up GPU nodes if none exist, and scales down at the end
+  scale_up:
+    prepare.cluster.nodes.auto_scale: true
+    prepare.cluster.nodes.auto_scale_down_on_exit: true
+
 clusters:
   cleanup_on_exit: false
 
@@ -57,10 +62,13 @@ prepare:
         extra_args:
           all_namespaces: true
 
-  gpu:
+  cluster:
     skip: false
-    instance_type: gx3-16x80x1l4
-    count: 1
+    nodes:
+      auto_scale: false
+      auto_scale_down_on_exit: false
+      instance_type: gx3-16x80x1l4
+      count: 1
 
   rhoai:
     skip: false

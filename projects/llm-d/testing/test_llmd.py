@@ -34,9 +34,6 @@ def test():
             logging.info("Resetting Prometheus database before testing")
             prom_start_ts = prom.reset_prometheus()
 
-            # Ensure GPU nodes are available
-            ensure_gpu_nodes_available()
-
             # Deploy LLM inference service
             deploy_llm_inference_service()
 
@@ -227,10 +224,11 @@ def capture_llm_inference_service_state():
 
 def ensure_gpu_nodes_available():
     """
-    Ensures that there are GPU nodes available in the cluster
+    Ensures that there are GPU nodes available in the cluster.
+    This function assumes prepare_gpu() has already been called.
     """
 
-    logging.info("Checking for GPU nodes in the cluster")
+    logging.info("Verifying GPU nodes are available in the cluster")
 
     try:
         result = run.run("oc get nodes -l nvidia.com/gpu.present=true --no-headers", capture_stdout=True)
@@ -239,14 +237,15 @@ def ensure_gpu_nodes_available():
             raise RuntimeError(f"Failed to check GPU nodes: {result.stderr}")
 
         gpu_nodes = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        has_gpu_nodes = gpu_nodes and not (len(gpu_nodes) == 1 and gpu_nodes[0] == '')
 
-        if not gpu_nodes or (len(gpu_nodes) == 1 and gpu_nodes[0] == ''):
-            raise RuntimeError("No GPU nodes found in the cluster. GPU nodes are required for LLM inference testing.")
-
-        logging.info(f"Found {len(gpu_nodes)} GPU node(s) in the cluster")
-        for node in gpu_nodes:
-            node_name = node.split()[0]
-            logging.info(f"  - {node_name}")
+        if not has_gpu_nodes:
+            raise RuntimeError("No GPU nodes found in the cluster. GPU nodes are required for LLM inference testing. Ensure prepare_gpu() was called.")
+        else:
+            logging.info(f"Found {len(gpu_nodes)} GPU node(s) in the cluster")
+            for node in gpu_nodes:
+                node_name = node.split()[0]
+                logging.info(f"  - {node_name}")
 
     except Exception as e:
         logging.error(f"GPU node validation failed: {e}")
@@ -317,6 +316,69 @@ curl -s "{url}/v1/completions" \\
         return True
 
 
+def conditional_scale_up():
+    """
+    Conditionally scales up GPU nodes if scale_up preset is enabled and no GPU nodes exist
+    """
+    auto_scale = config.project.get_config("prepare.cluster.nodes.auto_scale")
+    if not auto_scale:
+        return
+
+    logging.info("Auto scale enabled, checking for existing GPU nodes")
+
+    try:
+        result = run.run("oc get nodes -l nvidia.com/gpu.present=true --no-headers", capture_stdout=True)
+        gpu_nodes = result.stdout.strip().split('\n') if result.stdout.strip() else []
+        has_gpu_nodes = gpu_nodes and not (len(gpu_nodes) == 1 and gpu_nodes[0] == '')
+
+        if not has_gpu_nodes:
+            logging.info("No GPU nodes found, scaling up cluster")
+
+            node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+            node_count = config.project.get_config("prepare.cluster.nodes.count")
+
+            if node_instance_type and node_count:
+                logging.info(f"Scaling cluster to {node_count} {node_instance_type} instances")
+                run.run_toolbox("cluster", "set_scale",
+                               instance_type=node_instance_type,
+                               scale=node_count)
+
+                # Wait for GPU nodes to be ready
+                logging.info("Waiting for GPU nodes to be ready...")
+                run.run_toolbox("nfd", "wait_gpu_nodes")
+                run.run_toolbox("gpu-operator", "wait_stack_deployed")
+        else:
+            logging.info(f"Found {len(gpu_nodes)} existing GPU node(s), skipping scale up")
+
+    except Exception as e:
+        logging.error(f"Failed to check/scale GPU nodes: {e}")
+        raise
+
+
+def conditional_scale_down():
+    """
+    Conditionally scales down GPU nodes if scale_up preset is enabled
+    """
+    auto_scale_down = config.project.get_config("prepare.cluster.nodes.auto_scale_down_on_exit")
+    if not auto_scale_down:
+        return
+
+    node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+    if not node_instance_type:
+        logging.warning("Node instance type not configured, skipping scale down")
+        return
+
+    logging.info("Auto scale down enabled, scaling down GPU nodes to 0")
+
+    try:
+        run.run_toolbox("cluster", "set_scale",
+                       instance_type=node_instance_type,
+                       scale=0)
+        logging.info("GPU nodes scaled down successfully")
+    except Exception as e:
+        logging.error(f"Failed to scale down GPU nodes: {e}")
+
+
 def matbench_run_one():
     """
     Runs one test as part of a MatrixBenchmark benchmark
@@ -324,12 +386,23 @@ def matbench_run_one():
 
     logging.info("Running MatrixBenchmark test")
 
-    # Deploy and test
-    failed = test()
+    # Handle conditional GPU scaling before test
+    conditional_scale_up()
 
-    if not failed:
-        logging.info("MatrixBenchmark test completed successfully")
-    else:
-        logging.error("MatrixBenchmark test failed")
+    # Ensure GPU nodes are available before running test
+    ensure_gpu_nodes_available()
 
-    return failed
+    try:
+        # Deploy and test
+        failed = test()
+
+        if not failed:
+            logging.info("MatrixBenchmark test completed successfully")
+        else:
+            logging.error("MatrixBenchmark test failed")
+
+        return failed
+
+    finally:
+        # Handle conditional GPU scaling after test (regardless of success/failure)
+        conditional_scale_down()

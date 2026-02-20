@@ -152,7 +152,7 @@ def prepare_monitoring():
 
 def prepare_gpu():
     """
-    Prepares the cluster for GPU operations
+    Prepares the cluster for GPU operations - scales up unconditionally if configured
     """
 
     if config.project.get_config("prepare.gpu.skip"):
@@ -162,14 +162,14 @@ def prepare_gpu():
     logging.info("Preparing cluster for GPU operations")
 
     # Scale up the cluster if configured
-    gpu_instance_type = config.project.get_config("prepare.gpu.instance_type")
-    gpu_count = config.project.get_config("prepare.gpu.count")
+    node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+    node_count = config.project.get_config("prepare.cluster.nodes.count")
 
-    if gpu_instance_type and gpu_count:
-        logging.info(f"Scaling cluster to {gpu_count} {gpu_instance_type} instances")
+    if node_instance_type and node_count:
+        logging.info(f"Scaling cluster to {node_count} {node_instance_type} instances")
         run.run_toolbox("cluster", "set_scale",
-                       instance_type=gpu_instance_type,
-                       scale=str(gpu_count))
+                       instance_type=node_instance_type,
+                       scale=node_count)
 
     # Wait for GPU nodes to be ready
     run.run_toolbox("nfd", "wait_gpu_nodes")
@@ -279,11 +279,11 @@ def cleanup_cluster():
         logging.warning(f"Failed to delete namespace {namespace}: {e}")
 
     # Scale down cluster if configured
-    gpu_instance_type = config.project.get_config("prepare.gpu.instance_type")
-    if gpu_instance_type:
-        try:
-            run.run_toolbox("cluster", "set_scale",
-                           instance_type=gpu_instance_type,
-                           scale="0")
-        except Exception as e:
-            logging.warning(f"Failed to scale down cluster: {e}")
+    auto_scale_down = config.project.get_config("prepare.cluster.nodes.auto_scale_down_on_exit")
+    node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
+
+    if auto_scale_down and node_instance_type:
+        logging.info(f"Auto scale down enabled, scaling down {node_instance_type} nodes to 0")
+        run.run_toolbox("cluster", "set_scale",
+                        instance_type=node_instance_type,
+                        scale="0")
