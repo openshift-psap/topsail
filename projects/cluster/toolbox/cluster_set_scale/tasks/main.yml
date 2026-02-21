@@ -4,6 +4,26 @@
   fail: msg="Bailing out. This role requires 'machineset_instance_type' to be defined"
   when: not machineset_instance_type
 
+- name: Detect cloud provider type
+  shell: |
+    set -o pipefail;
+    oc get machineset -n openshift-machine-api -o json | jq -r '
+      .items[0].spec.template.spec.providerSpec.value |
+      if has("profile") then "ibm"
+      elif has("instanceType") then "aws"
+      else "unknown"
+      end'
+  register: detected_cloud_provider
+  failed_when: detected_cloud_provider.stdout == "unknown"
+
+- name: Set IBM flag based on detected cloud provider
+  set_fact:
+    cluster_ensure_machineset_ibm: "{{ detected_cloud_provider.stdout == 'ibm' }}"
+
+- name: Debug detected cloud provider
+  debug:
+    msg: "Detected cloud provider: {{ detected_cloud_provider.stdout }}, using IBM mode: {{ cluster_ensure_machineset_ibm }}"
+
 - name: Set the instance type file
   set_fact:
     instance_type_field: "{% if cluster_ensure_machineset_ibm %}profile{% else %}instanceType{% endif %}"
