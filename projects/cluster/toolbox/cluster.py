@@ -334,6 +334,8 @@ class Cluster:
         # use `name` as first suffix in the directory name
         os.environ["ARTIFACT_TOOLBOX_NAME_SUFFIX"] = f"_{name}{toolbox_name_suffix}"
 
+        name = name.replace("_", "-")
+
         return RunAnsibleRole(locals())
 
     @AnsibleRole("cluster_create_htpasswd_user")
