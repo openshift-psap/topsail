@@ -31,9 +31,12 @@ def test():
 
     # Ensure GPU nodes are available before running test
     ensure_gpu_nodes_available()
+    # Run GPU readiness check and image preloading in parallel
+    logging.info("Starting parallel GPU readiness check and image preloading")
 
-    # Preload LLM model image on GPU nodes
-    preload_llm_model_image()
+    with run.Parallel("prepare_gpu_node") as parallel:
+        parallel.delayed(wait_for_gpu_readiness)
+        parallel.delayed(preload_llm_model_image)
 
     failed = False
 
@@ -264,6 +267,33 @@ def ensure_gpu_nodes_available():
         raise
 
 
+def wait_for_gpu_readiness():
+    """
+    Waits for GPU nodes and GPU operator stack to be ready
+    """
+    logging.info("Waiting for GPU nodes to be ready...")
+    run.run_toolbox("nfd", "wait_gpu_nodes")
+    run.run_toolbox("gpu-operator", "wait_stack_deployed")
+    logging.info("GPU readiness check completed")
+
+
+def preload_single_image(namespace, image, image_name=""):
+    """
+    Preloads a single image on GPU nodes
+    """
+    try:
+        logging.info(f"Preloading image{f' {image_name}' if image_name else ''}: {image}")
+        run.run_toolbox("cluster", "preload_image",
+                        name=image_name or "preload",
+                        namespace=namespace,
+                        node_selector_key="nvidia.com/gpu.present",
+                        node_selector_value="true",
+                        image=image)
+    except Exception as e:
+        logging.error(f"Failed to preload image{f' {image_name}' if image_name else ''} {image}: {e}")
+        raise
+
+
 def preload_llm_model_image():
     """
     Preloads the LLM model image on GPU nodes to reduce startup time
@@ -272,8 +302,10 @@ def preload_llm_model_image():
     logging.info("Preloading LLM model image on GPU nodes")
 
     try:
+        all_images = {}
         # Get the model image URI from the YAML file
-        yaml_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        yaml_file = TESTING_THIS_DIR / "llmisvcs" / llmisvc_file
         namespace = config.project.get_config("tests.llmd.namespace")
 
         # Extract the model URI using yq
@@ -282,51 +314,61 @@ def preload_llm_model_image():
         if image_result.returncode != 0:
             raise RuntimeError(f"Failed to extract model URI from {yaml_file}: {image_result.stderr}")
 
-        model_image = image_result.stdout.strip().strip('"')
-        logging.info(f"Preloading model image: {model_image}")
+        model_image = image_result.stdout.strip().strip('"').strip("oci://")
+        image_name = run.run(f"cat {yaml_file} | yq .spec.model.name", capture_stdout=True).stdout.strip().strip('"')
+        logging.info(f"Preloading model image: {model_image} ({image_name})")
+        all_images[image_name] = model_image
 
         # Get additional images from RHODS operator CSV
-        csv_result = run.run("oc get csv rhods-operator.3.3.0 -ojson | jq '.spec.relatedImages | .[]'", capture_stdout=True)
+        logging.info("Fetching additional images from RHODS operator CSV")
 
-        if csv_result.returncode != 0:
-            logging.warning(f"Failed to get RHODS operator related images: {csv_result.stderr}")
+        # First get the actual CSV name
+        csv_name_result = run.run("oc get csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator -oname", capture_stdout=True)
+
+        if csv_name_result.returncode != 0:
+            logging.warning(f"Failed to get RHODS operator CSV name: {csv_name_result.stderr}")
             additional_images = []
         else:
-            # Parse the JSON output to get specific images
-            import json
-            related_images = []
-            for line in csv_result.stdout.strip().split('\n'):
-                if line.strip():
-                    try:
-                        img_data = json.loads(line)
-                        related_images.append(img_data)
-                    except json.JSONDecodeError:
+            csv_name = csv_name_result.stdout.strip().replace("clusterserviceversion.operators.coreos.com/", "")
+            logging.info(f"Found RHODS operator CSV: {csv_name}")
+
+            csv_result = run.run(f"oc get csv {csv_name} -n redhat-ods-operator -ojson | jq '.spec.relatedImages'", capture_stdout=True)
+
+            if csv_result.returncode != 0:
+                logging.warning(f"Failed to get RHODS operator related images (return code: {csv_result.returncode}): {csv_result.stderr}")
+                additional_images = []
+            else:
+                # Parse the JSON output to get specific images
+                import json
+                related_images = json.loads(csv_result.stdout)
+
+                # Extract the specific images we need
+                target_image_names = [
+                    "rhaiis_vllm_cuda_image",
+                    "odh_llm_d_inference_scheduler_image",
+                    "odh_llm_d_routing_sidecar_image"
+                ]
+
+                logging.info(f"Parsed {len(related_images)} related images from CSV")
+
+                additional_images = []
+
+                for i, img in enumerate(related_images):
+                    img_name = img["name"]
+                    if img_name not in target_image_names:
+                        print(f"{i} | {img_name} not in the list")
                         continue
+                    all_images[img_name] = img["image"]
+                    logging.info(f"Found additional image to preload: {img_name} = {img['image']}")
 
-            # Extract the specific images we need
-            target_image_names = [
-                "rhaiis_vllm_cuda_image",
-                "odh_llm_d_inference_scheduler_image",
-                "odh_llm_d_routing_sidecar_image"
-            ]
+                logging.info(f"Found {len(additional_images)} additional images to preload out of {len(target_image_names)} targets")
 
-            additional_images = []
-            for img in related_images:
-                if img.get("name") in target_image_names:
-                    additional_images.append(img.get("image"))
-                    logging.info(f"Found additional image to preload: {img.get('name')} = {img.get('image')}")
+        # Preload all images in parallel
+        logging.info(f"Starting parallel preload of {len(all_images)} images")
 
-        # Preload all images on GPU nodes
-        all_images = [model_image] + additional_images
-
-        for image in all_images:
-            if image:
-                logging.info(f"Preloading image: {image}")
-                run.run_toolbox("cluster", "preload_image",
-                               namespace=namespace,
-                               node_selector_key="nvidia.com/gpu.present",
-                               node_selector_value="true",
-                               image=image)
+        with run.Parallel("preload_images") as parallel:
+            for image_name, image in all_images.items():
+                parallel.delayed(preload_single_image, namespace, image, image_name)
 
         logging.info("LLM model and related images preloading completed successfully")
 
@@ -426,10 +468,7 @@ def conditional_scale_up():
                                instance_type=node_instance_type,
                                scale=node_count)
 
-                # Wait for GPU nodes to be ready
-                logging.info("Waiting for GPU nodes to be ready...")
-                run.run_toolbox("nfd", "wait_gpu_nodes")
-                run.run_toolbox("gpu-operator", "wait_stack_deployed")
+                # GPU readiness will be handled separately in parallel
         else:
             logging.info(f"Found {len(gpu_nodes)} existing GPU node(s), skipping scale up")
 
