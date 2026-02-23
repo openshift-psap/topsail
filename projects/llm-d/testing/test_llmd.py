@@ -12,6 +12,7 @@ import yaml
 
 from projects.core.library import env, config, run
 from projects.cluster.library import prom
+import prepare_llmd
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
@@ -35,8 +36,8 @@ def test():
     logging.info("Starting parallel GPU readiness check and image preloading")
 
     with run.Parallel("prepare_gpu_node") as parallel:
-        parallel.delayed(wait_for_gpu_readiness)
-        parallel.delayed(preload_llm_model_image)
+        parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
+        parallel.delayed(prepare_llmd.preload_llm_model_image)
 
     failed = False
 
@@ -267,16 +268,6 @@ def ensure_gpu_nodes_available():
         raise
 
 
-def wait_for_gpu_readiness():
-    """
-    Waits for GPU nodes and GPU operator stack to be ready
-    """
-    logging.info("Waiting for GPU nodes to be ready...")
-    run.run_toolbox("nfd", "wait_gpu_nodes")
-    run.run_toolbox("gpu-operator", "wait_stack_deployed")
-    logging.info("GPU readiness check completed")
-
-
 def preload_single_image(namespace, image, image_name=""):
     """
     Preloads a single image on GPU nodes
@@ -291,89 +282,6 @@ def preload_single_image(namespace, image, image_name=""):
                         image=image)
     except Exception as e:
         logging.error(f"Failed to preload image{f' {image_name}' if image_name else ''} {image}: {e}")
-        raise
-
-
-def preload_llm_model_image():
-    """
-    Preloads the LLM model image on GPU nodes to reduce startup time
-    """
-
-    logging.info("Preloading LLM model image on GPU nodes")
-
-    try:
-        all_images = {}
-        # Get the model image URI from the YAML file
-        llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
-        yaml_file = TESTING_THIS_DIR / "llmisvcs" / llmisvc_file
-        namespace = config.project.get_config("tests.llmd.namespace")
-
-        # Extract the model URI using yq
-        image_result = run.run(f"cat {yaml_file} | yq .spec.model.uri", capture_stdout=True)
-
-        if image_result.returncode != 0:
-            raise RuntimeError(f"Failed to extract model URI from {yaml_file}: {image_result.stderr}")
-
-        model_image = image_result.stdout.strip().strip('"').strip("oci://")
-        image_name = run.run(f"cat {yaml_file} | yq .spec.model.name", capture_stdout=True).stdout.strip().strip('"')
-        logging.info(f"Preloading model image: {model_image} ({image_name})")
-        all_images[image_name] = model_image
-
-        # Get additional images from RHODS operator CSV
-        logging.info("Fetching additional images from RHODS operator CSV")
-
-        # First get the actual CSV name
-        csv_name_result = run.run("oc get csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator -oname", capture_stdout=True)
-
-        if csv_name_result.returncode != 0:
-            logging.warning(f"Failed to get RHODS operator CSV name: {csv_name_result.stderr}")
-            additional_images = []
-        else:
-            csv_name = csv_name_result.stdout.strip().replace("clusterserviceversion.operators.coreos.com/", "")
-            logging.info(f"Found RHODS operator CSV: {csv_name}")
-
-            csv_result = run.run(f"oc get csv {csv_name} -n redhat-ods-operator -ojson | jq '.spec.relatedImages'", capture_stdout=True)
-
-            if csv_result.returncode != 0:
-                logging.warning(f"Failed to get RHODS operator related images (return code: {csv_result.returncode}): {csv_result.stderr}")
-                additional_images = []
-            else:
-                # Parse the JSON output to get specific images
-                import json
-                related_images = json.loads(csv_result.stdout)
-
-                # Extract the specific images we need
-                target_image_names = [
-                    "rhaiis_vllm_cuda_image",
-                    "odh_llm_d_inference_scheduler_image",
-                    "odh_llm_d_routing_sidecar_image"
-                ]
-
-                logging.info(f"Parsed {len(related_images)} related images from CSV")
-
-                additional_images = []
-
-                for i, img in enumerate(related_images):
-                    img_name = img["name"]
-                    if img_name not in target_image_names:
-                        print(f"{i} | {img_name} not in the list")
-                        continue
-                    all_images[img_name] = img["image"]
-                    logging.info(f"Found additional image to preload: {img_name} = {img['image']}")
-
-                logging.info(f"Found {len(additional_images)} additional images to preload out of {len(target_image_names)} targets")
-
-        # Preload all images in parallel
-        logging.info(f"Starting parallel preload of {len(all_images)} images")
-
-        with run.Parallel("preload_images") as parallel:
-            for image_name, image in all_images.items():
-                parallel.delayed(preload_single_image, namespace, image, image_name)
-
-        logging.info("LLM model and related images preloading completed successfully")
-
-    except Exception as e:
-        logging.error(f"Failed to preload LLM model image: {e}")
         raise
 
 
@@ -459,16 +367,7 @@ def conditional_scale_up():
         if not has_gpu_nodes:
             logging.info("No GPU nodes found, scaling up cluster")
 
-            node_instance_type = config.project.get_config("prepare.cluster.nodes.instance_type")
-            node_count = config.project.get_config("prepare.cluster.nodes.count")
-
-            if node_instance_type and node_count:
-                logging.info(f"Scaling cluster to {node_count} {node_instance_type} instances")
-                run.run_toolbox("cluster", "set_scale",
-                               instance_type=node_instance_type,
-                               scale=node_count)
-
-                # GPU readiness will be handled separately in parallel
+            prepare_llmd.scale_up()
         else:
             logging.info(f"Found {len(gpu_nodes)} existing GPU node(s), skipping scale up")
 

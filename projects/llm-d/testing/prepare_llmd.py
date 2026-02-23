@@ -8,6 +8,7 @@ import uuid
 import os
 
 import yaml
+import tempfile
 
 from projects.core.library import env, config, run
 
@@ -26,10 +27,14 @@ def prepare():
     prepare_operators()
     prepare_monitoring()
     prepare_grafana()
-    prepare_gpu()
     prepare_rhoai()
     prepare_gateway()
     prepare_namespace()
+    scale_up()
+
+    with run.Parallel("prepare_gpu_node") as parallel:
+        parallel.delayed(wait_for_gpu_readiness)
+        parallel.delayed(preload_llm_model_image)
 
 
 def prepare_operators():
@@ -48,8 +53,9 @@ def prepare_operators():
 
     logging.info("Preparing operators")
 
-    for operator_config in operators_list:
-        deploy_operator(operator_config)
+    with run.Parallel("prepare_operators") as parallel:
+        for operator_config in operators_list:
+            parallel.delayed(deploy_operator, operator_config)
 
 
 def deploy_operator(operator_config):
@@ -79,6 +85,7 @@ def deploy_operator(operator_config):
         "catalog": catalog,
         "manifest_name": operator,
         "namespace": namespace,
+        "artifact_dir_suffix": f"_{operator}"
     }
 
     if deploy_cr is not None:
@@ -209,7 +216,11 @@ spec:
       mirrors:
         - quay.io/rhoai
 """
-        run.run(f"oc apply -f-", input=icsp_yaml)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            f.write(icsp_yaml)
+            temp_file = f.name
+
+        run.run(f"oc apply -f {temp_file}")
 
     # Deploy RHOAI
     rhoai_image = config.project.get_config("prepare.rhoai.image")
@@ -217,9 +228,9 @@ spec:
     rhoai_channel = config.project.get_config("prepare.rhoai.channel")
 
     run.run_toolbox("rhods", "deploy_ods",
-                   image=rhoai_image,
-                   tag=rhoai_tag,
-                   channel=rhoai_channel)
+                    catalog_image=rhoai_image,
+                    tag=rhoai_tag,
+                    channel=rhoai_channel)
 
     # Enable KServe
     enable_components = config.project.get_config("prepare.rhoai.datasciencecluster.enable")
@@ -246,7 +257,7 @@ def prepare_gateway():
 
     logging.info(f"Deploying gateway: {gateway_name}")
 
-    run.run_toolbox("llmd", "deploy_gateway", gateway_name=gateway_name)
+    run.run_toolbox("llmd", "deploy_gateway", name=gateway_name)
 
 
 def prepare_namespace():
@@ -292,3 +303,101 @@ def cleanup_cluster():
         run.run_toolbox("cluster", "set_scale",
                         instance_type=node_instance_type,
                         scale="0")
+
+def preload_llm_model_image():
+    """
+    Preloads the LLM model image on GPU nodes to reduce startup time
+    """
+
+    logging.info("Preloading LLM model image on GPU nodes")
+
+    try:
+        all_images = {}
+        # Get the model image URI from the YAML file
+        llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        yaml_file = TESTING_THIS_DIR / "llmisvcs" / llmisvc_file
+        namespace = config.project.get_config("tests.llmd.namespace")
+
+        # Extract the model URI using yq
+        image_result = run.run(f"cat {yaml_file} | yq .spec.model.uri", capture_stdout=True)
+
+        if image_result.returncode != 0:
+            raise RuntimeError(f"Failed to extract model URI from {yaml_file}: {image_result.stderr}")
+
+        model_image = image_result.stdout.strip().strip('"').strip("oci://")
+        image_name = run.run(f"cat {yaml_file} | yq .spec.model.name", capture_stdout=True).stdout.strip().strip('"')
+        logging.info(f"Preloading model image: {model_image} ({image_name})")
+        all_images[image_name] = model_image
+
+        # Get additional images from RHODS operator CSV
+        logging.info("Fetching additional images from RHODS operator CSV")
+
+        # First get the actual CSV name
+        csv_name_result = run.run("oc get csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator -oname", capture_stdout=True)
+
+        if csv_name_result.returncode != 0:
+            logging.warning(f"Failed to get RHODS operator CSV name: {csv_name_result.stderr}")
+            additional_images = []
+        else:
+            csv_name = csv_name_result.stdout.strip().replace("clusterserviceversion.operators.coreos.com/", "")
+            logging.info(f"Found RHODS operator CSV: {csv_name}")
+
+            csv_result = run.run(f"oc get csv {csv_name} -n redhat-ods-operator -ojson | jq '.spec.relatedImages'", capture_stdout=True)
+
+            if csv_result.returncode != 0:
+                logging.warning(f"Failed to get RHODS operator related images (return code: {csv_result.returncode}): {csv_result.stderr}")
+                additional_images = []
+            else:
+                # Parse the JSON output to get specific images
+                import json
+                related_images = json.loads(csv_result.stdout)
+
+                # Extract the specific images we need
+                target_image_names = [
+                    "rhaiis_vllm_cuda_image",
+                    "odh_llm_d_inference_scheduler_image",
+                    "odh_llm_d_routing_sidecar_image"
+                ]
+
+                logging.info(f"Parsed {len(related_images)} related images from CSV")
+
+                additional_images = []
+
+                for i, img in enumerate(related_images):
+                    img_name = img["name"]
+                    if img_name not in target_image_names:
+                        continue
+                    all_images[img_name] = img["image"]
+                    logging.info(f"Found additional image to preload: {img_name} = {img['image']}")
+
+                logging.info(f"Found {len(additional_images)} additional images to preload out of {len(target_image_names)} targets")
+
+        # Preload all images in parallel
+        logging.info(f"Starting parallel preload of {len(all_images)} images")
+
+        with run.Parallel("preload_images") as parallel:
+            for image_name, image in all_images.items():
+                parallel.delayed(preload_single_image, namespace, image, image_name)
+
+        logging.info("LLM model and related images preloading completed successfully")
+
+    except Exception as e:
+        logging.error(f"Failed to preload LLM model image: {e}")
+        raise
+
+
+def preload_single_image(namespace, image, image_name=""):
+    """
+    Preloads a single image on GPU nodes
+    """
+    try:
+        logging.info(f"Preloading image{f' {image_name}' if image_name else ''}: {image}")
+        run.run_toolbox("cluster", "preload_image",
+                        name=image_name or "preload",
+                        namespace=namespace,
+                        node_selector_key="nvidia.com/gpu.present",
+                        node_selector_value="true",
+                        image=image)
+    except Exception as e:
+        logging.error(f"Failed to preload image{f' {image_name}' if image_name else ''} {image}: {e}")
+        raise
