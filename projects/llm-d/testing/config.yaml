@@ -146,3 +146,13 @@ matbenchmarking:
       index_prefix: llmd-ci-results
   regression_analyses:
     enabled: false
+
+exec_list:
+  _only_: false
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
+  matbench_run: true
+  generate_plots_from_pr_args: true
