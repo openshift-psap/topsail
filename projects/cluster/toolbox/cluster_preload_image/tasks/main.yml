@@ -57,7 +57,7 @@
     register: desired_number_scheduled_cmd
     retries: 3
     delay: 15
-    until: desired_number_scheduled_cmd or "0" | int > 0
+    until: (desired_number_scheduled_cmd.stdout | default("0")) | int > 0
 
   - name: Wait for the pods to be scheduled
     shell:
