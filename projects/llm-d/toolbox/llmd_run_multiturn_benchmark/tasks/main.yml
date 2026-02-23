@@ -63,17 +63,9 @@
   - name: Wait for the multiturn benchmark job to complete or fail
     shell: |
       set -o pipefail;
-      oc get job "{{ llmd_run_multiturn_benchmark_name }}" -n "{{ target_namespace }}" -o json 2>/dev/null | jq -r '
-        .status.conditions // [] |
-        {
-          complete: (map(select(.type == "Complete")) | .[0].status // "False"),
-          failed: (map(select(.type == "Failed")) | .[0].status // "False")
-        } |
-        "\(.complete):\(.failed)"' || echo "False:False"
+      oc get job "multiturn-benchmark" -n "llm-d-project" --no-headers | awk '{print $2; print "Job duration:", $4 > "/dev/stderr"}'
     register: job_status_result
-    until: >
-      (job_status_result.stdout.split(':')[0] == 'True') or
-      (job_status_result.stdout.split(':')[1] == 'True')
+    until: job_status_result.stdout in ['Complete', 'Failed']
     retries: "{{ (llmd_run_multiturn_benchmark_timeout | int / 10) | round(0, 'ceil') | int }}"
     delay: 10
     failed_when: false
@@ -81,7 +73,7 @@
   - name: Check final job status and fail if not completed successfully
     fail:
       msg: "Multi-turn benchmark job failed or timed out (final status: {{ job_status_result.stdout }})"
-    when: job_status_result.stdout.split(':')[0] != 'True'
+    when: job_status_result.stdout != 'Complete'
 
   always:
   - name: Capture the final multiturn benchmark job YAML
