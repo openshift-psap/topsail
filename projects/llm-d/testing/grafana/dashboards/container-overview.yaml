@@ -2,7 +2,6 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: container-overview
-  namespace: grafana
   annotations:
     name: Container Overview
     originalUrl: https://grafana.com/grafana/dashboards/14201

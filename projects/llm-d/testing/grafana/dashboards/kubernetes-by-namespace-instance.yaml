@@ -5,7 +5,6 @@ metadata:
     name: Kubernetes monitoring by namespace and instance
     originalUrl: https://grafana.com/grafana/dashboards/15826
   name: kubernetes-by-namespace-instance
-  namespace: grafana
 spec:
   allowCrossNamespaceImport: false
   instanceSelector:

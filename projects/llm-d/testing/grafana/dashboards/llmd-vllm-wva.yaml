@@ -5,7 +5,6 @@ metadata:
     name: LLM-D - vLLM - WVA - Overview
     originalUrl: https://github.com/aleskandro/llm-d-lab/blob/main/manifests/30-grafana/dashboards/llmd-vllm-wva.json
   name: llm-d-lab-vllm-wva-overview
-  namespace: grafana
 spec:
   allowCrossNamespaceImport: false
   instanceSelector:

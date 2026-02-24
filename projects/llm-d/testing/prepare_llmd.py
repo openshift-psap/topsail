@@ -112,6 +112,13 @@ def prepare_grafana():
 
     logging.info("Preparing Grafana resources")
 
+    # Get Grafana namespace from config
+    grafana_namespace = config.project.get_config("prepare.grafana.namespace")
+
+    # Create Grafana namespace if it doesn't exist
+    logging.info(f"Creating Grafana namespace: {grafana_namespace}")
+    run.run(f'oc new-project "{grafana_namespace}" --skip-config-write >/dev/null', check=False)
+
     # Deploy Grafana datasources
     datasources = config.project.get_config("prepare.grafana.datasources")
     for datasource_path in datasources or []:
@@ -120,18 +127,18 @@ def prepare_grafana():
             logging.warning(f"Grafana datasource file not found: {datasource_file}")
             continue
 
-        logging.info(f"Deploying Grafana datasource: {datasource_path}")
-        run.run(f"oc apply -f {datasource_file}")
+        logging.info(f"Deploying Grafana datasource: {datasource_path} to namespace {grafana_namespace}")
+        run.run(f"oc apply -n {grafana_namespace} -f {datasource_file}")
 
     # Deploy Grafana dashboards
     dashboards_dir_path = config.project.get_config("prepare.grafana.dashboards_dir")
     if dashboards_dir_path:
         dashboards_dir = TESTING_THIS_DIR / dashboards_dir_path
         dashboard_files = list(dashboards_dir.glob("*.yaml"))
-        logging.info(f"Deploying {len(dashboard_files)} Grafana dashboard(s) from {dashboards_dir_path}")
+        logging.info(f"Deploying {len(dashboard_files)} Grafana dashboard(s) from {dashboards_dir_path} to namespace {grafana_namespace}")
         for dashboard_file in dashboard_files:
             logging.info(f"  - {dashboard_file.name}")
-            run.run(f"oc apply -f {dashboard_file}")
+            run.run(f"oc apply -n {grafana_namespace} -f {dashboard_file}")
     else:
         logging.info("No Grafana dashboards directory configured")
 

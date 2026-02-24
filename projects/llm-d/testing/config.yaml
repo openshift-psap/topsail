@@ -85,6 +85,7 @@ prepare:
 
   grafana:
     skip: false
+    namespace: grafana
     datasources:
       - grafana/datasource.yaml
     dashboards_dir: grafana/dashboards
