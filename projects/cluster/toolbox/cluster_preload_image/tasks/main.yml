@@ -85,7 +85,7 @@
          -n {{ cluster_preload_image_namespace }}
          | jq '.status.desiredNumberScheduled - .status.numberReady'
     register: current_number_not_ready_cmd
-    retries: 90
+    retries: 135
     delay: 10
     until: current_number_not_ready_cmd.stdout | int == 0
 
