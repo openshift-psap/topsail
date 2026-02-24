@@ -3,7 +3,7 @@
 # Source component: Cluster.enable_userworkload_monitoring
 
 # Parameters
-# List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
+# List of namespaces to enable monitoring for. Each namespace will get the openshift.io/user-monitoring=true label.
 # Type: List
 cluster_enable_userworkload_monitoring_namespaces: []
 

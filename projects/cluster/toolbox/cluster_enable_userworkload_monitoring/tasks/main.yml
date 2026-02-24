@@ -35,6 +35,6 @@
   when: cluster_enable_userworkload_monitoring_namespaces | length > 0
   block:
     - name: Label namespaces for monitoring
-      command: oc label namespace {{ item }} openshift.io/cluster-monitoring=true --overwrite
+      command: oc label namespace {{ item }} openshift.io/user-monitoring=true --overwrite
       loop: "{{ cluster_enable_userworkload_monitoring_namespaces }}"
       register: label_result
