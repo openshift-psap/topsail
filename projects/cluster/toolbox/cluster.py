@@ -334,6 +334,8 @@ class Cluster:
         # use `name` as first suffix in the directory name
         os.environ["ARTIFACT_TOOLBOX_NAME_SUFFIX"] = f"_{name}{toolbox_name_suffix}"
 
+        name = name.replace("_", "-")
+
         return RunAnsibleRole(locals())
 
     @AnsibleRole("cluster_create_htpasswd_user")
@@ -525,6 +527,21 @@ class Cluster:
     def wait_fully_awake(self):
         """
         Waits for the cluster to be fully awake after Hive restart
+        """
+
+        return RunAnsibleRole(locals())
+
+    @AnsibleRole("cluster_enable_userworkload_monitoring")
+    @AnsibleMappedParams
+    def enable_userworkload_monitoring(self, namespaces: list = []):
+        """
+        Enables user workload monitoring for OpenShift
+
+        Creates the necessary ConfigMaps to enable user workload monitoring
+        and labels the specified namespaces for monitoring.
+
+        Args:
+            namespaces: List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
         """
 
         return RunAnsibleRole(locals())

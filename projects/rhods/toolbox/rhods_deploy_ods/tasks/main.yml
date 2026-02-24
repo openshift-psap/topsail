@@ -94,7 +94,7 @@
   command:
     oc get datasciencecluster -oname
   register: has_datasciencecluster_cmd
-  until: has_datasciencecluster_cmd.stdout
+  until: has_datasciencecluster_cmd.stdout | length > 0
   retries: 60
   delay: 10
   when: rhods_deploy_ods_managed_rhoai | bool

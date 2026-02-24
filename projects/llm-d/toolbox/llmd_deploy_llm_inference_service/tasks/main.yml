@@ -1,0 +1,137 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Check if the LLM inference service already exists
+  command:
+    oc get llminferenceservice "{{ llmd_deploy_llm_inference_service_name }}" \
+       -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+       --ignore-not-found
+  register: has_llm_inference_service_cmd
+
+- name: Save the LLM inference service
+  shell:
+    oc get llminferenceservice "{{ llmd_deploy_llm_inference_service_name }}" \
+       -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+       -oyaml \
+       > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.old.yaml"
+  when: has_llm_inference_service_cmd.stdout | length > 0
+
+- name: Delete the old LLM inference service
+  command:
+    oc delete llminferenceservice "{{ llmd_deploy_llm_inference_service_name }}" \
+       -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+       --ignore-not-found
+
+- name: Wait for all old LLM inference service pods to be deleted
+  shell: |
+    set -o pipefail;
+    oc get pods \
+       -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+       -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+       --no-headers | wc -l
+  register: old_pods_count
+  until: old_pods_count.stdout | int == 0
+  retries: 30
+  delay: 10
+  failed_when: false
+
+- name: Copy the LLM InferenceService YAML file
+  copy:
+    src: "{{ llmd_deploy_llm_inference_service_yaml_file }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
+    mode: '0700'
+
+- name: Create the LLM inference service
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
+
+- name: Wait for LLM inference service readiness and capture artifacts
+  block:
+  - name: Wait for the LLM inference service pods to appear
+    command:
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         --no-headers
+    register: llm_inference_service_pods_appear
+    until: llm_inference_service_pods_appear.stdout != ""
+    retries: 20
+    delay: 5
+
+  - name: Wait for the LLM inference service pods to be scheduled (not Pending)
+    shell: |
+      set -o pipefail;
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -o json | jq -r '.items[] | select(.status.phase == "Pending") | .metadata.name' | wc -l
+    register: llm_pods_pending
+    until: llm_pods_pending.stdout | int == 0
+    retries: 18
+    delay: 10
+    failed_when: llm_pods_pending.stdout | int > 0
+
+  - name: Wait for the LLM inference service pods to be running (images pulled and containers started)
+    shell: |
+      set -o pipefail;
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -o json | jq -r '.items[] | select(.status.phase != "Running" and .status.phase != "Succeeded") | .metadata.name' | wc -l
+    register: llm_pods_not_running
+    until: llm_pods_not_running.stdout | int == 0
+    retries: 60
+    delay: 15
+    failed_when: false
+
+  - name: Debug - show pod status during startup wait
+    command:
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -o wide
+    when: llm_pods_not_running.stdout | int > 0
+
+  - name: Debug - show pod events if pods are still not running
+    shell:
+      set -o pipefail;
+      oc get events --field-selector involvedObject.kind=Pod \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         --sort-by='.lastTimestamp' | tail -10
+    when: llm_pods_not_running.stdout | int > 0
+    failed_when: false
+
+  - name: Wait for the LLM inference service to be ready
+    command:
+      oc get llminferenceservice "{{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+    register: llm_inference_service_ready_status
+    until: llm_inference_service_ready_status.stdout == "True"
+    retries: 20
+    delay: 10
+
+  always:
+  - name: Capture the final LLM inference service YAML
+    shell:
+      oc get llminferenceservice "{{ llmd_deploy_llm_inference_service_name }}" \
+        -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+        -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.final.yaml"
+
+  - name: Capture the LLM inference service pods YAML
+    shell:
+      oc get pods -l "llminferenceservice={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.yaml"

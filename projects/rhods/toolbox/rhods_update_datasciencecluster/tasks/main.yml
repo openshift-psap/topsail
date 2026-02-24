@@ -119,26 +119,6 @@
 
 - name: Wait for the DataScienceCluster to be ready and capture artifacts
   block:
-  - name: Wait for the enabled components to be ready
-    shell: |
-      # see RHOAIENG-2618 for which is mapping is necessary
-      declare -A INSTALLED_COMPONENT_NAME;
-
-      INSTALLED_COMPONENT_NAME["datasciencepipelines"]="data-science-pipelines-operator"
-
-      installed_component_name="${INSTALLED_COMPONENT_NAME['{{ component }}']}"
-      if [[ -z "$installed_component_name" ]]; then
-        installed_component_name="{{ component }}"
-      fi
-
-      oc get datasciencecluster/{{ datasciencecluster_name }} -ojsonpath="{.status.installedComponents.$installed_component_name}"
-    register: dscluster_component_status_cmd
-    until: dscluster_component_status_cmd.stdout == "true"
-    loop: "{{ rhods_update_datasciencecluster_enable }}"
-    loop_control:
-      loop_var: component
-    retries: 60
-    delay: 10
   - name: Wait for the DSC object to be ready
     shell: |
       # To determine the overall readiness of the DataScienceCluster

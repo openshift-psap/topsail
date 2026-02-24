@@ -1,0 +1,158 @@
+ci_presets:
+  # name of the presets to apply, or null if no preset
+  name: null
+  # list of names of the presets to apply, or a single name, or null if no preset
+  names: null
+  local_config: null
+
+  # Preset that automatically scales up GPU nodes if none exist, and scales down at the end
+  scale_up:
+    prepare.cluster.nodes.auto_scale: true
+    prepare.cluster.nodes.auto_scale_down_on_exit: true
+
+clusters:
+  cleanup_on_exit: false
+
+prepare:
+  skip: false
+  namespace:
+    name: llm-d-project
+
+  operators:
+    skip: false
+    list:
+      - name: "Red Hat Connectivity Link"
+        catalog: redhat-operators
+        operator: rhcl-operator
+        namespace: all
+        enabled: false
+
+      - name: "OpenShift Cert Manager"
+        catalog: redhat-operators
+        operator: openshift-cert-manager-operator
+        namespace: openshift-cert-manager-operator
+        enabled: true
+
+      - name: "Leader Worker Set"
+        catalog: redhat-operators
+        operator: leader-worker-set
+        namespace: openshift-lws
+        deploy_cr: true
+        enabled: true
+
+      - name: "Node Feature Discovery"
+        catalog: redhat-operators
+        operator: nfd
+        namespace: openshift-nfd
+        deploy_cr: 1
+        enabled: true
+
+      - name: "NVIDIA GPU Operator"
+        catalog: certified-operators
+        operator: gpu-operator-certified
+        namespace: nvidia-gpu-operator
+        deploy_cr: true
+        enabled: true
+
+      - name: "Grafana Operator"
+        catalog: community-operators
+        operator: grafana-operator
+        namespace: grafana-operator
+        enabled: true
+        extra_args:
+          all_namespaces: true
+
+  cluster:
+    skip: false
+    nodes:
+      auto_scale: false
+      auto_scale_down_on_exit: false
+      instance_type: gx3-16x80x1l4
+      count: 1
+
+  rhoai:
+    skip: false
+    image: "quay.io/rhoai/rhoai-fbc-fragment"
+    tag: "rhoai-3.3@sha256:f6e7db613cd040e53da2d47850477a9b914de18979adaaac47e15dc7c76f8a76"
+    channel: "stable-3.x"
+    datasciencecluster:
+      enable: "[kserve]"
+      extra_settings: '{"spec.components.kserve.rawDeploymentServiceConfig": "Headless"}'
+
+  gateway:
+    skip: false
+    name: openshift-ai-inference  # NOTE: Should not be changed for the time being
+
+  grafana:
+    skip: false
+    datasources:
+      - grafana/datasource.yaml
+    dashboards_dir: grafana/dashboards
+
+  monitoring:
+    skip: false
+    namespaces:
+      - "@prepare.namespace.name"
+
+  cleanup:
+    skip: false
+
+tests:
+  llmd:
+    skip: false
+    namespace: "@prepare.namespace.name"
+
+    inference_service:
+      name: llama-llm-d
+      yaml_file: llama-3-1-8b-instruct-fp8.yaml
+      timeout: 900
+
+    benchmarks:
+      multiturn:
+        enabled: true
+        name: multiturn-benchmark
+        parallel: 9
+        timeout: 900
+
+      guidellm:
+        enabled: true
+        name: guidellm-benchmark
+        profile: sweep
+        max_seconds: 30
+        timeout: 900
+        processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
+        data: prompt_tokens=256,output_tokens=128
+
+    matbenchmarking:
+      enabled: false
+      stop_on_error: true
+
+  capture_prom: true
+  capture_prom_uwm: true
+  dry_mode: false
+
+export_artifacts:
+  enabled: false
+
+matbenchmarking:
+  preset: null
+  workload: projects.llm_d.visualizations.llmd_performance
+  config_file: plots.yaml
+  # directory to plot
+  lts:
+    generate: true
+    opensearch:
+      enabled: false
+      index_prefix: llmd-ci-results
+  regression_analyses:
+    enabled: false
+
+exec_list:
+  _only_: false
+
+  pre_cleanup_ci: null
+  prepare_ci: null
+  test_ci: null
+  post_cleanup_ci: null
+  matbench_run: true
+  generate_plots_from_pr_args: true

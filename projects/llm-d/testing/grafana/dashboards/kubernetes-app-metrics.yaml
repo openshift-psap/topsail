@@ -1,0 +1,1143 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: kubernetes-app-metrics
+  namespace: grafana
+  annotations:
+     name: Kubernetes App Metrics
+     originalLink: https://grafana.com/grafana/dashboards/1471
+spec:
+  allowCrossNamespaceImport: false
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 10m0s
+  json: |-
+     {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "description": "After selecting your namespace and container you get a wealth of metrics like request rate, error rate, response times, pod count, cpu and memory usage. You can view cpu and memory usage in a variety of ways, compared to the limit, compared to the request, per pod, average per pod, etc.",
+      "editable": false,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": 7,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "id": 16,
+          "panels": [],
+          "title": "Request rate",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 1
+          },
+          "id": 3,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(http_requests_total{app=\"$container\", handler!=\"prometheus\", kubernetes_namespace=\"$namespace\"}[30s])) by (kubernetes_namespace,app,code)",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "native | {{code}}",
+              "refId": "A",
+              "step": 10
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(nginx_http_requests_total{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (kubernetes_namespace,app,status)",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "nginx | {{status}}",
+              "refId": "B",
+              "step": 10
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(haproxy_backend_http_responses_total{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,code)",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "haproxy | {{code}}",
+              "refId": "C",
+              "step": 10
+            }
+          ],
+          "title": "Request rate",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 1
+          },
+          "id": 15,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(haproxy_backend_http_responses_total{app=\"$container\", kubernetes_namespace=\"$namespace\",code=\"5xx\"}[30s])) by (app,kubernetes_namespace) / sum(irate(haproxy_backend_http_responses_total{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace)",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "haproxy",
+              "refId": "A",
+              "step": 20
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(http_requests_total{app=\"$container\", handler!=\"prometheus\", kubernetes_namespace=\"$namespace\", code=~\"5[0-9]+\"}[30s])) by (kubernetes_namespace,app) / sum(irate(http_requests_total{app=\"$container\", handler!=\"prometheus\", kubernetes_namespace=\"$namespace\"}[30s])) by (kubernetes_namespace,app)",
+              "intervalFactor": 2,
+              "legendFormat": "native",
+              "refId": "B",
+              "step": 20
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(nginx_http_requests_total{app=\"$container\", kubernetes_namespace=\"$namespace\", status=~\"5[0-9]+\"}[30s])) by (kubernetes_namespace,app) / sum(irate(nginx_http_requests_total{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (kubernetes_namespace,app)",
+              "intervalFactor": 2,
+              "legendFormat": "nginx",
+              "refId": "C",
+              "step": 20
+            }
+          ],
+          "title": "Error rate",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "id": 17,
+          "panels": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 6,
+                "w": 24,
+                "x": 0,
+                "y": 9
+              },
+              "id": 5,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "intervalFactor": 1,
+                  "legendFormat": "native | 0.99",
+                  "refId": "A",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.90, sum(rate(http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "intervalFactor": 1,
+                  "legendFormat": "native | 0.90",
+                  "refId": "B",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "native | 0.50",
+                  "refId": "C",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.99, sum(rate(nginx_http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "intervalFactor": 1,
+                  "legendFormat": "nginx | 0.99",
+                  "refId": "D",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.9, sum(rate(nginx_http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "intervalFactor": 1,
+                  "legendFormat": "nginx | 0.90",
+                  "refId": "E",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "histogram_quantile(0.5, sum(rate(nginx_http_request_duration_seconds_bucket{app=\"$container\", kubernetes_namespace=\"$namespace\"}[30s])) by (app,kubernetes_namespace,le))",
+                  "intervalFactor": 1,
+                  "legendFormat": "nginx | 0.50",
+                  "refId": "F",
+                  "step": 1
+                }
+              ],
+              "title": "Response time percentiles",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Response time",
+          "type": "row"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "id": 18,
+          "panels": [],
+          "title": "Pod count",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 10
+          },
+          "id": 7,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "count(count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (pod_name))",
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "pods",
+              "refId": "A",
+              "step": 5
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "count(count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (kubernetes_io_hostname))",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "hosts",
+              "refId": "B",
+              "step": 10
+            }
+          ],
+          "title": "Number of pods",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 17
+          },
+          "id": 19,
+          "panels": [],
+          "title": "Usage relative to request",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "max": 1,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "elasticsearch-logging-data-20170207a (logging) - system"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#BF1B00",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "elasticsearch-logging-data-20170207a (logging) - user"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "#508642",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 18
+          },
+          "id": 12,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max"
+              ],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.1.0",
+          "targets": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(container_cpu_system_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (namespace,container) / sum(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"} / 1024) by (namespace,container)",
+              "intervalFactor": 2,
+              "legendFormat": "system",
+              "refId": "C",
+              "step": 10
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(irate(container_cpu_user_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (namespace,container) / sum(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"} / 1024) by (namespace,container)",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "user",
+              "refId": "B",
+              "step": 10
+            }
+          ],
+          "title": "Cpu usage (relative to request)",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 25
+          },
+          "id": 20,
+          "panels": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 26
+              },
+              "id": 10,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(irate(container_cpu_usage_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (namespace,container) / sum(container_spec_cpu_quota{container=\"$container\", namespace=\"$namespace\"} / container_spec_cpu_period{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container)",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "metric": "",
+                  "refId": "A",
+                  "step": 1
+                }
+              ],
+              "title": "Cpu usage (relative to limit)",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 26
+              },
+              "id": 11,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / sum(container_spec_memory_limit_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container)",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "refId": "A",
+                  "step": 1
+                }
+              ],
+              "title": "Memory usage (relative to limit)",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Usage relative to limit",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 26
+          },
+          "id": 21,
+          "panels": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 27
+              },
+              "id": 13,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(irate(container_cpu_usage_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (id,pod_name)",
+                  "interval": "",
+                  "intervalFactor": 2,
+                  "legendFormat": "{{pod_name}}",
+                  "refId": "A",
+                  "step": 2
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_quota{container=\"$container\", namespace=\"$namespace\"} / container_spec_cpu_period{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "intervalFactor": 2,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 2
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"} / 1024) by (namespace,container) / count(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "intervalFactor": 2,
+                  "legendFormat": "request",
+                  "refId": "C",
+                  "step": 2
+                }
+              ],
+              "title": "Cpu usage (per pod)",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 27
+              },
+              "id": 14,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (id,pod_name)",
+                  "interval": "",
+                  "intervalFactor": 2,
+                  "legendFormat": "{{pod_name}}",
+                  "refId": "A",
+                  "step": 2
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_memory_limit_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (container,namespace)",
+                  "intervalFactor": 2,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 2
+                }
+              ],
+              "title": "Memory usage (per pod)",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Usage per pod",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 27
+          },
+          "id": 22,
+          "panels": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 28
+              },
+              "id": 8,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(irate(container_cpu_usage_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "refId": "A",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_quota{container=\"$container\", namespace=\"$namespace\"} / container_spec_cpu_period{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"} / 1024) by (namespace,container) / count(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "request",
+                  "refId": "C",
+                  "step": 1
+                }
+              ],
+              "title": "Cpu usage (avg per pod)",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 28
+              },
+              "id": 9,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "metric": "",
+                  "refId": "A",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_memory_limit_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) / count(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container) ",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 1
+                }
+              ],
+              "title": "Memory usage (avg per pod)",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Usage per pod (average)",
+          "type": "row"
+        },
+        {
+          "collapsed": true,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 28
+          },
+          "id": 23,
+          "panels": [
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 0,
+                "y": 29
+              },
+              "id": 1,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(irate(container_cpu_usage_seconds_total{container=\"$container\", namespace=\"$namespace\"}[30s])) by (namespace,container)",
+                  "hide": false,
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "metric": "",
+                  "refId": "A",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_quota{container=\"$container\", namespace=\"$namespace\"} / container_spec_cpu_period{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container)",
+                  "intervalFactor": 1,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_cpu_shares{container=\"$container\", namespace=\"$namespace\"} / 1024) by (namespace,container) ",
+                  "intervalFactor": 1,
+                  "legendFormat": "request",
+                  "refId": "C",
+                  "step": 1
+                }
+              ],
+              "title": "Cpu usage (total)",
+              "type": "timeseries"
+            },
+            {
+              "datasource": {
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "gridPos": {
+                "h": 7,
+                "w": 12,
+                "x": 12,
+                "y": 29
+              },
+              "id": 2,
+              "options": {},
+              "targets": [
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_memory_usage_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container)",
+                  "interval": "",
+                  "intervalFactor": 1,
+                  "legendFormat": "actual",
+                  "refId": "A",
+                  "step": 1
+                },
+                {
+                  "datasource": {
+                    "uid": "${DS_PROMETHEUS}"
+                  },
+                  "expr": "sum(container_spec_memory_limit_bytes{container=\"$container\", namespace=\"$namespace\"}) by (namespace,container)",
+                  "intervalFactor": 1,
+                  "legendFormat": "limit",
+                  "refId": "B",
+                  "step": 1
+                }
+              ],
+              "title": "Memory usage (total)",
+              "type": "timeseries"
+            }
+          ],
+          "title": "Usage total",
+          "type": "row"
+        }
+      ],
+      "preload": false,
+      "refresh": "30s",
+      "schemaVersion": 41,
+      "tags": [],
+      "templating": {
+        "list": [
+          {
+            "allValue": ".+",
+            "current": {
+              "text": "",
+              "value": ""
+            },
+            "datasource": "${DS_PROMETHEUS}",
+            "includeAll": false,
+            "name": "namespace",
+            "options": [],
+            "query": "label_values(container_memory_usage_bytes{namespace=~\".+\",container!=\"POD\"},namespace)",
+            "refresh": 1,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "allValue": ".+",
+            "current": {
+              "text": "",
+              "value": ""
+            },
+            "datasource": "${DS_PROMETHEUS}",
+            "includeAll": false,
+            "name": "container",
+            "options": [],
+            "query": "label_values(container_memory_usage_bytes{namespace=~\"$namespace\",container!=\"POD\"},container)",
+            "refresh": 1,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          },
+          {
+            "current": {
+              "text": "prometheus",
+              "value": "prometheus"
+            },
+            "name": "DS_PROMETHEUS",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource"
+          }
+        ]
+      },
+      "time": {
+        "from": "now-3h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Kubernetes App Metrics",
+      "uid": "4885d1af-3300-430d-a132-b05c6fe3ab8f",
+      "version": 1
+      }

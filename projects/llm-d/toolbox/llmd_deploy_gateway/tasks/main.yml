@@ -1,0 +1,76 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Check if the gateway already exists
+  command:
+    oc get gateway "{{ llmd_deploy_gateway_name }}" -n "{{ llmd_deploy_gateway_namespace }}" --ignore-not-found
+  register: has_gateway_cmd
+
+- name: Save the gateway
+  shell:
+    oc get gateway "{{ llmd_deploy_gateway_name }}" -n "{{ llmd_deploy_gateway_namespace }}" -oyaml \
+       > "{{ artifact_extra_logs_dir }}/artifacts/gateway.old.yaml"
+  when: has_gateway_cmd.stdout | length > 0
+
+- name: Delete the old gateway
+  command:
+    oc delete gateway "{{ llmd_deploy_gateway_name }}" -n "{{ llmd_deploy_gateway_namespace }}"
+  when: has_gateway_cmd.stdout | length > 0
+
+- name: Wait for the gateway service to disappear
+  command:
+    oc get svc -l "gateway.networking.k8s.io/gateway-name={{ llmd_deploy_gateway_name }}" --all-namespaces --no-headers
+  register: gateway_svc_check
+  until: gateway_svc_check.stdout == ""
+  retries: 20
+  delay: 5
+  when: has_gateway_cmd.stdout | length > 0
+
+- name: Prepare the Gateway resource
+  template:
+    src: "{{ gateway_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/gateway.yaml"
+    mode: '0700'
+
+- name: Create the gateway
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/src/gateway.yaml"
+
+- name: Wait for gateway readiness and capture artifacts
+  block:
+  - name: Wait for the gateway service to appear
+    command:
+      oc get svc -l "gateway.networking.k8s.io/gateway-name={{ llmd_deploy_gateway_name }}" --all-namespaces --no-headers
+    register: gateway_svc_appear
+    until: gateway_svc_appear.stdout != ""
+    retries: 20
+    delay: 5
+
+  - name: Wait for the gateway to be programmed
+    command:
+      oc get gateway "{{ llmd_deploy_gateway_name }}" -n "{{ llmd_deploy_gateway_namespace }}" -o jsonpath='{.status.conditions[?(@.type=="Programmed")].status}'
+    register: gateway_programmed_status
+    until: gateway_programmed_status.stdout == "True"
+    retries: 20
+    delay: 10
+
+  always:
+  - name: Capture the final gateway YAML
+    shell:
+      oc get gateway "{{ llmd_deploy_gateway_name }}" -n "{{ llmd_deploy_gateway_namespace }}" -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/gateway.final.yaml"
+
+  - name: Capture the gateway service YAML
+    shell:
+      oc get svc -l "gateway.networking.k8s.io/gateway-name={{ llmd_deploy_gateway_name }}" --all-namespaces -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/gateway.service.yaml"

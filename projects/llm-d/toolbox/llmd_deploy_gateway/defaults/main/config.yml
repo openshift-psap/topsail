@@ -1,0 +1,17 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Llmd.deploy_gateway
+
+# Parameters
+# Name of the gateway to deploy
+llmd_deploy_gateway_name: openshift-ai-inference
+
+# Name of the gateway class to deploy
+llmd_deploy_gateway_gateway_class: data-science-gateway-class
+
+# Namespace where the gateway will be deployed
+llmd_deploy_gateway_namespace: openshift-ingress
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

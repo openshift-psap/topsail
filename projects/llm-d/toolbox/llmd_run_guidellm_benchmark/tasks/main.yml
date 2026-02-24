@@ -1,0 +1,92 @@
+---
+- name: Create the src directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/"
+    state: directory
+    mode: '0755'
+
+- name: Get current namespace if not specified
+  command: oc project -q
+  register: current_namespace_result
+  when: llmd_run_guidellm_benchmark_namespace == ""
+
+- name: Set the target namespace
+  set_fact:
+    target_namespace: "{{ current_namespace_result.stdout if llmd_run_guidellm_benchmark_namespace == '' else llmd_run_guidellm_benchmark_namespace }}"
+
+- name: Delete the old guidellm benchmark job
+  command:
+    oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
+
+- name: Get the LLMInferenceService gateway-internal URL
+  shell:
+    oc get llminferenceservice "{{ llmd_run_guidellm_benchmark_llmisvc_name }}" \
+       -n "{{ target_namespace }}" \
+       -o jsonpath='{.status.addresses[?(@.name=="gateway-internal")].url}'
+  register: llm_gateway_internal_url_result
+
+- name: Set the benchmark endpoint URL
+  set_fact:
+    benchmark_endpoint_url: "{{ llm_gateway_internal_url_result.stdout }}/v1"
+
+- name: Create the guidellm benchmark job YAML
+  template:
+    src: "{{ guidellm_benchmark_job_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/guidellm_benchmark_job.yaml"
+    mode: '0700'
+
+- name: Create the guidellm benchmark job
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/src/guidellm_benchmark_job.yaml"
+
+- name: Run guidellm benchmark and capture artifacts
+  block:
+  - name: Compute job timeout end time
+    shell: echo $(($(date +%s) + {{ llmd_run_guidellm_benchmark_timeout }}))
+    register: job_end_time_result
+
+  - name: Get current time and end time for debug
+    shell: |
+      end_epoch={{ job_end_time_result.stdout }}
+      current_human=$(date)
+      end_human=$(date -d @$end_epoch)
+      echo "Current: $current_human"
+      echo "End: $end_human"
+      echo "Timeout: {{ llmd_run_guidellm_benchmark_timeout }}s"
+
+  - name: Wait for the guidellm benchmark job to complete or fail
+    shell: |
+      set -o pipefail;
+      oc get job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --no-headers | awk '{print $2; print "Job duration:", $4 > "/dev/stderr"}'
+    register: job_status_result
+    until: job_status_result.stdout in ['Complete', 'Failed']
+    retries: "{{ (llmd_run_guidellm_benchmark_timeout | int / 10) | round(0, 'ceil') | int }}"
+    delay: 10
+    failed_when: false
+
+  - name: Check final job status and fail if not completed successfully
+    fail:
+      msg: "Guidellm benchmark job failed or timed out (final status: {{ job_status_result.stdout }})"
+    when: job_status_result.stdout != 'Complete'
+
+  always:
+  - name: Capture the final guidellm benchmark job YAML
+    shell:
+      oc get job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.final.yaml"
+
+  - name: Capture the guidellm benchmark job pods YAML
+    shell:
+      oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.pods.yaml"
+
+  - name: Capture the guidellm benchmark job logs
+    shell:
+      oc logs job/{{ llmd_run_guidellm_benchmark_name }} -n "{{ target_namespace }}" \
+         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.logs"
