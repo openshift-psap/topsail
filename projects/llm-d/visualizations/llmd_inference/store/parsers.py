@@ -451,58 +451,5 @@ def get_llmd_uwm_metrics():
         {"vllm_request_success_total": "kserve_vllm:request_success_total"},
     ]
 
-    # =============================================================================
-    # 📊 VLLM Queue and Request Management
-    # =============================================================================
-
-    # Request queue metrics - critical for understanding queuing behavior
-    all_metrics += [
-        {"vllm_num_requests_running": "kserve_vllm:num_requests_running"},
-        {"vllm_num_requests_waiting": "kserve_vllm:num_requests_waiting"},
-    ]
-
-    # =============================================================================
-    # 🔧 VLLM Resource Usage and Performance
-    # =============================================================================
-
-    # Token generation metrics
-    all_metrics += [
-        {"vllm_generation_tokens_total": "kserve_vllm:generation_tokens_total"},
-        {"vllm_prompt_tokens_total": "kserve_vllm:prompt_tokens_total"},
-    ]
-
-    # Cache usage metrics
-    all_metrics += [
-        {"vllm_kv_cache_usage_perc": "kserve_vllm:kv_cache_usage_perc"},
-    ]
-
-    # Request timing metrics - detailed breakdown
-    all_metrics += [
-        {"vllm_request_prefill_time_seconds_bucket": "kserve_vllm:request_prefill_time_seconds_bucket"},
-        {"vllm_request_prefill_time_seconds_sum": "kserve_vllm:request_prefill_time_seconds_sum"},
-        {"vllm_request_prefill_time_seconds_count": "kserve_vllm:request_prefill_time_seconds_count"},
-
-        {"vllm_request_decode_time_seconds_bucket": "kserve_vllm:request_decode_time_seconds_bucket"},
-        {"vllm_request_decode_time_seconds_sum": "kserve_vllm:request_decode_time_seconds_sum"},
-        {"vllm_request_decode_time_seconds_count": "kserve_vllm:request_decode_time_seconds_count"},
-
-        {"vllm_request_queue_time_seconds_bucket": "kserve_vllm:request_queue_time_seconds_bucket"},
-        {"vllm_request_queue_time_seconds_sum": "kserve_vllm:request_queue_time_seconds_sum"},
-        {"vllm_request_queue_time_seconds_count": "kserve_vllm:request_queue_time_seconds_count"},
-    ]
-
-    # Token distribution metrics
-    all_metrics += [
-        {"vllm_request_prompt_tokens_bucket": "kserve_vllm:request_prompt_tokens_bucket"},
-        {"vllm_request_generation_tokens_bucket": "kserve_vllm:request_generation_tokens_bucket"},
-        {"vllm_request_max_num_generation_tokens_bucket": "kserve_vllm:request_max_num_generation_tokens_bucket"},
-        {"vllm_request_max_num_generation_tokens_count": "kserve_vllm:request_max_num_generation_tokens_count"},
-        {"vllm_request_max_num_generation_tokens_sum": "kserve_vllm:request_max_num_generation_tokens_sum"},
-    ]
-
-    # Request success tracking
-    all_metrics += [
-        {"vllm_request_success_total": "kserve_vllm:request_success_total"},
-    ]
 
     return all_metrics

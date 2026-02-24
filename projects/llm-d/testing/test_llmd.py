@@ -12,6 +12,7 @@ import yaml
 
 from projects.core.library import env, config, run
 from projects.cluster.library import prom
+from projects.matrix_benchmarking.library import visualize
 import prepare_llmd
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -27,21 +28,13 @@ def test():
 
     logging.info("Running LLM-D test")
 
-    # Handle conditional GPU scaling before test
-    conditional_scale_up()
-
-    # Ensure GPU nodes are available before running test
-    ensure_gpu_nodes_available()
-    # Run GPU readiness check and image preloading in parallel
-    logging.info("Starting parallel GPU readiness check and image preloading")
-
-    with run.Parallel("prepare_gpu_node") as parallel:
-        parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
-        parallel.delayed(prepare_llmd.preload_llm_model_image)
+    prepare_for_test()
 
     failed = False
-
+    test_directory = None
     with env.NextArtifactDir("llm_d_testing"):
+        test_directory = env.ARTIFACT_DIR
+        prom_start_ts = None
         try:
             # Reset Prometheus before testing
             logging.info("Resetting Prometheus database before testing")
@@ -62,21 +55,52 @@ def test():
 
         except Exception as e:
             logging.exception(f"Test failed :/")
-            failed = True
+            failed = e
 
         finally:
             # Always dump Prometheus data after testing (success or failure)
             logging.info("Dumping Prometheus database after testing")
             namespace = config.project.get_config("tests.llmd.namespace")
-            prom.dump_prometheus(prom_start_ts, namespace)
+            if prom_start_ts:
+                prom.dump_prometheus(prom_start_ts, namespace)
 
         # Generate test metadata files
         _generate_test_metadata(failed)
 
     # Handle conditional GPU scaling after test completion
+
     conditional_scale_down()
 
+    # Generate visualization if enabled
+    if not config.project.get_config("tests.visualize"):
+        logging.info("Visualization disabled.")
+    else:
+        exc = generate_visualization(test_directory, failed)
+
+        if exc:
+            logging.error(f"Test visualization failed: {exc}")
+
+        if exc and not failed:
+            raise exc
+
+    if failed and isinstance(failed, Exception):
+        raise failed
+
     return failed
+
+
+def prepare_for_test():
+    # Handle conditional GPU scaling before test
+    conditional_scale_up()
+
+    # Ensure GPU nodes are available before running test
+    ensure_gpu_nodes_available()
+    # Run GPU readiness check and image preloading in parallel
+    logging.info("Starting parallel GPU readiness check and image preloading")
+
+    with run.Parallel("prepare_gpu_node") as parallel:
+        parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
+        parallel.delayed(prepare_llmd.preload_llm_model_image)
 
 
 def _generate_test_metadata(failed):
@@ -99,6 +123,27 @@ def _generate_test_metadata(failed):
         f.write("llm-d: true\n")
 
     logging.info(f"Written settings to {settings_path}")
+
+
+def generate_visualization(test_artifact_dir, test_failed):
+    """
+    Generate visualization from test artifacts
+    """
+    exc = None
+
+    with env.NextArtifactDir("plots"):
+        exc = run.run_and_catch(
+            exc,
+            visualize.generate_from_dir,
+            test_artifact_dir,
+            test_failed=test_failed
+        )
+        if not exc:
+            logging.info(f"Test visualization has been generated into {env.ARTIFACT_DIR}/reports_index.html")
+        else:
+            logging.info(f"Test failed. See '{env.ARTIFACT_DIR}' for more details. {exc}")
+
+    return exc
 
 
 def deploy_llm_inference_service():
