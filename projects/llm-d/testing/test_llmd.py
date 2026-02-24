@@ -230,7 +230,7 @@ def capture_llm_inference_service_state():
     try:
         run.run_toolbox("llmd", "capture_isvc_state",
                        llmisvc_name=llmisvc_name,
-                       namespace=namespace, mute=True)
+                       namespace=namespace, mute_stdout=True)
 
         logging.info("LLM inference service state captured successfully")
 
