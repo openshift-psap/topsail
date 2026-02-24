@@ -74,7 +74,7 @@ def prepare():
     prepare_gateway()
     scale_up()
 
-    with run.Parallel("prepare_gpu_node") as parallel:
+    with run.Parallel("prepare_node") as parallel:
         parallel.delayed(wait_for_gpu_readiness)
         parallel.delayed(preload_llm_model_image)
 
