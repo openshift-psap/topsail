@@ -268,23 +268,6 @@ def ensure_gpu_nodes_available():
         raise
 
 
-def preload_single_image(namespace, image, image_name=""):
-    """
-    Preloads a single image on GPU nodes
-    """
-    try:
-        logging.info(f"Preloading image{f' {image_name}' if image_name else ''}: {image}")
-        run.run_toolbox("cluster", "preload_image",
-                        name=image_name or "preload",
-                        namespace=namespace,
-                        node_selector_key="nvidia.com/gpu.present",
-                        node_selector_value="true",
-                        image=image)
-    except Exception as e:
-        logging.error(f"Failed to preload image{f' {image_name}' if image_name else ''} {image}: {e}")
-        raise
-
-
 def test_llm_inference_simple():
     """
     Runs a simple test against the LLM inference service
