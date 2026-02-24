@@ -25,11 +25,11 @@ def prepare():
         return
 
     prepare_operators()
+    prepare_namespace()
     prepare_monitoring()
     prepare_grafana()
     prepare_rhoai()
     prepare_gateway()
-    prepare_namespace()
     scale_up()
 
     with run.Parallel("prepare_gpu_node") as parallel:
