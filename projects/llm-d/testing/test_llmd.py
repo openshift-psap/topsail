@@ -377,7 +377,7 @@ def conditional_scale_down():
     try:
         run.run_toolbox("cluster", "set_scale",
                        instance_type=node_instance_type,
-                       scale=0)
+                       scale=0, mute_stdout=True)
         logging.info("GPU nodes scaled down successfully")
     except Exception as e:
         logging.error(f"Failed to scale down GPU nodes: {e}")
