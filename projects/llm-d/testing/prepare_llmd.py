@@ -56,6 +56,129 @@ def update_rhoai_pull_secret(secret_file_path):
         # Clean up temporary file
         os.unlink(temp_file_path)
 
+def wait_for_pull_secret_ready(registry="quay.io/rhoai", test_image=None, timeout=300):
+    """
+    Wait for the pull secret to be deployed and working across all nodes
+    """
+    import time
+    import json
+    logging.info(f"Waiting for pull secret with {registry} to be deployed...")
+    start_time = time.time()
+
+    # Flags to track completed steps
+    secret_contains_registry = False
+    secret_json_valid = False
+    machine_config_updated = False
+    registry_access_tested = False
+
+    while time.time() - start_time < timeout:
+        try:
+            # Check that the pull secret contains the registry (only if not already verified)
+            if not secret_contains_registry:
+                result = run.run('oc get secret/pull-secret -n openshift-config --template="{{index .data \\".dockerconfigjson\\" | base64decode}}"', capture_stdout=True)
+                secret_content = result.stdout
+
+                if registry not in secret_content:
+                    logging.info(f"Pull secret does not yet contain {registry}, waiting...")
+                    time.sleep(10)
+                    continue
+                else:
+                    logging.info(f"✓ Pull secret contains {registry}")
+                    secret_contains_registry = True
+
+            # Verify the secret is properly formatted JSON (only if not already verified)
+            if not secret_json_valid:
+                result = run.run('oc get secret/pull-secret -n openshift-config --template="{{index .data \\".dockerconfigjson\\" | base64decode}}"', capture_stdout=True)
+                secret_content = result.stdout
+
+                try:
+                    secret_data = json.loads(secret_content)
+                    if "auths" not in secret_data:
+                        logging.warning("Pull secret missing 'auths' section, waiting...")
+                        time.sleep(10)
+                        continue
+
+                    if registry not in secret_data["auths"]:
+                        logging.info(f"Registry {registry} not found in auths section, waiting...")
+                        time.sleep(10)
+                        continue
+
+                    # Check that auth data exists
+                    auth_data = secret_data["auths"][registry]
+                    if not auth_data.get("auth") and not auth_data.get("username"):
+                        logging.warning(f"Registry {registry} missing authentication data, waiting...")
+                        time.sleep(10)
+                        continue
+
+                    logging.info("✓ Pull secret JSON structure valid")
+                    secret_json_valid = True
+
+                except json.JSONDecodeError:
+                    logging.warning("Pull secret is not valid JSON, waiting...")
+                    time.sleep(10)
+                    continue
+
+            # Check machine config pool status (only if not already updated)
+            if not machine_config_updated:
+                logging.info("Checking machine config propagation...")
+                result = run.run("oc get mcp -o jsonpath='{.items[*].status.conditions[?(@.type==\"Updated\")].status}'", capture_stdout=True)
+                if "False" in result.stdout:
+                    logging.info("Machine config pools still updating, waiting...")
+                    time.sleep(30)
+                    continue
+                else:
+                    logging.info("✓ Machine config pools updated")
+                    machine_config_updated = True
+
+            # Verify nodes can access the registry using crictl (only if not already tested)
+            if test_image and not registry_access_tested:
+                logging.info("Validating registry access on nodes...")
+
+                # Get a worker node to test registry access
+                result = run.run("oc get nodes -l node-role.kubernetes.io/worker --no-headers -o custom-columns=NAME:.metadata.name | head -1",
+                                 capture_stdout=True)
+                if result.returncode == 0 and result.stdout.strip():
+                    test_node = result.stdout.strip()
+
+                    logging.info(f"Testing pull of {test_image} from node {test_node}")
+
+                    test_result = run.run(f'oc debug node/{test_node} -- chroot /host crictl pull {test_image}',
+                                          capture_stdout=True, capture_stderr=True, check=False)
+                    if test_result.returncode != 0:
+                        logging.warning(f"Failed to pull test image: {test_result.stderr}")
+                        logging.warning("Registry access test failed, but continuing with deployment")
+                        time.sleep(15)
+                        continue
+
+                    logging.info("✓ Successfully pulled test image - registry access confirmed")
+                    registry_access_tested = True
+                    # Clean up the pulled image
+                    run.run(f'oc debug node/{test_node} -- chroot /host crictl rmi {test_image}',
+                            capture_stdout=True, capture_stderr=True, check=False)
+                else:
+                    logging.warning("No worker nodes found for registry access testing")
+                    registry_access_tested = True  # Don't retry the test
+
+            # Check if all required steps are complete
+            required_tests_complete = secret_contains_registry and secret_json_valid and machine_config_updated
+            optional_test_complete = not test_image or registry_access_tested
+
+            if required_tests_complete and optional_test_complete:
+                logging.info(f"Pull secret with {registry} is ready and deployed!")
+                return True
+
+            # If we get here, some steps are still pending
+            logging.info("Some validation steps still in progress, continuing to wait...")
+
+        except Exception as e:
+            logging.warning(f"Error checking pull secret status: {e}")
+
+        time.sleep(15)
+
+    # Timeout reached
+    logging.error(f"Timeout waiting for pull secret with {registry} to be ready")
+    return False
+
 
 def prepare():
     """
@@ -254,6 +377,14 @@ def prepare_rhoai():
     if rhoai_secret_file.exists():
         logging.info("Applying pre-release image registry token")
         update_rhoai_pull_secret(rhoai_secret_file)
+
+        # Wait for the pull secret to be deployed and working
+        rhoai_image = config.project.get_config("prepare.rhoai.image")
+        rhoai_tag = config.project.get_config("prepare.rhoai.tag")
+        test_image = f"{rhoai_image}:{rhoai_tag}"
+
+        if not wait_for_pull_secret_ready("quay.io/rhoai", test_image=test_image):
+            raise RuntimeError("Pull secret deployment failed or timed out")
     else:
         logging.error(f"RHOAI secret file not found: {rhoai_secret_file}")
 
