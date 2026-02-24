@@ -46,7 +46,7 @@ class CallbackModule(default_CallbackModule):
                 self._display.display("", color=color)
                 self._display.display(f"LOOP #{idx}: {var} = {value}", color=color)
                 item_result = ansible.executor.task_result.TaskResult(
-                    host=result._host, task=result._task, return_data=res)
+                    host=result._host, task=result._task, return_data=res, task_fields=result._task_fields)
                 self.__display_result(item_result, color, ignore_errors, loop_idx=idx)
 
             return
