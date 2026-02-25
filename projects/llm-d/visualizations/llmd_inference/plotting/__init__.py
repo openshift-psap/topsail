@@ -6,7 +6,9 @@ def register():
     from . import report
     from . import error_report
     from . import throughput_analysis
+    from . import prometheus
 
     report.register()
     error_report.register()
     throughput_analysis.register()
+    prometheus.register()

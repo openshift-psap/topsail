@@ -9,6 +9,10 @@ def register():
     GuidellmResultsTable()
     MultiturnResultsTable()
 
+    # Register Prometheus reports
+    from . import prometheus_reports
+    prometheus_reports.register()
+
 
 class GuidellmResultsTable():
     def __init__(self):
