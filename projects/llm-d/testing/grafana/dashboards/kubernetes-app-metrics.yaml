@@ -2,7 +2,6 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: kubernetes-app-metrics
-  namespace: grafana
   annotations:
      name: Kubernetes App Metrics
      originalLink: https://grafana.com/grafana/dashboards/1471

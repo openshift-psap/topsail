@@ -2,7 +2,6 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: workload-variant-autoscaler
-  namespace: grafana
   annotations:
     name: Workload Variant Autoscaler
 spec:

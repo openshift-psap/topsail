@@ -127,6 +127,7 @@
               -o=jsonpath='{.items[?(@.spec.template.spec.providerSpec.value.{{ instance_type_field }}=="{{ machineset_instance_type }}")]}' \
       {% endif %}
       | jq 'if .status | has("availableReplicas") then . else . * {"status": {"availableReplicas": 0 }} end' \
+      | jq 'if .status | has("replicas") then . else . * {"status": {"replicas": 0 }} end' \
       | jq 'select(.status.availableReplicas != .spec.replicas or .status.replicas != .spec.replicas)' \
       | jq '{
           "name": .metadata.name,

@@ -2,7 +2,6 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: nvidia
-  namespace: grafana
   annotations:
     name: "NVIDIA DCGM Exporter Dashboard"
     originalUrl: "https://grafana.com/grafana/dashboards/12239/"

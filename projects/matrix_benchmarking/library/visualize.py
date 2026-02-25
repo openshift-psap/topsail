@@ -95,7 +95,7 @@ def call_parse(step_idx, common_args, common_env):
     parse_env = common_env.copy()
     parse_args = common_args.copy()
 
-    mode = config.project.get_config("matbench.download.mode")
+    mode = config.project.get_config("matbench.download.mode", None)
     if mode != "prefer_cache":
         logging.info(f"Download mode set to '{mode}', ignoring the parser cache.")
         parse_env["MATBENCH_STORE_IGNORE_CACHE"] = "y"
@@ -392,7 +392,7 @@ def generate_visualization(results_dirname, idx, generate_lts=None, upload_lts=N
         step_idx += 1
         non_fatal_errors += call_generate_lts_schema(step_idx, common_args)
 
-    if config.project.get_config("matbench.download.save_to_artifacts"):
+    if config.project.get_config("matbench.download.save_to_artifacts", None):
         shutil.copytree(common_args["MATBENCH_RESULTS_DIRNAME"], env.ARTIFACT_DIR / "downloaded")
 
     #

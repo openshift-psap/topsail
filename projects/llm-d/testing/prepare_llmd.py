@@ -15,6 +15,48 @@ from projects.core.library import env, config, run
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 PSAP_ODS_SECRET_PATH = pathlib.Path(os.environ.get("PSAP_ODS_SECRET_PATH", "/env/PSAP_ODS_SECRET_PATH/not_set"))
 
+def update_rhoai_pull_secret(secret_file_path):
+    """
+    Updates the cluster pull secret with RHOAI registry credentials
+    """
+    import json
+
+    # Read secret from file
+    secret = secret_file_path.read_text().strip()
+    if not secret:
+        raise ValueError(f"Secret file {secret_file_path} is empty")
+
+    logging.info("Checking current pull secret for quay.io/rhoai registry")
+
+    # Get current pull secret
+    result = run.run('oc get secret/pull-secret -n openshift-config --template="{{index .data \\".dockerconfigjson\\" | base64decode}}"', capture_stdout=True)
+    current_secret = result.stdout
+
+    # Check if registry already configured
+    if "quay.io/rhoai" in current_secret:
+        logging.info("Registry quay.io/rhoai already configured in pull secret")
+        #return
+
+    logging.info("Adding quay.io/rhoai registry to pull secret")
+
+    # Create temporary file with current secret
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+        temp_file.write(current_secret)
+        temp_file_path = temp_file.name
+
+    try:
+        # Add registry authentication
+        run.run(f'oc registry login --registry=quay.io/rhoai --auth-basic="{secret}" --to="{temp_file_path}"', log_command=False)
+
+        # Update cluster secret
+        run.run(f'oc set data secret/pull-secret -n openshift-config --from-file=.dockerconfigjson="{temp_file_path}"', log_command=False)
+
+        logging.info("Successfully updated pull secret with quay.io/rhoai registry")
+    finally:
+        # Clean up temporary file
+        os.unlink(temp_file_path)
+
+
 def prepare():
     """
     Prepares the cluster for LLM-D testing
@@ -25,11 +67,11 @@ def prepare():
         return
 
     prepare_operators()
+    prepare_namespace()
     prepare_monitoring()
     prepare_grafana()
     prepare_rhoai()
     prepare_gateway()
-    prepare_namespace()
     scale_up()
 
     with run.Parallel("prepare_gpu_node") as parallel:
@@ -112,6 +154,13 @@ def prepare_grafana():
 
     logging.info("Preparing Grafana resources")
 
+    # Get Grafana namespace from config
+    grafana_namespace = config.project.get_config("prepare.grafana.namespace")
+
+    # Create Grafana namespace if it doesn't exist
+    logging.info(f"Creating Grafana namespace: {grafana_namespace}")
+    run.run(f'oc new-project "{grafana_namespace}" --skip-config-write >/dev/null', check=False)
+
     # Deploy Grafana datasources
     datasources = config.project.get_config("prepare.grafana.datasources")
     for datasource_path in datasources or []:
@@ -120,18 +169,18 @@ def prepare_grafana():
             logging.warning(f"Grafana datasource file not found: {datasource_file}")
             continue
 
-        logging.info(f"Deploying Grafana datasource: {datasource_path}")
-        run.run(f"oc apply -f {datasource_file}")
+        logging.info(f"Deploying Grafana datasource: {datasource_path} to namespace {grafana_namespace}")
+        run.run(f"oc apply -n {grafana_namespace} -f {datasource_file}")
 
     # Deploy Grafana dashboards
     dashboards_dir_path = config.project.get_config("prepare.grafana.dashboards_dir")
     if dashboards_dir_path:
         dashboards_dir = TESTING_THIS_DIR / dashboards_dir_path
         dashboard_files = list(dashboards_dir.glob("*.yaml"))
-        logging.info(f"Deploying {len(dashboard_files)} Grafana dashboard(s) from {dashboards_dir_path}")
+        logging.info(f"Deploying {len(dashboard_files)} Grafana dashboard(s) from {dashboards_dir_path} to namespace {grafana_namespace}")
         for dashboard_file in dashboard_files:
             logging.info(f"  - {dashboard_file.name}")
-            run.run(f"oc apply -f {dashboard_file}")
+            run.run(f"oc apply -n {grafana_namespace} -f {dashboard_file}")
     else:
         logging.info("No Grafana dashboards directory configured")
 
@@ -200,12 +249,16 @@ def prepare_rhoai():
     logging.info("Preparing RHOAI")
 
     # Apply pre-release registry token if available
-    if PSAP_ODS_SECRET_PATH.exists() and (PSAP_ODS_SECRET_PATH / "rhoai-quay.sh").exists():
-        logging.info("Applying pre-release image registry token")
-        run.run(f"bash {PSAP_ODS_SECRET_PATH / 'rhoai-quay.sh'}")
 
-        # Apply ImageContentSourcePolicy for quay registry
-        icsp_yaml = """
+    rhoai_secret_file = PSAP_ODS_SECRET_PATH / config.project.get_config("secrets.rhoai_rc")
+    if rhoai_secret_file.exists():
+        logging.info("Applying pre-release image registry token")
+        update_rhoai_pull_secret(rhoai_secret_file)
+    else:
+        logging.error(f"RHOAI secret file not found: {rhoai_secret_file}")
+
+    # Apply ImageContentSourcePolicy for quay registry
+    icsp_yaml = """
 apiVersion: operator.openshift.io/v1alpha1
 kind: ImageContentSourcePolicy
 metadata:
@@ -216,11 +269,11 @@ spec:
       mirrors:
         - quay.io/rhoai
 """
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            f.write(icsp_yaml)
-            temp_file = f.name
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        f.write(icsp_yaml)
+        temp_file = f.name
 
-        run.run(f"oc apply -f {temp_file}")
+    run.run(f"oc apply -f {temp_file}")
 
     # Deploy RHOAI
     rhoai_image = config.project.get_config("prepare.rhoai.image")

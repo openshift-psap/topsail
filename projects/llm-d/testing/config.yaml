@@ -13,6 +13,12 @@ ci_presets:
 clusters:
   cleanup_on_exit: false
 
+secrets:
+  dir:
+    name: psap-ods-secret
+    env_key: PSAP_ODS_SECRET_PATH
+  rhoai_rc: rhoai_rc.secret
+
 prepare:
   skip: false
   namespace:
@@ -85,6 +91,7 @@ prepare:
 
   grafana:
     skip: false
+    namespace: grafana
     datasources:
       - grafana/datasource.yaml
     dashboards_dir: grafana/dashboards
@@ -130,22 +137,37 @@ tests:
   capture_prom: true
   capture_prom_uwm: true
   dry_mode: false
+  visualize: true
 
 export_artifacts:
   enabled: false
 
-matbenchmarking:
+matbench:
+  enabled: true
   preset: null
-  workload: projects.llm_d.visualizations.llmd_performance
+  workload: projects.llm-d.visualizations.llmd_inference
   config_file: plots.yaml
   # directory to plot
   lts:
     generate: true
     opensearch:
+      export:
+        enabled: false
+        enabled_on_replot: false
+        fail_test_on_fail: true
+      instance: smoke
+      index: topsail-llm-d-cpt
+      index_prefix: ""
+      build_counter_index: "topsail-llm-d-builds" # used to generate a unique ID for each build
+    regression_analyses:
       enabled: false
-      index_prefix: llmd-ci-results
-  regression_analyses:
-    enabled: false
+      enabled_on_replot: true
+      upload_lts_on_regression: true
+      # if the regression analyses fail, mark the test as failed
+      fail_test_on_regression: true
+      notification:
+        enabled: true
+        title: "llm-d CPT"
 
 exec_list:
   _only_: false

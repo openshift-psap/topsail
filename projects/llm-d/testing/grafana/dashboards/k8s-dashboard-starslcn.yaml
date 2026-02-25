@@ -2,7 +2,6 @@ apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
   name: k8s-dashboard-starslcn
-  namespace: grafana
   annotations:
     name: K8S Dashboard (StarsL.cn)
     originalUrl: https://grafana.com/grafana/dashboards/15661-k8s-dashboard-en-20250125/

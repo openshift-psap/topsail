@@ -21,6 +21,6 @@ Parameters
 
 ``namespaces``  
 
-* List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
+* List of namespaces to enable monitoring for. Each namespace will get the openshift.io/user-monitoring=true label.
 * type: List
 

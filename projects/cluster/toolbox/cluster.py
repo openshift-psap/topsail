@@ -541,7 +541,7 @@ class Cluster:
         and labels the specified namespaces for monitoring.
 
         Args:
-            namespaces: List of namespaces to enable monitoring for. Each namespace will get the openshift.io/cluster-monitoring=true label.
+            namespaces: List of namespaces to enable monitoring for. Each namespace will get the openshift.io/user-monitoring=true label.
         """
 
         return RunAnsibleRole(locals())
