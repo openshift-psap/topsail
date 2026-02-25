@@ -312,7 +312,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
 
     def only_control_plane_nodes(entry, metrics):
 
-        control_plane_nodes = [node.name for node in entry.results.cluster_info.control_plane]
+        control_plane_nodes = [node.name for node in (entry.results.cluster_info.control_plane if getattr(entry.results, "cluster_info", []) else [])]
 
         for metric in metrics:
             if metric.metric["instance"] not in control_plane_nodes:
@@ -320,7 +320,7 @@ def _get_control_plane_nodes_cpu_usage(cluster_role, register):
             yield metric
 
     def no_control_plane_nodes(entry, metrics):
-        control_plane_nodes = [node.name for node in entry.results.cluster_info.control_plane]
+        control_plane_nodes = [node.name for node in (entry.results.cluster_info.control_plane if getattr(entry.results, "cluster_info", []) else [])]
 
         for metric in metrics:
             if metric.metric["instance"] in control_plane_nodes:
