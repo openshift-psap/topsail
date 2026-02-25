@@ -36,6 +36,9 @@ def test():
         test_directory = env.ARTIFACT_DIR
         prom_start_ts = None
         try:
+            # Clean up any existing LLM inference services and pods before testing
+            cleanup_llm_inference_resources()
+
             # Reset Prometheus before testing
             logging.info("Resetting Prometheus database before testing")
             prom_start_ts = prom.reset_prometheus()
@@ -203,6 +206,8 @@ def run_multiturn_benchmark():
 
     failed = False
 
+    endpoint_url = f"{endpoint_url}/v1"
+
     try:
         run.run_toolbox("llmd", "run_multiturn_benchmark",
                        llmisvc_name=llmisvc_name,
@@ -281,6 +286,45 @@ def capture_llm_inference_service_state():
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
+
+
+def cleanup_llm_inference_resources():
+    """
+    Clean up all llminferenceservice resources in the namespace before testing.
+    Fails the test if cleanup is not successful.
+    """
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    logging.info(f"Cleaning up all llminferenceservice resources in namespace {namespace}")
+
+    # Delete all llminferenceservice resources in the namespace
+    logging.info("Deleting all llminferenceservice resources")
+    run.run(f"oc delete llminferenceservice --all -n {namespace} --wait=true --timeout=180s")
+
+    # Verify no llminferenceservice resources remain
+    logging.info("Verifying no llminferenceservice resources remain")
+    for i in range(6):  # Check up to 6 times with 10 second intervals
+        result = run.run(f"oc get llminferenceservice -n {namespace} --no-headers",
+                       capture_stdout=True)
+
+        if not result.stdout.strip():
+            logging.info("No llminferenceservice resources found - cleanup successful")
+            break
+        else:
+            remaining_services = result.stdout.strip().split('\n')
+            remaining_count = len([s for s in remaining_services if s.strip()])
+            logging.info(f"Still found {remaining_count} llminferenceservice resources, waiting...")
+
+            if i == 5:  # Last iteration
+                logging.error(f"Failed to clean up llminferenceservice resources after 60 seconds. {remaining_count} resources still exist:")
+                for service in remaining_services:
+                    if service.strip():
+                        logging.error(f"  - {service}")
+                raise RuntimeError(f"Cannot proceed with test - {remaining_count} llminferenceservice resources still exist in namespace {namespace}")
+
+            time.sleep(10)
+
+    logging.info("LLM inference service cleanup completed successfully")
 
 
 def ensure_gpu_nodes_available():
