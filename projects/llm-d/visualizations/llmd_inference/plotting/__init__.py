@@ -7,8 +7,11 @@ def register():
     from . import error_report
     from . import throughput_analysis
     from . import prometheus
+    from . import vllm_metrics
 
     report.register()
     error_report.register()
     throughput_analysis.register()
     prometheus.register()
+    vllm_metrics.register()
+    vllm_metrics.register_report()

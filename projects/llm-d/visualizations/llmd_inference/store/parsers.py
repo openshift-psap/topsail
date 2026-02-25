@@ -297,7 +297,8 @@ SUTEST_CONTAINER_LABELS = [
 ]
 
 SUTEST_CONTAINER_EXTRA_METRICS_NAMES = [
-    "LLM Inference Pods"
+    "LLM Inference Service",
+    "LLM Inference Gateway",
 ]
 
 def get_llmd_main_metrics(register=False):
@@ -385,5 +386,50 @@ def get_llmd_uwm_metrics():
         {"vllm_request_success_total": "kserve_vllm:request_success_total"},
     ]
 
+    # =============================================================================
+    # 🔧 COMPUTED VLLM METRICS (rate, average, increase transformations)
+    # =============================================================================
+
+    # E2E Request Latency computed metrics
+    all_metrics += [
+        {"vllm_e2e_latency_average": "rate(kserve_vllm:e2e_request_latency_seconds_sum[5m]) / rate(kserve_vllm:e2e_request_latency_seconds_count[5m])"},
+        {"vllm_e2e_request_rate": "rate(kserve_vllm:e2e_request_latency_seconds_count[5m])"},
+    ]
+
+    # TTFT computed metrics
+    all_metrics += [
+        {"vllm_ttft_average": "rate(kserve_vllm:time_to_first_token_seconds_sum[5m]) / rate(kserve_vllm:time_to_first_token_seconds_count[5m])"},
+        {"vllm_ttft_rate": "rate(kserve_vllm:time_to_first_token_seconds_count[5m])"},
+    ]
+
+    # Inter-token latency computed metrics
+    all_metrics += [
+        {"vllm_inter_token_average": "rate(kserve_vllm:inter_token_latency_seconds_sum[5m]) / rate(kserve_vllm:inter_token_latency_seconds_count[5m])"},
+        {"vllm_inter_token_rate": "rate(kserve_vllm:inter_token_latency_seconds_count[5m])"},
+    ]
+
+    # Request processing phase computed metrics
+    all_metrics += [
+        {"vllm_prefill_average": "rate(kserve_vllm:request_prefill_time_seconds_sum[5m]) / rate(kserve_vllm:request_prefill_time_seconds_count[5m])"},
+        {"vllm_prefill_rate": "rate(kserve_vllm:request_prefill_time_seconds_sum[5m])"},
+        {"vllm_decode_average": "rate(kserve_vllm:request_decode_time_seconds_sum[5m]) / rate(kserve_vllm:request_decode_time_seconds_count[5m])"},
+        {"vllm_decode_rate": "rate(kserve_vllm:request_decode_time_seconds_sum[5m])"},
+        {"vllm_queue_average": "rate(kserve_vllm:request_queue_time_seconds_sum[5m]) / rate(kserve_vllm:request_queue_time_seconds_count[5m])"},
+        {"vllm_queue_rate": "rate(kserve_vllm:request_queue_time_seconds_sum[5m])"},
+    ]
+
+    # Token throughput computed metrics
+    all_metrics += [
+        {"vllm_prompt_tokens_rate": "rate(kserve_vllm:prompt_tokens_total[5m])"},
+        {"vllm_generation_tokens_rate": "rate(kserve_vllm:generation_tokens_total[5m])"},
+        {"vllm_total_tokens_rate": "rate(kserve_vllm:prompt_tokens_total[5m]) + rate(kserve_vllm:generation_tokens_total[5m])"},
+        {"vllm_avg_max_gen_tokens": "rate(kserve_vllm:request_max_num_generation_tokens_sum[5m]) / rate(kserve_vllm:request_max_num_generation_tokens_count[5m])"},
+    ]
+
+    # Request success computed metrics
+    all_metrics += [
+        {"vllm_request_success_rate": "rate(kserve_vllm:request_success_total[5m])"},
+        {"vllm_request_success_increase": "increase(kserve_vllm:request_success_total[5m])"},
+    ]
 
     return all_metrics
