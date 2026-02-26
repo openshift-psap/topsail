@@ -51,6 +51,13 @@
     dest: "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
     mode: '0700'
 
+- name: Set the name and namespace in the LLM inference service YAML
+  shell: |
+    yq -Yi '.metadata.name = "{{ llmd_deploy_llm_inference_service_name }}"' \
+       "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
+    yq -Yi '.metadata.namespace = "{{ llmd_deploy_llm_inference_service_namespace }}"' \
+       "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
+
 - name: Create the LLM inference service
   command:
     oc create -f "{{ artifact_extra_logs_dir }}/src/llm_inference_service.yaml"
