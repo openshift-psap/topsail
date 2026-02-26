@@ -10,6 +10,9 @@ ci_presets:
     prepare.cluster.nodes.auto_scale: true
     prepare.cluster.nodes.auto_scale_down_on_exit: true
 
+  multi-flavor:
+    tests.llmd.flavors: [simple, simple-x2, intelligent-routing-x2]
+    prepare.cluster.nodes.count: 2
 clusters:
   cleanup_on_exit: false
 
@@ -107,12 +110,14 @@ prepare:
 tests:
   llmd:
     skip: false
+    flavors: intelligent-routing
     namespace: "@prepare.namespace.name"
 
     inference_service:
       name: llama-llm-d
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
+      do_simple_test: true
 
     benchmarks:
       multiturn:
@@ -129,10 +134,6 @@ tests:
         timeout: 900
         processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
         data: prompt_tokens=256,output_tokens=128
-
-    matbenchmarking:
-      enabled: false
-      stop_on_error: true
 
   capture_prom: true
   capture_prom_uwm: true

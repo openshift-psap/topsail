@@ -1,11 +1,9 @@
 apiVersion: serving.kserve.io/v1alpha1
 kind: LLMInferenceService
 metadata:
-  name: llama-llm-d
-  namespace: llm-d-project
+  name: SET_AT_RUNTIME
+  namespace: SET_AT_RUNTIME
   annotations:
-    opendatahub.io/model-type: generative
-    openshift.io/display-name: llama-llm-d
     security.opendatahub.io/enable-auth: 'false'
     prometheus.io/path: /metrics
     prometheus.io/port: "8000"
