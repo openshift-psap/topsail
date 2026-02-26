@@ -6,6 +6,7 @@ import datetime
 import time
 import uuid
 import os
+import json
 
 import yaml
 import tempfile
@@ -19,7 +20,6 @@ def update_rhoai_pull_secret(secret_file_path):
     """
     Updates the cluster pull secret with RHOAI registry credentials
     """
-    import json
 
     # Read secret from file
     secret = secret_file_path.read_text().strip()
@@ -60,8 +60,6 @@ def wait_for_pull_secret_ready(registry="quay.io/rhoai", test_image=None, timeou
     """
     Wait for the pull secret to be deployed and working across all nodes
     """
-    import time
-    import json
     logging.info(f"Waiting for pull secret with {registry} to be deployed...")
     start_time = time.time()
 
@@ -533,7 +531,6 @@ def preload_llm_model_image():
                 additional_images = []
             else:
                 # Parse the JSON output to get specific images
-                import json
                 related_images = json.loads(csv_result.stdout)
 
                 # Extract the specific images we need
