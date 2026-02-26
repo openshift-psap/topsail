@@ -24,16 +24,9 @@
   command:
     oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
 
-- name: Get the LLMInferenceService gateway-internal URL
-  shell:
-    oc get llminferenceservice "{{ llmd_run_guidellm_benchmark_llmisvc_name }}" \
-       -n "{{ target_namespace }}" \
-       -o jsonpath='{.status.addresses[?(@.name=="gateway-internal")].url}'
-  register: llm_gateway_internal_url_result
-
 - name: Set the benchmark endpoint URL
   set_fact:
-    benchmark_endpoint_url: "{{ llm_gateway_internal_url_result.stdout }}/v1"
+    benchmark_endpoint_url: "{{ llmd_run_guidellm_benchmark_endpoint_url }}"
 
 - name: Create the guidellm benchmark job YAML
   template:

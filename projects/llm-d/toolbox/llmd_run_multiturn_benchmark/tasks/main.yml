@@ -24,16 +24,9 @@
   command:
     oc delete job "{{ llmd_run_multiturn_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
 
-- name: Get the LLMInferenceService gateway-internal URL
-  shell:
-    oc get llminferenceservice "{{ llmd_run_multiturn_benchmark_llmisvc_name }}" \
-       -n "{{ target_namespace }}" \
-       -o jsonpath='{.status.addresses[?(@.name=="gateway-internal")].url}'
-  register: llm_gateway_internal_url_result
-
 - name: Set the benchmark endpoint URL
   set_fact:
-    benchmark_endpoint_url: "{{ llm_gateway_internal_url_result.stdout }}/v1"
+    benchmark_endpoint_url: "{{ llmd_run_multiturn_benchmark_endpoint_url }}"
 
 - name: Create the multiturn benchmark job YAML
   template:
@@ -63,7 +56,7 @@
   - name: Wait for the multiturn benchmark job to complete or fail
     shell: |
       set -o pipefail;
-      oc get job "multiturn-benchmark" -n "llm-d-project" --no-headers | awk '{print $2; print "Job duration:", $4 > "/dev/stderr"}'
+      oc get job "{{ llmd_run_multiturn_benchmark_name }}" -n "{{ target_namespace }}" --no-headers | awk '{print $2; print "Job duration:", $4 > "/dev/stderr"}'
     register: job_status_result
     until: job_status_result.stdout in ['Complete', 'Failed']
     retries: "{{ (llmd_run_multiturn_benchmark_timeout | int / 10) | round(0, 'ceil') | int }}"
