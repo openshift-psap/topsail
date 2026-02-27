@@ -54,7 +54,7 @@ class LlmdInferenceErrorReport():
             if hasattr(results, 'multiturn_benchmark') and results.multiturn_benchmark:
                 multiturn_available += 1
 
-            if hasattr(results, 'prometheus_path') and results.prometheus_path:
+            if hasattr(results, 'metrics') and results.metrics:
                 prometheus_available += 1
 
         # Overall test summary
@@ -188,19 +188,13 @@ class LlmdInferenceErrorReport():
                             ]))
 
                 # Prometheus monitoring data
-                if hasattr(results, 'prometheus_path') and results.prometheus_path:
+                if hasattr(results, 'metrics') and results.metrics:
                     # Look for prometheus dump directory
-                    prom_dir = None
-                    for item in artifacts_basedir.iterdir():
-                        if item.is_dir() and 'prometheus_db' in item.name:
-                            prom_dir = item
-                            break
-
-                    if prom_dir:
-                        artifact_links.append(html.Li([
-                            html.A("📈 Prometheus monitoring data",
-                                  href=str(prom_dir), target="_blank")
-                        ]))
+                    for prom_name in results.metrics:
+                        if results.metrics[prom_name]:
+                            artifact_links.append(html.Li([
+                                f"📈 Prometheus '{prom_name}' monitoring data",
+                            ]))
 
             # Show artifact links if available
             if artifact_links:
@@ -222,7 +216,7 @@ class LlmdInferenceErrorReport():
             else:
                 data_sources.append("❌ Multi-turn")
 
-            if hasattr(results, 'prometheus_path') and results.prometheus_path:
+            if hasattr(results, 'metrics') and results.metrics:
                 data_sources.append("✅ Prometheus")
             else:
                 data_sources.append("❌ Prometheus")
