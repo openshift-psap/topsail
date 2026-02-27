@@ -169,6 +169,9 @@ matbench:
       notification:
         enabled: true
         title: "llm-d CPT"
+  download:
+    mode: prefer_cache
+    url: null
 
 exec_list:
   _only_: false
