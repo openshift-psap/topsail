@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Red Hat PSAP TOPSAIL test orchestration framework &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="TOPSAIL" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Red Hat PSAP TOPSAIL test orchestration framework</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="red-hat-psap-topsail-test-orchestration-framework">
+<h1>Red Hat PSAP TOPSAIL test orchestration framework<a class="headerlink" href="#red-hat-psap-topsail-test-orchestration-framework" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">TOPSAIL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#topsail-orchestration-and-toolbox">TOPSAIL orchestration and toolbox</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#topsail-projects-organization">TOPSAIL <code class="docutils literal notranslate"><span class="pre">projects</span></code> organization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#review-guidelines">Review Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#style-guidelines">Style Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contributing.html#yaml-style">YAML style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contributing.html#ansible-style">Ansible style</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#coding-guidelines">Coding guidelines</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound" id="understanding-topsail">
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#cluster-creation">Cluster creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#cluster-from-pool">Cluster from pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#bare-metal-clusters">Bare-metal clusters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#launching-topsail-jobs-on-the-ci-engines">Launching TOPSAIL jobs on the CI engines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#a-bit-of-history">A bit of history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#a-bit-of-apology">A bit of apology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#how-it-actually-works">How it actually works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#configuring-the-configuration-with-presets">Configuring the configuration with presets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#creating-dedicated-directories">Creating dedicated directories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="understanding/orchestration.html#running-toolbox-commands-in-parallel">Running toolbox commands in parallel</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound" id="extending-topsail">
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extending/orchestration.html">Creating a New Orchestration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extending/orchestration.html#prepare-the-environment">Prepare the environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#prepare-the-test-py-config-yaml-and-command-args-yaml-j2">Prepare the <code class="docutils literal notranslate"><span class="pre">test.py</span></code>, <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#copy-the-clusters-sh-and-configure-sh">Copy the <code class="docutils literal notranslate"><span class="pre">clusters.sh</span></code> and <code class="docutils literal notranslate"><span class="pre">configure.sh</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#create-test-py-and-prepare-py">Create <code class="docutils literal notranslate"><span class="pre">test_....py</span></code> and <code class="docutils literal notranslate"><span class="pre">prepare_....py</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="extending/orchestration.html#start-building-your-test-orchestration">Start building your test orchestration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#core-helper-modules">Core helper modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#the-projects-rhods-library-prepare-rhoai-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.rhods.library.prepare_rhoai</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#the-projects-gpu-operator-library-prepare-gpu-operator-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.gpu_operator.library.prepare_gpu_operator</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#the-projects-local-ci-library-prepare-user-pods-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.local_ci.library.prepare_user_pods</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/orchestration.html#the-projects-matrix-benchmarking-library-visualize-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.matrix_benchmarking.library.visualize</span></code> library module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extending/toolbox.html#including-new-roles-in-topsails-cli">Including new roles in Topsail’s CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extending/toolbox.html#creating-a-python-class-for-the-new-role">1. Creating a Python class for the new role</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/toolbox.html#including-the-new-toolbox-class-in-the-toolbox">2. Including the new toolbox class in the Toolbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/toolbox.html#rendering-the-default-parameters">3. Rendering the default parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extending/toolbox.html#executing-the-new-toolbox-command">4. Executing the new toolbox command</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extending/visualization.html">Creating a new visualization module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extending/visualization.html#the-store-module">The <code class="docutils literal notranslate"><span class="pre">store</span></code> module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extending/visualization.html#the-store-parsers">The store parsers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="extending/visualization.html#the-store-and-models-lts-and-kpi-modules">The <code class="docutils literal notranslate"><span class="pre">store</span></code> and <code class="docutils literal notranslate"><span class="pre">models</span></code> LTS and KPI modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending/visualization.html#the-plotting-visualization-module">The <code class="docutils literal notranslate"><span class="pre">plotting</span></code> visualization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extending/visualization.html#the-analyze-regression-analyze-module">The <code class="docutils literal notranslate"><span class="pre">analyze</span></code> regression analyze module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound" id="topsail-toolbox">
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.generated/index.html">Toolbox Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#cluster"><code class="docutils literal notranslate"><span class="pre">cluster</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#configure"><code class="docutils literal notranslate"><span class="pre">configure</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#container-bench"><code class="docutils literal notranslate"><span class="pre">container_bench</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#crc"><code class="docutils literal notranslate"><span class="pre">crc</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#fine-tuning"><code class="docutils literal notranslate"><span class="pre">fine_tuning</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#run"><code class="docutils literal notranslate"><span class="pre">run</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#gpu-operator"><code class="docutils literal notranslate"><span class="pre">gpu_operator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#jump-ci"><code class="docutils literal notranslate"><span class="pre">jump_ci</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#kserve"><code class="docutils literal notranslate"><span class="pre">kserve</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#llm-load-test"><code class="docutils literal notranslate"><span class="pre">llm_load_test</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#llmd"><code class="docutils literal notranslate"><span class="pre">llmd</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#local-ci"><code class="docutils literal notranslate"><span class="pre">local_ci</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#mac-ai"><code class="docutils literal notranslate"><span class="pre">mac_ai</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#nfd"><code class="docutils literal notranslate"><span class="pre">nfd</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#nfd-operator"><code class="docutils literal notranslate"><span class="pre">nfd_operator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#pipelines"><code class="docutils literal notranslate"><span class="pre">pipelines</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#remote"><code class="docutils literal notranslate"><span class="pre">remote</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#repo"><code class="docutils literal notranslate"><span class="pre">repo</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#rhods"><code class="docutils literal notranslate"><span class="pre">rhods</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#server"><code class="docutils literal notranslate"><span class="pre">server</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="toolbox.generated/index.html#storage"><code class="docutils literal notranslate"><span class="pre">storage</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound" id="topsail-orchetrations">
+</div>
+<p>Documentation generated on Feb 27, 2026 from git-main/0e164ebd.</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-right" title="TOPSAIL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

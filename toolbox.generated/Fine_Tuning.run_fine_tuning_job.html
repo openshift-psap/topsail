@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fine_tuning run_fine_tuning_job &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">fine_tuning run_fine_tuning_job</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/toolbox.generated/Fine_Tuning.run_fine_tuning_job.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fine-tuning-run-fine-tuning-job">
+<h1>fine_tuning run_fine_tuning_job<a class="headerlink" href="#fine-tuning-run-fine-tuning-job" title="Link to this heading"></a></h1>
+<p>Run a simple fine-tuning Job.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code></p>
+<ul class="simple">
+<li><p>The name of the fine-tuning job to create</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">namespace</span></code></p>
+<ul class="simple">
+<li><p>The name of the namespace where the scheduler load will be generated</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">pvc_name</span></code></p>
+<ul class="simple">
+<li><p>The name of the PVC where the model and dataset are stored</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">workload</span></code></p>
+<ul class="simple">
+<li><p>The name of the workload to run inside the container (fms or ilab)</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">model_name</span></code></p>
+<ul class="simple">
+<li><p>The name of the model to use inside the /dataset directory of the PVC</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_name</span></code></p>
+<ul class="simple">
+<li><p>The name of the dataset to use inside the /model directory of the PVC</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_replication</span></code></p>
+<ul class="simple">
+<li><p>Number of replications of the dataset to use, to artificially extend or reduce the fine-tuning effort</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_transform</span></code></p>
+<ul class="simple">
+<li><p>Name of the transformation to apply to the dataset</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_prefer_cache</span></code></p>
+<ul class="simple">
+<li><p>If True, and the dataset has to be transformed/duplicated, save and/or load it from the PVC</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_prepare_cache_only</span></code></p>
+<ul class="simple">
+<li><p>If True, only prepare the dataset cache file and do not run the fine-tuning.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">dataset_response_template</span></code></p>
+<ul class="simple">
+<li><p>The delimiter marking the beginning of the response in the dataset samples</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">container_image</span></code></p>
+<ul class="simple">
+<li><p>The image to use for the fine-tuning container</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">quay.io/modh/fms-hf-tuning:release-7a8ff0f4114ba43398d34fd976f6b17bb1f665f3</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">gpu</span></code></p>
+<ul class="simple">
+<li><p>The number of GPUs to request for the fine-tuning job</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">memory</span></code></p>
+<ul class="simple">
+<li><p>The number of RAM gigs to request for to the fine-tuning job (in Gigs)</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">10</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">cpu</span></code></p>
+<ul class="simple">
+<li><p>The number of CPU cores to request for the fine-tuning job (in cores)</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">request_equals_limits</span></code></p>
+<ul class="simple">
+<li><p>If True, sets the ‘limits’ of the job with the same value as the request.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">shared_memory</span></code></p>
+<ul class="simple">
+<li><p>Amount of shm (in GB) to give to each of the job pods</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">prepare_only</span></code></p>
+<ul class="simple">
+<li><p>If True, only prepare the environment but do not run the fine-tuning job.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">delete_other</span></code></p>
+<ul class="simple">
+<li><p>If True, delete the other PyTorchJobs before running</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">pod_count</span></code></p>
+<ul class="simple">
+<li><p>Number of Pods to include in the job</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">hyper_parameters</span></code></p>
+<ul class="simple">
+<li><p>Dictionnary of hyper-parameters to pass to sft-trainer</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">capture_artifacts</span></code></p>
+<ul class="simple">
+<li><p>If enabled, captures the artifacts that will help post-mortem analyses</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">sleep_forever</span></code></p>
+<ul class="simple">
+<li><p>If true, sleeps forever instead of running the fine-tuning command.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">ephemeral_output_pvc_size</span></code></p>
+<ul class="simple">
+<li><p>If a size (with units) is passed, use an ephemeral volume claim for storing the fine-tuning output. Otherwise, use an emptyDir.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">use_primary_nic</span></code></p>
+<ul class="simple">
+<li><p>If enabled, tell NCCL to use the primary NIC. Only taken into account if –use_secondary_nic is passed.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">use_secondary_nic</span></code></p>
+<ul class="simple">
+<li><p>If enabled, activates the secondary NIC. Can be a list with the name of multiple NetworkDefinitionAttachements, in the same namespace.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">use_host_network</span></code></p>
+<ul class="simple">
+<li><p>If enabled, activates the host network</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">retrieve_files</span></code></p>
+<ul class="simple">
+<li><p>If enabled, allows files retrieval from the pod to the artifacts directory.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How roles are organized &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Creating a new visualization module" href="visualization.html" />
+    <link rel="prev" title="Creating a New Orchestration" href="orchestration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-default-parameters-are-generated">How default parameters are generated</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#including-new-roles-in-topsails-cli">Including new roles in Topsail’s CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-python-class-for-the-new-role">1. Creating a Python class for the new role</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#description-of-the-decorators">Description of the decorators</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#including-the-new-toolbox-class-in-the-toolbox">2. Including the new toolbox class in the Toolbox</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rendering-the-default-parameters">3. Rendering the default parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#executing-the-new-toolbox-command">4. Executing the new toolbox command</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">How roles are organized</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/extending/toolbox.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="how-roles-are-organized">
+<h1>How roles are organized<a class="headerlink" href="#how-roles-are-organized" title="Link to this heading"></a></h1>
+<p>Roles in TOPSAIL are standard Ansible roles that are wired into the
+<code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code> command line interface.</p>
+<p>In TOPSAIL, the roles are organized by projects, in the
+<code class="docutils literal notranslate"><span class="pre">projects/PROJECT_NAME/roles</span></code> directories. Their structure follows
+Ansible standard role guidelines:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>toolbox/
+├──<span class="w"> </span>&lt;group<span class="w"> </span>name&gt;.py
+└──<span class="w"> </span>&lt;new_role_name&gt;/
+<span class="w">    </span>├──<span class="w"> </span>defaults
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span>main.yml
+<span class="w">    </span>├──<span class="w"> </span>files
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span>.keep
+<span class="w">    </span>├──<span class="w"> </span>README.md
+<span class="w">    </span>├──<span class="w"> </span>tasks
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span>main.yml
+<span class="w">    </span>├──<span class="w"> </span>templates
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span>example.yml.j2
+<span class="w">    </span>└──<span class="w"> </span>vars
+<span class="w">        </span>└──<span class="w"> </span>main.yml
+</pre></div>
+</div>
+</section>
+<section id="how-default-parameters-are-generated">
+<h1>How default parameters are generated<a class="headerlink" href="#how-default-parameters-are-generated" title="Link to this heading"></a></h1>
+<p>Topsail generates automatically all the default parameters in the
+<code class="docutils literal notranslate"><span class="pre">&lt;role&gt;/defaults/main.yml</span></code> file, to make sure all the roles
+parameters are consistent with what the CLI supports
+(<code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code>). The file <code class="docutils literal notranslate"><span class="pre">&lt;role&gt;/defaults/main.yml</span></code> is
+rendered automatically when executing from the project’s root folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">run_toolbox</span><span class="o">.</span><span class="n">py</span> <span class="n">repo</span> <span class="n">generate_toolbox_related_files</span>
+<span class="c1"># or</span>
+<span class="o">./</span><span class="n">run_toolbox</span><span class="o">.</span><span class="n">py</span> <span class="n">repo</span> <span class="n">generate_ansible_default_settings</span>
+</pre></div>
+</div>
+<section id="including-new-roles-in-topsails-cli">
+<h2>Including new roles in Topsail’s CLI<a class="headerlink" href="#including-new-roles-in-topsails-cli" title="Link to this heading"></a></h2>
+<section id="creating-a-python-class-for-the-new-role">
+<h3>1. Creating a Python class for the new role<a class="headerlink" href="#creating-a-python-class-for-the-new-role" title="Link to this heading"></a></h3>
+<p>Create a class file to reference the new role and define the default
+parameters that can be referenced from the CLI as parameters.</p>
+<p>In the project’s <code class="docutils literal notranslate"><span class="pre">toolbox</span></code> directory, create or edit the
+<code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;.py</span></code> file with the following code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> import sys
+
+ from projects.core.library.ansible_toolbox import (
+     RunAnsibleRole, AnsibleRole,
+     AnsibleMappedParams, AnsibleConstant,
+     AnsibleSkipConfigGeneration
+ )
+
+class &lt;project_name&gt;:
+    &quot;&quot;&quot;
+    Commands relating to &lt;project_name&gt;
+    &quot;&quot;&quot;
+
+    @AnsibleRole(&quot;&lt;new_role_name&gt;&quot;)
+    @AnsibleMappedParams
+    def run(self,
+            &lt;new_role_parameter_1&gt;,
+            &lt;new_role_parameter_n&gt;,
+            ):
+        &quot;&quot;&quot;
+        Run &lt;new_role_name&gt;
+
+        Args:
+          &lt;new_role_parameter_1&gt;: First parameter
+          &lt;new_role_parameter_n&gt;: Nth parameter
+        &quot;&quot;&quot;
+
+        # if needed, perform simple parameters validation here
+
+        return RunAnsibleRole(locals())
+</pre></div>
+</div>
+<section id="description-of-the-decorators">
+<h4>Description of the decorators<a class="headerlink" href="#description-of-the-decorators" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;AnsibleROle(role_name)</span></code> tells the role where the command is implemented</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;AnsibleMappedParams</span></code> specifies that the Python arguments should
+be mapped into the Ansible arguments (that’s the most common)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;AnsibleSkipConfigGeneration</span></code> specifies that no configuration
+should be generated for this command (usually, it means that another
+command already specifies the arguments, and this one reuses the
+same role with different settings)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;AnsibleConstant(description,</span> <span class="pre">name,</span> <span class="pre">value)</span></code> specifies a Ansible
+argument without Python equivalent. Can be used to pass flags
+embedded in the function name. Eg: <code class="docutils literal notranslate"><span class="pre">dump_prometheus</span></code> and
+<code class="docutils literal notranslate"><span class="pre">reset_prometheus</span></code>.</p></li>
+</ul>
+</section>
+</section>
+<section id="including-the-new-toolbox-class-in-the-toolbox">
+<h3>2. Including the new toolbox class in the Toolbox<a class="headerlink" href="#including-the-new-toolbox-class-in-the-toolbox" title="Link to this heading"></a></h3>
+<p>This step in not necessary anymore. The <code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code> command
+from the root directory loads the toolbox with this generic call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">projects</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">ansible_toolbox</span><span class="o">.</span><span class="n">Toolbox</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This class traverses all the <code class="docutils literal notranslate"><span class="pre">projects/*/toolbox/*.py</span></code> Python files,
+and loads the class with the titled name of the file (simplified code):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">toolbox_file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">TOPSAIL_DIR</span> <span class="o">/</span> <span class="s2">&quot;projects&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*/toolbox/*.py&quot;</span><span class="p">):</span>
+    <span class="n">toolbox_module</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">toolbox_file</span><span class="p">)</span>
+    <span class="n">toolbox_name</span> <span class="o">=</span> <span class="n">name</span> <span class="n">of</span> <span class="o">&lt;</span><span class="n">toolbox_file</span><span class="o">&gt;</span> <span class="n">without</span> <span class="n">extension</span>
+    <span class="n">toolbox_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">toolbox_module</span><span class="p">,</span> <span class="n">toolbox_name</span><span class="o">.</span><span class="n">title</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="rendering-the-default-parameters">
+<h3>3. Rendering the default parameters<a class="headerlink" href="#rendering-the-default-parameters" title="Link to this heading"></a></h3>
+<p>Now, once the new toolbox command is created, the role class is added to the
+project’s root folder and the CLI entrypoint is included in the
+<code class="docutils literal notranslate"><span class="pre">Toolbox</span></code> class, it is possible to render the role default parameters
+from the <code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code> CLI. To render the default parameters for
+all roles execute:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">run_toolbox</span><span class="o">.</span><span class="n">py</span> <span class="n">repo</span> <span class="n">generate_ansible_default_settings</span>
+</pre></div>
+</div>
+<p>TOPSAIL GitHub repository will refuse to merge the PR if this command
+has not been called after the Python entrypoint has been modified.</p>
+</section>
+<section id="executing-the-new-toolbox-command">
+<h3>4. Executing the new toolbox command<a class="headerlink" href="#executing-the-new-toolbox-command" title="Link to this heading"></a></h3>
+<p>Once the role is in the correct folder and the <code class="docutils literal notranslate"><span class="pre">Toolbox</span></code> entrypoints
+are up to date, this new role can be executed directly from <code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code>
+like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">./</span><span class="n">run_toolbox</span><span class="o">.</span><span class="n">py</span> <span class="o">&lt;</span><span class="n">project_name</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">new_role_name</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">new_role_parameter_1</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">new_role_parameter_n</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="orchestration.html" class="btn btn-neutral float-left" title="Creating a New Orchestration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="visualization.html" class="btn btn-neutral float-right" title="Creating a new visualization module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

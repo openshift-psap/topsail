@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Test Orchestrations Layer &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Reusable Toolbox Layer" href="toolbox.html" />
+    <link rel="prev" title="Contributing" href="../contributing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#the-ci-job-launchers">The CI job launchers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cluster-creation">Cluster creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cluster-from-pool">Cluster from pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bare-metal-clusters">Bare-metal clusters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#launching-topsail-jobs-on-the-ci-engines">Launching TOPSAIL jobs on the CI engines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#topsail-configuration-system">TOPSAIL Configuration System</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-bit-of-history">A bit of history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-bit-of-apology">A bit of apology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-it-actually-works">How it actually works</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuring-the-configuration-with-presets">Configuring the configuration with presets</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#calling-the-toolbox-commands">Calling the toolbox commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#creating-dedicated-directories">Creating dedicated directories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-toolbox-commands-in-parallel">Running toolbox commands in parallel</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The Test Orchestrations Layer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/understanding/orchestration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-test-orchestrations-layer">
+<h1>The Test Orchestrations Layer<a class="headerlink" href="#the-test-orchestrations-layer" title="Link to this heading"></a></h1>
+<p>The test orchestration layer is the crux of TOPSAIL. It binds
+everything else together:
+- the CI job launchers
+- the configuration
+- the toolbox commands
+- the post-mortem visualizations and automated regression analyses.</p>
+<p>Historically, this layer has been first and foremost triggered by CI
+jobs, with clean clusters and kube-admin privileges. This is still the
+first target of TOPSAIL test automation. The side effect of that is
+that TOPSAIL may seem not very user-friendly when trying to use it
+interactively from a terminal.</p>
+<p>In this section, we’ll try to cover these different aspects that
+TOPSAIL binds together.</p>
+</section>
+<section id="the-ci-job-launchers">
+<h1>The CI job launchers<a class="headerlink" href="#the-ci-job-launchers" title="Link to this heading"></a></h1>
+<p>TOPSAIL test orchestrations are focused on reproducibility and
+end-to-end testing. These two ideas are directly linked, and in the
+OpenShift world, the easiest to ensure that the rests are reproducible
+and end-to-end automated is to start from scratch (or from a fresh and
+clean cluster).</p>
+<section id="cluster-creation">
+<h2>Cluster creation<a class="headerlink" href="#cluster-creation" title="Link to this heading"></a></h2>
+<p>In OpenShift CI, TOPSAIL has the ability to create a dedicated cluster
+(even two, one for RHOAI, one for simulating users). This mode is
+launched with the <code class="docutils literal notranslate"><span class="pre">rhoai-e2e</span></code> test. It is particularly useful when
+launching cloud scale tests. The cluster creation is handled by the
+<a class="reference external" href="https://github.com/openshift-psap/topsail/tree/main/projects/cluster/subprojects/deploy-cluster">deploy-cluster subproject</a>.
+This part of TOPSAIL is old, and mostly written in Bash. But it has
+proved to be robust and reliable, although we haven’t been using it
+much since we got access to bare-metal clusters.</p>
+<p>By default, these clusters are destroyed after the test.
+A <code class="docutils literal notranslate"><span class="pre">keep</span></code> flag can be set in the configuration to avoid destroying
+it, and creating a kube-admin user with a predefined password. (Ask
+in PM for how access the cluster).</p>
+</section>
+<section id="cluster-from-pool">
+<h2>Cluster from pool<a class="headerlink" href="#cluster-from-pool" title="Link to this heading"></a></h2>
+<p>In OpenShift CI, TOPSAIL has a pool of pre-deployed clusters. These
+clusters are controlled by the <a class="reference external" href="https://www.redhat.com/en/blog/openshift-hive-cluster-as-a-service">Hive</a>
+tool, managed by the OpenShift CI team. In the current configuration,
+the pool have 2 single-node OpenShift systems.</p>
+<p>These clusters are always destroyed at the end of the run. This is
+outside of TOPSAIL control.</p>
+</section>
+<section id="bare-metal-clusters">
+<h2>Bare-metal clusters<a class="headerlink" href="#bare-metal-clusters" title="Link to this heading"></a></h2>
+<p>In the Middleware Jenkins CI, TOPSAIL can be launched against two
+bare-metal clusters. These clusters have long running OpenShift
+deployments, and they are “never” reinstalled (at least, there is no
+reinstall automation in place at the moment). Hence, the test
+orchestrations are in charge of cleanup the cluster before (to ensure
+that no garbage is left) and after the test (to let the cluster clean
+for the following users). So the complete test sequence is:</p>
+<ol class="arabic simple">
+<li><p>cleanup</p></li>
+<li><p>prepare</p></li>
+<li><p>test</p></li>
+<li><p>cleanup</p></li>
+</ol>
+<p>This is the theory at least. In practice, the clusters are dedicated
+to the team, and after mutual agreement, the cleanups and prepare
+steps may be skipped to save time. Or the test and final cleanup, to
+have a cluster ready for development.</p>
+<p>Before launching a test, check the state of the cluster. Is RHOAI
+installed? is the DSC configured as you expected? If not, make sure
+you tick the cleanup and prepare steps.</p>
+<p>Is someone else’s job already on the same cluster? if yes, your job
+will be queued and start only after the first job completion. Make
+sure you tick the cleanup and prepare steps.</p>
+</section>
+<section id="launching-topsail-jobs-on-the-ci-engines">
+<h2>Launching TOPSAIL jobs on the CI engines<a class="headerlink" href="#launching-topsail-jobs-on-the-ci-engines" title="Link to this heading"></a></h2>
+<p>See this google doc for all the details about launching TOPSAIL jobs
+on the CI engines:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://docs.google.com/document/d/1uBL294crnFVnaRdBEtP4_qHIBadojQl3Ccc8VNpmCNQ/edit?usp=sharing">How to launch TOPSAIL tests</a></p></li>
+</ul>
+</section>
+</section>
+<section id="topsail-configuration-system">
+<h1>TOPSAIL Configuration System<a class="headerlink" href="#topsail-configuration-system" title="Link to this heading"></a></h1>
+<p>The configuration system is (yet another) key element of TOPSAIL. It
+has been designed to flexible, modular, and (important point to
+understand some of its implementation choices) configurable from
+OpenShift CI and other CI engines.</p>
+<section id="a-bit-of-history">
+<h2>A bit of history<a class="headerlink" href="#a-bit-of-history" title="Link to this heading"></a></h2>
+<p>OpenShift CI is a great tool, but a strong limitation of it is that it
+can be only statically configured (from the <a class="reference external" href="https://github.com/openshift/release/tree/master/ci-operator/config/openshift-psap/topsail">openshift/release</a>
+repository). TOPSAIL had to find a way to enable dynamic
+configuration, without touching the source code. Long story (see a
+small <a class="reference external" href="https://docs.google.com/presentation/d/1DxULqo8U3jRZqUU52xEL8JnfGzV_IE_sSjGKJsZNTTU/edit?usp=sharing">slide deck</a>
+illustrating it) short, TOPSAIL can be configured in Github. (See <a class="reference external" href="https://docs.google.com/document/d/1uBL294crnFVnaRdBEtP4_qHIBadojQl3Ccc8VNpmCNQ/edit?usp=sharing">How
+to launch TOPSAIL tests</a>
+for all the details).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">test</span> <span class="n">rhoai</span><span class="o">-</span><span class="n">light</span> <span class="n">fine_tuning</span> <span class="n">ibm_40gb_models</span>
+<span class="o">/</span><span class="n">var</span> <span class="n">tests</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">test_settings</span><span class="o">.</span><span class="n">gpu</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="a-bit-of-apology">
+<h2>A bit of apology<a class="headerlink" href="#a-bit-of-apology" title="Link to this heading"></a></h2>
+<p>TOPSAIL project’s configuration is a YAML document.  On one side, each
+project is free to define is own configuration. But on the other side,
+some code is shared between different projects (the <code class="docutils literal notranslate"><span class="pre">library</span></code> files,
+defined in some of the projects).</p>
+<p>This aspect (the full flexibility + the code reuse in the libraries)
+makes the configuration structure hard to track. A refactoring might
+be envisaged to have a more strongly defined configuration format, at
+least for the reusable libraries (eg, the library could tell: this
+configuration block does not follow my model, I do not accept to
+process it).</p>
+</section>
+<section id="how-it-actually-works">
+<h2>How it actually works<a class="headerlink" href="#how-it-actually-works" title="Link to this heading"></a></h2>
+<p>So, TOPSAIL project’s configuration is a YAML document. And the test
+orchestration reads it alter its behavior. It’s as simple as that.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tests</span><span class="p">:</span>
+  <span class="n">capture_prom</span><span class="p">:</span> <span class="n">true</span>
+  <span class="n">capture_state</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">capture_prom</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;tests.capture_prom&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">capture_prom</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;tests.capture_prom is disabled, skipping Prometheus DB reset&quot;</span><span class="p">)</span>
+    <span class="k">return</span>
+</pre></div>
+</div>
+<p>Sometimes, the test orchestration doesn’t need to handle some
+configuration flags, but only pass them to the toolbox layer. TOPSAIL
+provides a helper toolbox command for that: <code class="docutils literal notranslate"><span class="pre">from_config</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">rhods</span><span class="p">:</span>
+  <span class="n">catalog</span><span class="p">:</span>
+    <span class="n">image</span><span class="p">:</span> <span class="n">brew</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">redhat</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">rh</span><span class="o">-</span><span class="n">osbs</span><span class="o">/</span><span class="n">iib</span>
+    <span class="n">tag</span><span class="p">:</span> <span class="mi">804339</span>
+    <span class="n">channel</span><span class="p">:</span> <span class="n">fast</span>
+    <span class="n">version</span><span class="p">:</span> <span class="mf">2.13.0</span>
+    <span class="n">version_name</span><span class="p">:</span> <span class="n">rc1</span>
+    <span class="n">opendatahub</span><span class="p">:</span> <span class="n">false</span>
+    <span class="n">managed_rhoi</span><span class="p">:</span> <span class="n">true</span>
+</pre></div>
+</div>
+<p>These configuration flags should be passed directly to the <code class="docutils literal notranslate"><span class="pre">rhods</span>
+<span class="pre">deploy_ods</span></code> toolbox command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">deploy_ods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">catalog_image</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+               <span class="n">disable_dsc_config</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opendatahub</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">managed_rhoai</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Deploy ODS operator from its custom catalog</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      catalog_image: Container image containing the RHODS bundle.</span>
+<span class="sd">      tag: Catalog image tag to use to deploy RHODS.</span>
+<span class="sd">      channel: The channel to use for the deployment. Let empty to use the default channel.</span>
+<span class="sd">      ...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p>So the way to launch the RHOAI deployement should be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span><span class="o">.</span><span class="n">run_toolbox</span><span class="p">(</span><span class="s2">&quot;rhods&quot;</span><span class="p">,</span> <span class="s2">&quot;deploy_ods&quot;</span>
+                <span class="n">catalog_image</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;rhods.catalog.image&quot;</span><span class="p">),</span>
+                <span class="n">tag</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;rhods.catalog.tag&quot;</span><span class="p">),</span>
+                <span class="n">channel</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;rhods.catalog.channel&quot;</span><span class="p">),</span>
+                <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Instead, the orchestration can use the <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code> file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">rhods</span> <span class="n">deploy_ods</span><span class="p">:</span>
+  <span class="n">catalog_image</span><span class="p">:</span> <span class="p">{{</span> <span class="n">rhods</span><span class="o">.</span><span class="n">catalog</span><span class="o">.</span><span class="n">image</span> <span class="p">}}</span>
+  <span class="n">tag</span><span class="p">:</span> <span class="p">{{</span> <span class="n">rhods</span><span class="o">.</span><span class="n">catalog</span><span class="o">.</span><span class="n">tag</span> <span class="p">}}</span>
+  <span class="n">channel</span><span class="p">:</span> <span class="p">{{</span> <span class="n">rhods</span><span class="o">.</span><span class="n">catalog</span><span class="o">.</span><span class="n">channel</span> <span class="p">}}</span>
+  <span class="o">...</span>
+</pre></div>
+</div>
+<p>where the template will be generated from the configuration file. And
+this command will trigger it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span><span class="o">.</span><span class="n">run_toolbox_from_config</span><span class="p">(</span><span class="s2">&quot;rhods&quot;</span><span class="p">,</span> <span class="s2">&quot;deploy_ods&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or this equivalent, from the command-line:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">source</span> <span class="o">./</span><span class="n">projects</span><span class="o">/</span><span class="n">fine_tuning</span><span class="o">/</span><span class="n">testing</span><span class="o">/</span><span class="n">configure</span><span class="o">.</span><span class="n">sh</span>
+<span class="o">./</span><span class="n">run_toolbox</span><span class="o">.</span><span class="n">py</span> <span class="n">from_config</span> <span class="n">rhods</span> <span class="n">deploy_ods</span>
+</pre></div>
+</div>
+</section>
+<section id="configuring-the-configuration-with-presets">
+<h2>Configuring the configuration with presets<a class="headerlink" href="#configuring-the-configuration-with-presets" title="Link to this heading"></a></h2>
+<p>TOPSAIL configuration can be updated through the presets. This allows
+storing multiple different test flavors side by side, and deciding at
+launch time which one to execute.</p>
+<p>The presets, stored inside in the configuration in the <code class="docutils literal notranslate"><span class="pre">ci_presets</span></code>
+field, define how to update the main configuration blocks before
+running the test.</p>
+<p>Here is an example, which will test multiple dataset replication
+factors:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dgx_single_model_multi_dataset</span><span class="p">:</span>
+  <span class="n">extends</span><span class="p">:</span> <span class="p">[</span><span class="n">dgx_single_model</span><span class="p">]</span>
+  <span class="n">tests</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">matbenchmarking</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span> <span class="n">true</span>
+  <span class="n">tests</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">test_settings</span><span class="o">.</span><span class="n">gpu</span><span class="p">:</span> <span class="mi">1</span>
+  <span class="n">tests</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">test_settings</span><span class="o">.</span><span class="n">dataset_replication</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>We see that three fields are “simply” updated. The <code class="docutils literal notranslate"><span class="pre">extends</span></code> keyword
+means that first of all (because it is in the first position), we need
+to apply the <code class="docutils literal notranslate"><span class="pre">dgx_single_model</span></code> preset, and only after modify the
+three fields.</p>
+<p>The presets are applied with a simple recursive algorithm (which will
+dirtily crash if there is a loop in the presets ^.^). If multiple
+presets are defined, and they touch the same values, only the last
+change will be visible. Same for the <code class="docutils literal notranslate"><span class="pre">extends</span></code> keyword. It applied
+at its position in the dictionary.</p>
+<p>Last important point: the presets <strong>cannot</strong> create new fields. This
+can be worked around by having placeholders in the main
+configuration. Eg:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tests</span><span class="p">:</span>
+  <span class="n">fine_tuning</span><span class="p">:</span>
+    <span class="n">test_settings</span><span class="p">:</span>
+        <span class="n">hyper_parameters</span><span class="p">:</span>
+          <span class="n">per_device_train_batch_size</span><span class="p">:</span> <span class="n">null</span>
+          <span class="n">gradient_accumulation_steps</span><span class="p">:</span> <span class="n">null</span>
+</pre></div>
+</div>
+<p>And everything is YAML. So the preset values can be YAML dictionaries
+(or lists).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tests</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">test_settings</span><span class="o">.</span><span class="n">hyper_parameters</span><span class="p">:</span> <span class="p">{</span><span class="n">r</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">lora_alpha</span><span class="p">:</span> <span class="mi">16</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This would work even if no placeholder has been set for <code class="docutils literal notranslate"><span class="pre">r</span></code> and
+<code class="docutils literal notranslate"><span class="pre">lora_alpha</span></code>, because the <code class="docutils literal notranslate"><span class="pre">hyper_parameters</span></code> is being assigned
+(and everything it contained before would be erased).</p>
+</section>
+</section>
+<section id="calling-the-toolbox-commands">
+<h1>Calling the toolbox commands<a class="headerlink" href="#calling-the-toolbox-commands" title="Link to this heading"></a></h1>
+<p>The “orchestration” layer orchestrates the toolbox commands. That is,
+it calls them, in the right order, according to configuration flags,
+and with the right parameters.</p>
+<p>The Python code can call the toolbox directly, by passing all the
+necessary arguments:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">has_dsc</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;oc get dsc -oname&quot;</span><span class="p">,</span> <span class="n">capture_stdout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">stdout</span>
+<span class="n">run</span><span class="o">.</span><span class="n">run_toolbox</span><span class="p">(</span>
+    <span class="s2">&quot;rhods&quot;</span><span class="p">,</span> <span class="s2">&quot;update_datasciencecluster&quot;</span><span class="p">,</span>
+    <span class="n">enable</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;kueue&quot;</span><span class="p">,</span> <span class="s2">&quot;codeflare&quot;</span><span class="p">,</span> <span class="s2">&quot;trainingoperator&quot;</span><span class="p">],</span>
+    <span class="n">name</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">has_dsc</span> <span class="k">else</span> <span class="s2">&quot;default-dsc&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>or from the configuration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span><span class="o">.</span><span class="n">run_toolbox_from_config</span><span class="p">(</span><span class="s2">&quot;rhods&quot;</span><span class="p">,</span> <span class="s2">&quot;deploy_ods&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>But it can also have a “mix” of both, via the <code class="docutils literal notranslate"><span class="pre">extra</span></code> arguments of
+the <code class="docutils literal notranslate"><span class="pre">from_config</span></code> call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">extra</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">storage_dir</span><span class="o">=</span><span class="n">storage_dir</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">source_name</span><span class="p">)</span>
+<span class="n">run</span><span class="o">.</span><span class="n">run_toolbox_from_config</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;download_to_pvc&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="n">extra</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This way, <code class="docutils literal notranslate"><span class="pre">cluster</span> <span class="pre">download_to_pvc</span></code> will have parameters received
+from the configuration, and extra settings (which take precedence),
+prepared directly in Python.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">from_config</span></code> command also accepts a prefix and/or a
+suffix. Indeed, one command might be called with different parameters
+in the same workflow.</p>
+<p>A simple example is the <code class="docutils literal notranslate"><span class="pre">cluster</span> <span class="pre">set_scale</span></code> command, which is used,
+in cloud environment, to control the number of nodes dedicated to a
+given task.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sutest</span><span class="o">/</span><span class="n">cluster</span> <span class="n">set_scale</span><span class="p">:</span>
+  <span class="n">name</span><span class="p">:</span> <span class="p">{{</span> <span class="n">clusters</span><span class="o">.</span><span class="n">sutest</span><span class="o">.</span><span class="n">compute</span><span class="o">.</span><span class="n">machineset</span><span class="o">.</span><span class="n">name</span> <span class="p">}}</span>
+  <span class="n">instance_type</span><span class="p">:</span> <span class="p">{{</span> <span class="n">clusters</span><span class="o">.</span><span class="n">sutest</span><span class="o">.</span><span class="n">compute</span><span class="o">.</span><span class="n">machineset</span><span class="o">.</span><span class="n">type</span> <span class="p">}}</span>
+  <span class="n">scale</span><span class="p">:</span> <span class="n">SET_AT_RUNTIME</span>
+
+<span class="n">driver</span><span class="o">/</span><span class="n">cluster</span> <span class="n">set_scale</span><span class="p">:</span>
+  <span class="n">instance_type</span><span class="p">:</span> <span class="p">{{</span> <span class="n">clusters</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">compute</span><span class="o">.</span><span class="n">machineset</span><span class="o">.</span><span class="n">type</span> <span class="p">}}</span>
+  <span class="n">name</span><span class="p">:</span> <span class="p">{{</span> <span class="n">clusters</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">compute</span><span class="o">.</span><span class="n">machineset</span><span class="o">.</span><span class="n">name</span> <span class="p">}}</span>
+  <span class="n">scale</span><span class="p">:</span> <span class="n">SET_AT_RUNTIME</span>
+</pre></div>
+</div>
+<p>This will be called with the <code class="docutils literal notranslate"><span class="pre">prefix</span></code> parameter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span><span class="o">.</span><span class="n">run_toolbox_from_config</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;set_scale&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;sutest&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">scale</span><span class="o">=...</span><span class="p">))</span>
+<span class="n">run</span><span class="o">.</span><span class="n">run_toolbox_from_config</span><span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;set_scale&quot;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;driver&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">scale</span><span class="o">=...</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>and the same works for the suffix:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">prefix</span><span class="o">/</span><span class="n">command</span> <span class="n">sub</span><span class="o">-</span><span class="n">command</span><span class="o">/</span><span class="n">suffix</span><span class="p">:</span> <span class="o">...</span>
+</pre></div>
+</div>
+<section id="creating-dedicated-directories">
+<h2>Creating dedicated directories<a class="headerlink" href="#creating-dedicated-directories" title="Link to this heading"></a></h2>
+<p>The artifacts are a critical element for TOPSAIL post-mortem
+processing and troubleshooting. But when the orchestration starts to
+involve multiple commands, it gets complicated to understand what is
+done at which step.</p>
+<p>So TOPSAIL provides the <code class="docutils literal notranslate"><span class="pre">env.NextArtifactDir</span></code> context, which creates
+a dedicated directory (with a <code class="docutils literal notranslate"><span class="pre">nnn__</span></code> prefix to enforce the correct
+ordering).</p>
+<p>Inside this directory, <code class="docutils literal notranslate"><span class="pre">env.ARTIFACT_DIR</span></code> will be correctly, so that
+the code can write its artifact files in a dedicated directory.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">NextArtifactDir</span><span class="p">(</span><span class="s2">&quot;multi_model_test_sequentially&quot;</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>This is mostly used in the <code class="docutils literal notranslate"><span class="pre">test</span></code> part, to group the multiple
+commands related to a test together.</p>
+</section>
+<section id="running-toolbox-commands-in-parallel">
+<h2>Running toolbox commands in parallel<a class="headerlink" href="#running-toolbox-commands-in-parallel" title="Link to this heading"></a></h2>
+<p>When the orchestration preparation starts to involve multiple
+commands, running all of them sequentially make take forever.</p>
+<p>So TOPSAIL provides the <code class="docutils literal notranslate"><span class="pre">run.Parallel</span></code> context and the
+<code class="docutils literal notranslate"><span class="pre">parallel.delayed</span></code> function to allow running multiple commands in
+parallel:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">run</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="s2">&quot;prepare_scale&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+    <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_kserve</span><span class="o">.</span><span class="n">prepare</span><span class="p">)</span>
+    <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">scale_up_sutest</span><span class="p">)</span>
+
+    <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_user_pods</span><span class="o">.</span><span class="n">prepare_user_pods</span><span class="p">,</span> <span class="n">user_count</span><span class="p">)</span>
+    <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_user_pods</span><span class="o">.</span><span class="n">cluster_scale_up</span><span class="p">,</span> <span class="n">user_count</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will create a dedicated directory, and at the end of the block it
+will execute the 4 functions in dedicated threads.</p>
+<p>Mind that the configuration <strong>cannot</strong> be updated inside a parallel
+region (eg,
+<code class="docutils literal notranslate"><span class="pre">config.project.set_config(&quot;tests.scale.model.consolidated&quot;,</span> <span class="pre">True)</span></code>).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../contributing.html" class="btn btn-neutral float-left" title="Contributing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="toolbox.html" class="btn btn-neutral float-right" title="The Reusable Toolbox Layer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

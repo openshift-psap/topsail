@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creating a new visualization module &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Toolbox Documentation" href="../toolbox.generated/index.html" />
+    <link rel="prev" title="How roles are organized" href="toolbox.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Creating a new visualization module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-store-module">The <code class="docutils literal notranslate"><span class="pre">store</span></code> module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#the-store-parsers">The store parsers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#the-store-and-models-lts-and-kpi-modules">The <code class="docutils literal notranslate"><span class="pre">store</span></code> and <code class="docutils literal notranslate"><span class="pre">models</span></code> LTS and KPI modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-plotting-visualization-module">The <code class="docutils literal notranslate"><span class="pre">plotting</span></code> visualization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-analyze-regression-analyze-module">The <code class="docutils literal notranslate"><span class="pre">analyze</span></code> regression analyze module</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Creating a new visualization module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/extending/visualization.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="creating-a-new-visualization-module">
+<h1>Creating a new visualization module<a class="headerlink" href="#creating-a-new-visualization-module" title="Link to this heading"></a></h1>
+<p>TOPSAIL post-processing/visualization rely on MatrixBenchmarking
+modules.  The post-processing steps are configured within the
+<code class="docutils literal notranslate"><span class="pre">matbench</span></code> field of the configuration file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">matbench</span><span class="p">:</span>
+  <span class="n">preset</span><span class="p">:</span> <span class="n">null</span>
+  <span class="n">workload</span><span class="p">:</span> <span class="n">projects</span><span class="o">.</span><span class="n">fine_tuning</span><span class="o">.</span><span class="n">visualizations</span><span class="o">.</span><span class="n">fine_tuning</span>
+  <span class="n">config_file</span><span class="p">:</span> <span class="n">plots</span><span class="o">.</span><span class="n">yaml</span>
+  <span class="n">download</span><span class="p">:</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">prefer_cache</span>
+    <span class="n">url</span><span class="p">:</span>
+    <span class="n">url_file</span><span class="p">:</span>
+    <span class="c1"># if true, copy the results downloaded by `matbench download` into the artifacts directory</span>
+    <span class="n">save_to_artifacts</span><span class="p">:</span> <span class="n">false</span>
+  <span class="c1"># directory to plot. Set by testing/common/visualize.py before launching the visualization</span>
+  <span class="n">test_directory</span><span class="p">:</span> <span class="n">null</span>
+  <span class="n">lts</span><span class="p">:</span>
+    <span class="n">generate</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">horreum</span><span class="p">:</span>
+      <span class="n">test_name</span><span class="p">:</span> <span class="n">null</span>
+    <span class="n">opensearch</span><span class="p">:</span>
+      <span class="n">export</span><span class="p">:</span>
+        <span class="n">enabled</span><span class="p">:</span> <span class="n">false</span>
+        <span class="n">enabled_on_replot</span><span class="p">:</span> <span class="n">false</span>
+        <span class="n">fail_test_on_fail</span><span class="p">:</span> <span class="n">true</span>
+      <span class="n">instance</span><span class="p">:</span> <span class="n">smoke</span>
+      <span class="n">index</span><span class="p">:</span> <span class="n">topsail</span><span class="o">-</span><span class="n">fine</span><span class="o">-</span><span class="n">tuning</span>
+      <span class="n">index_prefix</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+      <span class="n">prom_index_suffix</span><span class="p">:</span> <span class="o">-</span><span class="n">prom</span>
+    <span class="n">regression_analyses</span><span class="p">:</span>
+      <span class="n">enabled</span><span class="p">:</span> <span class="n">false</span>
+      <span class="c1"># if the regression analyses fail, mark the test as failed</span>
+      <span class="n">fail_test_on_regression</span><span class="p">:</span> <span class="n">false</span>
+</pre></div>
+</div>
+<p>The visualization modules are split into several sub-modules, that are
+described below.</p>
+<section id="the-store-module">
+<h2>The <code class="docutils literal notranslate"><span class="pre">store</span></code> module<a class="headerlink" href="#the-store-module" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">store</span></code> module is built as an extension of
+<code class="docutils literal notranslate"><span class="pre">projects.matrix_benchmarking.visualizations.helpers.store</span></code>, which
+defines the <code class="docutils literal notranslate"><span class="pre">store</span></code> architecture usually used in TOPSAIL.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">local_store</span> <span class="o">=</span> <span class="n">helpers_store</span><span class="o">.</span><span class="n">BaseStore</span><span class="p">(</span>
+    <span class="n">cache_filename</span><span class="o">=</span><span class="n">CACHE_FILENAME</span><span class="p">,</span> <span class="n">important_files</span><span class="o">=</span><span class="n">IMPORTANT_FILES</span><span class="p">,</span>
+
+    <span class="n">artifact_dirnames</span><span class="o">=</span><span class="n">parsers</span><span class="o">.</span><span class="n">artifact_dirnames</span><span class="p">,</span>
+    <span class="n">artifact_paths</span><span class="o">=</span><span class="n">parsers</span><span class="o">.</span><span class="n">artifact_paths</span><span class="p">,</span>
+
+    <span class="n">parse_always</span><span class="o">=</span><span class="n">parsers</span><span class="o">.</span><span class="n">parse_always</span><span class="p">,</span>
+    <span class="n">parse_once</span><span class="o">=</span><span class="n">parsers</span><span class="o">.</span><span class="n">parse_once</span><span class="p">,</span>
+
+    <span class="c1"># ---</span>
+
+    <span class="n">lts_payload_model</span><span class="o">=</span><span class="n">models_lts</span><span class="o">.</span><span class="n">Payload</span><span class="p">,</span>
+    <span class="n">generate_lts_payload</span><span class="o">=</span><span class="n">lts_parser</span><span class="o">.</span><span class="n">generate_lts_payload</span><span class="p">,</span>
+
+    <span class="c1"># ---</span>
+
+    <span class="n">models_kpis</span><span class="o">=</span><span class="n">models_kpi</span><span class="o">.</span><span class="n">KPIs</span><span class="p">,</span>
+    <span class="n">get_kpi_labels</span><span class="o">=</span><span class="n">lts_parser</span><span class="o">.</span><span class="n">get_kpi_labels</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The upper part defines the core of the <code class="docutils literal notranslate"><span class="pre">store</span></code> module. It is
+mandatory.</p>
+<p>The lower parts define the LTS payload and KPIs. This part if
+optional, and only required to push KPIs to OpenSearch.</p>
+<section id="the-store-parsers">
+<h3>The store parsers<a class="headerlink" href="#the-store-parsers" title="Link to this heading"></a></h3>
+<p>The goal of the <code class="docutils literal notranslate"><span class="pre">store.parsers</span></code> module is to turn TOPSAIL test
+artifacts directories into a Python object, that can be plotted or
+turned into LTS KPIs.</p>
+<p>The parsers of the main workload components rely on the <code class="docutils literal notranslate"><span class="pre">simple</span></code>
+store.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">store_simple</span><span class="o">.</span><span class="n">register_custom_parse_results</span><span class="p">(</span><span class="n">local_store</span><span class="o">.</span><span class="n">parse_directory</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">simple</span></code> store searches for a <code class="docutils literal notranslate"><span class="pre">settings.yaml</span></code> file and an
+<code class="docutils literal notranslate"><span class="pre">exit_code</span></code> file.</p>
+<p>When these two files are found, the parsing of a test begins, and the
+current directory is considered a test root directory.</p>
+<p>The parsing is done this way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">exists</span><span class="p">(</span><span class="n">CACHE_FILE</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">MATBENCH_STORE_IGNORE_CACHE</span> <span class="o">==</span> <span class="n">true</span><span class="p">:</span>
+  <span class="n">results</span> <span class="o">=</span> <span class="n">reload</span><span class="p">(</span><span class="n">CACHE_FILE</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+  <span class="n">results</span> <span class="o">=</span> <span class="n">parse_once</span><span class="p">()</span>
+
+<span class="n">parse_always</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="n">results</span><span class="o">.</span><span class="n">lts</span> <span class="o">=</span> <span class="n">parse_lts</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="k">return</span> <span class="n">results</span>
+</pre></div>
+</div>
+<p>This organization improves the flexibility of the parsers, wrt to what
+takes time (should be in <code class="docutils literal notranslate"><span class="pre">parse_once</span></code>) vs what depends on the
+current execution environment (should be in <code class="docutils literal notranslate"><span class="pre">parse_always</span></code>).</p>
+<p>Mind that if you are working on the parsers, you should disable the
+cache, or your modifications will not be taken into account.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">MATBENCH_STORE_IGNORE_CACHE</span><span class="o">=</span><span class="n">true</span>
+</pre></div>
+</div>
+<p>You can re-enable it afterwards with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">unset</span> <span class="n">MATBENCH_STORE_IGNORE_CACHE</span>
+</pre></div>
+</div>
+<p>The results of the main parser is a <code class="docutils literal notranslate"><span class="pre">types.SimpleNamespace</span></code>
+object. By choice, it is weakly (on the fly) defined, so the
+developers must take care to properly propagate any modification of
+the structure. We tested having a Pydantic model, but that turned out
+to be to cumbersome to maintain. Could be retested.</p>
+<p>The important part of the parser is triggered by the execution of this
+method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_once</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dirname</span><span class="p">):</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">test_config</span> <span class="o">=</span> <span class="n">helpers_store_parsers</span><span class="o">.</span><span class="n">parse_test_config</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">test_uuid</span> <span class="o">=</span> <span class="n">helpers_store_parsers</span><span class="o">.</span><span class="n">parse_test_uuid</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>This <code class="docutils literal notranslate"><span class="pre">parse_once</span></code> method is in charge of transforming a directory
+(<code class="docutils literal notranslate"><span class="pre">dirname</span></code>) into a Python object (<code class="docutils literal notranslate"><span class="pre">results</span></code>). The parse heavily
+relies on <code class="docutils literal notranslate"><span class="pre">obj</span> <span class="pre">=</span> <span class="pre">types.SimpleNamespace()</span></code> objects, which are
+dictionaries which fields can be access as attributes. The inner
+dictionary can be accessed with <code class="docutils literal notranslate"><span class="pre">obj.__dict__</span></code> for programmatic
+traversal.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">parse_once</span></code> method should delegate the parsing to submethods,
+which typically looks like this (safety checks have been removed for
+readability):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_once</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dirname</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">finish_reason</span> <span class="o">=</span> <span class="n">_parse_finish_reason</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+    <span class="o">....</span>
+
+<span class="nd">@helpers_store_parsers</span><span class="o">.</span><span class="n">ignore_file_not_found</span>
+<span class="k">def</span> <span class="nf">_parse_finish_reason</span><span class="p">(</span><span class="n">dirname</span><span class="p">):</span>
+    <span class="n">finish_reason</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span>
+    <span class="n">finish_reason</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">register_important_file</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">artifact_paths</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span> <span class="o">/</span> <span class="s2">&quot;artifacts/pod.json&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pod_def</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="n">finish_reason</span><span class="o">.</span><span class="n">exit_code</span> <span class="o">=</span> <span class="n">container_terminated_state</span><span class="p">[</span><span class="s2">&quot;exitCode&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">finish_reason</span>
+</pre></div>
+</div>
+<p>Note that:</p>
+<ul class="simple">
+<li><p>for efficiency, JSON parsing should be preferred to YAML parsing,
+which is much slower.</p></li>
+<li><p>for grep-ability, the <code class="docutils literal notranslate"><span class="pre">results.xxx</span></code> field name should match the
+variable defined in the method (<code class="docutils literal notranslate"><span class="pre">xxx</span> <span class="pre">=</span> <span class="pre">types.SimpleNamespace()</span></code>)</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">ignore_file_not_found</span></code> decorator will catch
+<code class="docutils literal notranslate"><span class="pre">FileNotFoundError</span></code> exceptions and return <code class="docutils literal notranslate"><span class="pre">None</span></code> instead. This
+makes the code resilient against not-generated artifacts. This
+happens “often” while performing investigations in TOPSAIL, because
+the test failed in an unexpected way. The visualization is expected
+to perform as best as possible when this happens (graceful
+degradation), so that the rest of the artifacts can be exploited to
+understand what happened and caused the failure.</p></li>
+</ul>
+<p>The difference between these two methods:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_once</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dirname</span><span class="p">):</span> <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">parse_always</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">import_settings</span><span class="p">):</span> <span class="o">..</span>
+</pre></div>
+</div>
+<p>is that <code class="docutils literal notranslate"><span class="pre">parse_once</span></code> is called once, then the results is saved into
+a cache file, and reloaded from there, the environment variable
+<code class="docutils literal notranslate"><span class="pre">MATBENCH_STORE_IGNORE_CACHE=y</span></code> is set.</p>
+<p>Method <code class="docutils literal notranslate"><span class="pre">parse_always</span></code> is always called, even after reloading the
+cache file. This can be used to parse information about the
+environment in which the post-processing is executed.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">artifact_dirnames</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span>
+<span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">CLUSTER_CAPTURE_ENV_DIR</span> <span class="o">=</span> <span class="s2">&quot;*__cluster__capture_environment&quot;</span>
+<span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span> <span class="o">=</span> <span class="s2">&quot;*__fine_tuning__run_fine_tuning_job&quot;</span>
+<span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">RHODS_CAPTURE_STATE</span> <span class="o">=</span> <span class="s2">&quot;*__rhods__capture_state&quot;</span>
+<span class="n">artifact_paths</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span> <span class="c1"># will be dynamically populated</span>
+</pre></div>
+</div>
+<p>This block is used to lookup the directories where the files to be
+parsed are stored (the prefix <code class="docutils literal notranslate"><span class="pre">nnn__</span></code> can change easily, so it
+shouldn’t be hardcoded).</p>
+<p>During the initialization of the store module, the directories listed
+by <code class="docutils literal notranslate"><span class="pre">artifacts_dirnames</span></code> are resolved and stored in the
+<code class="docutils literal notranslate"><span class="pre">artifacts_paths</span></code> namespace. They can be used in the parser with,
+eg: <code class="docutils literal notranslate"><span class="pre">artifact_paths.FINE_TUNING_RUN_FINE_TUNING_DIR</span> <span class="pre">/</span>
+<span class="pre">&quot;artifacts/pod.log&quot;</span></code>.</p>
+<p>If the directory blob does not resolve to a file, its value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">IMPORTANT_FILES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;.uuid&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;config.yaml&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">CLUSTER_CAPTURE_ENV_DIR</span><span class="si">}</span><span class="s2">/_ansible.log&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">CLUSTER_CAPTURE_ENV_DIR</span><span class="si">}</span><span class="s2">/nodes.json&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">CLUSTER_CAPTURE_ENV_DIR</span><span class="si">}</span><span class="s2">/ocp_version.yml&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span><span class="si">}</span><span class="s2">/src/config_final.json&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span><span class="si">}</span><span class="s2">/artifacts/pod.log&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span><span class="si">}</span><span class="s2">/artifacts/pod.json&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">FINE_TUNING_RUN_FINE_TUNING_DIR</span><span class="si">}</span><span class="s2">/_ansible.play.yaml&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">RHODS_CAPTURE_STATE</span><span class="si">}</span><span class="s2">/rhods.createdAt&quot;</span><span class="p">,</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">artifact_dirnames</span><span class="o">.</span><span class="n">RHODS_CAPTURE_STATE</span><span class="si">}</span><span class="s2">/rhods.version&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>This block defines the files important for the parsing. They are
+“important” and not “mandatory” as the parsing should be able to
+proceed even if the files are missing.</p>
+<p>The list of “important files” is used when downloading results for
+re-processing. The download command can either lookup the cache file,
+or download all the important files. A warning is issued during the
+parsing if a file opened with <code class="docutils literal notranslate"><span class="pre">register_important_file</span></code> is not part
+of the import files list.</p>
+</section>
+</section>
+<section id="the-store-and-models-lts-and-kpi-modules">
+<h2>The <code class="docutils literal notranslate"><span class="pre">store</span></code> and <code class="docutils literal notranslate"><span class="pre">models</span></code> LTS and KPI modules<a class="headerlink" href="#the-store-and-models-lts-and-kpi-modules" title="Link to this heading"></a></h2>
+<p>The Long-Term Storage (LTS) payload and the Key Performance Indicators
+(KPIs) are TOPSAIL/MatrixBenchmarking features for Continuous
+Performance Testing (CPT).</p>
+<ul class="simple">
+<li><p>The LTS payload is a “complex” object, with <code class="docutils literal notranslate"><span class="pre">metadata</span></code>,
+<code class="docutils literal notranslate"><span class="pre">results</span></code> and <code class="docutils literal notranslate"><span class="pre">kpis</span></code> fields. The <code class="docutils literal notranslate"><span class="pre">metadata</span></code>, <code class="docutils literal notranslate"><span class="pre">results</span></code> are
+defined with Pydantic models, which enforce their structure. This
+was the first attempt of TOPSAIL/MatrixBenchmarking to go towards
+long-term stability of the test results and metadata. This attempt
+has not been convincing, but it is still part of the pipeline for
+historical reasons. Any metadata or result can be stored in these
+two objects, provided that you correctly add the fields in the
+models.</p></li>
+<li><p>The KPIs is our current working solution for continuous performance
+testing. A KPI is a simple object, which consists in a value, a help
+text, a timestamp, a unit, and a set of labels. The KPIs follow the
+OpenMetrics idea.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># HELP kserve_container_cpu_usage_max Max CPU usage of the Kserve container | container_cpu_usage_seconds_total</span>
+<span class="c1"># UNIT kserve_container_cpu_usage_max cores</span>
+<span class="n">kserve_container_cpu_usage_max</span><span class="p">{</span><span class="n">instance_type</span><span class="o">=</span><span class="s2">&quot;g5.2xlarge&quot;</span><span class="p">,</span> <span class="n">accelerator_name</span><span class="o">=</span><span class="s2">&quot;NVIDIA-A10G&quot;</span><span class="p">,</span> <span class="n">ocp_version</span><span class="o">=</span><span class="s2">&quot;4.16.0-rc.6&quot;</span><span class="p">,</span> <span class="n">rhoai_version</span><span class="o">=</span><span class="s2">&quot;2.13.0-rc1+2024-09-02&quot;</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;flan-t5-small&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">}</span> <span class="mf">1.964734477279039</span>
+</pre></div>
+</div>
+<p>Currently, the KPIs are part of the LTS payload, and the labels are
+duplicated for each of the KPIs. This designed will be reconsidered in
+the near future.</p>
+<p>The KPIs are a set of performance indicators and labels.</p>
+<p>The KPIs are defined by functions which extract the KPI value by
+inspecting the LTS payload:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@matbench_models</span><span class="o">.</span><span class="n">HigherBetter</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">KPIMetadata</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of dataset tokens processed per seconds per GPU&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;tokens/s&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">dataset_tokens_per_second_per_gpu</span><span class="p">(</span><span class="n">lts_payload</span><span class="p">):</span>
+   <span class="k">return</span> <span class="n">lts_payload</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">dataset_tokens_per_second_per_gpu</span>
+</pre></div>
+</div>
+<p>the name of the function is the name of the KPI, and the annotation
+define the metadata and some formatting properties:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># mandatory</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">KPIMetadata</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of train tokens processed per GPU per seconds&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;tokens/s&quot;</span><span class="p">)</span>
+
+<span class="c1"># one of these two is mandatory</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">LowerBetter</span>
+<span class="c1"># or</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">HigherBetter</span>
+
+<span class="c1"># ignore this KPI in the regression analyse</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">IgnoredForRegression</span>
+
+<span class="c1"># simple value formatter</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">Format</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># formatter with a divisor (and a new unit)</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">FormatDivisor</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;GB&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{:.2f}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The KPI labels are defined via a Pydantic model:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">KPI_SETTINGS_VERSION</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">matbench_models</span><span class="o">.</span><span class="n">ExclusiveModel</span><span class="p">):</span>
+   <span class="n">kpi_settings_version</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">ocp_version</span><span class="p">:</span> <span class="n">matbench_models</span><span class="o">.</span><span class="n">SemVer</span>
+   <span class="n">rhoai_version</span><span class="p">:</span> <span class="n">matbench_models</span><span class="o">.</span><span class="n">SemVer</span>
+   <span class="n">instance_type</span><span class="p">:</span> <span class="nb">str</span>
+
+   <span class="n">accelerator_type</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">accelerator_count</span><span class="p">:</span> <span class="nb">int</span>
+
+   <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">tuning_method</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">per_device_train_batch_size</span><span class="p">:</span> <span class="nb">int</span>
+   <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span>
+   <span class="n">max_seq_length</span><span class="p">:</span> <span class="nb">int</span>
+   <span class="n">container_image</span><span class="p">:</span> <span class="nb">str</span>
+
+   <span class="n">replicas</span><span class="p">:</span> <span class="nb">int</span>
+   <span class="n">accelerators_per_replica</span><span class="p">:</span> <span class="nb">int</span>
+
+   <span class="n">lora_rank</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+   <span class="n">lora_dropout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+   <span class="n">lora_alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+   <span class="n">lora_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+   <span class="n">ci_engine</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">test_path</span><span class="p">:</span> <span class="nb">str</span>
+   <span class="n">urls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>So eventually, the KPIs are the combination of the generic part
+(<code class="docutils literal notranslate"><span class="pre">matbench_models.KPI</span></code>) and project specific labels (<code class="docutils literal notranslate"><span class="pre">Settings</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">KPI</span><span class="p">(</span><span class="n">matbench_models</span><span class="o">.</span><span class="n">KPI</span><span class="p">,</span> <span class="n">Settings</span><span class="p">):</span> <span class="k">pass</span>
+<span class="n">KPIs</span> <span class="o">=</span> <span class="n">matbench_models</span><span class="o">.</span><span class="n">getKPIsModel</span><span class="p">(</span><span class="s2">&quot;KPIs&quot;</span><span class="p">,</span> <span class="vm">__name__</span><span class="p">,</span> <span class="n">kpi</span><span class="o">.</span><span class="n">KPIs</span><span class="p">,</span> <span class="n">KPI</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The LTS payload was the original idea of the document to save for
+continuous performance testing. KPIs have replaced them in this
+endeavor, but in the current state of the project, the LTS payload
+includes the KPIs. The LTS payload is the object actually sent to the
+OpenSearch database.</p>
+<p>The LTS Payload is composed of three objects:</p>
+<ul class="simple">
+<li><p>the metadata (replaced by the KPI labels)</p></li>
+<li><p>the results (replace by the KPI values)</p></li>
+<li><p>the KPIs</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LTS_SCHEMA_VERSION</span> <span class="o">=</span> <span class="s2">&quot;1.0&quot;</span>
+<span class="k">class</span> <span class="nc">Metadata</span><span class="p">(</span><span class="n">matbench_models</span><span class="o">.</span><span class="n">Metadata</span><span class="p">):</span>
+    <span class="n">lts_schema_version</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span>
+
+    <span class="n">presets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">config</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ocp_version</span><span class="p">:</span> <span class="n">matbench_models</span><span class="o">.</span><span class="n">SemVer</span>
+
+ <span class="k">class</span> <span class="nc">Results</span><span class="p">(</span><span class="n">matbench_models</span><span class="o">.</span><span class="n">ExclusiveModel</span><span class="p">):</span>
+    <span class="n">train_tokens_per_second</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">dataset_tokens_per_second</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">gpu_hours_per_million_tokens</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">dataset_tokens_per_second_per_gpu</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">train_tokens_per_gpu_per_second</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">train_samples_per_second</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">train_runtime</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">train_steps_per_second</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">avg_tokens_per_sample</span><span class="p">:</span> <span class="nb">float</span>
+
+ <span class="k">class</span> <span class="nc">Payload</span><span class="p">(</span><span class="n">matbench_models</span><span class="o">.</span><span class="n">ExclusiveModel</span><span class="p">):</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Metadata</span>
+    <span class="n">results</span><span class="p">:</span> <span class="n">Results</span>
+    <span class="n">kpis</span><span class="p">:</span> <span class="n">KPIs</span>
+</pre></div>
+</div>
+<p>The generation of the LTS payload is done after the parsing of main
+artifacts.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">generate_lts_payload</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">import_settings</span><span class="p">):</span>
+    <span class="n">lts_payload</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span>
+
+    <span class="n">lts_payload</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">generate_lts_metadata</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">import_settings</span><span class="p">)</span>
+    <span class="n">lts_payload</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="n">generate_lts_results</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="c1"># lts_payload.kpis is generated in the helper store</span>
+
+    <span class="k">return</span> <span class="n">lts_payload</span>
+</pre></div>
+</div>
+<p>On purpose, the parser does <em>not</em> use the Pydantic model when creating
+the LTS payload.  The reason for that is that the parser is strict. If
+a field is missing, the object will not be created and an exception
+will be raised.  When TOPSAIL is used for running performance
+investigations (in particular scale tests), we do not what this,
+because the test might terminate with some artifacts missing. Hence,
+the parsing will be incomplete, and we do <em>not</em> want that to abort the
+visualization process.</p>
+<p>However, when running in continuous performance testing mode, we do
+want to guarantee that everything is correctly populated.</p>
+<p>So TOPSAIL will run the parsing twice. First, without checking the LTS
+conformity:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">matbench</span> <span class="n">parse</span>
+     <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">matrix</span><span class="o">=</span><span class="s1">&#39;.../internal_matrix.json&#39;</span> \
+     <span class="o">--</span><span class="n">pretty</span><span class="o">=</span><span class="s1">&#39;True&#39;</span> \
+     <span class="o">--</span><span class="n">results</span><span class="o">-</span><span class="n">dirname</span><span class="o">=</span><span class="s1">&#39;...&#39;</span> \
+     <span class="o">--</span><span class="n">workload</span><span class="o">=</span><span class="s1">&#39;projects.kserve.visualizations.kserve-llm&#39;</span>
+</pre></div>
+</div>
+<p>Then, when LTS generation is enabled, with the LTS checkup:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">matbench</span> <span class="n">parse</span> \
+     <span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">lts</span><span class="o">=</span><span class="s1">&#39;.../lts_payload.json&#39;</span> \
+     <span class="o">--</span><span class="n">pretty</span><span class="o">=</span><span class="s1">&#39;True&#39;</span> \
+     <span class="o">--</span><span class="n">results</span><span class="o">-</span><span class="n">dirname</span><span class="o">=</span><span class="s1">&#39;...&#39;</span> \
+     <span class="o">--</span><span class="n">workload</span><span class="o">=</span><span class="s1">&#39;projects.kserve.visualizations.kserve-llm&#39;</span>
+</pre></div>
+</div>
+<p>This step (which reload from the cache file) will be recorded as a
+failure if the parsing is incomplete.</p>
+<p>The KPI values are generated in two steps:</p>
+<p>First the <code class="docutils literal notranslate"><span class="pre">KPIs</span></code> dictionary is populated when the <code class="docutils literal notranslate"><span class="pre">KPIMetadata</span></code>
+decorator is applied to a function (<code class="docutils literal notranslate"><span class="pre">function</span> <span class="pre">name</span> <span class="pre">--&gt;</span> <span class="pre">dict</span> <span class="pre">with</span> <span class="pre">the</span>
+<span class="pre">function,</span> <span class="pre">metadata,</span> <span class="pre">format,</span> <span class="pre">etc</span></code>)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">KPIs</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># populated by the @matbench_models.KPIMetadata decorator</span>
+<span class="c1"># ...</span>
+<span class="nd">@matbench_models</span><span class="o">.</span><span class="n">KPIMetadata</span><span class="p">(</span><span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of train tokens processed per seconds&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;tokens/s&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">train_tokens_per_second</span><span class="p">(</span><span class="n">lts_payload</span><span class="p">):</span>
+  <span class="k">return</span> <span class="n">lts_payload</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">train_tokens_per_second</span>
+</pre></div>
+</div>
+<p>Second, when the LTS payload is generated via the <code class="docutils literal notranslate"><span class="pre">helpers_store</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">projects.matrix_benchmarking.visualizations.helpers.store</span> <span class="k">as</span> <span class="nn">helpers_store</span>
+</pre></div>
+</div>
+<p>the LTS payload is passed to the KPI function, and the full KPI is
+generated.</p>
+</section>
+<section id="the-plotting-visualization-module">
+<h2>The <code class="docutils literal notranslate"><span class="pre">plotting</span></code> visualization module<a class="headerlink" href="#the-plotting-visualization-module" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">plotting</span></code> module contains two kind of classes: the “actual”
+plotting classes, which generate Plotly plots, and the report classes,
+which generates HTML pages, based on Plotly’s Dash framework.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">plotting</span></code> plot classes generate Plotly plots. They receive a
+set of parameters about what should be plotted:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">do_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ordered_vars</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">setting_lists</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>and they return a Plotly figure, and optionally some text to write
+below the plot:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">msg</span>
+</pre></div>
+</div>
+<p>The parameters are mostly useful when multiple experiments have been
+captured:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">setting_lists</span></code> and <code class="docutils literal notranslate"><span class="pre">settings</span></code> should not be touched. They
+should be passed to <code class="docutils literal notranslate"><span class="pre">common.Matrix.all_records</span></code>, which will return
+a filtered list of all the entry to include in the plot.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">common</span><span class="o">.</span><span class="n">Matrix</span><span class="o">.</span><span class="n">all_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">setting_lists</span><span class="p">):</span>
+    <span class="c1"># extract plot data from entry</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Some plotting classes may be written to display only one experiment
+results. A fail-safe exit can be written this way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">common</span><span class="o">.</span><span class="n">Matrix</span><span class="o">.</span><span class="n">count_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">setting_lists</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{},</span> <span class="s2">&quot;ERROR: only one experiment must be selected&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">variables</span></code> dictionary tells which settings have multiple
+values. Eg, we may have 6 experiments, all with
+<code class="docutils literal notranslate"><span class="pre">model_name=llama3</span></code>, but with <code class="docutils literal notranslate"><span class="pre">virtual_users=[4,</span> <span class="pre">16,</span> <span class="pre">32]</span></code> and
+<code class="docutils literal notranslate"><span class="pre">deployment_type=[raw,</span> <span class="pre">knative]</span></code>. In this case, the
+<code class="docutils literal notranslate"><span class="pre">virtual_users</span></code> and <code class="docutils literal notranslate"><span class="pre">deployment_type</span></code> will be listed in the
+<code class="docutils literal notranslate"><span class="pre">variables</span></code>. This is useful to give a name to each entry. Eg,
+here, <code class="docutils literal notranslate"><span class="pre">entry.get_name(variables)</span></code>  may return <code class="docutils literal notranslate"><span class="pre">virtual_users=16,</span>
+<span class="pre">deployment_type=raw</span></code>.</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">ordered_vars</span></code> list tells the preferred ordering for
+processing the experiments. With the example above and
+<code class="docutils literal notranslate"><span class="pre">ordered_vars=[virtual_users,</span> <span class="pre">deployment_type]</span></code>, we may want to
+use the virtual_user setting as legend. With
+<code class="docutils literal notranslate"><span class="pre">ordered_vars=[deployment_type,</span> <span class="pre">virtual_users]</span></code>, we may want to
+use the <code class="docutils literal notranslate"><span class="pre">deployment_type</span></code> instead. This gives flexibility in the
+way the plots are rendered. This order can be set in the GUI, or via
+the reporting calls.</p></li>
+</ul>
+<p>Note that using these parameters is optional. They have no sense when
+only one experiment should be plotted, and <code class="docutils literal notranslate"><span class="pre">ordered_vars</span></code> is useful
+only when using the GUI, or when generating reports. They help the
+generic processing of the results.</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">cfg</span></code> dictionary provides some dynamic configuration flags to
+perform the visualization. They can be passed either via the GUI, or
+by the report classes (eg, to highlight a particular aspect of the
+plot).</p></li>
+</ul>
+<p>Writing a plotting class is often messy and dirty, with a lot of
+<code class="docutils literal notranslate"><span class="pre">if</span></code> this <code class="docutils literal notranslate"><span class="pre">else</span></code> that. With Plotly’s initial framework
+<code class="docutils literal notranslate"><span class="pre">plotly.graph_objs</span></code>, it was easy and tempting to mix the data
+preparation (traversing the data structures) with the data
+visualization (adding elements like lines to the plot), and do both
+parts in the same loops.</p>
+<p>Plotly express (<code class="docutils literal notranslate"><span class="pre">plotly.express</span></code>) introduced a new way to generate
+the plots, based on Pandas DataFrames:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">generateThroughputData</span><span class="p">(</span><span class="n">entries</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">ordered_vars</span><span class="p">,</span> <span class="n">cfg__model_name</span><span class="p">))</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">hover_data</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+              <span class="n">x</span><span class="o">=</span><span class="s2">&quot;throughput&quot;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">&quot;tpot_mean&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;model_testname&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;test_name&quot;</span><span class="p">,)</span>
+</pre></div>
+</div>
+<p>This pattern, where the first phase shapes the data to plot into
+DataFrame, and the second phase turns the DataFrame into a figure, is
+the preferred way to organize the code of the plotting classes.</p>
+<p>The report classes are similar to the plotting classes, except that
+they generate … reports, instead of plots (!).</p>
+<p>A report is an HTML document, based on the Dash framework HTML tags
+(that is, Python objects):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">args</span> <span class="o">=</span> <span class="n">ordered_vars</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">setting_lists</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">cfg</span>
+
+<span class="n">header</span> <span class="o">+=</span> <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="s2">&quot;Latency per token during the load test&quot;</span><span class="p">)]</span>
+
+<span class="n">header</span> <span class="o">+=</span> <span class="n">Plot_and_Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latency details&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+<span class="n">header</span> <span class="o">+=</span> <span class="n">html</span><span class="o">.</span><span class="n">Br</span><span class="p">()</span>
+<span class="n">header</span> <span class="o">+=</span> <span class="n">html</span><span class="o">.</span><span class="n">Br</span><span class="p">()</span>
+
+<span class="n">header</span> <span class="o">+=</span> <span class="n">Plot_and_Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latency distribution&quot;</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+<span class="n">header</span> <span class="o">+=</span> <span class="n">html</span><span class="o">.</span><span class="n">Br</span><span class="p">()</span>
+<span class="n">header</span> <span class="o">+=</span> <span class="n">html</span><span class="o">.</span><span class="n">Br</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The configuration dictionary, mentioned above, can be used to generate
+different flavors of the plot:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">header</span> <span class="o">+=</span> <span class="n">Plot_and_Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latency distribution&quot;</span><span class="p">,</span> <span class="n">set_config</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">box_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_text</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">args</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">common</span><span class="o">.</span><span class="n">Matrix</span><span class="o">.</span><span class="n">all_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">setting_lists</span><span class="p">):</span>
+    <span class="n">header</span> <span class="o">+=</span> <span class="p">[</span><span class="n">html</span><span class="o">.</span><span class="n">H2</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get_name</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;model_name&#39;</span><span class="p">])))))]</span>
+    <span class="n">header</span> <span class="o">+=</span> <span class="n">Plot_and_Text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Latency details&quot;</span><span class="p">,</span> <span class="n">set_config</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">),</span> <span class="n">args</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>When TOPSAIL has successfully run the parsing step, it calls the
+<code class="docutils literal notranslate"><span class="pre">visualization</span></code> component with a predefined list of reports
+(preferred) and plots (not recommended) to generate. This is stored in
+<code class="docutils literal notranslate"><span class="pre">data/plots.yaml</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">visualize</span><span class="p">:</span>
+<span class="o">-</span> <span class="nb">id</span><span class="p">:</span> <span class="n">llm_test</span>
+  <span class="n">generate</span><span class="p">:</span>
+  <span class="o">-</span> <span class="s2">&quot;report: Error report&quot;</span>
+  <span class="o">-</span> <span class="s2">&quot;report: Latency per token&quot;</span>
+  <span class="o">-</span> <span class="s2">&quot;report: Throughput&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="the-analyze-regression-analyze-module">
+<h2>The <code class="docutils literal notranslate"><span class="pre">analyze</span></code> regression analyze module<a class="headerlink" href="#the-analyze-regression-analyze-module" title="Link to this heading"></a></h2>
+<p>The last part of TOPSAIL/MatrixBenchmarking post-processing is the
+automated regression analyses. The workflow required to enable performance
+analyses will be described in the orchestration section. What is
+required in the workload module only consists of a few keys to define.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># the setting (kpi labels) keys against which the historical regression should be performed</span>
+<span class="n">COMPARISON_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rhoai_version&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The setting keys listed in <code class="docutils literal notranslate"><span class="pre">COMPARISON_KEYS</span></code> will be used to
+distinguish which entries to considered as “history” for a given test,
+from everything else. In this example, we see that we compare against
+historical OpenShift AI versions.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">COMPARISON_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rhoai_version&quot;</span><span class="p">,</span> <span class="s2">&quot;image_tag&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Here, we compare against the historical RHOAI version and image tag.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># the setting (kpi labels) keys that should be ignored when searching for historical results</span>
+<span class="n">IGNORED_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;runtime_image&quot;</span><span class="p">,</span> <span class="s2">&quot;ocp_version&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Then we define the settings to ignore when searching for historical
+records. Here, we ignore the runtime image name, and the OpenShift
+version.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># the setting (kpi labels) keys *prefered* for sorting the entries in the regression report</span>
+<span class="n">SORTING_KEYS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;model_name&quot;</span><span class="p">,</span> <span class="s2">&quot;virtual_users&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Finally, for readability purpose, we define how the entries should be
+sorted, so that the tables have a consistent ordering.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">IGNORED_ENTRIES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;virtual_users&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">128</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Last, we can define some settings to ignore while traversing the
+entries that have been tested.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="toolbox.html" class="btn btn-neutral float-left" title="How roles are organized" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../toolbox.generated/index.html" class="btn btn-neutral float-right" title="Toolbox Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

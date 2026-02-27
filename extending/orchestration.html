@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creating a New Orchestration &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How roles are organized" href="toolbox.html" />
+    <link rel="prev" title="The Post-mortem Processing &amp; Visualization Layer" href="../understanding/visualization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Creating a New Orchestration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-the-environment">Prepare the environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#prepare-the-test-py-config-yaml-and-command-args-yaml-j2">Prepare the <code class="docutils literal notranslate"><span class="pre">test.py</span></code>, <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#copy-the-clusters-sh-and-configure-sh">Copy the <code class="docutils literal notranslate"><span class="pre">clusters.sh</span></code> and <code class="docutils literal notranslate"><span class="pre">configure.sh</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-test-py-and-prepare-py">Create <code class="docutils literal notranslate"><span class="pre">test_....py</span></code> and <code class="docutils literal notranslate"><span class="pre">prepare_....py</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#start-building-your-test-orchestration">Start building your test orchestration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#core-helper-modules">Core helper modules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-run-module">The <code class="docutils literal notranslate"><span class="pre">run</span></code> module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-env-module">The <code class="docutils literal notranslate"><span class="pre">env</span></code> module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-config-module">The <code class="docutils literal notranslate"><span class="pre">config</span></code> module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#the-projects-rhods-library-prepare-rhoai-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.rhods.library.prepare_rhoai</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-projects-gpu-operator-library-prepare-gpu-operator-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.gpu_operator.library.prepare_gpu_operator</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-projects-local-ci-library-prepare-user-pods-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.local_ci.library.prepare_user_pods</span></code> library module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-projects-matrix-benchmarking-library-visualize-library-module">The <code class="docutils literal notranslate"><span class="pre">projects.matrix_benchmarking.library.visualize</span></code> library module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Creating a New Orchestration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/extending/orchestration.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="creating-a-new-orchestration">
+<h1>Creating a New Orchestration<a class="headerlink" href="#creating-a-new-orchestration" title="Link to this heading"></a></h1>
+<p>You’re working on a new perf&amp;scale test project, and you want to have
+it automated and running in the CI? Good! Do you already have you test
+architecture in mind? And your toolbox is ready? Perfect, so we can
+start building the orchestration!</p>
+<section id="prepare-the-environment">
+<h2>Prepare the environment<a class="headerlink" href="#prepare-the-environment" title="Link to this heading"></a></h2>
+<p>To create an orchestration, go to <code class="docutils literal notranslate"><span class="pre">projects/PROJECT_NAME/testing</span></code>
+and prepare the following boilerplate code.</p>
+<p>Mind that the <code class="docutils literal notranslate"><span class="pre">PROJECT_NAME</span></code> should be compatible with Python
+packages (no <code class="docutils literal notranslate"><span class="pre">-</span></code>) to keep things simple.</p>
+<section id="prepare-the-test-py-config-yaml-and-command-args-yaml-j2">
+<h3>Prepare the <code class="docutils literal notranslate"><span class="pre">test.py</span></code>, <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> and <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code><a class="headerlink" href="#prepare-the-test-py-config-yaml-and-command-args-yaml-j2" title="Link to this heading"></a></h3>
+<p>These files are all what is mandatory to have a configurable
+orchestration layer.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test.py</span></code> should contain these entrypoints, for interacting with the CI:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@entrypoint</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">prepare_ci</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prepares the cluster and the namespace for running the tests</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<span class="nd">@entrypoint</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">test_ci</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs the test from the CI</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+
+
+<span class="nd">@entrypoint</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">cleanup_cluster</span><span class="p">(</span><span class="n">mute</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Restores the cluster to its original state</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># _Not_ executed in OpenShift CI cluster (running on AWS). Only required for running in bare-metal environments.</span>
+
+    <span class="n">common</span><span class="o">.</span><span class="n">cleanup_cluster</span><span class="p">()</span>
+
+    <span class="k">pass</span>
+
+
+<span class="nd">@entrypoint</span><span class="p">(</span><span class="n">ignore_secret_path</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">apply_preset_from_pr_args</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">generate_plots_from_pr_args</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates the visualization reports from the PR arguments</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">visualize</span><span class="o">.</span><span class="n">download_and_generate_visualizations</span><span class="p">()</span>
+
+    <span class="n">export</span><span class="o">.</span><span class="n">export_artifacts</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">ARTIFACT_DIR</span><span class="p">,</span> <span class="n">test_step</span><span class="o">=</span><span class="s2">&quot;plot&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Entrypoint</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Commands for launching the CI tests</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_ci</span> <span class="o">=</span> <span class="n">prepare_ci</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_ci</span> <span class="o">=</span> <span class="n">test_ci</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cleanup_cluster_ci</span> <span class="o">=</span> <span class="n">cleanup_cluster</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">export_artifacts</span> <span class="o">=</span> <span class="n">export_artifacts</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_plots_from_pr_args</span> <span class="o">=</span> <span class="n">generate_plots_from_pr_args</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1"># Print help rather than opening a pager</span>
+    <span class="n">fire</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">Display</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">lines</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="o">*</span><span class="n">lines</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="n">fire</span><span class="o">.</span><span class="n">Fire</span><span class="p">(</span><span class="n">Entrypoint</span><span class="p">())</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command &#39;</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">cmd</span><span class="si">}</span><span class="s2">&#39; failed --&gt; </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">()</span> <span class="c1"># empty line after ^C</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interrupted.&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> should contain</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ci_presets</span><span class="p">:</span>
+  <span class="c1"># name of the presets to apply, or null if no preset</span>
+  <span class="n">name</span><span class="p">:</span> <span class="n">null</span>
+  <span class="c1"># list of names of the presets to apply, or a single name, or null if no preset</span>
+  <span class="n">names</span><span class="p">:</span> <span class="n">null</span>
+
+
+  <span class="n">single</span><span class="p">:</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">type</span><span class="p">:</span> <span class="n">single</span>
+
+  <span class="n">keep</span><span class="p">:</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">keep</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">ocp</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">Project</span><span class="p">:</span> <span class="n">PSAP</span><span class="o">/</span><span class="n">Project</span><span class="o">/...</span>
+    <span class="c1"># clusters.create.ocp.tags.TicketId:</span>
+
+  <span class="n">light_cluster</span><span class="p">:</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">ocp</span><span class="o">.</span><span class="n">deploy_cluster</span><span class="o">.</span><span class="n">target</span><span class="p">:</span> <span class="n">cluster_light</span>
+
+  <span class="n">light</span><span class="p">:</span>
+    <span class="n">extends</span><span class="p">:</span> <span class="p">[</span><span class="n">light_cluster</span><span class="p">]</span>
+    <span class="o">...</span>
+
+  <span class="o">...</span>
+
+<span class="n">secrets</span><span class="p">:</span>
+  <span class="nb">dir</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">psap</span><span class="o">-</span><span class="n">ods</span><span class="o">-</span><span class="n">secret</span>
+    <span class="n">env_key</span><span class="p">:</span> <span class="n">PSAP_ODS_SECRET_PATH</span>
+  <span class="c1"># name of the file containing the properties of LDAP secrets</span>
+  <span class="n">s3_ldap_password_file</span><span class="p">:</span> <span class="n">s3_ldap</span><span class="o">.</span><span class="n">passwords</span>
+  <span class="n">keep_cluster_password_file</span><span class="p">:</span> <span class="n">get_cluster</span><span class="o">.</span><span class="n">password</span>
+  <span class="n">brew_registry_redhat_io_token_file</span><span class="p">:</span> <span class="n">brew</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">redhat</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">token</span>
+  <span class="n">opensearch_instances</span><span class="p">:</span> <span class="n">opensearch</span><span class="o">.</span><span class="n">yaml</span>
+  <span class="n">aws_credentials</span><span class="p">:</span> <span class="o">.</span><span class="n">awscred</span>
+  <span class="n">git_credentials</span><span class="p">:</span> <span class="n">git</span><span class="o">-</span><span class="n">credentials</span>
+
+<span class="n">clusters</span><span class="p">:</span>
+  <span class="n">metal_profiles</span><span class="p">:</span>
+    <span class="o">...</span><span class="p">:</span> <span class="o">...</span>
+  <span class="n">create</span><span class="p">:</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">single</span> <span class="c1"># can be: single, ocp, managed</span>
+    <span class="n">keep</span><span class="p">:</span> <span class="n">false</span>
+    <span class="n">name_prefix</span><span class="p">:</span> <span class="n">fine</span><span class="o">-</span><span class="n">tuning</span><span class="o">-</span><span class="n">ci</span>
+    <span class="n">ocp</span><span class="p">:</span>
+      <span class="c1"># list of tags to apply to the machineset when creating the cluster</span>
+      <span class="n">tags</span><span class="p">:</span>
+        <span class="c1"># TicketId: &quot;...&quot;</span>
+        <span class="n">Project</span><span class="p">:</span> <span class="n">PSAP</span><span class="o">/</span><span class="n">Project</span><span class="o">/...</span>
+      <span class="n">deploy_cluster</span><span class="p">:</span>
+        <span class="n">target</span><span class="p">:</span> <span class="n">cluster</span>
+      <span class="n">base_domain</span><span class="p">:</span> <span class="n">psap</span><span class="o">.</span><span class="n">aws</span><span class="o">.</span><span class="n">rhperfscale</span><span class="o">.</span><span class="n">org</span>
+      <span class="n">version</span><span class="p">:</span> <span class="mf">4.15.9</span>
+      <span class="n">region</span><span class="p">:</span> <span class="n">us</span><span class="o">-</span><span class="n">west</span><span class="o">-</span><span class="mi">2</span>
+      <span class="n">control_plane</span><span class="p">:</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">m6a</span><span class="o">.</span><span class="n">xlarge</span>
+      <span class="n">workers</span><span class="p">:</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">m6a</span><span class="mf">.2</span><span class="n">xlarge</span>
+        <span class="n">count</span><span class="p">:</span> <span class="mi">2</span>
+
+  <span class="n">sutest</span><span class="p">:</span>
+    <span class="n">is_metal</span><span class="p">:</span> <span class="n">false</span>
+    <span class="n">lab</span><span class="p">:</span>
+      <span class="n">name</span><span class="p">:</span> <span class="n">null</span>
+    <span class="n">compute</span><span class="p">:</span>
+      <span class="n">dedicated</span><span class="p">:</span> <span class="n">true</span>
+      <span class="n">machineset</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">workload</span><span class="o">-</span><span class="n">pods</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">m6i</span><span class="mf">.2</span><span class="n">xlarge</span>
+        <span class="n">count</span><span class="p">:</span> <span class="n">null</span>
+        <span class="n">taint</span><span class="p">:</span>
+          <span class="n">key</span><span class="p">:</span> <span class="n">only</span><span class="o">-</span><span class="n">workload</span><span class="o">-</span><span class="n">pods</span>
+          <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span>
+          <span class="n">effect</span><span class="p">:</span> <span class="n">NoSchedule</span>
+  <span class="n">driver</span><span class="p">:</span>
+    <span class="n">is_metal</span><span class="p">:</span> <span class="n">false</span>
+    <span class="n">compute</span><span class="p">:</span>
+      <span class="n">dedicated</span><span class="p">:</span> <span class="n">true</span>
+      <span class="n">machineset</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">test</span><span class="o">-</span><span class="n">pods</span>
+        <span class="n">count</span><span class="p">:</span> <span class="n">null</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="n">m6i</span><span class="mf">.2</span><span class="n">xlarge</span>
+        <span class="n">taint</span><span class="p">:</span>
+          <span class="n">key</span><span class="p">:</span> <span class="n">only</span><span class="o">-</span><span class="n">test</span><span class="o">-</span><span class="n">pods</span>
+          <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span>
+          <span class="n">effect</span><span class="p">:</span> <span class="n">NoSchedule</span>
+  <span class="n">cleanup_on_exit</span><span class="p">:</span> <span class="n">false</span>
+
+<span class="n">matbench</span><span class="p">:</span>
+  <span class="n">preset</span><span class="p">:</span> <span class="n">null</span>
+  <span class="n">workload</span><span class="p">:</span> <span class="n">projects</span><span class="o">....</span><span class="n">visualizations</span><span class="o">...</span>
+  <span class="n">prom_workload</span><span class="p">:</span> <span class="n">projects</span><span class="o">....</span><span class="n">visualizations</span><span class="o">....</span>
+  <span class="n">config_file</span><span class="p">:</span> <span class="n">plots</span><span class="o">.</span><span class="n">yaml</span>
+  <span class="n">download</span><span class="p">:</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">prefer_cache</span>
+    <span class="n">url</span><span class="p">:</span>
+    <span class="n">url_file</span><span class="p">:</span>
+    <span class="c1"># if true, copy the results downloaded by `matbench download` into the artifacts directory</span>
+    <span class="n">save_to_artifacts</span><span class="p">:</span> <span class="n">false</span>
+  <span class="c1"># directory to plot. Set by testing/common/visualize.py before launching the visualization</span>
+  <span class="n">test_directory</span><span class="p">:</span> <span class="n">null</span>
+  <span class="n">lts</span><span class="p">:</span>
+    <span class="n">generate</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">horreum</span><span class="p">:</span>
+      <span class="n">test_name</span><span class="p">:</span> <span class="n">null</span>
+    <span class="n">opensearch</span><span class="p">:</span>
+      <span class="n">export</span><span class="p">:</span>
+        <span class="n">enabled</span><span class="p">:</span> <span class="n">false</span>
+        <span class="n">enabled_on_replot</span><span class="p">:</span> <span class="n">false</span>
+        <span class="n">fail_test_on_fail</span><span class="p">:</span> <span class="n">true</span>
+      <span class="n">instance</span><span class="p">:</span> <span class="n">smoke</span>
+      <span class="n">index</span><span class="p">:</span> <span class="o">...</span>
+      <span class="n">index_prefix</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+      <span class="n">prom_index_suffix</span><span class="p">:</span> <span class="o">-</span><span class="n">prom</span>
+    <span class="n">regression_analyses</span><span class="p">:</span>
+      <span class="n">enabled</span><span class="p">:</span> <span class="n">false</span>
+      <span class="c1"># if the regression analyses fail, mark the test as failed</span>
+      <span class="n">fail_test_on_regression</span><span class="p">:</span> <span class="n">false</span>
+<span class="n">export_artifacts</span><span class="p">:</span>
+  <span class="n">enabled</span><span class="p">:</span> <span class="n">false</span>
+  <span class="n">bucket</span><span class="p">:</span> <span class="n">rhoai</span><span class="o">-</span><span class="n">cpt</span><span class="o">-</span><span class="n">artifacts</span>
+  <span class="n">path_prefix</span><span class="p">:</span> <span class="n">cpt</span><span class="o">/</span><span class="n">fine</span><span class="o">-</span><span class="n">tuning</span>
+  <span class="n">dest</span><span class="p">:</span> <span class="n">null</span> <span class="c1"># will be set by the export code</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">command_args.yml.j2</span></code> should start with:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="o">%</span> <span class="nb">set</span> <span class="n">secrets_location</span> <span class="o">=</span> <span class="n">false</span> <span class="o">|</span> <span class="n">or_env</span><span class="p">(</span><span class="n">secrets</span><span class="o">.</span><span class="n">dir</span><span class="o">.</span><span class="n">env_key</span><span class="p">)</span> <span class="o">%</span><span class="p">}</span>
+<span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">secrets_location</span> <span class="o">%</span><span class="p">}</span>
+  <span class="p">{{</span> <span class="p">(</span><span class="s2">&quot;ERROR: secrets_location must be defined (secrets.dir.name=&quot;</span><span class="o">+</span> <span class="n">secrets</span><span class="o">.</span><span class="n">dir</span><span class="o">.</span><span class="n">name</span><span class="o">|</span><span class="n">string</span> <span class="o">+</span><span class="s2">&quot; or env(secrets.dir.env_key=&quot;</span> <span class="o">+</span> <span class="n">secrets</span><span class="o">.</span><span class="n">dir</span><span class="o">.</span><span class="n">env_key</span><span class="o">|</span><span class="n">string</span> <span class="o">+</span> <span class="s2">&quot;)) &quot;</span><span class="p">)</span> <span class="o">|</span> <span class="n">raise_exception</span> <span class="p">}}</span>
+<span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span>
+<span class="p">{</span><span class="o">%</span> <span class="nb">set</span> <span class="n">s3_ldap_password_location</span> <span class="o">=</span> <span class="n">secrets_location</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">secrets</span><span class="o">.</span><span class="n">s3_ldap_password_file</span> <span class="o">%</span><span class="p">}</span>
+
+<span class="c1"># ---</span>
+</pre></div>
+</div>
+</section>
+<section id="copy-the-clusters-sh-and-configure-sh">
+<h3>Copy the <code class="docutils literal notranslate"><span class="pre">clusters.sh</span></code> and <code class="docutils literal notranslate"><span class="pre">configure.sh</span></code><a class="headerlink" href="#copy-the-clusters-sh-and-configure-sh" title="Link to this heading"></a></h3>
+<p>These files are necessary to be able to create clusters on
+OpenShift CI. (<code class="docutils literal notranslate"><span class="pre">/test</span> <span class="pre">rhoai-e2e</span></code>). They shouldn’t be modified.</p>
+<p>And now, the boiler-plate code is in place, and we can start building
+the test orchestration.</p>
+</section>
+<section id="create-test-py-and-prepare-py">
+<h3>Create <code class="docutils literal notranslate"><span class="pre">test_....py</span></code> and <code class="docutils literal notranslate"><span class="pre">prepare_....py</span></code><a class="headerlink" href="#create-test-py-and-prepare-py" title="Link to this heading"></a></h3>
+<p>Starting at this step, the development of the test orchestration
+starts, and you “just” have to fill the gaps :)</p>
+<p>In the <code class="docutils literal notranslate"><span class="pre">prepare_ci</span></code> method, prepare your cluster, according to the
+configuration. In the <code class="docutils literal notranslate"><span class="pre">test_ci</span></code> method, run your test and collect
+its artifacts. In the <code class="docutils literal notranslate"><span class="pre">cleanup_cluster_ci</span></code>, cleanup you cluster, so
+that it can be used again for another test.</p>
+</section>
+</section>
+<section id="start-building-your-test-orchestration">
+<h2>Start building your test orchestration<a class="headerlink" href="#start-building-your-test-orchestration" title="Link to this heading"></a></h2>
+<p>One the boilerplate code is in place, we can start building the test
+orchestration. TOPSAIL provides some “low level” helper modules:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">projects.core.library</span> <span class="kn">import</span> <span class="n">env</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">configure_logging</span><span class="p">,</span> <span class="n">export</span>
+</pre></div>
+</div>
+<p>as well as libraries of common orchestration bits:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">projects.rhods.library</span> <span class="kn">import</span> <span class="n">prepare_rhoai</span> <span class="k">as</span> <span class="n">prepare_rhoai_mod</span>
+<span class="kn">from</span> <span class="nn">projects.gpu_operator.library</span> <span class="kn">import</span> <span class="n">prepare_gpu_operator</span>
+<span class="kn">from</span> <span class="nn">projects.matrix_benchmarking.library</span> <span class="kn">import</span> <span class="n">visualize</span>
+</pre></div>
+</div>
+<p>These libraries are illustrated below. They are not formally described
+at the moment. They come from project code blocks that have noticed to
+be used identically across projects, so they have been moved to
+library directories to be easier to reuse.</p>
+<p>Sharing code across projects means extending the risk of unnoticed
+bugs when updating the library. With this in mind, the question of
+code sharing vs code duplication takes another direction, as extensive
+testing is not easy in such a rapidly evolving project.</p>
+<section id="core-helper-modules">
+<h3>Core helper modules<a class="headerlink" href="#core-helper-modules" title="Link to this heading"></a></h3>
+<section id="the-run-module">
+<h4>The <code class="docutils literal notranslate"><span class="pre">run</span></code> module<a class="headerlink" href="#the-run-module" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>helper functions to run system commands, toolbox commands, and
+<code class="docutils literal notranslate"><span class="pre">from_config</span></code> toolbox commands:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">capture_stdout</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">capture_stderr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">protect_shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stdin_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log_command</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method allows running a command, capturing or not its
+stdout/stderr, checking it’s return code, chaning it’s working
+directory, protecting it with bash safety flags (<code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-o</span>
+<span class="pre">errexit;set</span> <span class="pre">-o</span> <span class="pre">pipefail;set</span> <span class="pre">-o</span> <span class="pre">nounset;set</span> <span class="pre">-o</span> <span class="pre">errtrace</span></code>), passing a
+file as stdin, logging or not the command, …</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_toolbox</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">artifact_dir_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mute_stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This command allows running a toolbox command. <code class="docutils literal notranslate"><span class="pre">group,</span> <span class="pre">command,</span>
+<span class="pre">kwargs</span></code> are the CLI toolbox command arguments.  <code class="docutils literal notranslate"><span class="pre">run_kwargs</span></code> allows
+passing arguments directory to the <code class="docutils literal notranslate"><span class="pre">run</span></code> command described
+above. <code class="docutils literal notranslate"><span class="pre">mute_stdout</span></code> allows muting (capturing) the stdout
+text. <code class="docutils literal notranslate"><span class="pre">check</span></code> allows disabling the exception on error
+check. <code class="docutils literal notranslate"><span class="pre">artifact_dir_suffix</span></code> allows appending a suffix to the
+toolbox directory name (eg, to distinguish two identical calls in the
+artifacts).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">run_toolbox_from_config</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">artifact_dir_suffix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mute_stdout</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This command allows running a toolbox command with the <code class="docutils literal notranslate"><span class="pre">from_config</span></code>
+helper (see the description of the <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code>
+file). <code class="docutils literal notranslate"><span class="pre">prefix</span></code> and <code class="docutils literal notranslate"><span class="pre">suffix</span></code> allow distinguishing commands in the
+<code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code> file. <code class="docutils literal notranslate"><span class="pre">extra</span></code> allows passing extra
+arguments that override what is in the template file. <code class="docutils literal notranslate"><span class="pre">show_args</span></code>
+only display the arguments that would be passed to <code class="docutils literal notranslate"><span class="pre">run_toolbox.py</span></code>.z</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">run_and_catch</span></code> is an helper function for chaining multiple
+functions without swallowing exceptions:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">exc</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">exc</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">run_and_catch</span><span class="p">(</span>
+  <span class="n">exc</span><span class="p">,</span>
+  <span class="n">run</span><span class="o">.</span><span class="n">run_toolbox</span><span class="p">,</span> <span class="s2">&quot;kserve&quot;</span><span class="p">,</span> <span class="s2">&quot;capture_operators_state&quot;</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">capture_stdout</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">exc</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">run_and_catch</span><span class="p">(</span>
+  <span class="n">exc</span><span class="p">,</span>
+  <span class="n">run</span><span class="o">.</span><span class="n">run_toolbox</span><span class="p">,</span> <span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;capture_environment&quot;</span><span class="p">,</span> <span class="n">run_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">capture_stdout</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">exc</span><span class="p">:</span> <span class="k">raise</span> <span class="n">exc</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>helper context to run functions in parallel. If
+<code class="docutils literal notranslate"><span class="pre">exit_on_exception</span></code> is set, the code will exit the process when an
+exception is catch. Otherwise it will simply raise it. If
+<code class="docutils literal notranslate"><span class="pre">dedicated_dir</span></code> is set, a dedicated directly, based on the
+<code class="docutils literal notranslate"><span class="pre">name</span></code> parameter, will be created.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Parallel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">exit_on_exception</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dedicated_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">prepare</span><span class="p">():</span>
+  <span class="k">with</span> <span class="n">run</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="s2">&quot;prepare1&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_rhoai</span><span class="p">)</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">scale_up_sutest</span><span class="p">)</span>
+
+
+  <span class="n">test_settings</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;tests.fine_tuning.test_settings&quot;</span><span class="p">)</span>
+  <span class="k">with</span> <span class="n">run</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="s2">&quot;prepare2&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_gpu</span><span class="p">)</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">prepare_namespace</span><span class="p">,</span> <span class="n">test_settings</span><span class="p">)</span>
+
+  <span class="k">with</span> <span class="n">run</span><span class="o">.</span><span class="n">Parallel</span><span class="p">(</span><span class="s2">&quot;prepare3&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">preload_image_yyy</span><span class="p">)</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">preload_image_xxx</span><span class="p">)</span>
+      <span class="n">parallel</span><span class="o">.</span><span class="n">delayed</span><span class="p">(</span><span class="n">preload_image_zzz</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-env-module">
+<h4>The <code class="docutils literal notranslate"><span class="pre">env</span></code> module<a class="headerlink" href="#the-env-module" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ARTIFACT_DIR</span></code> thread-safe access to the storage directory. Prefer
+using this than <code class="docutils literal notranslate"><span class="pre">$ARTIFACT_DIR</span></code> which isn’t thread safe.</p></li>
+<li><p>helper context to create a dedicated artifact directory. Based on
+OpenShift CI, TOPSAIL relies on the <code class="docutils literal notranslate"><span class="pre">ARTIFACT_DIR</span></code> environment
+variable to store its artifacts. Each toolbox command creates a new
+directory name <code class="docutils literal notranslate"><span class="pre">nnn__group__command</span></code>, which keeps the directories
+ordered and easy to follow. However, when many commands are executed,
+sometimes in parallel, the number of directories increase and becomes
+hard to understand. This command allows creating subdirectories, to
+group things logically:</p></li>
+</ul>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">NextArtifactDir</span><span class="p">(</span><span class="s2">&quot;prepare_namespace&quot;</span><span class="p">):</span>
+    <span class="n">set_namespace_annotations</span><span class="p">()</span>
+    <span class="n">download_data_sources</span><span class="p">(</span><span class="n">test_settings</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="the-config-module">
+<h4>The <code class="docutils literal notranslate"><span class="pre">config</span></code> module<a class="headerlink" href="#the-config-module" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">config.project.get_config(&lt;config</span> <span class="pre">key&gt;)</span></code> helper command to
+access the configuration. Uses the inline Json format.  This object
+holds the main project configuration.</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">config.project.set_config(&lt;config</span> <span class="pre">key&gt;,</span> <span class="pre">&lt;value&gt;)</span></code> helper
+command to update the configuration. Sometimes, it is convenient to
+store values in the configuration (eg, coming from the
+command-line). Mind that this is not thread-safe (an error is raised
+if this command is called in a <code class="docutils literal notranslate"><span class="pre">run.Parallel</span></code> context). Mind that
+this command does not allow creating new configuration fields in the
+document. Only existing fields can be updated.</p></li>
+</ul>
+</section>
+</section>
+<section id="the-projects-rhods-library-prepare-rhoai-library-module">
+<h3>The <code class="docutils literal notranslate"><span class="pre">projects.rhods.library.prepare_rhoai</span></code> library module<a class="headerlink" href="#the-projects-rhods-library-prepare-rhoai-library-module" title="Link to this heading"></a></h3>
+<p>This library helps with the deployment of RHOAI pre-builds on OpenShift.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">install_servicemesh()</span></code> installs the ServiceMesh Operator, if not
+already installed in the cluster (this is a dependency of RHOAI)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uninstall_servicemesh(mute=True)</span></code> uninstall the ServiceMesh
+Operator, if it is installed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_rhoai_installed()</span></code> tells if RHOAI is currently installed or
+not.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">install(token_file=None,</span> <span class="pre">force=False)</span></code> installs RHOAI, if it is
+not already installed (unless <code class="docutils literal notranslate"><span class="pre">force</span></code> is passed). Mind that the
+current deployment code only works with the pre-builds of RHOAI,
+which require a Brew <code class="docutils literal notranslate"><span class="pre">token_file</span></code>. If the token isn’t passed, it
+is assumed that the cluster already has access to Brew.</p></li>
+</ul>
+</section>
+<section id="the-projects-gpu-operator-library-prepare-gpu-operator-library-module">
+<h3>The <code class="docutils literal notranslate"><span class="pre">projects.gpu_operator.library.prepare_gpu_operator</span></code> library module<a class="headerlink" href="#the-projects-gpu-operator-library-prepare-gpu-operator-library-module" title="Link to this heading"></a></h3>
+<p>This library helps with the deployment of the GPU stack on OpenShift.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">prepare_gpu_operator()</span></code> deploys the NFD Operator and the GPU
+Operator, if they are not already installed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_ready(...)</span></code> waits for the GPU Operator stack to be deployed,
+and optionally enable additional GPU Operator features:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_time_sharing</span></code> enables the time-sharing capability of
+the GPU Operator, (configured via the <code class="docutils literal notranslate"><span class="pre">command_args.yaml.j2</span></code>
+file).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">extend_metrics=True,</span> <span class="pre">wait_metrics=True</span></code> enables extra metrics
+to be captured by the GPU Operator DCGM component (the
+“well-known” metrics set). If <code class="docutils literal notranslate"><span class="pre">wait_metrics</span></code> is enabled, the
+automation will wait for the DCGM to start reporting these
+metrics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_stack_deployed</span></code> allows disabling the final wait, and
+only enable the components above.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cleanup_gpu_operator()</span></code> undeploys the GPU Operator and the NFD
+Operator, if they are deployed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add_toleration(effect,</span> <span class="pre">key)</span></code> adds a toleration to the GPU
+Operator DaemonSet Pods. This allows the GPU Operator Pods to be
+deployed on nodes with specific taints. Mind that this command
+overrides any toleration previously set.</p></li>
+</ul>
+</section>
+<section id="the-projects-local-ci-library-prepare-user-pods-library-module">
+<h3>The <code class="docutils literal notranslate"><span class="pre">projects.local_ci.library.prepare_user_pods</span></code> library module<a class="headerlink" href="#the-projects-local-ci-library-prepare-user-pods-library-module" title="Link to this heading"></a></h3>
+<p>This library helps with the execution of multi-user TOPSAIL tests.</p>
+<p>Multi-user tests consist in Pods running inside the cluster, and
+all executing a TOPSAIL command. Their initialization is synchronized
+with a barrier, then they wait a configurable delay before starting
+their script. When they terminate, their file artifacts are collected via a
+S3 server, and stored locally for post-processing.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">prepare_base_image_container(namespace)</span></code> builds a TOPSAIL image
+in a given namespace. The image must be consistent with the commit
+of TOPSAIL being tested, so the <code class="docutils literal notranslate"><span class="pre">BuildConfig</span></code> relies on the PR
+number of fetch the right commit. The <code class="docutils literal notranslate"><span class="pre">apply_prefer_pr</span></code> function
+provides the helper code to update the configuration with the number
+of the PR being tested.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">apply_prefer_pr(pr_number=None)</span></code> inspects the environment to
+detect the PR number. When running locally, export
+<code class="docutils literal notranslate"><span class="pre">TOPSAIL_LOCAL_CI=true</span></code> and <code class="docutils literal notranslate"><span class="pre">PULL_NUMBER=...</span></code> for this function to
+automatically detect the PR number. Mind that this function updates
+the configuration file, so it cannot run inside a parallel context.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">delete_istags(namespace)</span></code> cleanups up the istags used by TOPSAIL
+User Pods.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rebuild_driver_image(namespace,</span> <span class="pre">pr_number)</span></code> helps refreshing the
+image when running locally.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@entrypoint</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">rebuild_driver_image</span><span class="p">(</span><span class="n">pr_number</span><span class="p">):</span>
+    <span class="n">namespace</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s2">&quot;base_image.namespace&quot;</span><span class="p">)</span>
+    <span class="n">prepare_user_pods</span><span class="o">.</span><span class="n">rebuild_driver_image</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="n">pr_number</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cluster_scale_up(user_count)</span></code> scales up the cluster with the
+right number of nodes (when not running in a bare-metal cluster).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prepare_user_pods(user_count)</span></code> prepares the cluster for running a
+multi-user scale test. Deploys the dependency tools (minio, redis),
+builds the image, prepare the ServiceAccount that TOPSAIL will use,
+prepare the secrets that TOPSAIL will have access to …</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cleanup_cluster()</span></code> cleanups up the cluster by deleting the User
+Pod namespace.</p></li>
+</ul>
+</section>
+<section id="the-projects-matrix-benchmarking-library-visualize-library-module">
+<h3>The <code class="docutils literal notranslate"><span class="pre">projects.matrix_benchmarking.library.visualize</span></code> library module<a class="headerlink" href="#the-projects-matrix-benchmarking-library-visualize-library-module" title="Link to this heading"></a></h3>
+<p>This module helps with the post-processing of TOPSAIL results.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">prepare_matbench()</span></code> is called from the ContainerFile. It
+installs the <code class="docutils literal notranslate"><span class="pre">pip</span></code> dependencies of MatrixBenchmarking.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">download_and_generate_visualizations(results_dirname)</span></code> is called
+from the CIs, when replotting. It downloads test results runs the
+post-processing steps against it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generate_from_dir(results_dirname,</span> <span class="pre">generate_lts=None)</span></code> is the
+main entrypoint of this library. It accepts a directory as argument,
+and runs the post-processing steps against it. The expected
+configuration should be further documented …</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../understanding/visualization.html" class="btn btn-neutral float-left" title="The Post-mortem Processing &amp; Visualization Layer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="toolbox.html" class="btn btn-neutral float-right" title="How roles are organized" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

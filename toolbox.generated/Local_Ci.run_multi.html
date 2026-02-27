@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>local_ci run_multi &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">local_ci run_multi</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/toolbox.generated/Local_Ci.run_multi.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="local-ci-run-multi">
+<h1>local_ci run_multi<a class="headerlink" href="#local-ci-run-multi" title="Link to this heading"></a></h1>
+<p>Runs a given CI command in parallel from multiple Pods</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ci_command</span></code></p>
+<ul class="simple">
+<li><p>The CI command to run.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">user_count</span></code></p>
+<ul class="simple">
+<li><p>Batch job parallelism count.</p></li>
+<li><p>type: Int</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">namespace</span></code></p>
+<ul class="simple">
+<li><p>The namespace in which the image.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">topsail</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">istag</span></code></p>
+<ul class="simple">
+<li><p>The imagestream tag to use.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">topsail:main</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">job_name</span></code></p>
+<ul class="simple">
+<li><p>The name to give to the Job running the CI command.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">topsail</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">service_account</span></code></p>
+<ul class="simple">
+<li><p>Name of the ServiceAccount to use for running the Pod.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">default</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">secret_name</span></code></p>
+<ul class="simple">
+<li><p>Name of the Secret to mount in the Pod.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">secret_env_key</span></code></p>
+<ul class="simple">
+<li><p>Name of the environment variable with which the secret path will be exposed in the Pod.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">retrieve_artifacts</span></code></p>
+<ul class="simple">
+<li><p>If False, do not retrieve locally the test artifacts.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">minio_namespace</span></code></p>
+<ul class="simple">
+<li><p>Namespace where the Minio server is located.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">minio_bucket_name</span></code></p>
+<ul class="simple">
+<li><p>Name of the bucket in the Minio server.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">minio_secret_key_key</span></code></p>
+<ul class="simple">
+<li><p>Key inside ‘secret_env_key’ containing the secret to access the Minio bucket. Must be in the form ‘user_password=SECRET_KEY’.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">variable_overrides</span></code></p>
+<ul class="simple">
+<li><p>Optional path to the variable_overrides config file (avoids fetching Github PR json).</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">use_local_config</span></code></p>
+<ul class="simple">
+<li><p>If true, gives the local configuration file ($TOPSAIL_FROM_CONFIG_FILE) to the Pods.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">capture_prom_db</span></code></p>
+<ul class="simple">
+<li><p>If True, captures the Prometheus DB of the systems.</p></li>
+<li><p>type: Bool</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">git_pull</span></code></p>
+<ul class="simple">
+<li><p>If True, update the repo in the image with the latest version of the build ref before running the command in the Pods.</p></li>
+<li><p>type: Bool</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">state_signal_redis_server</span></code></p>
+<ul class="simple">
+<li><p>Optional address of the Redis server to pass to StateSignal synchronization. If empty, do not perform any synchronization.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">sleep_factor</span></code></p>
+<ul class="simple">
+<li><p>Delay (in seconds) between the start of each of the users.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">user_batch_size</span></code></p>
+<ul class="simple">
+<li><p>Number of users to launch after the sleep delay.</p></li>
+<li><p>default value: <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">abort_on_failure</span></code></p>
+<ul class="simple">
+<li><p>If true, let the Job abort the parallel execution on the first Pod failure. If false, ignore the process failure and track the overall failure count with a flag.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">need_all_success</span></code></p>
+<ul class="simple">
+<li><p>If true, fails the execution if any of the Pods failed. If false, fails it if none of the Pods succeed.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">launch_as_daemon</span></code></p>
+<ul class="simple">
+<li><p>If true, do not wait for the job to complete. Most of the options above become irrelevant</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

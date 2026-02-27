@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toolbox Documentation &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Creating a new visualization module" href="../extending/visualization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Toolbox Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cluster"><code class="docutils literal notranslate"><span class="pre">cluster</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configure"><code class="docutils literal notranslate"><span class="pre">configure</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#container-bench"><code class="docutils literal notranslate"><span class="pre">container_bench</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#crc"><code class="docutils literal notranslate"><span class="pre">crc</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fine-tuning"><code class="docutils literal notranslate"><span class="pre">fine_tuning</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run"><code class="docutils literal notranslate"><span class="pre">run</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gpu-operator"><code class="docutils literal notranslate"><span class="pre">gpu_operator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jump-ci"><code class="docutils literal notranslate"><span class="pre">jump_ci</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#kserve"><code class="docutils literal notranslate"><span class="pre">kserve</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#llm-load-test"><code class="docutils literal notranslate"><span class="pre">llm_load_test</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#llmd"><code class="docutils literal notranslate"><span class="pre">llmd</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-ci"><code class="docutils literal notranslate"><span class="pre">local_ci</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mac-ai"><code class="docutils literal notranslate"><span class="pre">mac_ai</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nfd"><code class="docutils literal notranslate"><span class="pre">nfd</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#nfd-operator"><code class="docutils literal notranslate"><span class="pre">nfd_operator</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipelines"><code class="docutils literal notranslate"><span class="pre">pipelines</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#remote"><code class="docutils literal notranslate"><span class="pre">remote</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#repo"><code class="docutils literal notranslate"><span class="pre">repo</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rhods"><code class="docutils literal notranslate"><span class="pre">rhods</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#server"><code class="docutils literal notranslate"><span class="pre">server</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#storage"><code class="docutils literal notranslate"><span class="pre">storage</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Toolbox Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/toolbox.generated/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="toolbox-documentation">
+<h1>Toolbox Documentation<a class="headerlink" href="#toolbox-documentation" title="Link to this heading"></a></h1>
+<section id="cluster">
+<h2><code class="docutils literal notranslate"><span class="pre">cluster</span></code><a class="headerlink" href="#cluster" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">cluster</span> <span class="n">scaling</span><span class="p">,</span> <span class="n">upgrading</span> <span class="ow">and</span> <span class="n">environment</span> <span class="n">capture</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Cluster.build_push_image.html"><span class="doc">build_push_image</span></a>     Build and publish an image to quay using either a Dockerfile or git repo.</p></li>
+<li><p><a class="reference internal" href="Cluster.capture_environment.html"><span class="doc">capture_environment</span></a>       Captures the cluster environment</p></li>
+<li><p><a class="reference internal" href="Cluster.create_htpasswd_adminuser.html"><span class="doc">create_htpasswd_adminuser</span></a>   Create an htpasswd admin user.</p></li>
+<li><p><a class="reference internal" href="Cluster.create_osd.html"><span class="doc">create_osd</span></a>         Create an OpenShift Dedicated cluster.</p></li>
+<li><p><a class="reference internal" href="Cluster.deploy_operator.html"><span class="doc">deploy_operator</span></a>       Deploy an operator from OperatorHub catalog entry.</p></li>
+<li><p><a class="reference internal" href="Cluster.destroy_ocp.html"><span class="doc">destroy_ocp</span></a>       Destroy an OpenShift cluster</p></li>
+<li><p><a class="reference internal" href="Cluster.destroy_osd.html"><span class="doc">destroy_osd</span></a>       Destroy an OpenShift Dedicated cluster.</p></li>
+<li><p><a class="reference internal" href="Cluster.dump_prometheus_db.html"><span class="doc">dump_prometheus_db</span></a>         Dump Prometheus database into a file</p></li>
+<li><p><a class="reference internal" href="Cluster.enable_userworkload_monitoring.html"><span class="doc">enable_userworkload_monitoring</span></a>         Enables user workload monitoring for OpenShift</p></li>
+<li><p><a class="reference internal" href="Cluster.fill_workernodes.html"><span class="doc">fill_workernodes</span></a>     Fills the worker nodes with place-holder Pods with the maximum available amount of a given resource name.</p></li>
+<li><p><a class="reference internal" href="Cluster.preload_image.html"><span class="doc">preload_image</span></a>   Preload a container image on all the nodes of a cluster.</p></li>
+<li><p><a class="reference internal" href="Cluster.query_prometheus_db.html"><span class="doc">query_prometheus_db</span></a>       Query Prometheus with a list of PromQueries read in a file</p></li>
+<li><p><a class="reference internal" href="Cluster.reset_prometheus_db.html"><span class="doc">reset_prometheus_db</span></a>       Resets Prometheus database, by destroying its Pod</p></li>
+<li><p><a class="reference internal" href="Cluster.set_project_annotation.html"><span class="doc">set_project_annotation</span></a>         Set an annotation on a given project, or for any new projects.</p></li>
+<li><p><a class="reference internal" href="Cluster.set_scale.html"><span class="doc">set_scale</span></a>   Ensures that the cluster has exactly <cite>scale</cite> nodes with instance_type <cite>instance_type</cite></p></li>
+<li><p><a class="reference internal" href="Cluster.update_pods_per_node.html"><span class="doc">update_pods_per_node</span></a>     Update the maximum number of Pods per Nodes, and Pods per Core See alse: <a class="reference external" href="https://docs.openshift.com/container-platform/4.14/nodes/nodes/nodes-nodes-managing-max-pods.html">https://docs.openshift.com/container-platform/4.14/nodes/nodes/nodes-nodes-managing-max-pods.html</a></p></li>
+<li><p><a class="reference internal" href="Cluster.upgrade_to_image.html"><span class="doc">upgrade_to_image</span></a>     Upgrades the cluster to the given image</p></li>
+<li><p><a class="reference internal" href="Cluster.wait_fully_awake.html"><span class="doc">wait_fully_awake</span></a>     Waits for the cluster to be fully awake after Hive restart</p></li>
+</ul>
+</section>
+<section id="configure">
+<h2><code class="docutils literal notranslate"><span class="pre">configure</span></code><a class="headerlink" href="#configure" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">TOPSAIL</span> <span class="n">testing</span> <span class="n">configuration</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Configure.apply.html"><span class="doc">apply</span></a>         Applies a preset (or a list of presets) to the current configuration file</p></li>
+<li><p><a class="reference internal" href="Configure.enter.html"><span class="doc">enter</span></a>         Enter into a custom configuration file for a TOPSAIL project</p></li>
+<li><p><a class="reference internal" href="Configure.get.html"><span class="doc">get</span></a>     Gives the value of a given key, in the current configuration file</p></li>
+<li><p><a class="reference internal" href="Configure.name.html"><span class="doc">name</span></a>   Gives the name of the current configuration</p></li>
+</ul>
+</section>
+<section id="container-bench">
+<h2><code class="docutils literal notranslate"><span class="pre">container_bench</span></code><a class="headerlink" href="#container-bench" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">the</span> <span class="n">performance</span> <span class="n">evaluation</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Container_Bench.artifact_add_benchmark.html"><span class="doc">artifact_add_benchmark</span></a>         Runs the artifact add benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.capture_container_engine_info.html"><span class="doc">capture_container_engine_info</span></a>   Captures the info of the container engine</p></li>
+<li><p><a class="reference internal" href="Container_Bench.capture_system_state.html"><span class="doc">capture_system_state</span></a>     Captures the state of the remote Mac system</p></li>
+<li><p><a class="reference internal" href="Container_Bench.commit_container_benchmark.html"><span class="doc">commit_container_benchmark</span></a>         Runs the commit container benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.create_container_benchmark.html"><span class="doc">create_container_benchmark</span></a>         Runs the create benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.exec_container_benchmark.html"><span class="doc">exec_container_benchmark</span></a>     Runs the exec container benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.image_build_large_build_context_benchmark.html"><span class="doc">image_build_large_build_context_benchmark</span></a>   Runs the image build large build context benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.iperf_host_to_container_benchmark.html"><span class="doc">iperf_host_to_container_benchmark</span></a>   Runs the iperf3 benchmark from host to container with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.iperf_net_bridge_benchmark.html"><span class="doc">iperf_net_bridge_benchmark</span></a>         Runs the iperf3 benchmark using network bridge between containers with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.iperf_net_host_benchmark.html"><span class="doc">iperf_net_host_benchmark</span></a>     Runs the iperf3 benchmark using host network between containers with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.list_images_benchmark.html"><span class="doc">list_images_benchmark</span></a>   Runs the list images benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.load_image_benchmark.html"><span class="doc">load_image_benchmark</span></a>     Runs the load image benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.parallel_remove_image_benchmark.html"><span class="doc">parallel_remove_image_benchmark</span></a>       Runs the parallel remove image benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.prepare_benchmark_script_on_remote.html"><span class="doc">prepare_benchmark_script_on_remote</span></a>         Prepares the benchmark script on the remote machine</p></li>
+<li><p><a class="reference internal" href="Container_Bench.pull_image_benchmark.html"><span class="doc">pull_image_benchmark</span></a>     Runs the pull image benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.remove_container_benchmark.html"><span class="doc">remove_container_benchmark</span></a>         Runs the remove container benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.remove_image_benchmark.html"><span class="doc">remove_image_benchmark</span></a>         Runs the remove image benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.run_container_benchmark.html"><span class="doc">run_container_benchmark</span></a>       Runs the run container benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.save_image_benchmark.html"><span class="doc">save_image_benchmark</span></a>     Runs the save image benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.start_container_benchmark.html"><span class="doc">start_container_benchmark</span></a>   Runs the start benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.sysbench_cpu_benchmark.html"><span class="doc">sysbench_cpu_benchmark</span></a>         Runs the sysbench CPU benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.sysbench_fileio_container_benchmark.html"><span class="doc">sysbench_fileio_container_benchmark</span></a>       Runs the sysbench fileIO container benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.sysbench_fileio_mount_benchmark.html"><span class="doc">sysbench_fileio_mount_benchmark</span></a>       Runs the sysbench fileIO mount benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.sysbench_memory_read_benchmark.html"><span class="doc">sysbench_memory_read_benchmark</span></a>         Runs the sysbench memory read benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+<li><p><a class="reference internal" href="Container_Bench.sysbench_memory_write_benchmark.html"><span class="doc">sysbench_memory_write_benchmark</span></a>       Runs the sysbench memory write benchmark with the given runtime properties of exec_props: binary_path: path to the container engine binary (e.g., docker, podman) rootfull: whether to run the benchmark as root user additional_args: additional arguments to pass to the container engine binary exec_time_path: path to the exec_time.py script</p></li>
+</ul>
+</section>
+<section id="crc">
+<h2><code class="docutils literal notranslate"><span class="pre">crc</span></code><a class="headerlink" href="#crc" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">CRC</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Crc.refresh_image.html"><span class="doc">refresh_image</span></a>       Update a CRC AMI image with a given SNC repo commit</p></li>
+</ul>
+</section>
+<section id="fine-tuning">
+<h2><code class="docutils literal notranslate"><span class="pre">fine_tuning</span></code><a class="headerlink" href="#fine-tuning" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">RHOAI</span> <span class="n">scheduler</span> <span class="n">testing</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Fine_Tuning.ray_fine_tuning_job.html"><span class="doc">ray_fine_tuning_job</span></a>   Run a simple Ray fine-tuning Job.</p></li>
+<li><p><a class="reference internal" href="Fine_Tuning.run_fine_tuning_job.html"><span class="doc">run_fine_tuning_job</span></a>   Run a simple fine-tuning Job.</p></li>
+</ul>
+</section>
+<section id="run">
+<h2><code class="docutils literal notranslate"><span class="pre">run</span></code><a class="headerlink" href="#run" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Run `topsail` toolbox commands from a single config file.
+</pre></div>
+</div>
+</section>
+<section id="gpu-operator">
+<h2><code class="docutils literal notranslate"><span class="pre">gpu_operator</span></code><a class="headerlink" href="#gpu-operator" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="k">for</span> <span class="n">deploying</span><span class="p">,</span> <span class="n">building</span> <span class="ow">and</span> <span class="n">testing</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">operator</span> <span class="ow">in</span> <span class="n">various</span> <span class="n">ways</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Gpu_Operator.capture_deployment_state.html"><span class="doc">capture_deployment_state</span></a>        Captures the GPU operator deployment state</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.deploy_cluster_policy.html"><span class="doc">deploy_cluster_policy</span></a>      Creates the ClusterPolicy from the OLM ClusterServiceVersion</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.deploy_from_bundle.html"><span class="doc">deploy_from_bundle</span></a>    Deploys the GPU Operator from a bundle</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.deploy_from_operatorhub.html"><span class="doc">deploy_from_operatorhub</span></a>  Deploys the GPU operator from OperatorHub</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.enable_time_sharing.html"><span class="doc">enable_time_sharing</span></a>  Enable time-sharing in the GPU Operator ClusterPolicy</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.extend_metrics.html"><span class="doc">extend_metrics</span></a>    Enable time-sharing in the GPU Operator ClusterPolicy</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.get_csv_version.html"><span class="doc">get_csv_version</span></a>  Get the version of the GPU Operator currently installed from OLM Stores the version in the ‘ARTIFACT_EXTRA_LOGS_DIR’ artifacts directory.</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.run_gpu_burn.html"><span class="doc">run_gpu_burn</span></a>        Runs the GPU burn on the cluster</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.undeploy_from_operatorhub.html"><span class="doc">undeploy_from_operatorhub</span></a>      Undeploys a GPU-operator that was deployed from OperatorHub</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.wait_deployment.html"><span class="doc">wait_deployment</span></a>  Waits for the GPU operator to deploy</p></li>
+<li><p><a class="reference internal" href="Gpu_Operator.wait_stack_deployed.html"><span class="doc">wait_stack_deployed</span></a>  Waits for the GPU Operator stack to be deployed on the GPU nodes</p></li>
+</ul>
+</section>
+<section id="jump-ci">
+<h2><code class="docutils literal notranslate"><span class="pre">jump_ci</span></code><a class="headerlink" href="#jump-ci" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">to</span> <span class="n">run</span> <span class="n">TOPSAIL</span> <span class="n">scripts</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">jump</span> <span class="n">host</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Jump_Ci.ensure_lock.html"><span class="doc">ensure_lock</span></a>       Ensure that cluster lock with a given name is taken. Fails otherwise.</p></li>
+<li><p><a class="reference internal" href="Jump_Ci.prepare_step.html"><span class="doc">prepare_step</span></a>     Prepares the jump host for running a CI test step:</p></li>
+<li><p><a class="reference internal" href="Jump_Ci.prepare_topsail.html"><span class="doc">prepare_topsail</span></a>       Prepares the jump host for running TOPSAIL: - clones TOPSAIL repository - builds TOPSAIL image in the remote host</p></li>
+<li><p><a class="reference internal" href="Jump_Ci.release_lock.html"><span class="doc">release_lock</span></a>     Release a cluster lock with a given name on a remote node</p></li>
+<li><p><a class="reference internal" href="Jump_Ci.retrieve_artifacts.html"><span class="doc">retrieve_artifacts</span></a>         Prepares the jump host for running a CI test step:</p></li>
+<li><p><a class="reference internal" href="Jump_Ci.take_lock.html"><span class="doc">take_lock</span></a>   Take a lock with a given cluster name on a remote node</p></li>
+</ul>
+</section>
+<section id="kserve">
+<h2><code class="docutils literal notranslate"><span class="pre">kserve</span></code><a class="headerlink" href="#kserve" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">RHOAI</span> <span class="n">KServe</span> <span class="n">component</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Kserve.capture_operators_state.html"><span class="doc">capture_operators_state</span></a>        Captures the state of the operators of the KServe serving stack</p></li>
+<li><p><a class="reference internal" href="Kserve.capture_state.html"><span class="doc">capture_state</span></a>    Captures the state of the KServe stack in a given namespace</p></li>
+<li><p><a class="reference internal" href="Kserve.deploy_model.html"><span class="doc">deploy_model</span></a>      Deploy a KServe model</p></li>
+<li><p><a class="reference internal" href="Kserve.extract_protos.html"><span class="doc">extract_protos</span></a>  Extracts the protos of an inference service</p></li>
+<li><p><a class="reference internal" href="Kserve.extract_protos_grpcurl.html"><span class="doc">extract_protos_grpcurl</span></a>  Extracts the protos of an inference service, with GRPCurl observe</p></li>
+<li><p><a class="reference internal" href="Kserve.undeploy_model.html"><span class="doc">undeploy_model</span></a>  Undeploy a KServe model</p></li>
+<li><p><a class="reference internal" href="Kserve.validate_model.html"><span class="doc">validate_model</span></a>  Validate the proper deployment of a KServe model</p></li>
+</ul>
+</section>
+<section id="llm-load-test">
+<h2><code class="docutils literal notranslate"><span class="pre">llm_load_test</span></code><a class="headerlink" href="#llm-load-test" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">llm</span><span class="o">-</span><span class="n">load</span><span class="o">-</span><span class="n">test</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Llm_Load_Test.run.html"><span class="doc">run</span></a>         Load test the wisdom model</p></li>
+</ul>
+</section>
+<section id="llmd">
+<h2><code class="docutils literal notranslate"><span class="pre">llmd</span></code><a class="headerlink" href="#llmd" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="ow">and</span> <span class="n">utilities</span> <span class="k">for</span> <span class="n">the</span> <span class="n">LLM</span><span class="o">-</span><span class="n">D</span> <span class="n">toolbox</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Llmd.capture_isvc_state.html"><span class="doc">capture_isvc_state</span></a>    Captures all relevant objects and state for an LLMInferenceService</p></li>
+<li><p><a class="reference internal" href="Llmd.deploy_gateway.html"><span class="doc">deploy_gateway</span></a>    Deploys a GatewayClass and Gateway object</p></li>
+<li><p><a class="reference internal" href="Llmd.deploy_llm_inference_service.html"><span class="doc">deploy_llm_inference_service</span></a>        Deploys an LLM InferenceService from a YAML file</p></li>
+<li><p><a class="reference internal" href="Llmd.run_guidellm_benchmark.html"><span class="doc">run_guidellm_benchmark</span></a>    Runs a Guidellm benchmark job against the LLM inference service</p></li>
+<li><p><a class="reference internal" href="Llmd.run_multiturn_benchmark.html"><span class="doc">run_multiturn_benchmark</span></a>  Runs a multi-turn benchmark job against the LLM inference service</p></li>
+</ul>
+</section>
+<section id="local-ci">
+<h2><code class="docutils literal notranslate"><span class="pre">local_ci</span></code><a class="headerlink" href="#local-ci" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">to</span> <span class="n">run</span> <span class="n">the</span> <span class="n">CI</span> <span class="n">scripts</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">container</span> <span class="n">environment</span> <span class="n">similar</span> <span class="n">to</span> <span class="n">the</span> <span class="n">one</span> <span class="n">used</span> <span class="n">by</span> <span class="n">the</span> <span class="n">CI</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Local_Ci.run.html"><span class="doc">run</span></a>      Runs a given CI command</p></li>
+<li><p><a class="reference internal" href="Local_Ci.run_multi.html"><span class="doc">run_multi</span></a>  Runs a given CI command in parallel from multiple Pods</p></li>
+</ul>
+</section>
+<section id="mac-ai">
+<h2><code class="docutils literal notranslate"><span class="pre">mac_ai</span></code><a class="headerlink" href="#mac-ai" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">the</span> <span class="n">MacOS</span> <span class="n">AI</span> <span class="n">performance</span> <span class="n">evaluation</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Mac_Ai.remote_build_virglrenderer.html"><span class="doc">remote_build_virglrenderer</span></a>  Builds the Virglrenderer library</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_capture_cpu_ram_usage.html"><span class="doc">remote_capture_cpu_ram_usage</span></a>      Captures the CPU and RAM usage on MacOS</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_capture_power_usage.html"><span class="doc">remote_capture_power_usage</span></a>  Captures the power usage on MacOS</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_capture_system_state.html"><span class="doc">remote_capture_system_state</span></a>        Captures the state of the remote Mac system</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_capture_virtgpu_memory.html"><span class="doc">remote_capture_virtgpu_memory</span></a>    Captures the virt-gpu memory usage</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_llama_cpp_pull_model.html"><span class="doc">remote_llama_cpp_pull_model</span></a>        Pulls a model with llama-cpp, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_llama_cpp_run_bench.html"><span class="doc">remote_llama_cpp_run_bench</span></a>  Benchmark a model with llama_cpp, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_llama_cpp_run_model.html"><span class="doc">remote_llama_cpp_run_model</span></a>  Runs a model with llama_cpp, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_ollama_pull_model.html"><span class="doc">remote_ollama_pull_model</span></a>      Pulls a model with ollama, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_ollama_run_model.html"><span class="doc">remote_ollama_run_model</span></a>        Runs a model with ollama, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_ollama_start.html"><span class="doc">remote_ollama_start</span></a>        Starts ollama, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_ramalama_run_bench.html"><span class="doc">remote_ramalama_run_bench</span></a>    Benchmark a model with ramalama, on a remote host</p></li>
+<li><p><a class="reference internal" href="Mac_Ai.remote_ramalama_run_model.html"><span class="doc">remote_ramalama_run_model</span></a>    Runs a model with ramalama, on a remote host</p></li>
+</ul>
+</section>
+<section id="nfd">
+<h2><code class="docutils literal notranslate"><span class="pre">nfd</span></code><a class="headerlink" href="#nfd" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="k">for</span> <span class="n">NFD</span> <span class="n">related</span> <span class="n">tasks</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Nfd.has_gpu_nodes.html"><span class="doc">has_gpu_nodes</span></a>       Checks if the cluster has GPU nodes</p></li>
+<li><p><a class="reference internal" href="Nfd.has_labels.html"><span class="doc">has_labels</span></a>     Checks if the cluster has NFD labels</p></li>
+<li><p><a class="reference internal" href="Nfd.wait_gpu_nodes.html"><span class="doc">wait_gpu_nodes</span></a>     Wait until nfd find GPU nodes</p></li>
+<li><p><a class="reference internal" href="Nfd.wait_labels.html"><span class="doc">wait_labels</span></a>   Wait until nfd labels the nodes</p></li>
+</ul>
+</section>
+<section id="nfd-operator">
+<h2><code class="docutils literal notranslate"><span class="pre">nfd_operator</span></code><a class="headerlink" href="#nfd-operator" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="k">for</span> <span class="n">deploying</span><span class="p">,</span> <span class="n">building</span> <span class="ow">and</span> <span class="n">testing</span> <span class="n">the</span> <span class="n">NFD</span> <span class="n">operator</span> <span class="ow">in</span> <span class="n">various</span> <span class="n">ways</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Nfd_Operator.deploy_from_operatorhub.html"><span class="doc">deploy_from_operatorhub</span></a>  Deploys the NFD Operator from OperatorHub</p></li>
+<li><p><a class="reference internal" href="Nfd_Operator.undeploy_from_operatorhub.html"><span class="doc">undeploy_from_operatorhub</span></a>      Undeploys an NFD-operator that was deployed from OperatorHub</p></li>
+</ul>
+</section>
+<section id="pipelines">
+<h2><code class="docutils literal notranslate"><span class="pre">pipelines</span></code><a class="headerlink" href="#pipelines" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">RHODS</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Pipelines.capture_notebooks_state.html"><span class="doc">capture_notebooks_state</span></a>     Capture information about the cluster and the RHODS notebooks deployment</p></li>
+<li><p><a class="reference internal" href="Pipelines.capture_state.html"><span class="doc">capture_state</span></a>         Captures the state of a Data Science Pipeline Application in a given namespace.</p></li>
+<li><p><a class="reference internal" href="Pipelines.deploy_application.html"><span class="doc">deploy_application</span></a>       Deploy a Data Science Pipeline Application in a given namespace.</p></li>
+<li><p><a class="reference internal" href="Pipelines.run_kfp_notebook.html"><span class="doc">run_kfp_notebook</span></a>   Run a notebook in a given notebook image.</p></li>
+</ul>
+</section>
+<section id="remote">
+<h2><code class="docutils literal notranslate"><span class="pre">remote</span></code><a class="headerlink" href="#remote" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">the</span> <span class="n">setup</span> <span class="n">of</span> <span class="n">remote</span> <span class="n">hosts</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Remote.build_image.html"><span class="doc">build_image</span></a>        Builds a podman image</p></li>
+<li><p><a class="reference internal" href="Remote.clone.html"><span class="doc">clone</span></a>    Clones a Github repository in a remote host</p></li>
+<li><p><a class="reference internal" href="Remote.download.html"><span class="doc">download</span></a>      Downloads a file in a remote host</p></li>
+<li><p><a class="reference internal" href="Remote.retrieve.html"><span class="doc">retrieve</span></a>      Retrieves remote files locally</p></li>
+</ul>
+</section>
+<section id="repo">
+<h2><code class="docutils literal notranslate"><span class="pre">repo</span></code><a class="headerlink" href="#repo" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">to</span> <span class="n">perform</span> <span class="n">consistency</span> <span class="n">validations</span> <span class="n">on</span> <span class="n">this</span> <span class="n">repo</span> <span class="n">itself</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Repo.generate_ansible_default_settings.html"><span class="doc">generate_ansible_default_settings</span></a>      Generate the <cite>defaults/main/config.yml</cite> file of the Ansible roles, based on the Python definition.</p></li>
+<li><p><a class="reference internal" href="Repo.generate_middleware_ci_secret_boilerplate.html"><span class="doc">generate_middleware_ci_secret_boilerplate</span></a>      Generate the boilerplace code to include a new secret in the Middleware CI configuration</p></li>
+<li><p><a class="reference internal" href="Repo.generate_toolbox_related_files.html"><span class="doc">generate_toolbox_related_files</span></a>    Generate the rst document and Ansible default settings, based on the Toolbox Python definition.</p></li>
+<li><p><a class="reference internal" href="Repo.generate_toolbox_rst_documentation.html"><span class="doc">generate_toolbox_rst_documentation</span></a>    Generate the <cite>doc/toolbox.generated/*.rst</cite> file, based on the Toolbox Python definition.</p></li>
+<li><p><a class="reference internal" href="Repo.send_cpt_notification.html"><span class="doc">send_cpt_notification</span></a>      Send a <em>CPT</em> notification to slack about the completion of a CPT job.</p></li>
+<li><p><a class="reference internal" href="Repo.send_job_completion_notification.html"><span class="doc">send_job_completion_notification</span></a>        Send a <em>job completion</em> notification to github and/or slack about the completion of a test job.</p></li>
+<li><p><a class="reference internal" href="Repo.validate_no_broken_link.html"><span class="doc">validate_no_broken_link</span></a>  Ensure that all the symlinks point to a file</p></li>
+<li><p><a class="reference internal" href="Repo.validate_no_wip.html"><span class="doc">validate_no_wip</span></a>  Ensures that none of the commits have the WIP flag in their message title.</p></li>
+<li><p><a class="reference internal" href="Repo.validate_role_files.html"><span class="doc">validate_role_files</span></a>  Ensures that all the Ansible variables defining a filepath (<cite>project/*/toolbox/</cite>) do point to an existing file.</p></li>
+<li><p><a class="reference internal" href="Repo.validate_role_vars_used.html"><span class="doc">validate_role_vars_used</span></a>  Ensure that all the Ansible variables defined are actually used in their role (with an exception for symlinks)</p></li>
+</ul>
+</section>
+<section id="rhods">
+<h2><code class="docutils literal notranslate"><span class="pre">rhods</span></code><a class="headerlink" href="#rhods" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">RHODS</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Rhods.capture_state.html"><span class="doc">capture_state</span></a>     Captures the state of the RHOAI deployment</p></li>
+<li><p><a class="reference internal" href="Rhods.delete_ods.html"><span class="doc">delete_ods</span></a>   Forces ODS operator deletion</p></li>
+<li><p><a class="reference internal" href="Rhods.deploy_addon.html"><span class="doc">deploy_addon</span></a>       Installs the RHODS OCM addon</p></li>
+<li><p><a class="reference internal" href="Rhods.deploy_ods.html"><span class="doc">deploy_ods</span></a>   Deploy ODS operator from its custom catalog</p></li>
+<li><p><a class="reference internal" href="Rhods.dump_prometheus_db.html"><span class="doc">dump_prometheus_db</span></a>   Dump Prometheus database into a file</p></li>
+<li><p><a class="reference internal" href="Rhods.reset_prometheus_db.html"><span class="doc">reset_prometheus_db</span></a>         Resets RHODS Prometheus database, by destroying its Pod.</p></li>
+<li><p><a class="reference internal" href="Rhods.undeploy_ods.html"><span class="doc">undeploy_ods</span></a>       Undeploy ODS operator</p></li>
+<li><p><a class="reference internal" href="Rhods.update_datasciencecluster.html"><span class="doc">update_datasciencecluster</span></a>     Update RHOAI datasciencecluster resource</p></li>
+<li><p><a class="reference internal" href="Rhods.wait_odh.html"><span class="doc">wait_odh</span></a>       Wait for ODH to finish its deployment</p></li>
+<li><p><a class="reference internal" href="Rhods.wait_ods.html"><span class="doc">wait_ods</span></a>       Wait for ODS to finish its deployment</p></li>
+</ul>
+</section>
+<section id="server">
+<h2><code class="docutils literal notranslate"><span class="pre">server</span></code><a class="headerlink" href="#server" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">the</span> <span class="n">deployment</span> <span class="n">of</span> <span class="n">servers</span> <span class="n">on</span> <span class="n">OpenShift</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Server.deploy_ldap.html"><span class="doc">deploy_ldap</span></a>        Deploy OpenLDAP and LDAP Oauth</p></li>
+<li><p><a class="reference internal" href="Server.deploy_minio_s3_server.html"><span class="doc">deploy_minio_s3_server</span></a>  Deploy Minio S3 server</p></li>
+<li><p><a class="reference internal" href="Server.deploy_nginx_server.html"><span class="doc">deploy_nginx_server</span></a>        Deploy an NGINX HTTP server</p></li>
+<li><p><a class="reference internal" href="Server.deploy_opensearch.html"><span class="doc">deploy_opensearch</span></a>    Deploy OpenSearch and OpenSearch-Dashboards</p></li>
+<li><p><a class="reference internal" href="Server.deploy_redis_server.html"><span class="doc">deploy_redis_server</span></a>        Deploy a redis server</p></li>
+<li><p><a class="reference internal" href="Server.undeploy_ldap.html"><span class="doc">undeploy_ldap</span></a>    Undeploy OpenLDAP and LDAP Oauth</p></li>
+</ul>
+</section>
+<section id="storage">
+<h2><code class="docutils literal notranslate"><span class="pre">storage</span></code><a class="headerlink" href="#storage" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Commands</span> <span class="n">relating</span> <span class="n">to</span> <span class="n">OpenShift</span> <span class="n">file</span> <span class="n">storage</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="Storage.deploy_aws_efs.html"><span class="doc">deploy_aws_efs</span></a>         Deploy AWS EFS CSI driver and configure AWS accordingly.</p></li>
+<li><p><a class="reference internal" href="Storage.deploy_nfs_provisioner.html"><span class="doc">deploy_nfs_provisioner</span></a>         Deploy NFS Provisioner</p></li>
+<li><p><a class="reference internal" href="Storage.download_to_image.html"><span class="doc">download_to_image</span></a>   Downloads the a dataset into an image in the internal registry</p></li>
+<li><p><a class="reference internal" href="Storage.download_to_pvc.html"><span class="doc">download_to_pvc</span></a>       Downloads the a dataset into a PVC of the cluster</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../extending/visualization.html" class="btn btn-neutral float-left" title="Creating a new visualization module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

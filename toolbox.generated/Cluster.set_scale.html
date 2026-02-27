@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cluster set_scale &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../intro.html">TOPSAIL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">cluster set_scale</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/toolbox.generated/Cluster.set_scale.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cluster-set-scale">
+<h1>cluster set_scale<a class="headerlink" href="#cluster-set-scale" title="Link to this heading"></a></h1>
+<p>Ensures that the cluster has exactly <code class="docutils literal notranslate"><span class="pre">scale</span></code> nodes with instance_type <code class="docutils literal notranslate"><span class="pre">instance_type</span></code></p>
+<p>If the machinesets of the given instance type already have the required total number of replicas,
+their replica parameters will not be modified.
+Otherwise,
+- If there’s only one machineset with the given instance type, its replicas will be set to the value of this parameter.
+- If there are other machinesets with non-zero replicas, the playbook will fail, unless the <cite>force</cite> parameter is
+set to true. In that case, the number of replicas of the other machinesets will be zeroed before setting the replicas
+of the first machineset to the value of this parameter.”
+- If <cite>–base-machineset=machineset</cite> flag is passed, <cite>machineset</cite> machineset will be used to derive the new
+machinetset (otherwise, the first machinetset of the listing will be used). This is useful if the desired <cite>instance_type</cite>
+is only available in some specific regions and, controlled by different machinesets.</p>
+<p>Example: ./run_toolbox.py cluster set_scale g4dn.xlarge 1 # ensure that the cluster has 1 GPU node</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">instance_type</span></code></p>
+<ul class="simple">
+<li><p>The instance type to use, for example, g4dn.xlarge</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">scale</span></code></p>
+<ul class="simple">
+<li><p>The number of required nodes with given instance type</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">base_machineset</span></code></p>
+<ul class="simple">
+<li><p>Name of a machineset to use to derive the new one. Default: pickup the first machineset found in <cite>oc get machinesets -n openshift-machine-api</cite>.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">force</span></code></p>
+<ul class="simple">
+<li><p>Missing documentation for force</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">taint</span></code></p>
+<ul class="simple">
+<li><p>Taint to apply to the machineset.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code></p>
+<ul class="simple">
+<li><p>Name to give to the new machineset.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">spot</span></code></p>
+<ul class="simple">
+<li><p>Set to true to request spot instances from AWS. Set to false (default) to request on-demand instances.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">disk_size</span></code></p>
+<ul class="simple">
+<li><p>Size of the EBS volume to request for the root partition</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">ibm</span></code></p>
+<ul class="simple">
+<li><p>Set to true if running in an IBMCloud. Assumes AWS otherwise.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

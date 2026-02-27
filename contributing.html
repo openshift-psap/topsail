@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; Red Hat PSAP topsail toolbox git-main/0e164ebd documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=1bdcfe73"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The Test Orchestrations Layer" href="understanding/orchestration.html" />
+    <link rel="prev" title="TOPSAIL" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Red Hat PSAP topsail toolbox
+          </a>
+              <div class="version">
+                27, Feb 2026
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">General</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">TOPSAIL</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#review-guidelines">Review Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#style-guidelines">Style Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#yaml-style">YAML style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ansible-style">Ansible style</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#coding-guidelines">Coding guidelines</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Understanding The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html">The Test Orchestrations Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#the-ci-job-launchers">The CI job launchers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#topsail-configuration-system">TOPSAIL Configuration System</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/orchestration.html#calling-the-toolbox-commands">Calling the toolbox commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/toolbox.html">The Reusable Toolbox Layer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="understanding/visualization.html">The Post-mortem Processing &amp; Visualization Layer</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Extending The Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="extending/orchestration.html">Creating a New Orchestration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html">How roles are organized</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/toolbox.html#how-default-parameters-are-generated">How default parameters are generated</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extending/visualization.html">Creating a new visualization module</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">TOPSAIL's Toolbox</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="toolbox.generated/index.html">Toolbox Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Red Hat PSAP topsail toolbox</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h1>
+<p>Thanks for taking the time to contribute!</p>
+<p>The following is a set of guidelines for contributing to <code class="docutils literal notranslate"><span class="pre">TOPSAIL</span></code>.
+These are mostly guidelines, feel free to propose changes to this
+document in a pull request.</p>
+<p>—</p>
+<p>The primary goal of the repository is to serve as a central repository
+of the PSAP team’s performance and scale test automation.</p>
+<p>The secondary goal of the repository is to offer a toolbox for setting
+up and configuring clusters, in preparation of performance and scale test execution.</p>
+<section id="pull-request-guidelines">
+<h2>Pull Request Guidelines<a class="headerlink" href="#pull-request-guidelines" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Pull Requests (PRs) need to be <code class="docutils literal notranslate"><span class="pre">/approve</span></code> and reviewed <code class="docutils literal notranslate"><span class="pre">/lgtm</span></code> by
+PSAP team members before being merged.</p></li>
+<li><p>PRs should have a proper description explaining the problem being
+solved, or the new feature being introduced.</p></li>
+</ul>
+</section>
+<section id="review-guidelines">
+<h2>Review Guidelines<a class="headerlink" href="#review-guidelines" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Reviews can be performed by anyone interested in the good health of
+the repository; but approval and/or <code class="docutils literal notranslate"><span class="pre">/lgtm</span></code> is reserved to PSAP
+team members at the moment.</p></li>
+<li><p>The main merging criteria is to have a successful test run that
+executes the modified code. Because of the nature of the repository,
+we can’t test all the code paths for all PRs.</p>
+<ul>
+<li><p>In order to save unnecessary AWS cloud time, the testing is not
+automatically executed by Prow; it must be manually triggered.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="style-guidelines">
+<h2>Style Guidelines<a class="headerlink" href="#style-guidelines" title="Link to this heading"></a></h2>
+<section id="yaml-style">
+<h3>YAML style<a class="headerlink" href="#yaml-style" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Align nested lists with their parent’s label</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">block</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">    </span><span class="nt">block</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>YAML files use the <cite>.yml</cite> extension</p></li>
+</ul>
+</section>
+<section id="ansible-style">
+<h3>Ansible style<a class="headerlink" href="#ansible-style" title="Link to this heading"></a></h3>
+<p>We strive to follow Ansible best practices in the different playbooks.</p>
+<p>This command is executed as a GitHub-Action hook on all the new PRs,
+to help keeping a consistent code style:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ansible-lint<span class="w"> </span>-v<span class="w"> </span>--force-color<span class="w"> </span>-c<span class="w"> </span>config/ansible-lint.yml<span class="w"> </span>playbooks<span class="w"> </span>roles
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Try to avoid using <code class="docutils literal notranslate"><span class="pre">shell</span></code> tasks as much as possible</p>
+<ul>
+<li><p>Make sure that <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">-o</span> <span class="pre">pipefail;</span></code> is part of the shell command
+whenever a <code class="docutils literal notranslate"><span class="pre">|</span></code> is involved (<code class="docutils literal notranslate"><span class="pre">ansible-lint</span></code> forgets some of
+them)</p></li>
+<li><p>Redirection into a <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">artifact_extra_logs_dir</span> <span class="pre">}}</span></code> file is a
+common exception</p></li>
+</ul>
+</li>
+<li><p>Use inline stanza for <code class="docutils literal notranslate"><span class="pre">debug</span></code> and <code class="docutils literal notranslate"><span class="pre">fail</span></code> tasks, eg:</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">The GFD did not label the nodes</span>
+<span class="w">  </span><span class="nt">fail</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">msg=&quot;The GFD did not label the nodes&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="coding-guidelines">
+<h2>Coding guidelines<a class="headerlink" href="#coding-guidelines" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Keep the main log file clean when everything goes right, and store
+all the relevant information in the <code class="docutils literal notranslate"><span class="pre">{{</span> <span class="pre">artifact_extra_logs_dir</span>
+<span class="pre">}}</span></code> directory, eg:</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Inspect the Subscriptions status (debug)</span>
+<span class="w">  </span><span class="nt">shell</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">oc describe subscriptions.operators.coreos.com/gpu-operator-certified</span>
+<span class="w">       </span><span class="l l-Scalar l-Scalar-Plain">-n openshift-operators</span>
+<span class="w">       </span><span class="l l-Scalar l-Scalar-Plain">&gt; {{ artifact_extra_logs_dir }}/gpu_operator_Subscription.log</span>
+<span class="w">  </span><span class="nt">failed_when</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Include troubleshooting inspection commands whenever
+possible/relevant (see above for an example)</p>
+<ul>
+<li><p>mark them as <code class="docutils literal notranslate"><span class="pre">failed_when:</span> <span class="pre">false</span></code> to ensure that their execution
+doesn’t affect the testing</p></li>
+<li><p>add <code class="docutils literal notranslate"><span class="pre">(debug)</span></code> in the task name to make it clear that the command
+is not part of the proper testing.</p></li>
+</ul>
+</li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">ignore_errors:</span> <span class="pre">true</span></code> <strong>only</strong> for tracking <strong>known
+failures</strong>.</p>
+<ul>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">failed_when:</span> <span class="pre">false</span></code> to ignore the task return code</p></li>
+<li><p>but whenever possible, write tasks that do not fail, eg:</p></li>
+</ul>
+</li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">oc delete --ignore-not-found=true $MY_RESOURCE</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Try to group related modifications in a dedicated commit, and stack
+commits in logical order (eg, 1/ add role, 2/ add toolbox script 3/
+integrate the toolbox scrip in the nightly CI)</p>
+<ul>
+<li><p>Commits are not squashed, so please avoid commits “fixing” another
+commit of the PR.</p></li>
+<li><p>Hints: <a class="reference external" href="https://github.com/mystor/git-revise">git revise</a></p>
+<ul>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">revise</span> <span class="pre">&lt;commit&gt;</span></code> to modify an older commit (not
+older that <code class="docutils literal notranslate"><span class="pre">master</span></code> ;-)</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">revise</span> <span class="pre">--cut</span> <span class="pre">&lt;commit&gt;</span></code> to split a commit in two
+logical commits</p></li>
+<li><p>or simply use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">--amend</span></code> to modify the most recent commit</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="intro.html" class="btn btn-neutral float-left" title="TOPSAIL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="understanding/orchestration.html" class="btn btn-neutral float-right" title="The Test Orchestrations Layer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Red Hat PSAP team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
