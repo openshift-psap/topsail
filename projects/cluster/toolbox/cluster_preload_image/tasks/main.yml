@@ -5,6 +5,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
 - name: Lookup the namespace user ID range
   shell:
     set -o pipefail;
@@ -79,7 +85,7 @@
          -n {{ cluster_preload_image_namespace }}
          | jq '.status.desiredNumberScheduled - .status.numberReady'
     register: current_number_not_ready_cmd
-    retries: 90
+    retries: 135
     delay: 10
     until: current_number_not_ready_cmd.stdout | int == 0
 
@@ -99,7 +105,7 @@
     shell:
       oc describe pods -l name={{ cluster_preload_image_name }}
          -n {{ cluster_preload_image_namespace }}
-         > "{{ artifact_extra_logs_dir }}/pods.descr"
+         > "{{ artifact_extra_logs_dir }}/artifacts/pods.descr"
     failed_when: false
 
   - name: Get the status of the preload Pods
@@ -107,7 +113,7 @@
       oc get pods -l name={{ cluster_preload_image_name }}
          -owide
          -n {{ cluster_preload_image_namespace }}
-         > "{{ artifact_extra_logs_dir }}/pods.status"
+         > "{{ artifact_extra_logs_dir }}/artifacts/pods.status"
     failed_when: false
 
   - name: Get the yaml of the daemonset
@@ -115,14 +121,14 @@
       oc get ds/{{ cluster_preload_image_name }}
          -oyaml
          -n {{ cluster_preload_image_namespace }}
-         > "{{ artifact_extra_logs_dir }}/daemonset.yaml"
+         > "{{ artifact_extra_logs_dir }}/artifacts/daemonset.yaml"
     failed_when: false
 
   - name: Get the status of the daemonset
     shell:
       oc get ds/{{ cluster_preload_image_name }}
          -n {{ cluster_preload_image_namespace }}
-         > "{{ artifact_extra_logs_dir }}/daemonset.status"
+         > "{{ artifact_extra_logs_dir }}/artifacts/daemonset.status"
     failed_when: false
 
   - name: Delete the DaemonSet, it it exists

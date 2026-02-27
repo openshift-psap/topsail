@@ -519,8 +519,8 @@ def get_common_matbench_args_env(results_dirname):
 
 
 def download(results_dirname):
-    url = config.project.get_config("matbench.download.url")
-    url_file = config.project.get_config("matbench.download.url_file")
+    url = config.project.get_config("matbench.download.url", None)
+    url_file = config.project.get_config("matbench.download.url_file", None)
 
     if url:
         with open(env.ARTIFACT_DIR / "source_url", "w") as f:

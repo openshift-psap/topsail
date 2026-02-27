@@ -30,63 +30,97 @@ def test():
 
     prepare_for_test()
 
-    failed = False
+    # Get test flavors from config
+    flavors = config.project.get_config("tests.llmd.flavors")
+    if not isinstance(flavors, list):
+        flavors = [flavors]
+
+    logging.info(f"Running tests for flavors: {flavors}")
+
+    overall_failed = False
     test_directory = None
+    namespace = config.project.get_config("tests.llmd.namespace")
+
     with env.NextArtifactDir("llm_d_testing"):
         test_directory = env.ARTIFACT_DIR
-        prom_start_ts = None
-        try:
-            # Reset Prometheus before testing
-            logging.info("Resetting Prometheus database before testing")
-            prom_start_ts = prom.reset_prometheus()
 
-            # Deploy LLM inference service
-            deploy_llm_inference_service()
+        for i, flavor in enumerate(flavors):
+            logging.info(f"Running test for flavor: {flavor} ({i+1}/{len(flavors)})")
 
-            # Run benchmarks
-            if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-                failed |= run_multiturn_benchmark()
+            flavor_failed = False
+            prom_start_ts = None
 
-            if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
-                failed |= run_guidellm_benchmark()
+            llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+            llmisvc_name += f"-{flavor}"
 
-            # Capture state for analysis
-            capture_llm_inference_service_state()
+            with env.NextArtifactDir(f"flavor_{flavor}"):
+                try:
+                    # Clean up any existing LLM inference services and pods before testing
+                    cleanup_llm_inference_resources()
 
-        except Exception as e:
-            logging.exception(f"Test failed :/")
-            failed = e
+                    # Reset Prometheus before testing
+                    if config.project.get_config("tests.capture_prom"):
+                        logging.info("Resetting Prometheus database before testing")
+                        prom_start_ts = prom.reset_prometheus()
 
-        finally:
-            # Always dump Prometheus data after testing (success or failure)
-            logging.info("Dumping Prometheus database after testing")
-            namespace = config.project.get_config("tests.llmd.namespace")
-            if prom_start_ts:
-                prom.dump_prometheus(prom_start_ts, namespace)
+                    # Deploy LLM inference service
+                    deploy_llm_inference_service(flavor, llmisvc_name, namespace)
 
-        # Generate test metadata files
-        _generate_test_metadata(failed)
+                    # Get the service URL
+                    endpoint_url = get_llm_inference_url(llmisvc_name, namespace)
+                    if config.project.get_config("tests.llmd.inference_service.do_simple_test"):
+                        if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace):
+                            raise RuntimeException("Simple inference test failed :/")
 
-    # Handle conditional GPU scaling after test completion
+                    # Run benchmarks
+                    if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
+                        flavor_failed |= run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace)
 
+                    if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
+                        flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
+
+                    # Capture state for analysis
+                    capture_llm_inference_service_state(llmisvc_name, namespace)
+
+                except Exception as e:
+                    logging.exception(f"Test failed for flavor {flavor} :/")
+                    flavor_failed = e
+
+                finally:
+                    # Always dump Prometheus data after testing (success or failure)
+                    logging.info("Dumping Prometheus database after testing")
+                    namespace = config.project.get_config("tests.llmd.namespace")
+                    if prom_start_ts:
+                        prom.dump_prometheus(prom_start_ts, namespace)
+
+                # Generate test metadata files for this flavor
+                _generate_test_metadata(flavor_failed, flavor)
+
+                if flavor_failed:
+                    overall_failed = True
+                    logging.error(f"Test failed for flavor: {flavor}")
+                else:
+                    logging.info(f"Test completed successfully for flavor: {flavor}")
+
+    # Handle conditional GPU scaling after all tests complete
     conditional_scale_down()
 
     # Generate visualization if enabled
     if not config.project.get_config("tests.visualize"):
         logging.info("Visualization disabled.")
     else:
-        exc = generate_visualization(test_directory, failed)
+        exc = generate_visualization(test_directory, overall_failed)
 
         if exc:
             logging.error(f"Test visualization failed: {exc}")
 
-        if exc and not failed:
+        if exc and not overall_failed:
             raise exc
 
-    if failed and isinstance(failed, Exception):
-        raise failed
+    if overall_failed and isinstance(overall_failed, Exception):
+        raise overall_failed
 
-    return failed
+    return overall_failed
 
 
 def prepare_for_test():
@@ -103,11 +137,11 @@ def prepare_for_test():
         parallel.delayed(prepare_llmd.preload_llm_model_image)
 
 
-def _generate_test_metadata(failed):
+def _generate_test_metadata(failed, flavor):
     """
     Generate metadata files for the test execution
     """
-    logging.info("Generating test metadata files")
+    logging.info(f"Generating test metadata files for flavor: {flavor}")
 
     # Write exit code file
     exit_code = "1" if failed else "0"
@@ -117,12 +151,17 @@ def _generate_test_metadata(failed):
 
     logging.info(f"Written exit code: {exit_code} to {exit_code_path}")
 
-    # Write settings file
+    # Write settings file using YAML
     settings_path = env.ARTIFACT_DIR / "settings.yaml"
-    with open(settings_path, 'w') as f:
-        f.write("llm-d: true\n")
+    settings_data = {
+        "llm-d": True,
+        "flavor": flavor
+    }
 
-    logging.info(f"Written settings to {settings_path}")
+    with open(settings_path, 'w') as f:
+        yaml.dump(settings_data, f, default_flow_style=False)
+
+    logging.info(f"Written settings to {settings_path} for flavor: {flavor}")
 
 
 def generate_visualization(test_artifact_dir, test_failed):
@@ -146,18 +185,61 @@ def generate_visualization(test_artifact_dir, test_failed):
     return exc
 
 
-def deploy_llm_inference_service():
+def reshape_isvc(flavor, llmisvc_path):
+    """
+    Reshape the ISVC YAML file based on the flavor configuration
+    """
+
+    logging.info(f"Reshaping ISVC for flavor: {flavor}")
+
+    # Load the YAML file
+    with open(llmisvc_path, 'r') as f:
+        isvc_data = yaml.safe_load(f)
+
+    # Apply flavor-specific modifications
+    if "simple" in flavor:
+        logging.info("Applying 'simple' flavor modifications")
+
+        # Remove spec.router if it exists
+        del isvc_data['spec']['router']
+        logging.info("Removed spec.router for 'simple' flavor")
+
+    elif "intelligent-routing" in flavor or "default" in flavor:
+        logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
+    else:
+        # Unknown flavor
+        raise ValueError(f"Unknown flavor '{flavor}'. Supported flavors: simple, intelligent-routing")
+
+    if "x2" in flavor:
+        isvc_data['spec']['replicas'] = 2
+        logging.info("Setting spec.replicas = 2")
+
+    # Save the modified file to ARTIFACT_DIR
+    output_path = env.ARTIFACT_DIR / llmisvc_path.name
+    try:
+        with open(output_path, 'w') as f:
+            yaml.dump(isvc_data, f, default_flow_style=False)
+    except Exception as e:
+        raise ValueError(f"Failed to write reshaped ISVC file to {output_path}: {e}")
+
+    logging.info(f"Reshaped ISVC saved to: {output_path}")
+    return output_path
+
+
+def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
     """
     Deploys the LLM inference service
     """
 
-    namespace = config.project.get_config("tests.llmd.namespace")
-    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
     llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
 
     # Convert relative path to absolute
-    if not os.path.isabs(llmisvc_file):
-        llmisvc_file = str(TESTING_THIS_DIR / "llmisvcs" / llmisvc_file)
+    llmisvc_path = pathlib.Path(llmisvc_file)
+    if not llmisvc_path.is_absolute():
+        llmisvc_path = TESTING_THIS_DIR / "llmisvcs" / llmisvc_path
+
+    llmisvc_path = reshape_isvc(flavor, llmisvc_path)
 
     logging.info(f"Deploying LLM inference service {llmisvc_name} in namespace {namespace}")
 
@@ -165,26 +247,58 @@ def deploy_llm_inference_service():
     run.run_toolbox("llmd", "deploy_llm_inference_service",
                    name=llmisvc_name,
                    namespace=namespace,
-                   yaml_file=llmisvc_file)
-
-    # Wait for the service to be ready
-    timeout = config.project.get_config("tests.llmd.inference_service.timeout")
-    logging.info(f"Waiting up to {timeout}s for LLM inference service to be ready")
-
-    run.run(f"oc wait --for=condition=Ready llminferenceservice/{llmisvc_name} "
-           f"-n {namespace} --timeout={timeout}s")
-
-    # Get and log the service URL
-    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
-                        f"-o jsonpath='{{.status.url}}'", capture_stdout=True)
-
-    if url_result.returncode == 0:
-        logging.info(f"LLM inference service URL: {url_result.stdout.strip()}")
+                   yaml_file=llmisvc_path)
 
     return llmisvc_name, namespace
 
 
-def run_multiturn_benchmark():
+def get_llm_inference_url(llmisvc_name, namespace):
+    """
+    Gets the URL of the deployed LLM inference service
+    """
+
+    logging.info("Getting LLM inference service URL")
+
+    # Try getting the service URL from .status.url first
+    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
+                        f"-ojsonpath='{{.status.url}}'", capture_stdout=True)
+
+    endpoint_url = url_result.stdout.strip() if url_result.returncode == 0 else ""
+
+    if endpoint_url:
+        logging.info(f"LLM inference service URL: {endpoint_url}")
+        return endpoint_url
+
+    # If that didn't work or is empty, try .status.addresses[0].url
+    logging.info("Trying alternate URL location at .status.addresses[0].url")
+    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
+                         f"-ojsonpath='{{.status.addresses[0].url}}'", capture_stdout=True)
+
+    if url_result.returncode != 0:
+        logging.error("Failed to get LLM inference service URL from both locations")
+        raise RuntimeError(f"Failed to get LLM inference service URL: {url_result.stderr}")
+
+    endpoint_url = url_result.stdout.strip()
+
+    if not endpoint_url:
+        logging.error("LLM inference service URL is empty at both locations")
+        raise RuntimeError("LLM inference service URL is empty")
+
+    # Get the service port
+    port_result = run.run(f"oc get svc -l app.kubernetes.io/name={llmisvc_name} "
+                          f"-n {namespace} -o jsonpath='{{.items[0].spec.ports[0].port}}'", capture_stdout=True)
+
+    if port_result.stdout.strip():
+        port = port_result.stdout.strip()
+
+        endpoint_url = f"{endpoint_url}:{port}"
+        logging.info(f"Added port {port} to URL: {endpoint_url}")
+
+    logging.info(f"LLM inference service URL: {endpoint_url}")
+    return endpoint_url
+
+
+def run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace):
     """
     Runs the multi-turn benchmark
     """
@@ -194,18 +308,17 @@ def run_multiturn_benchmark():
 
     logging.info("Running multi-turn benchmark")
 
-    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
-    namespace = config.project.get_config("tests.llmd.namespace")
-
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.multiturn.name")
     parallel = config.project.get_config("tests.llmd.benchmarks.multiturn.parallel")
     timeout = config.project.get_config("tests.llmd.benchmarks.multiturn.timeout")
 
     failed = False
 
+    endpoint_url = f"{endpoint_url}/v1"
+
     try:
         run.run_toolbox("llmd", "run_multiturn_benchmark",
-                       llmisvc_name=llmisvc_name,
+                       endpoint_url=endpoint_url,
                        name=benchmark_name,
                        namespace=namespace,
                        parallel=parallel,
@@ -220,7 +333,7 @@ def run_multiturn_benchmark():
     return failed
 
 
-def run_guidellm_benchmark():
+def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     """
     Runs the Guidellm benchmark
     """
@@ -229,9 +342,6 @@ def run_guidellm_benchmark():
         return False
 
     logging.info("Running Guidellm benchmark")
-
-    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
-    namespace = config.project.get_config("tests.llmd.namespace")
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
     profile = config.project.get_config("tests.llmd.benchmarks.guidellm.profile")
@@ -244,7 +354,7 @@ def run_guidellm_benchmark():
 
     try:
         run.run_toolbox("llmd", "run_guidellm_benchmark",
-                       llmisvc_name=llmisvc_name,
+                       endpoint_url=endpoint_url,
                        name=benchmark_name,
                        namespace=namespace,
                        profile=profile,
@@ -262,15 +372,12 @@ def run_guidellm_benchmark():
     return failed
 
 
-def capture_llm_inference_service_state():
+def capture_llm_inference_service_state(llmisvc_name, namespace):
     """
     Captures the state of the LLM inference service
     """
 
     logging.info("Capturing LLM inference service state")
-
-    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
-    namespace = config.project.get_config("tests.llmd.namespace")
 
     try:
         run.run_toolbox("llmd", "capture_isvc_state",
@@ -281,6 +388,48 @@ def capture_llm_inference_service_state():
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
+
+
+def cleanup_llm_inference_resources():
+    """
+    Clean up all llminferenceservice resources in the namespace before testing.
+    Fails the test if cleanup is not successful.
+    """
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    logging.info(f"Cleaning up all jobs resources in namespace {namespace}")
+    result = run.run(f"oc delete jobs --all -n {namespace}", capture_stdout=True)
+
+    logging.info(f"Cleaning up all llminferenceservice resources in namespace {namespace}")
+
+    # Delete all llminferenceservice resources in the namespace
+    logging.info("Deleting all llminferenceservice resources")
+    run.run(f"oc delete llminferenceservice --all -n {namespace} --wait=true --timeout=180s")
+
+    # Verify no llminferenceservice resources remain
+    logging.info("Verifying no llminferenceservice resources remain")
+    for i in range(6):  # Check up to 6 times with 10 second intervals
+        result = run.run(f"oc get llminferenceservice -n {namespace} --no-headers",
+                       capture_stdout=True)
+
+        if not result.stdout.strip():
+            logging.info("No llminferenceservice resources found - cleanup successful")
+            break
+        else:
+            remaining_services = result.stdout.strip().split('\n')
+            remaining_count = len([s for s in remaining_services if s.strip()])
+            logging.info(f"Still found {remaining_count} llminferenceservice resources, waiting...")
+
+            if i == 5:  # Last iteration
+                logging.error(f"Failed to clean up llminferenceservice resources after 60 seconds. {remaining_count} resources still exist:")
+                for service in remaining_services:
+                    if service.strip():
+                        logging.error(f"  - {service}")
+                raise RuntimeError(f"Cannot proceed with test - {remaining_count} llminferenceservice resources still exist in namespace {namespace}")
+
+            time.sleep(10)
+
+    logging.info("LLM inference service cleanup completed successfully")
 
 
 def ensure_gpu_nodes_available():
@@ -313,28 +462,17 @@ def ensure_gpu_nodes_available():
         raise
 
 
-def test_llm_inference_simple():
+def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace):
     """
-    Runs a simple test against the LLM inference service
+    Runs a simple test against the LLM inference service using oc rsh
     """
 
-    namespace = config.project.get_config("tests.llmd.namespace")
-    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    logging.info("Running simple LLM inference test from inside cluster")
 
-    logging.info("Running simple LLM inference test")
+    # Construct the internal service URL
+    deployment_name = f"{llmisvc_name}-kserve"
 
-    # Get the service URL
-    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
-                        f"-o jsonpath='{{.status.url}}'", capture_stdout=True)
-
-    if url_result.returncode != 0:
-        logging.error("Failed to get LLM inference service URL")
-        return True
-
-    url = url_result.stdout.strip()
-    if not url:
-        logging.error("LLM inference service URL is empty")
-        return True
+    logging.info(f"Testing internal URL: {endpoint_url}")
 
     # Test with a simple completion request
     test_payload = {
@@ -345,36 +483,34 @@ def test_llm_inference_simple():
     }
 
     try:
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump(test_payload, f)
-            payload_file = f.name
+        # Convert payload to JSON string for inline use
+        payload_json = json.dumps(test_payload)
 
-        # Make the request
+        # Execute curl inside the pod with inline JSON
         result = run.run(f"""
-curl -s "{url}/v1/completions" \\
+oc rsh -n {namespace} -c main deploy/{deployment_name} \\
+  curl -k -sSf "{endpoint_url}/v1/completions" \\
   -H "Content-Type: application/json" \\
-  -d @{payload_file}
+  -d '{payload_json}'
 """, capture_stdout=True)
 
-        os.unlink(payload_file)
-
-        if result.returncode == 0:
-            response = json.loads(result.stdout)
-            if "choices" in response and len(response["choices"]) > 0:
-                completion = response["choices"][0].get("text", "")
-                logging.info(f"Simple LLM test successful. Completion: {completion[:100]}...")
-                return False
-            else:
-                logging.error(f"Invalid response format: {result.stdout}")
-                return True
-        else:
+        if result.returncode != 0:
             logging.error(f"Request failed: {result.stderr}")
-            return True
+            return False
+
+        response = json.loads(result.stdout)
+        if "choices" not in response or not len(response["choices"]):
+            logging.error(f"Invalid response format: {result.stdout}")
+            return False
+
+        completion = response["choices"][0]["text"]
+        logging.info(f"Simple LLM test successful. Completion: {completion[:100]}...")
+
+        return True
 
     except Exception as e:
         logging.error(f"Simple LLM test failed: {e}")
-        return True
+        return False
 
 
 def conditional_scale_up():

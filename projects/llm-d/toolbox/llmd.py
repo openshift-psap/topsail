@@ -50,7 +50,7 @@ class Llmd:
     @AnsibleMappedParams
     def run_multiturn_benchmark(
             self,
-            llmisvc_name,
+            endpoint_url,
             name="multi-turn-benchmark", namespace="",
             image="quay.io/hayesphilip/multi-turn-benchmark", version="0.0.1",
             timeout=900, parallel=9
@@ -59,7 +59,7 @@ class Llmd:
         Runs a multi-turn benchmark job against the LLM inference service
 
         Args:
-          llmisvc_name: Name of the LLMInferenceService to benchmark (in same namespace)
+          endpoint_url: Endpoint URL for the LLM inference service to benchmark
           name: Name of the benchmark job
           namespace: Namespace to run the benchmark job in (empty string auto-detects current namespace)
           image: Container image for the benchmark
@@ -74,7 +74,7 @@ class Llmd:
     @AnsibleMappedParams
     def run_guidellm_benchmark(
             self,
-            llmisvc_name,
+            endpoint_url,
             name="guidellm-benchmark", namespace="",
             image="ghcr.io/vllm-project/guidellm", version="v0.5.3",
             timeout=900, profile="sweep", max_seconds=30,
@@ -85,7 +85,7 @@ class Llmd:
         Runs a Guidellm benchmark job against the LLM inference service
 
         Args:
-          llmisvc_name: Name of the LLMInferenceService to benchmark (in same namespace)
+          endpoint_url: Endpoint URL for the LLM inference service to benchmark
           name: Name of the benchmark job
           namespace: Namespace to run the benchmark job in (empty string auto-detects current namespace)
           image: Container image for the benchmark

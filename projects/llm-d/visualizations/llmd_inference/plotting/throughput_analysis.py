@@ -38,6 +38,9 @@ class GuidellmThroughputScaling():
             if not entry.results.guidellm_benchmarks:
                 continue
 
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
+
             # Include all strategies - let's show the full picture
             for benchmark in entry.results.guidellm_benchmarks:
                 if benchmark.strategy == "throughput":
@@ -58,6 +61,7 @@ class GuidellmThroughputScaling():
                     strategy_type = "Ramp"
 
                 data.append({
+                    'Test Configuration': entry_name,
                     'Concurrency': benchmark.request_concurrency,
                     'Request Rate (req/s)': benchmark.request_rate,
                     'Strategy': benchmark.strategy,
@@ -77,11 +81,11 @@ class GuidellmThroughputScaling():
                         hover_data=df.columns,
                         x='Concurrency',
                         y='Request Rate (req/s)',
-                        color='Strategy Type',
+                        color='Test Configuration',
                         symbol='Strategy Type',
                         size='Tokens/s',
                         text='Strategy',
-                        title='Request Throughput vs Concurrency (All Strategies)')
+                        title='Request Throughput vs Concurrency by Configuration')
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
@@ -103,24 +107,28 @@ class GuidellmThroughputScaling():
 
         best_strategy = df.loc[df['Request Rate (req/s)'].idxmax()]
 
-        # Strategy type breakdown
+        # Configuration breakdown
+        config_counts = df['Test Configuration'].value_counts()
         strategy_counts = df['Strategy Type'].value_counts()
         total_strategies = len(df)
 
         performance_ratio = ((max_rate - min_rate) / min_rate * 100) if min_rate > 0 else 0
 
         msg = []
-        msg.append(f"Showing {total_strategies} strategies across {len(strategy_counts)} types:")
+        msg.append(f"Showing {total_strategies} strategies across {len(config_counts)} test configurations:")
         msg.append(html.Br())
-        for strategy_type, count in strategy_counts.items():
-            msg.append(f"• {strategy_type}: {count} strategies")
+        for config, count in config_counts.items():
+            msg.append(f"• {config}: {count} strategies")
             msg.append(html.Br())
         msg.append(html.Br())
-        msg.append(f"Best performing: {best_strategy['Strategy']} ({max_rate:.2f} req/s)")
+        msg.append(f"Strategy types: {', '.join(strategy_counts.keys())}")
+        msg.append(html.Br())
+        msg.append(html.Br())
+        msg.append(f"Best performing: {best_strategy['Strategy']} in {best_strategy['Test Configuration']} ({max_rate:.2f} req/s)")
         msg.append(html.Br())
         msg.append(f"Performance range: {min_rate:.2f} - {max_rate:.2f} req/s ({performance_ratio:.1f}% spread)")
         msg.append(html.Br())
-        msg.append("Note: Bubble size shows token throughput, shape/color shows strategy type")
+        msg.append("Note: Bubble size shows token throughput, color shows test configuration, shape shows strategy type")
 
         # 4. Return fig, msg
         return fig, msg
@@ -149,11 +157,15 @@ class GuidellmLatencyVsThroughput():
             if not entry.results.guidellm_benchmarks:
                 continue
 
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
+
             for benchmark in entry.results.guidellm_benchmarks:
                 if benchmark.strategy == "throughput":
                     continue
 
                 data.append({
+                    'Test Configuration': entry_name,
                     'Request Rate (req/s)': benchmark.request_rate,
                     'Latency (ms)': benchmark.request_latency_median * 1000,  # Convert to ms
                     'Strategy': benchmark.strategy,
@@ -172,10 +184,11 @@ class GuidellmLatencyVsThroughput():
                         hover_data=df.columns,
                         x='Request Rate (req/s)',
                         y='Latency (ms)',
-                        color='Strategy',
+                        color='Test Configuration',
+                        symbol='Test Configuration',
                         size='Tokens/s',
                         text='Strategy',
-                        title='Latency vs Throughput Trade-off')
+                        title='Latency vs Throughput Trade-off by Configuration')
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
@@ -189,11 +202,11 @@ class GuidellmLatencyVsThroughput():
         most_efficient = df.loc[df['Efficiency'].idxmax()]
 
         msg = []
-        msg.append(f"Highest throughput: {best_throughput['Strategy']} ({best_throughput['Request Rate (req/s)']:.2f} req/s)")
+        msg.append(f"Highest throughput: {best_throughput['Strategy']} in {best_throughput['Test Configuration']} ({best_throughput['Request Rate (req/s)']:.2f} req/s)")
         msg.append(html.Br())
-        msg.append(f"Lowest latency: {best_latency['Strategy']} ({best_latency['Latency (ms)']:.1f} ms)")
+        msg.append(f"Lowest latency: {best_latency['Strategy']} in {best_latency['Test Configuration']} ({best_latency['Latency (ms)']:.1f} ms)")
         msg.append(html.Br())
-        msg.append(f"Most efficient: {most_efficient['Strategy']} ({most_efficient['Efficiency']:.2f} req/s per ms)")
+        msg.append(f"Most efficient: {most_efficient['Strategy']} in {most_efficient['Test Configuration']} ({most_efficient['Efficiency']:.2f} req/s per ms)")
         msg.append(html.Br())
         msg.append("Note: Higher throughput and lower latency indicate better performance")
 
@@ -223,9 +236,14 @@ class GuidellmLatencyOverview():
             if not entry.results.guidellm_benchmarks:
                 continue
 
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
+
             for benchmark in entry.results.guidellm_benchmarks:
                 data.append({
+                    'Test Configuration': entry_name,
                     'Strategy': benchmark.strategy,
+                    'Full Strategy Name': f"{benchmark.strategy} ({entry_name})",
                     'Request Latency (ms)': benchmark.request_latency_median * 1000,
                     'TTFT (ms)': benchmark.ttft_median,
                     'Concurrency': benchmark.request_concurrency,
@@ -244,12 +262,11 @@ class GuidellmLatencyOverview():
         # 2. Generate plotly express plot
         fig = px.bar(df,
                     hover_data=df.columns,
-                    x='Strategy',
+                    x='Full Strategy Name',
                     y='Request Latency (ms)',
-                    color='TTFT (ms)',
+                    color='Test Configuration',
                     text='Request Latency (ms)',
-                    color_continuous_scale='RdYlGn_r',  # Red=high latency, Green=low latency
-                    title='Latency Overview by Strategy')
+                    title='Latency Overview by Strategy and Configuration')
 
         fig.update_traces(texttemplate='%{text:.1f}ms', textposition="outside")
         fig.update_layout(showlegend=True, xaxis_tickangle=-45)
@@ -264,21 +281,28 @@ class GuidellmLatencyOverview():
 
         latency_spread = worst_latency['Request Latency (ms)'] - best_latency['Request Latency (ms)']
 
+        # Configuration performance summary
+        config_latency = df.groupby('Test Configuration')['Request Latency (ms)'].mean().sort_values()
+        best_config = config_latency.index[0]
+        worst_config = config_latency.index[-1]
+
         msg = []
-        msg.append(f"Best request latency: {best_latency['Strategy']} ({best_latency['Request Latency (ms)']:.1f} ms)")
+        msg.append(f"Best request latency: {best_latency['Strategy']} in {best_latency['Test Configuration']} ({best_latency['Request Latency (ms)']:.1f} ms)")
         msg.append(html.Br())
-        msg.append(f"Worst request latency: {worst_latency['Strategy']} ({worst_latency['Request Latency (ms)']:.1f} ms)")
+        msg.append(f"Worst request latency: {worst_latency['Strategy']} in {worst_latency['Test Configuration']} ({worst_latency['Request Latency (ms)']:.1f} ms)")
         msg.append(html.Br())
         msg.append(f"Average request latency: {avg_latency:.1f} ms")
         msg.append(html.Br())
         msg.append(f"Latency spread: {latency_spread:.1f} ms")
         msg.append(html.Br())
         msg.append(html.Br())
-        msg.append(f"Best TTFT: {best_ttft['Strategy']} ({best_ttft['TTFT (ms)']:.1f} ms)")
+        msg.append(f"Best configuration overall: {best_config} ({config_latency[best_config]:.1f} ms avg)")
+        msg.append(html.Br())
+        msg.append(f"Best TTFT: {best_ttft['Strategy']} in {best_ttft['Test Configuration']} ({best_ttft['TTFT (ms)']:.1f} ms)")
         msg.append(html.Br())
         msg.append(f"Average TTFT: {avg_ttft:.1f} ms")
         msg.append(html.Br())
-        msg.append("Note: Bar color shows TTFT (red=high, green=low)")
+        msg.append("Note: Bar color shows test configuration")
 
         # 4. Return fig, msg
         return fig, msg
@@ -306,9 +330,14 @@ class TokenThroughputAnalysis():
             if not entry.results.guidellm_benchmarks:
                 continue
 
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
+
             for benchmark in entry.results.guidellm_benchmarks:
                 data.append({
+                    'Test Configuration': entry_name,
                     'Strategy': benchmark.strategy,
+                    'Full Strategy Name': f"{benchmark.strategy} ({entry_name})",
                     'Input Tokens/s': benchmark.input_tokens_per_second,
                     'Output Tokens/s': benchmark.output_tokens_per_second,
                     'Total Tokens/s': benchmark.tokens_per_second,
@@ -326,14 +355,14 @@ class TokenThroughputAnalysis():
         # 2. Generate plotly express plot
         fig = px.bar(df,
                     hover_data=df.columns,
-                    x='Strategy',
+                    x='Full Strategy Name',
                     y='Total Tokens/s',
-                    color='Strategy',
+                    color='Test Configuration',
                     text='Total Tokens/s',
-                    title='Token Throughput by Strategy')
+                    title='Token Throughput by Strategy and Configuration')
 
         fig.update_traces(texttemplate='%{text:.0f}', textposition="outside")
-        fig.update_layout(showlegend=False, xaxis_tickangle=-45)
+        fig.update_layout(showlegend=True, xaxis_tickangle=-45)
 
         # Add stacked breakdown as a secondary chart
         # Create stacked data for input/output breakdown
@@ -358,14 +387,21 @@ class TokenThroughputAnalysis():
         best_strategy = df.loc[df['Total Tokens/s'].idxmax()]
         improvement = ((max_tokens - min_tokens) / min_tokens * 100) if min_tokens > 0 else 0
 
+        # Configuration performance summary
+        config_tokens = df.groupby('Test Configuration')['Total Tokens/s'].mean().sort_values(ascending=False)
+        best_config = config_tokens.index[0]
+
         msg = []
-        msg.append(f"Highest token throughput: {best_strategy['Strategy']} ({max_tokens:.0f} tok/s)")
+        msg.append(f"Highest token throughput: {best_strategy['Strategy']} in {best_strategy['Test Configuration']} ({max_tokens:.0f} tok/s)")
         msg.append(html.Br())
         msg.append(f"Lowest token throughput: {min_tokens:.0f} tok/s")
         msg.append(html.Br())
         msg.append(f"Average token throughput: {avg_tokens:.0f} tok/s")
         msg.append(html.Br())
         msg.append(f"Performance improvement: {improvement:.1f}% (best vs worst)")
+        msg.append(html.Br())
+        msg.append(html.Br())
+        msg.append(f"Best configuration overall: {best_config} ({config_tokens[best_config]:.0f} tok/s avg)")
 
         # 4. Return fig, msg
         return fig, msg
@@ -395,7 +431,8 @@ class MultiturnTTFTByTurn():
                 continue
 
             benchmark = entry.results.multiturn_benchmark
-            entry_name = getattr(entry, 'name', f"Test {len(data) + 1}")
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
 
             # Extract TTFT by turn data
             if hasattr(benchmark, 'ttft_by_turn') and benchmark.ttft_by_turn:
@@ -403,7 +440,7 @@ class MultiturnTTFTByTurn():
                     data.append({
                         'Turn Number': turn_num,
                         'TTFT (ms)': ttft_value,
-                        'Test': entry_name,
+                        'Test Configuration': entry_name,
                         'Requests/sec': benchmark.requests_per_second,
                         'Total Requests': benchmark.total_requests,
                         'Completed Conversations': f"{benchmark.completed_conversations}/{benchmark.total_conversations}"
@@ -420,10 +457,10 @@ class MultiturnTTFTByTurn():
                      hover_data=df.columns,
                      x='Turn Number',
                      y='TTFT (ms)',
-                     color='Test',
+                     color='Test Configuration',
                      markers=True,
                      range_y=[0, max_ttft * 1.1],
-                     title='TTFT by Turn Number - Prefix Caching Effects')
+                     title='TTFT by Turn Number - Prefix Caching Effects by Configuration')
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
@@ -442,27 +479,44 @@ class MultiturnTTFTByTurn():
         )
 
         # 3. Generate summary text
-        # Calculate prefix caching effectiveness
+        # Calculate prefix caching effectiveness overall and per configuration
         turn_1_data = df[df['Turn Number'] == 1]
         later_turns_data = df[df['Turn Number'] > 1]
 
+        msg = []
+
         if not turn_1_data.empty and not later_turns_data.empty:
+            # Overall effectiveness
             avg_turn_1 = turn_1_data['TTFT (ms)'].mean()
             avg_later = later_turns_data['TTFT (ms)'].mean()
             speedup = avg_turn_1 / avg_later if avg_later > 0 else 1
             improvement = ((avg_turn_1 - avg_later) / avg_turn_1 * 100) if avg_turn_1 > 0 else 0
 
-            msg = []
-            msg.append(f"Turn 1 average TTFT: {avg_turn_1:.1f} ms")
+            msg.append(f"Overall Turn 1 average TTFT: {avg_turn_1:.1f} ms")
             msg.append(html.Br())
-            msg.append(f"Later turns average TTFT: {avg_later:.1f} ms")
+            msg.append(f"Overall later turns average TTFT: {avg_later:.1f} ms")
             msg.append(html.Br())
-            msg.append(f"Prefix caching speedup: {speedup:.2f}x")
+            msg.append(f"Overall prefix caching speedup: {speedup:.2f}x")
             msg.append(html.Br())
-            msg.append(f"Performance improvement: {improvement:.1f}%")
+            msg.append(f"Overall performance improvement: {improvement:.1f}%")
+            msg.append(html.Br())
             msg.append(html.Br())
 
-            # Effectiveness rating
+            # Per-configuration effectiveness
+            configurations = df['Test Configuration'].unique()
+            msg.append("Per-configuration analysis:")
+            msg.append(html.Br())
+            for config in configurations:
+                config_df = df[df['Test Configuration'] == config]
+                config_turn_1 = config_df[config_df['Turn Number'] == 1]['TTFT (ms)'].mean()
+                config_later = config_df[config_df['Turn Number'] > 1]['TTFT (ms)'].mean()
+
+                if not pd.isna(config_turn_1) and not pd.isna(config_later) and config_later > 0:
+                    config_speedup = config_turn_1 / config_later
+                    msg.append(f"• {config}: {config_speedup:.2f}x speedup")
+                    msg.append(html.Br())
+
+            # Overall effectiveness rating
             if speedup > 2:
                 effectiveness = "🟢 Excellent"
             elif speedup > 1.5:
@@ -472,15 +526,18 @@ class MultiturnTTFTByTurn():
             else:
                 effectiveness = "🔴 Minimal"
 
-            msg.append(f"Prefix caching effectiveness: {effectiveness}")
+            msg.append(html.Br())
+            msg.append(f"Overall prefix caching effectiveness: {effectiveness}")
         else:
-            msg = ["Insufficient data to calculate prefix caching effectiveness"]
+            msg.append("Insufficient data to calculate prefix caching effectiveness")
 
         # Add turn range info
         min_turn = df['Turn Number'].min()
         max_turn = df['Turn Number'].max()
         msg.append(html.Br())
         msg.append(f"Turn range analyzed: {min_turn} to {max_turn}")
+        msg.append(html.Br())
+        msg.append(f"Configurations tested: {', '.join(df['Test Configuration'].unique())}")
 
         # 4. Return fig, msg
         return fig, msg

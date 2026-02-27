@@ -18,9 +18,9 @@ Parameters
 ----------
 
 
-``llmisvc_name``  
+``endpoint_url``  
 
-* Name of the LLMInferenceService to benchmark (in same namespace)
+* Endpoint URL for the LLM inference service to benchmark
 
 
 ``name``  

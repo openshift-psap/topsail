@@ -6,6 +6,7 @@ import json
 import csv
 import types
 
+import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
 from ..models import MultiturnBenchmark, GuidellmBenchmark
@@ -277,7 +278,7 @@ def _extract_metrics(dirname):
 
     # Add main Prometheus metrics (cluster-level: node, kube, nvidia, etc.)
     if artifact_paths.PROMETHEUS_DUMP_DIR is not None:
-        db_files["main"] = (str(artifact_paths.PROMETHEUS_DUMP_DIR / "prometheus.t*"), get_llmd_main_metrics())
+        db_files["sutest"] = (str(artifact_paths.PROMETHEUS_DUMP_DIR / "prometheus.t*"), get_llmd_main_metrics())
 
     # Add UWM Prometheus metrics (application-level: vllm, etc.)
     if artifact_paths.PROMETHEUS_UWM_DUMP_DIR is not None:
@@ -290,97 +291,31 @@ def _extract_metrics(dirname):
     return helpers_store_parsers.extract_metrics(dirname, db_files)
 
 
-def get_llmd_main_metrics():
+SUTEST_CONTAINER_LABELS = [
+    {"LLM Inference Service": dict(namespace="llm-d-project", pod=".*-kserve-.*")},
+    {"LLM Inference Gateway": dict(namespace="llm-d-project", pod=".*-epp-.*")},
+]
+
+SUTEST_CONTAINER_EXTRA_METRICS_NAMES = [
+    "LLM Inference Service",
+    "LLM Inference Gateway",
+]
+
+def get_llmd_main_metrics(register=False):
     """Define the list of main Prometheus metrics to extract for LLM-D inference workloads"""
 
-    # Base metrics - always include 'up' for timestamp reference
+    cluster_role = "sutest"
+
     all_metrics = []
-    all_metrics += [{"up": "up"}]  # for the test start/end timestamp
 
-    # =============================================================================
-    # 📊 CLUSTER-LEVEL INFRASTRUCTURE METRICS (stored in main Prometheus)
-    # =============================================================================
+    all_metrics += [{"up": "up"}] # for the test start/end timestamp
 
-    # Container resource specifications and limits
-    all_metrics += [
-        {"container_spec_cpu_quota": "container_spec_cpu_quota"},
-        {"container_spec_memory_limit_bytes": "container_spec_memory_limit_bytes"},
-    ]
-
-    # Controller runtime metrics
-    all_metrics += [
-        {"controller_runtime_reconcile_errors_total": "controller_runtime_reconcile_errors_total"},
-        {"controller_runtime_reconcile_time_seconds_bucket": "controller_runtime_reconcile_time_seconds_bucket"},
-        {"controller_runtime_reconcile_total": "controller_runtime_reconcile_total"},
-    ]
-
-    # Kube-state-metrics
-    all_metrics += [
-        {"kube_horizontalpodautoscaler_spec_max_replicas": "kube_horizontalpodautoscaler_spec_max_replicas"},
-        {"kube_pod_container_info": "kube_pod_container_info"},
-        {"kube_pod_container_status_ready": "kube_pod_container_status_ready"},
-        {"kube_pod_container_status_restarts_total": "kube_pod_container_status_restarts_total"},
-        {"kube_pod_container_status_running": "kube_pod_container_status_running"},
-        {"kube_pod_info": "kube_pod_info"},
-        {"kube_pod_labels": "kube_pod_labels"},
-        {"kube_pod_status_phase": "kube_pod_status_phase"},
-        {"kube_pod_status_ready": "kube_pod_status_ready"},
-    ]
-
-    # Node-level metrics
-    all_metrics += [
-        {"machine_cpu_cores": "machine_cpu_cores"},
-        {"node_cpu_seconds_total": "node_cpu_seconds_total"},
-        {"node_disk_io_time_seconds_total": "node_disk_io_time_seconds_total"},
-        {"node_disk_read_bytes_total": "node_disk_read_bytes_total"},
-        {"node_disk_reads_completed_total": "node_disk_reads_completed_total"},
-        {"node_disk_writes_completed_total": "node_disk_writes_completed_total"},
-        {"node_disk_written_bytes_total": "node_disk_written_bytes_total"},
-        {"node_load1": "node_load1"},
-        {"node_load15": "node_load15"},
-        {"node_load5": "node_load5"},
-        {"node_memory_Buffers_bytes": "node_memory_Buffers_bytes"},
-        {"node_memory_Cached_bytes": "node_memory_Cached_bytes"},
-        {"node_memory_MemAvailable_bytes": "node_memory_MemAvailable_bytes"},
-        {"node_memory_MemFree_bytes": "node_memory_MemFree_bytes"},
-        {"node_memory_MemTotal_bytes": "node_memory_MemTotal_bytes"},
-        {"node_memory_PageTables_bytes": "node_memory_PageTables_bytes"},
-        {"node_memory_Slab_bytes": "node_memory_Slab_bytes"},
-        {"node_memory_SwapCached_bytes": "node_memory_SwapCached_bytes"},
-        {"node_memory_SwapFree_bytes": "node_memory_SwapFree_bytes"},
-        {"node_memory_SwapTotal_bytes": "node_memory_SwapTotal_bytes"},
-        {"node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate": "node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate"},
-        {"node_network_receive_bytes_total": "node_network_receive_bytes_total"},
-        {"node_network_transmit_bytes_total": "node_network_transmit_bytes_total"},
-    ]
-
-    # NVIDIA GPU metrics (DCGM)
-    all_metrics += [
-        {"nvidia_gpu_memory_used": "DCGM_FI_DEV_FB_USED"},
-        {"nvidia_gpu_memory_free": "DCGM_FI_DEV_FB_FREE"},
-        {"nvidia_gpu_utilization": "DCGM_FI_DEV_GPU_UTIL"},
-        {"nvidia_gpu_power_usage": "DCGM_FI_DEV_POWER_USAGE"},
-        {"nvidia_gpu_temperature": "DCGM_FI_DEV_GPU_TEMP"},
-        {"nvidia_gpu_sm_clock": "DCGM_FI_DEV_SM_CLOCK"},
-        {"nvidia_gpu_tensor_active": "DCGM_FI_PROF_PIPE_TENSOR_ACTIVE"},
-        {"nvidia_gpu_sm_active": "DCGM_FI_PROF_SM_ACTIVE"},
-        {"nvidia_gpu_sm_occupancy": "DCGM_FI_PROF_SM_OCCUPANCY"},
-        {"nvidia_gpu_mem_copy_util": "DCGM_FI_DEV_MEM_COPY_UTIL"},
-    ]
-
-    # Container metrics (collected by cluster monitoring but related to workloads)
-    all_metrics += [
-        {"vllm_container_cpu_usage_seconds_total": "vllm_container_cpu_usage_seconds_total"},
-        {"vllm_container_memory_usage_bytes": "vllm_container_memory_usage_bytes"},
-        {"vllm_container_memory_working_set_bytes": "vllm_container_memory_working_set_bytes"},
-    ]
-
-    # Inferno metrics (if using inferno autoscaler)
-    all_metrics += [
-        {"inferno_current_replicas": "inferno_current_replicas"},
-        {"inferno_desired_ratio": "inferno_desired_ratio"},
-        {"inferno_desired_replicas": "inferno_desired_replicas"},
-    ]
+    all_metrics += helper_prom_store.get_cluster_metrics(
+        cluster_role, register=register,
+        container_labels=SUTEST_CONTAINER_LABELS,
+        gpu_container="main",
+        network_metrics_names=SUTEST_CONTAINER_EXTRA_METRICS_NAMES,
+    )
 
     return all_metrics
 
@@ -451,5 +386,50 @@ def get_llmd_uwm_metrics():
         {"vllm_request_success_total": "kserve_vllm:request_success_total"},
     ]
 
+    # =============================================================================
+    # 🔧 COMPUTED VLLM METRICS (rate, average, increase transformations)
+    # =============================================================================
+
+    # E2E Request Latency computed metrics
+    all_metrics += [
+        {"vllm_e2e_latency_average": "rate(kserve_vllm:e2e_request_latency_seconds_sum[5m]) / rate(kserve_vllm:e2e_request_latency_seconds_count[5m])"},
+        {"vllm_e2e_request_rate": "rate(kserve_vllm:e2e_request_latency_seconds_count[5m])"},
+    ]
+
+    # TTFT computed metrics
+    all_metrics += [
+        {"vllm_ttft_average": "rate(kserve_vllm:time_to_first_token_seconds_sum[5m]) / rate(kserve_vllm:time_to_first_token_seconds_count[5m])"},
+        {"vllm_ttft_rate": "rate(kserve_vllm:time_to_first_token_seconds_count[5m])"},
+    ]
+
+    # Inter-token latency computed metrics
+    all_metrics += [
+        {"vllm_inter_token_average": "rate(kserve_vllm:inter_token_latency_seconds_sum[5m]) / rate(kserve_vllm:inter_token_latency_seconds_count[5m])"},
+        {"vllm_inter_token_rate": "rate(kserve_vllm:inter_token_latency_seconds_count[5m])"},
+    ]
+
+    # Request processing phase computed metrics
+    all_metrics += [
+        {"vllm_prefill_average": "rate(kserve_vllm:request_prefill_time_seconds_sum[5m]) / rate(kserve_vllm:request_prefill_time_seconds_count[5m])"},
+        {"vllm_prefill_rate": "rate(kserve_vllm:request_prefill_time_seconds_sum[5m])"},
+        {"vllm_decode_average": "rate(kserve_vllm:request_decode_time_seconds_sum[5m]) / rate(kserve_vllm:request_decode_time_seconds_count[5m])"},
+        {"vllm_decode_rate": "rate(kserve_vllm:request_decode_time_seconds_sum[5m])"},
+        {"vllm_queue_average": "rate(kserve_vllm:request_queue_time_seconds_sum[5m]) / rate(kserve_vllm:request_queue_time_seconds_count[5m])"},
+        {"vllm_queue_rate": "rate(kserve_vllm:request_queue_time_seconds_sum[5m])"},
+    ]
+
+    # Token throughput computed metrics
+    all_metrics += [
+        {"vllm_prompt_tokens_rate": "rate(kserve_vllm:prompt_tokens_total[5m])"},
+        {"vllm_generation_tokens_rate": "rate(kserve_vllm:generation_tokens_total[5m])"},
+        {"vllm_total_tokens_rate": "rate(kserve_vllm:prompt_tokens_total[5m]) + rate(kserve_vllm:generation_tokens_total[5m])"},
+        {"vllm_avg_max_gen_tokens": "rate(kserve_vllm:request_max_num_generation_tokens_sum[5m]) / rate(kserve_vllm:request_max_num_generation_tokens_count[5m])"},
+    ]
+
+    # Request success computed metrics
+    all_metrics += [
+        {"vllm_request_success_rate": "rate(kserve_vllm:request_success_total[5m])"},
+        {"vllm_request_success_increase": "increase(kserve_vllm:request_success_total[5m])"},
+    ]
 
     return all_metrics

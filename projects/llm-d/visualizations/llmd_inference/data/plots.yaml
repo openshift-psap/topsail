@@ -4,3 +4,7 @@ visualize:
   - "report: LLM-D Inference Error Report"
   - "report: GuideLLM Results Table"
   - "report: Multi-turn Results Table"
+  - "report: Prometheus Resource Usage"
+  - "report: Prometheus GPU Performance"
+  - "report: Prometheus System Health"
+  - "report: VLLM Metrics Analysis"

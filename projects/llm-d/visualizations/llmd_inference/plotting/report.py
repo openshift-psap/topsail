@@ -9,6 +9,10 @@ def register():
     GuidellmResultsTable()
     MultiturnResultsTable()
 
+    # Register Prometheus reports
+    from . import prometheus_reports
+    prometheus_reports.register()
+
 
 class GuidellmResultsTable():
     def __init__(self):
@@ -45,7 +49,8 @@ class GuidellmResultsTable():
             if hasattr(artifacts_basedir, 'artifacts_basedir'):
                 artifacts_basedir = artifacts_basedir.artifacts_basedir
 
-                entry_name = getattr(entry, 'name', f"Test {i + 1}")
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Test {i + 1}"
                 artifact_links.append(html.Li([
                     html.A(f"🗂️ {entry_name} - Test artifacts directory",
                           href=str(artifacts_basedir), target="_blank")
@@ -81,7 +86,8 @@ class GuidellmResultsTable():
                             html.Ul(guidellm_sublinks)
                         ]))
             else:
-                entry_name = getattr(entry, 'name', f"Test {i + 1}")
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Test {i + 1}"
                 artifact_links.append(html.Li(f"🗂️ {entry_name} - Artifacts not available"))
 
         if artifact_links:
@@ -91,30 +97,40 @@ class GuidellmResultsTable():
 
         header.append(html.Br())
 
-        # Collect all GuideLLM benchmarks across all entries
+        # Collect all GuideLLM benchmarks across all entries with their configuration info
         all_benchmarks = []
+        benchmark_configs = []
         for entry in entries:
             if hasattr(entry.results, 'guidellm_benchmarks') and entry.results.guidellm_benchmarks:
-                all_benchmarks.extend(entry.results.guidellm_benchmarks)
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Unknown Configuration"
+                for benchmark in entry.results.guidellm_benchmarks:
+                    all_benchmarks.append(benchmark)
+                    benchmark_configs.append(entry_name)
 
         if not all_benchmarks:
             header.append(html.P("No GuideLLM benchmark data found."))
             return None, header
 
-        # Sort benchmarks by request rate (best performance first)
-        all_benchmarks = sorted(all_benchmarks, key=lambda x: x.request_rate, reverse=True)
+        # Sort benchmarks by configuration first, then by request rate (best performance first)
+        # Create pairs of (benchmark, config) and sort them
+        benchmark_pairs = list(zip(all_benchmarks, benchmark_configs))
+        benchmark_pairs.sort(key=lambda pair: (pair[1], -pair[0].request_rate))
+        all_benchmarks = [pair[0] for pair in benchmark_pairs]
+        benchmark_configs = [pair[1] for pair in benchmark_pairs]
 
         # Create performance overview table
         header.append(html.H3("📊 Performance Overview"))
 
         overview_headers = [
-            "Strategy", "Request Rate (req/s)", "TTFT P50 (ms)", "TTFT P95 (ms)",
+            "Configuration", "Strategy", "Request Rate (req/s)", "TTFT P50 (ms)", "TTFT P95 (ms)",
             "Latency P50 (ms)", "Latency P95 (ms)", "Tokens/s", "Concurrency"
         ]
 
         overview_rows = []
-        for benchmark in all_benchmarks:
+        for i, benchmark in enumerate(all_benchmarks):
             row = [
+                benchmark_configs[i],
                 benchmark.strategy,
                 f"{benchmark.request_rate:.2f}",
                 f"{benchmark.ttft_median:.1f}",
@@ -136,13 +152,14 @@ class GuidellmResultsTable():
         header.append(html.H3("⏱️ Latency Component Breakdown"))
 
         latency_headers = [
-            "Strategy", "TTFT P50", "TTFT P95", "ITL P50", "ITL P95",
+            "Configuration", "Strategy", "TTFT P50", "TTFT P95", "ITL P50", "ITL P95",
             "TPOT P50", "TPOT P95", "Total Latency P50", "Total Latency P95"
         ]
 
         latency_rows = []
-        for benchmark in all_benchmarks:
+        for i, benchmark in enumerate(all_benchmarks):
             row = [
+                benchmark_configs[i],
                 benchmark.strategy,
                 f"{benchmark.ttft_median:.1f} ms",
                 f"{benchmark.ttft_p95:.1f} ms",
@@ -164,13 +181,14 @@ class GuidellmResultsTable():
         header.append(html.H3("🔤 Token Throughput Analysis"))
 
         token_headers = [
-            "Strategy", "Total Tokens/s", "Input Tokens/s", "Output Tokens/s",
+            "Configuration", "Strategy", "Total Tokens/s", "Input Tokens/s", "Output Tokens/s",
             "Input Tokens/req", "Output Tokens/req", "Total Tokens/req"
         ]
 
         token_rows = []
-        for benchmark in all_benchmarks:
+        for i, benchmark in enumerate(all_benchmarks):
             row = [
+                benchmark_configs[i],
                 benchmark.strategy,
                 f"{benchmark.tokens_per_second:.1f}",
                 f"{benchmark.input_tokens_per_second:.1f}",
@@ -190,19 +208,53 @@ class GuidellmResultsTable():
         # Add summary statistics
         header.append(html.H3("📈 Summary Statistics"))
 
-        best_throughput = max(all_benchmarks, key=lambda x: x.request_rate)
-        best_latency = min(all_benchmarks, key=lambda x: x.ttft_median)
-        best_tokens = max(all_benchmarks, key=lambda x: x.tokens_per_second)
+        # Find best performers with their configurations
+        best_throughput_idx = max(range(len(all_benchmarks)), key=lambda i: all_benchmarks[i].request_rate)
+        best_latency_idx = min(range(len(all_benchmarks)), key=lambda i: all_benchmarks[i].ttft_median)
+        best_tokens_idx = max(range(len(all_benchmarks)), key=lambda i: all_benchmarks[i].tokens_per_second)
+
+        best_throughput = all_benchmarks[best_throughput_idx]
+        best_latency = all_benchmarks[best_latency_idx]
+        best_tokens = all_benchmarks[best_tokens_idx]
+
+        # Configuration analysis
+        configurations = {}
+        for i, benchmark in enumerate(all_benchmarks):
+            config = benchmark_configs[i]
+            if config not in configurations:
+                configurations[config] = {
+                    'throughput': [],
+                    'latency': [],
+                    'tokens': [],
+                    'count': 0
+                }
+            configurations[config]['throughput'].append(benchmark.request_rate)
+            configurations[config]['latency'].append(benchmark.ttft_median)
+            configurations[config]['tokens'].append(benchmark.tokens_per_second)
+            configurations[config]['count'] += 1
 
         summary_stats = [
-            f"🏆 Best throughput: {best_throughput.strategy} ({best_throughput.request_rate:.2f} req/s)",
-            f"⚡ Best TTFT: {best_latency.strategy} ({best_latency.ttft_median:.1f} ms)",
-            f"🚀 Best token throughput: {best_tokens.strategy} ({best_tokens.tokens_per_second:.1f} tok/s)",
-            f"📊 Total strategies tested: {len(all_benchmarks)}"
+            f"🏆 Best throughput: {best_throughput.strategy} in {benchmark_configs[best_throughput_idx]} ({best_throughput.request_rate:.2f} req/s)",
+            f"⚡ Best TTFT: {best_latency.strategy} in {benchmark_configs[best_latency_idx]} ({best_latency.ttft_median:.1f} ms)",
+            f"🚀 Best token throughput: {best_tokens.strategy} in {benchmark_configs[best_tokens_idx]} ({best_tokens.tokens_per_second:.1f} tok/s)",
+            f"📊 Total strategies tested: {len(all_benchmarks)} across {len(configurations)} configurations"
         ]
 
         for stat in summary_stats:
             header.append(html.P(stat))
+
+        # Add per-configuration summary
+        if len(configurations) > 1:
+            header.append(html.Br())
+            header.append(html.H4("🔧 Configuration Performance Comparison"))
+
+            for config, metrics in configurations.items():
+                avg_throughput = sum(metrics['throughput']) / len(metrics['throughput'])
+                avg_latency = sum(metrics['latency']) / len(metrics['latency'])
+                avg_tokens = sum(metrics['tokens']) / len(metrics['tokens'])
+
+                config_summary = f"• {config}: {avg_throughput:.1f} req/s avg, {avg_latency:.1f} ms TTFT avg, {avg_tokens:.0f} tok/s avg ({metrics['count']} strategies)"
+                header.append(html.P(config_summary))
 
         return None, header
 
@@ -280,7 +332,8 @@ class MultiturnResultsTable():
             if hasattr(artifacts_basedir, 'artifacts_basedir'):
                 artifacts_basedir = artifacts_basedir.artifacts_basedir
 
-                entry_name = getattr(entry, 'name', f"Test {i + 1}")
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Test {i + 1}"
                 artifact_links.append(html.Li([
                     html.A(f"🗂️ {entry_name} - Test artifacts directory",
                           href=str(artifacts_basedir), target="_blank")
@@ -316,7 +369,8 @@ class MultiturnResultsTable():
                             html.Ul(multiturn_sublinks)
                         ]))
             else:
-                entry_name = getattr(entry, 'name', f"Test {i + 1}")
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Test {i + 1}"
                 artifact_links.append(html.Li(f"🗂️ {entry_name} - Artifacts not available"))
 
         if artifact_links:
@@ -332,7 +386,8 @@ class MultiturnResultsTable():
         for i, entry in enumerate(entries):
             if hasattr(entry.results, 'multiturn_benchmark') and entry.results.multiturn_benchmark:
                 benchmark = entry.results.multiturn_benchmark
-                entry_name = getattr(entry, 'name', f"Test {i + 1}")
+                # Get unique name for this entry (includes flavor info)
+                entry_name = entry.get_name(variables) if variables else f"Test {i + 1}"
                 all_benchmarks.append(benchmark)
                 benchmark_names.append(entry_name)
 

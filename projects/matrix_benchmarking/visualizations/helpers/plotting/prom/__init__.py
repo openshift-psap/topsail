@@ -180,7 +180,7 @@ class Plot():
                                              Value=y_value))
 
         if not data:
-            return None, "No metric to plot ..."
+            return None, f"No data to plot for {self.metrics} ..."
 
         if show_test_timestamps:
             tests_timestamp_y_position, plots = get_tests_timestamp_plots(common.Matrix.all_records(settings, setting_lists), y_max, variables)

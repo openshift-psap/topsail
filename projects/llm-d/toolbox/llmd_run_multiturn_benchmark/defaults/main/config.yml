@@ -3,9 +3,9 @@
 # Source component: Llmd.run_multiturn_benchmark
 
 # Parameters
-# Name of the LLMInferenceService to benchmark (in same namespace)
+# Endpoint URL for the LLM inference service to benchmark
 # Mandatory value
-llmd_run_multiturn_benchmark_llmisvc_name:
+llmd_run_multiturn_benchmark_endpoint_url:
 
 # Name of the benchmark job
 llmd_run_multiturn_benchmark_name: multi-turn-benchmark
