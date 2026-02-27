@@ -140,12 +140,12 @@ ci_presets:
     prepare.podman.machine.remoting_env.enabled: true
     prepare.virglrenderer.enabled: true
     prepare.llama_cpp.source.repo.url: https://github.com/ggml-org/llama.cpp
-    prepare.llama_cpp.source.repo.version: b7944
+    prepare.llama_cpp.source.repo.version: b8163
     prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.6
     prepare.ramalama.build_image.enabled: true
     prepare.ramalama.build_image.name: remoting
     prepare.ramalama.repo.url: https://github.com/kpouget/ramalama
-    prepare.ramalama.repo.version: v0.17.0-apir.0.1.4-rc10
+    prepare.ramalama.repo.version: v0.17.0-apir.0.1.5-rc2
     prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
 
   remoting_wip:
