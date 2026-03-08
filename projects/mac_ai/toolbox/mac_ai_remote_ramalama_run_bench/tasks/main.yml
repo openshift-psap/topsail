@@ -14,7 +14,12 @@
 
     export {{ mac_ai_remote_ramalama_run_bench_env }}
 
-    $timeout {{ mac_ai_remote_ramalama_run_bench_path }} \
+    cd "$PYTHONPATH"
+    python3 -m venv venv
+    source venv/bin/activate
+    cd -
+
+    {{ mac_ai_remote_ramalama_run_bench_path }} \
        bench \
        --image {{ mac_ai_remote_ramalama_run_bench_image }} \
         {{ mac_ai_remote_ramalama_run_bench_model_name }} \

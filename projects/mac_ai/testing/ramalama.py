@@ -69,6 +69,16 @@ def download_ramalama(base_work_dir, dest, version):
     remote_access.run_with_ansible_ssh_conf(base_work_dir, "git show -s --format='%cd%n%s%n%H' --date=format:'%y%m%d.%H%M' > ramalama-commit.info",
                                         chdir=dest)
 
+    remote_access.run_with_ansible_ssh_conf(
+        base_work_dir,
+        f"""
+        cd '{dest}'
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -e .
+        """
+    )
+
 
 def build_container_image(base_work_dir, ramalama_path, platform):
     image_name = config.project.get_config("prepare.ramalama.build_image.name")
@@ -290,7 +300,13 @@ def _run(base_work_dir, platform, ramalama_path, ramalama_cmd, *, check=False, c
 
     return remote_access.run_with_ansible_ssh_conf(
         base_work_dir,
-        f"{ramalama_path} {ramalama_cmd}",
+        f"""
+        cd '{ramalama_path.parent.parent}'
+        python3 -m venv venv
+        source venv/bin/activate
+        cd '{base_work_dir}'
+
+        {ramalama_path} {ramalama_cmd}""",
         check=check, capture_stdout=capture_stdout, capture_stderr=capture_stderr,
         extra_env=extra_env,
     )
