@@ -31,6 +31,8 @@ ci_presets:
     remote_host.description: "crc-lab-mac5"
     prepare.cleanup_on_exit: true
     remote_host.env.PATH: "/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/podman/bin"
+    prepare.brew._libomp.version: "22.1.0"
+
   mac-m4:
     secrets.hostname: mac_ai__hostname.mac-m4
     secrets.username: mac_ai__username.mac-m4
