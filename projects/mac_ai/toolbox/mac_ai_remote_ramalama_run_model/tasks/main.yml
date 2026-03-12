@@ -26,6 +26,12 @@
   - name: Start serving the ramalama model
     shell: |
       export {{ mac_ai_remote_ramalama_run_model_env }}
+
+      cd "$PYTHONPATH"
+      python3 -m venv venv
+      source venv/bin/activate
+      cd -
+
       nohup {{ mac_ai_remote_ramalama_run_model_path }} \
          --debug \
          serve \
