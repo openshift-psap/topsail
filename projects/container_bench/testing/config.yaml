@@ -237,7 +237,7 @@ artifact_add_benchmark:
     - podman
 
 machine_first_start_benchmark:
-  runs: 1
+  runs: 10
   machine_benchmark: true
   supported_container_engines:
     - podman
@@ -248,7 +248,7 @@ machine_first_start_benchmark:
     rootful: false
 
 machine_start_benchmark:
-  runs: 1
+  runs: 10
   machine_benchmark: true
   supported_container_engines:
     - podman
@@ -290,11 +290,11 @@ test:
   platforms_to_skip:
    - docker
   benchmark:
-    - run_container_benchmark
+    # - run_container_benchmark
     # - exec_container_benchmark
     # - image_build_large_build_context_benchmark
     # - artifact_add_benchmark
-    - sysbench_cpu_benchmark
+    # - sysbench_cpu_benchmark
     # - sysbench_memory_read_benchmark
     # - sysbench_memory_write_benchmark
     # - sysbench_fileio_container_benchmark
@@ -338,7 +338,7 @@ test:
     machine_config:
       cpus:
         - 2
-      #  - 4
+        - 6
         - 8
       memory:
         - 2048
@@ -359,7 +359,7 @@ test:
      - hyperv
     cpus:
       - 2
-      #  - 4
+      - 6
       - 8
     memory:
       - 2048
@@ -379,13 +379,13 @@ test:
     # - test.podman.machine_provider
     # - test.podman.runtime
     # --- podman machine config (for regular benchmarks) ---
-     - test.podman.machine_config.cpus
+    # - test.podman.machine_config.cpus
     # - test.podman.machine_config.memory
     # - test.podman.machine_config.rootful
     # --- machine benchmarks: machine config (independent from above) ---
-    # - test.benchmark_machine.provider
+     - test.benchmark_machine.provider
      - test.benchmark_machine.cpus
-    # - test.benchmark_machine.memory
+     - test.benchmark_machine.memory
     # - test.benchmark_machine.rootful
     map_iterable_test_fields:
       test.platform: test.platform
