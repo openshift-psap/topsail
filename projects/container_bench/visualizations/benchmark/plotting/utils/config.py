@@ -46,8 +46,24 @@ DOCKER_PATHS = {
 }
 
 
+SETTINGS_KEY_LABEL_MAP = {
+    "test.benchmark_machine.cpus": "CPU",
+    "test.benchmark_machine.memory": "Memory",
+    "test.benchmark_machine.rootful": "Rootless",
+    "test.benchmark_machine.provider": "Provider",
+
+    "test.podman.machine_config.cpus": "CPU",
+    "test.podman.machine_config.memory": "Memory",
+    "test.podman.machine_config.rootful": "Rootless",
+
+    "test.podman.runtime": "Runtime",
+}
+
+
 def normalize_configuration_key(key):
-    normalized_key = key.replace("test.podman.", "").replace("test.docker.", "")
+    if key in SETTINGS_KEY_LABEL_MAP:
+        return SETTINGS_KEY_LABEL_MAP[key]
+    normalized_key = key.replace("test.podman.", "").replace("test.docker.", "").replace("test.benchmark_machine.", "")
     if '.' in normalized_key:
         normalized_key = normalized_key.split('.')[-1]
     return normalized_key
@@ -70,6 +86,26 @@ def _extract_container_engine_provider(test_config):
         yaml_root = getattr(test_config, "yaml_file", {})
     env_dict = _safe_nested_get(yaml_root, provider_path, {}) or {}
     return env_dict.get("CONTAINERS_MACHINE_PROVIDER", "")
+
+
+def _extract_machine_benchmark_config(test_config):
+    if isinstance(test_config, dict):
+        yaml_root = test_config.get("yaml_file", {})
+    else:
+        yaml_root = getattr(test_config, "yaml_file", {})
+    # machine_first_start_benchmark is the primary source for machine hardware config;
+    # fall back to machine_start_benchmark for backward compatibility
+    machine_cfg = _safe_nested_get(yaml_root, ["machine_first_start_benchmark", "machine"], {})
+    if not machine_cfg or not isinstance(machine_cfg, dict):
+        machine_cfg = _safe_nested_get(yaml_root, ["machine_start_benchmark", "machine"], {})
+    if not machine_cfg or not isinstance(machine_cfg, dict):
+        return {}
+    return {
+        "cpus":    machine_cfg.get("cpus"),
+        "memory":  machine_cfg.get("memory"),
+        "rootful": machine_cfg.get("rootful"),
+        "provider": machine_cfg.get("provider"),
+    }
 
 
 def _extract_system_info(system_state):
@@ -199,6 +235,11 @@ def GetInfo(settings):
         test_config = entry.results.__dict__.get("test_config", {})
         if test_config:
             data["container_engine_provider"] = _extract_container_engine_provider(test_config)
+            is_machine_benchmark = entry.settings.__dict__.get("platform") == "machine_podman"
+            if is_machine_benchmark:
+                machine_cfg = _extract_machine_benchmark_config(test_config)
+                if machine_cfg:
+                    data["machine_benchmark_config"] = machine_cfg
         else:
             logging.warning("Missing test_config in entry results.")
             data["container_engine_provider"] = ""
@@ -263,12 +304,38 @@ def _add_provider_info_if_varying(label_parts, config, all_configurations):
         label_parts.append(f"Provider: {provider}")
 
 
+_ENGINE_TO_SETTING_KEYS = {
+    "Host_cpu": ("test.podman.machine_config.cpus", "test.benchmark_machine.cpus"),
+    "Host_memory": ("test.podman.machine_config.memory", "test.benchmark_machine.memory"),
+    "Mode": ("test.podman.machine_config.rootful", "test.benchmark_machine.rootful"),
+    "Runtime": ("test.podman.runtime",),
+}
+
+
+def _is_setting_already_varying(field_key, all_configurations):
+    """Return True if field_key is already represented by a varying settings key."""
+    setting_keys = _ENGINE_TO_SETTING_KEYS.get(field_key)
+    if not setting_keys:
+        return False
+    values = [
+        c.get("settings", {}).get(k)
+        for c in all_configurations
+        for k in setting_keys
+        if c.get("settings", {}).get(k) is not None
+    ]
+    return len(set(str(v) for v in values)) > 1
+
+
 def _add_engine_info_if_varying(label_parts, config, all_configurations):
     engine_info = config.get("container_engine_info", {})
 
     for field_key, short_name in ENGINE_LABEL_FIELD_CONFIG:
         value = engine_info.get(field_key)
         if not value or value == "N/A":
+            continue
+
+        # Skip this engine field if the same dimension is expressed by a varying setting
+        if _is_setting_already_varying(field_key, all_configurations):
             continue
 
         all_values = []
@@ -382,6 +449,32 @@ def find_shared_and_different_info(configurations):
     shared_engine, different_engine = categorize_configuration_fields(
         configurations, engine_field_map, lambda config: config.get("container_engine_info", {}), format_field_value
     )
+
+    _MACHINE_CFG_TO_ENGINE = [
+        ("cpus", "Host_cpu", lambda v: int(v)),
+        ("memory", "Host_memory", lambda v: int(v) * 1024 * 1024),
+        ("rootful", "Mode", lambda v: not v),
+    ]
+    is_machine_benchmark_context = any(
+        c.get("machine_benchmark_config") for c in configurations
+    )
+    if is_machine_benchmark_context:
+        for cfg_key, engine_field, transform in _MACHINE_CFG_TO_ENGINE:
+            raw_values = [
+                c["machine_benchmark_config"][cfg_key]
+                for c in configurations
+                if c.get("machine_benchmark_config", {}).get(cfg_key) is not None
+            ]
+            if not raw_values:
+                continue
+            formatted = [format_field_value(engine_field, transform(v)) for v in raw_values]
+            if len(set(str(v) for v in formatted)) == 1:
+                shared_engine[engine_field] = formatted[0]
+                different_engine.pop(engine_field, None)
+            else:
+                different_engine[engine_field] = True
+                shared_engine.pop(engine_field, None)
+
     shared_info["engine"] = shared_engine
     different_info["engine"] = different_engine
 
