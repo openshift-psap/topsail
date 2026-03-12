@@ -1,0 +1,30 @@
+---
+# Benchmark body for machine-level benchmarks on Windows platforms.
+# Skips container resource cleanup and image pulling - not applicable when
+# benchmarking the machine lifecycle itself (e.g. podman machine start).
+# Usage:
+# - include_tasks: "../../shared_tasks/windows_machine_benchmark_body.yml"
+# Requires: prepare_commands, benchmark_command, cleanup_commands variables
+
+- name: Validate required variables
+  fail:
+    msg: "Required variable '{{ item }}' is not defined"
+  when: vars[item] is not defined
+  loop:
+    - prepare_commands
+    - benchmark_command
+    - cleanup_commands
+
+- name: Create benchmark artifacts directory
+  include_tasks: "create_artifacts_dir.yml"
+
+- name: Execute benchmark preparation commands
+  ansible.windows.win_shell: "{{ prepare_commands }}"
+  when: prepare_commands | length > 0
+
+- name: Execute benchmark measurement
+  include_tasks: "run_benchmark.yml"
+
+- name: Execute benchmark cleanup commands
+  ansible.windows.win_shell: "{{ cleanup_commands }}"
+  when: cleanup_commands | length > 0

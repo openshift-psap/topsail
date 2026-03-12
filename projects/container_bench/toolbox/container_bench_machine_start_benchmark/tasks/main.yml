@@ -1,0 +1,48 @@
+---
+- name: Map execution properties dictionary to short alias
+  set_fact:
+    exec_props: "{{ container_bench_machine_start_benchmark_exec_props }}"
+
+- name: Extract individual properties from exec_props dictionary
+  set_fact:
+    binary_path: "{{ exec_props.binary_path }}"
+    additional_args: "{{ exec_props.additional_args }}"
+    exec_time_path: "{{ exec_props.exec_time_path }}"
+    rootfull: "{{ exec_props.rootfull }}"
+    machine_provider: "{{ exec_props.machine_provider | default('') }}"
+    machine_cpus: "{{ exec_props.machine_cpus | default('') }}"
+    machine_memory: "{{ exec_props.machine_memory | default('') }}"
+    machine_rootful: "{{ exec_props.machine_rootful | default(false) }}"
+
+- name: Build provider environment prefix
+  set_fact:
+    # Uses `env KEY=VALUE` form: works in shell (prepare/cleanup) and as a subprocess (benchmark_command via exec_time.py)
+    provider_env: "{{ 'env CONTAINERS_MACHINE_PROVIDER=' ~ machine_provider ~ ' ' if machine_provider | length > 0 else '' }}"
+
+- name: Set common commands (shared across all platforms)
+  set_fact:
+    image_to_pull: ""
+    prepare_commands: |
+      {{ provider_env }}{{ binary_path }} machine stop benchmark-machine 2>/dev/null || true
+      {{ provider_env }}{{ binary_path }} machine rm --force benchmark-machine 2>/dev/null || true
+      {{ provider_env }}{{ binary_path }} machine init benchmark-machine
+      {{ provider_env }}{{ binary_path }} machine set \
+        {% if machine_cpus | string | length > 0 %}--cpus={{ machine_cpus }}{% endif %} \
+        {% if machine_memory | string | length > 0 %}--memory={{ machine_memory }}{% endif %} \
+        --rootful={{ machine_rootful | lower }} \
+        benchmark-machine
+      {{ provider_env }}{{ binary_path }} machine start benchmark-machine
+      {{ provider_env }}{{ binary_path }} machine stop benchmark-machine
+    cleanup_commands: |
+      {{ provider_env }}{{ binary_path }} machine stop benchmark-machine 2>/dev/null || true
+      {{ provider_env }}{{ binary_path }} machine rm --force benchmark-machine 2>/dev/null || true
+    benchmark_command: |
+      {{ provider_env }}{{ binary_path }} machine start benchmark-machine
+
+- name: Include Unix/Linux tasks
+  include_tasks: "../../shared_tasks/unix_machine_benchmark_body.yml"
+  when: ansible_os_family != 'Windows'
+
+- name: Include Windows tasks
+  include_tasks: "../../shared_tasks/windows_machine_benchmark_body.yml"
+  when: ansible_os_family == 'Windows'
