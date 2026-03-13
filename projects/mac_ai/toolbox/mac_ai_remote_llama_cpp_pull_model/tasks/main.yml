@@ -5,6 +5,16 @@
     state: directory
     mode: '0755'
 
+- name: Compute the model destination
+  set_fact:
+    model_dest: "{{ (mac_ai_remote_llama_cpp_pull_model_base_work_dir + '/') if not mac_ai_remote_llama_cpp_pull_model_dest.startswith('/') else '' }}{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
+
+- name: Ensure that the parent directory exists
+  file:
+    path: "{{ model_dest | dirname }}"
+    state: directory
+    mode: '0755'
+
 - name: Execute and retrieve the artifacts
   block:
   - name: Start pulling the llama_cpp model {{ mac_ai_remote_llama_cpp_pull_model_name }}
@@ -12,36 +22,16 @@
       cd "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}";
 
       {{ mac_ai_remote_llama_cpp_pull_model_path }} \
-        {{ mac_ai_remote_llama_cpp_pull_model_name }} \
-        "say nothing" \
-        2>/dev/null
+        --hf-repo "{{ mac_ai_remote_llama_cpp_pull_model_name }}" \
+        --hf-file "{{ model_dest }}" \
+        "say nothing" 2>/dev/null
 
     environment:
       HOME: "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}"
 
-  - name: Compute the name of the model file
-    command:
-      basename {{ mac_ai_remote_llama_cpp_pull_model_name }}
-    register: model_name_cmd
-
   - name: Show the size of the model
     command:
-      du -sh "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}"
-
-  - name: Compute the model destination
-    set_fact:
-      model_dest: "{{ (mac_ai_remote_llama_cpp_pull_model_base_work_dir + '/') if not mac_ai_remote_llama_cpp_pull_model_dest.startswith('/') else '' }}{{ mac_ai_remote_llama_cpp_pull_model_dest }}"
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
-
-  - name: Ensure that the parent directory exists
-    shell:
-      mkdir -p $(dirname "{{ model_dest }}")
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
-
-  - name: Move the model file to its dest location
-    command:
-      mv "{{ mac_ai_remote_llama_cpp_pull_model_base_work_dir }}/{{ model_name_cmd.stdout }}" "{{ model_dest }}"
-    when: mac_ai_remote_llama_cpp_pull_model_dest | default('', true) | length > 0
+      du -sh "{{ model_dest }}"
 
   rescue:
   - name: Fail
