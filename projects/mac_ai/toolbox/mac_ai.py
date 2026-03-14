@@ -135,7 +135,7 @@ class Mac_Ai:
             base_work_dir,
             path,
             name,
-            dest=None,
+            dest,
     ):
         """
         Pulls a model with llama-cpp, on a remote host
@@ -144,7 +144,7 @@ class Mac_Ai:
           base_work_dir: the base directory where to store things
           path: the path to the llama-cpp binary
           name: the name of the model to fetch
-          dest: if specified, where to put the model being pulled
+          dest: where to put the model being pulled
         """
 
         return RunAnsibleRole(locals())

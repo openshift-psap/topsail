@@ -35,5 +35,5 @@ Parameters
 
 ``dest``  
 
-* If specified, where to put the model being pulled
+* Where to put the model being pulled
 

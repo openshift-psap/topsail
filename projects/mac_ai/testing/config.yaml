@@ -651,7 +651,7 @@ test:
 
 cleanup:
   models:
-    gguf: true
+    gguf: false
     ollama: true
     ramalama: true
 
