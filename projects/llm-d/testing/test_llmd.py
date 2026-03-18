@@ -74,7 +74,8 @@ def test():
                     logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
 
                     # Get the service URL
-                    endpoint_url = get_llm_inference_url(llmisvc_name, namespace)
+                    endpoint_url = get_llm_inference_url(llmisvc_name, namespace, flavor)
+
                     if config.project.get_config("tests.llmd.inference_service.do_simple_test"):
                         if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name):
                             raise RuntimeError("Simple inference test failed :/")
@@ -400,53 +401,47 @@ def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
     return llmisvc_name, namespace, llmisvc_path
 
 
-def get_llm_inference_url(llmisvc_name, namespace):
+def get_llm_inference_url(llmisvc_name, namespace, flavor):
     """
-    Gets the URL of the deployed LLM inference service
+    Gets the URL of the deployed LLM inference service using the service name pattern
     """
 
-    logging.info("Getting LLM inference service URL")
+    logging.info(f"Getting LLM inference service URL for flavor: {flavor}")
 
-    # Try getting the service URL from .status.url first
-    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
-                        f"-ojsonpath='{{.status.url}}'", capture_stdout=True)
+    # Construct the service URL using the standard pattern:
+    # https://{llmisvc-name}-kserve-workload-svc.{namespace}.svc.cluster.local
+    service_name = f"{llmisvc_name}-kserve-workload-svc"
 
-    endpoint_url = url_result.stdout.strip() if url_result.returncode == 0 else ""
+    # For simple flavors, we need to append the HTTPS port from the service
+    if flavor.startswith("simple"):
+        logging.info("Simple flavor detected - looking up service port")
 
-    if endpoint_url:
-        logging.info(f"LLM inference service URL: {endpoint_url}")
-        return endpoint_url
+        # Get the HTTPS port from the service
+        port_result = run.run(f"oc get svc {service_name} -n {namespace} "
+                              """-o jsonpath='{.spec.ports[?(@.name==\"https\")].port}'""",
+                             capture_stdout=True, check=False)
 
-    # If that didn't work or is empty, try .status.addresses[1].url
-    logging.info("Trying alternate URL location at .status.addresses[1].url")
-    url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
-                         f"-ojsonpath='{{.status.addresses[1].url}}'", capture_stdout=True)
+        if port_result.returncode != 0 or not port_result.stdout.strip():
+            raise RuntimeError("Couldn't extract the SVC port :/")
+        https_port = port_result.stdout.strip()
+        endpoint_url = f"https://{service_name}.{namespace}.svc.cluster.local:{https_port}"
+        logging.info(f"Simple flavor - using port {https_port} from service")
 
-    if url_result.returncode != 0:
-        logging.error("Failed to get LLM inference service URL from both locations")
-        raise RuntimeError(f"Failed to get LLM inference service URL: {url_result.stderr}")
+    else:
+        # For intelligent-routing and other flavors, use standard URL without port
+        endpoint_url = f"https://{service_name}.{namespace}.svc.cluster.local"
+        logging.info("Non-simple flavor - using standard URL without port")
 
-    endpoint_url = url_result.stdout.strip()
+    logging.info(f"Constructed LLM inference service URL: {endpoint_url}")
 
-    if not endpoint_url:
-        logging.error("LLM inference service URL is empty at both locations")
-        raise RuntimeError("LLM inference service URL is empty")
+    # Verify the service exists
+    svc_check = run.run(f"oc get svc {service_name} -n {namespace}", capture_stdout=True, check=False)
+    if svc_check.returncode != 0:
+        logging.warning(f"Service {service_name} not found in namespace {namespace}")
+        logging.warning(f"Service check output: {svc_check.stderr}")
+        # Still return the constructed URL as it might be accessible
+        logging.info("Returning constructed URL despite service check failure")
 
-    ADD_PORT = False
-    if not ADD_PORT:
-        return endpoint_url
-
-    # Get the service port
-    port_result = run.run(f"oc get svc -l app.kubernetes.io/name={llmisvc_name} "
-                          f"-n {namespace} -o jsonpath='{{.items[0].spec.ports[0].port}}'", capture_stdout=True)
-
-    if port_result.stdout.strip():
-        port = port_result.stdout.strip()
-
-        endpoint_url = f"{endpoint_url}:{port}"
-        logging.info(f"Added port {port} to URL: {endpoint_url}")
-
-    logging.info(f"LLM inference service URL: {endpoint_url}")
     return endpoint_url
 
 
