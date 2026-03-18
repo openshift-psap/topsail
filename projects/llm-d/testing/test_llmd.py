@@ -64,13 +64,16 @@ def test():
                         prom_start_ts = prom.reset_prometheus()
 
                     # Deploy LLM inference service
-                    deploy_llm_inference_service(flavor, llmisvc_name, namespace)
+                    _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
+
+                    # TODO: extract the name of the model from the llmisvc_path
+                    model_name = "Llama-3.3-70B-Instruct-FP8-dynamic"
 
                     # Get the service URL
                     endpoint_url = get_llm_inference_url(llmisvc_name, namespace)
                     if config.project.get_config("tests.llmd.inference_service.do_simple_test"):
-                        if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace):
-                            raise RuntimeException("Simple inference test failed :/")
+                        if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name):
+                            raise RuntimeError("Simple inference test failed :/")
 
                     # Run benchmarks
                     if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
@@ -185,24 +188,24 @@ def generate_visualization(test_artifact_dir, test_failed):
     return exc
 
 
-def reshape_isvc(flavor, llmisvc_path):
+def apply_flavor_modifications(isvc_data, flavor):
     """
-    Reshape the ISVC YAML file based on the flavor configuration
+    Apply flavor-specific modifications to the ISVC data
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        flavor: The flavor string to apply
     """
-
-    logging.info(f"Reshaping ISVC for flavor: {flavor}")
-
-    # Load the YAML file
-    with open(llmisvc_path, 'r') as f:
-        isvc_data = yaml.safe_load(f)
+    logging.info(f"Applying flavor modifications for: {flavor}")
 
     # Apply flavor-specific modifications
     if "simple" in flavor:
         logging.info("Applying 'simple' flavor modifications")
 
         # Remove spec.router if it exists
-        del isvc_data['spec']['router']
-        logging.info("Removed spec.router for 'simple' flavor")
+        if 'router' in isvc_data.get('spec', {}):
+            del isvc_data['spec']['router']
+            logging.info("Removed spec.router for 'simple' flavor")
 
     elif "intelligent-routing" in flavor or "default" in flavor:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
@@ -211,9 +214,108 @@ def reshape_isvc(flavor, llmisvc_path):
         # Unknown flavor
         raise ValueError(f"Unknown flavor '{flavor}'. Supported flavors: simple, intelligent-routing")
 
+    # Handle replica scaling
     if "x2" in flavor:
         isvc_data['spec']['replicas'] = 2
         logging.info("Setting spec.replicas = 2")
+
+
+def apply_kueue_configuration(isvc_data):
+    """
+    Apply Kueue annotations and labels to the ISVC data
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    kueue_config = config.project.get_config("tests.llmd.inference_service.kueue", {})
+
+    if not kueue_config.get("enabled", False):
+        logging.info("Kueue integration disabled - skipping kueue configuration")
+        return
+
+    logging.info("Applying Kueue configuration to ISVC")
+
+    # Get prefix for kueue labels/annotations
+    kueue_prefix = kueue_config.get("prefix")
+
+    # Ensure metadata sections exist
+    if 'metadata' not in isvc_data:
+        isvc_data['metadata'] = {}
+    if 'labels' not in isvc_data['metadata']:
+        isvc_data['metadata']['labels'] = {}
+    if 'annotations' not in isvc_data['metadata']:
+        isvc_data['metadata']['annotations'] = {}
+
+    # Apply Kueue labels
+    kueue_labels = kueue_config.get("labels", {})
+    for label_key, label_value in kueue_labels.items():
+        full_label_key = f"{kueue_prefix}{label_key}"
+        isvc_data['metadata']['labels'][full_label_key] = label_value
+        logging.info(f"Added Kueue label: {full_label_key}={label_value}")
+
+    # Apply Kueue annotations
+    kueue_annotations = kueue_config.get("annotations", {})
+    for annotation_key, annotation_value in kueue_annotations.items():
+        full_annotation_key = f"{kueue_prefix}{annotation_key}"
+        isvc_data['metadata']['annotations'][full_annotation_key] = annotation_value
+        logging.info(f"Added Kueue annotation: {full_annotation_key}={annotation_value}")
+
+    # Apply Kueue annotations to router scheduler pod template
+    if 'spec' in isvc_data and 'router' in isvc_data['spec'] and 'scheduler' in isvc_data['spec']['router']:
+        scheduler_template = isvc_data['spec']['router']['scheduler'].get('template', {})
+
+        # Ensure metadata exists in scheduler template
+        if 'metadata' not in scheduler_template:
+            scheduler_template['metadata'] = {}
+        if 'annotations' not in scheduler_template['metadata']:
+            scheduler_template['metadata']['annotations'] = {}
+
+        # Apply the same Kueue annotations to the scheduler pod template
+        for annotation_key, annotation_value in kueue_annotations.items():
+            full_annotation_key = f"{kueue_prefix}{annotation_key}"
+            scheduler_template['metadata']['annotations'][full_annotation_key] = annotation_value
+            logging.info(f"Added Kueue annotation to scheduler template: {full_annotation_key}={annotation_value}")
+
+        # Update the scheduler template back to the data structure
+        isvc_data['spec']['router']['scheduler']['template'] = scheduler_template
+
+    # Calculate pod group total count: 1 scheduler + number of replicas
+    replicas = isvc_data.get('spec', {}).get('replicas', 1)
+    pod_group_total_count = 1 + replicas  # 1 scheduler + replicas
+    isvc_data['metadata']['annotations'][f"{kueue_prefix}pod-group-total-count"] = str(pod_group_total_count)
+    logging.info(f"Set pod-group-total-count: {pod_group_total_count} (1 scheduler + {replicas} replicas)")
+
+def reshape_isvc(flavor, llmisvc_path):
+    """
+    Reshape the ISVC YAML file based on configuration
+
+    This method applies various modifications to the ISVC in a modular way:
+    1. Flavor-specific modifications (routing, replicas, etc.)
+    2. Kueue annotations and labels
+    3. Future extensions can be added as separate functions
+
+    Args:
+        flavor: The flavor string to apply
+        llmisvc_path: Path to the original ISVC YAML file
+
+    Returns:
+        Path to the modified ISVC YAML file
+    """
+    logging.info(f"Reshaping ISVC for flavor: {flavor}")
+
+    # Load the YAML file
+    with open(llmisvc_path, 'r') as f:
+        isvc_data = yaml.safe_load(f)
+
+    # Apply modifications in order
+    # 1. Apply flavor modifications
+    apply_flavor_modifications(isvc_data, flavor)
+
+    # 2. Apply Kueue configuration
+    apply_kueue_configuration(isvc_data)
+
+    # 3. Future aspects can be added here as separate function calls
+    # apply_other_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
@@ -249,7 +351,7 @@ def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
                    namespace=namespace,
                    yaml_file=llmisvc_path)
 
-    return llmisvc_name, namespace
+    return llmisvc_name, namespace, llmisvc_path
 
 
 def get_llm_inference_url(llmisvc_name, namespace):
@@ -269,10 +371,10 @@ def get_llm_inference_url(llmisvc_name, namespace):
         logging.info(f"LLM inference service URL: {endpoint_url}")
         return endpoint_url
 
-    # If that didn't work or is empty, try .status.addresses[0].url
-    logging.info("Trying alternate URL location at .status.addresses[0].url")
+    # If that didn't work or is empty, try .status.addresses[1].url
+    logging.info("Trying alternate URL location at .status.addresses[1].url")
     url_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
-                         f"-ojsonpath='{{.status.addresses[0].url}}'", capture_stdout=True)
+                         f"-ojsonpath='{{.status.addresses[1].url}}'", capture_stdout=True)
 
     if url_result.returncode != 0:
         logging.error("Failed to get LLM inference service URL from both locations")
@@ -283,6 +385,10 @@ def get_llm_inference_url(llmisvc_name, namespace):
     if not endpoint_url:
         logging.error("LLM inference service URL is empty at both locations")
         raise RuntimeError("LLM inference service URL is empty")
+
+    ADD_PORT = False
+    if not ADD_PORT:
+        return endpoint_url
 
     # Get the service port
     port_result = run.run(f"oc get svc -l app.kubernetes.io/name={llmisvc_name} "
@@ -462,7 +568,7 @@ def ensure_gpu_nodes_available():
         raise
 
 
-def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace):
+def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name):
     """
     Runs a simple test against the LLM inference service using oc rsh
     """
@@ -476,7 +582,7 @@ def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace):
 
     # Test with a simple completion request
     test_payload = {
-        "model": "llama-3-1-8b-instruct-fp8",
+        "model": model_name,
         "prompt": "San Francisco is a",
         "max_tokens": 50,
         "temperature": 0.7

@@ -123,7 +123,7 @@ tests:
       do_simple_test: true
 
       kueue:
-        enabled: true
+        enabled: false
         prefix: "kueue.x-k8s.io/"
         labels:
           pod-group-name: llmisvc
