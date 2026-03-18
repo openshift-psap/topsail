@@ -557,6 +557,16 @@ def preload_llm_model_image():
 
                 logging.info(f"Found {len(additional_images)} additional images to preload out of {len(target_image_names)} targets")
 
+        # Get extra images from config file
+        extra_images = config.project.get_config("prepare.preload.extra_images", {})
+        if extra_images:
+            logging.info(f"Adding {len(extra_images)} extra images from config")
+            for image_name, image_uri in extra_images.items():
+                all_images[image_name] = image_uri
+                logging.info(f"Added extra image to preload: {image_name} = {image_uri}")
+        else:
+            logging.info("No extra images configured for preloading")
+
         # Preload all images in parallel
         logging.info(f"Starting parallel preload of {len(all_images)} images")
 
