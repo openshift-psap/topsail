@@ -76,7 +76,7 @@ class Llmd:
             self,
             endpoint_url,
             name="guidellm-benchmark", namespace="",
-            image="ghcr.io/vllm-project/guidellm", version="v0.5.4",
+            image="ghcr.io/vllm-project/guidellm", version="pr-590",
             timeout=900, profile="sweep", max_seconds=30,
             processor="RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic",
             data="prompt_tokens=256,output_tokens=128"
