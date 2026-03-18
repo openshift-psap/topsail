@@ -21,6 +21,7 @@ secrets:
     name: psap-ods-secret
     env_key: PSAP_ODS_SECRET_PATH
   rhoai_rc: rhoai_rc.secret
+  hf_token: git-credentials
 
 prepare:
   skip: false
@@ -107,8 +108,24 @@ prepare:
   preload:
     extra_images: {}
 
+  pvc:
+    size: 1000Gi
+    name: llmd-models
+
+  model_downloader:
+    image: ghcr.io/opendatahub-io/rhaii-on-xks/kserve-storage-initializer:e6b5db0@sha256:b305264fe2211be2c6063500c4c11da79e8357af4b34dd8567b0d8e8dea7e1d4
+
   cleanup:
     skip: false
+
+models:
+  llama3.3-70b:
+    name: Llama-3.3-70B-Instruct-FP8-dynamic
+    source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+
+  gpt-oss-120:
+    name: gpt-oss-120b
+    source: hf://openai/gpt-oss-120b
 
 tests:
   llmd:
@@ -121,6 +138,8 @@ tests:
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
+
+      model: llama3.3-70b
 
       kueue:
         enabled: false

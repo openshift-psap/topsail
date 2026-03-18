@@ -196,6 +196,7 @@ def prepare():
     scale_up()
 
     with run.Parallel("prepare_node") as parallel:
+        parallel.delayed(download_models_to_pvc)
         parallel.delayed(wait_for_gpu_readiness)
         parallel.delayed(preload_llm_model_image)
 
@@ -485,6 +486,95 @@ def cleanup_cluster():
         run.run_toolbox("cluster", "set_scale",
                         instance_type=node_instance_type,
                         scale="0")
+
+def download_models_to_pvc():
+    """
+    Download configured models to the PVC for use with inference services
+    """
+    logging.info("Starting model download process")
+
+    try:
+        # Get models configuration
+        models_config = config.project.get_config("models")
+        if not models_config:
+            logging.info("No models configured for download - skipping")
+            return
+
+        logging.info(f"Downloading {len(models_config)} model(s) to PVC...")
+
+        # Download models in parallel for efficiency
+        with run.Parallel("download_models") as parallel:
+            for model_key, model_config in models_config.items():
+                parallel.delayed(download_single_model, model_key)
+
+        logging.info("Model download process completed successfully")
+
+    except Exception as e:
+        logging.error(f"Failed to download models to PVC: {e}")
+        raise
+
+
+def download_single_model(model_key):
+    """
+    Download a single model using the storage toolbox
+
+    Args:
+        model_key: The key identifying the model in the models configuration
+    """
+    try:
+        logging.info(f"Starting download for model '{model_key}'")
+
+        # Get model configuration
+        models_config = config.project.get_config("models")
+        if model_key not in models_config:
+            raise ValueError(f"Model '{model_key}' not found in models configuration")
+
+        model_config = models_config[model_key]
+        if 'source' not in model_config:
+            logging.info(f"Model '{model_key}' has no source configured")
+            return
+
+        source = model_config['source']
+
+        # Get PVC configuration
+        pvc_name = config.project.get_config("prepare.pvc.name", "llmd-models")
+        pvc_size = config.project.get_config("prepare.pvc.size", "1000Gi")
+        namespace = config.project.get_config("prepare.namespace.name")
+        downloader_image = config.project.get_config("prepare.model_downloader.image",
+                                                     "registry.access.redhat.com/ubi9/ubi")
+
+        # Check if model already exists in PVC
+        check_result = run.run(f'oc get pvc -l {model_key}=yes -oname',
+                              capture_stdout=True, check=False)
+
+        expected_pvc = f"persistentvolumeclaim/{pvc_name}"
+        if check_result.returncode == 0 and expected_pvc in check_result.stdout:
+            logging.info(f"Model '{model_key}' already exists in PVC (found {expected_pvc} with label {model_key}=yes) - skipping download")
+            return
+
+        logging.info(f"Model '{model_key}' not found in PVC - proceeding with download from {source}")
+
+        # Get credentials path
+        hf_token_secret = config.project.get_config("secrets.hf_token")
+        secret_dir = config.project.get_config("secrets.dir.env_key")
+        hf_creds_path = pathlib.Path(os.environ[secret_dir]) / hf_token_secret
+
+        run.run_toolbox("storage", "download_to_pvc",
+                       name=model_key,
+                       source=source,
+                       pvc_name=pvc_name,
+                       namespace=namespace,
+                       pvc_size=pvc_size,
+                       image=downloader_image,
+                       creds=str(hf_creds_path),
+                       clean_first=False)  # Don't clean to allow multiple models in same PVC
+
+        logging.info(f"Successfully downloaded model '{model_key}'")
+
+    except Exception as e:
+        logging.error(f"Failed to download model '{model_key}': {e}")
+        raise
+
 
 def preload_llm_model_image():
     """

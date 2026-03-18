@@ -66,8 +66,12 @@ def test():
                     # Deploy LLM inference service
                     _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
 
-                    # TODO: extract the name of the model from the llmisvc_path
-                    model_name = "Llama-3.3-70B-Instruct-FP8-dynamic"
+                    # Extract the model name from configuration
+                    model_ref = config.project.get_config("tests.llmd.inference_service.model")
+
+                    models = config.project.get_config(f"models")
+                    model_name = models[model_ref]["name"]
+                    logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
 
                     # Get the service URL
                     endpoint_url = get_llm_inference_url(llmisvc_name, namespace)
@@ -133,12 +137,14 @@ def prepare_for_test():
     # Ensure GPU nodes are available before running test
     ensure_gpu_nodes_available()
     # Run GPU readiness check and image preloading in parallel
-    logging.info("Starting parallel GPU readiness check and image preloading")
+    logging.info("Starting parallel GPU readiness check and image/model preloading")
+
+    model_ref = config.project.get_config("tests.llmd.inference_service.model")
 
     with run.Parallel("prepare_gpu_node") as parallel:
         parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
         parallel.delayed(prepare_llmd.preload_llm_model_image)
-
+        parallel.delayed(prepare_llmd.download_single_model, model_ref)
 
 def _generate_test_metadata(failed, flavor):
     """
@@ -285,6 +291,51 @@ def apply_kueue_configuration(isvc_data):
     isvc_data['metadata']['annotations'][f"{kueue_prefix}pod-group-total-count"] = str(pod_group_total_count)
     logging.info(f"Set pod-group-total-count: {pod_group_total_count} (1 scheduler + {replicas} replicas)")
 
+def apply_model_configuration(isvc_data):
+    """
+    Apply model URI and name configuration from config file
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    model_key = config.project.get_config("tests.llmd.inference_service.model", None)
+
+    if not model_key:
+        logging.info("No model configuration found - using defaults from YAML")
+        return
+
+    logging.info(f"Applying model configuration for model reference: {model_key}")
+
+    # Get model details from models section
+    models_config = config.project.get_config("models", {})
+    if model_key not in models_config:
+        raise ValueError(f"Model '{model_key}' not found in models configuration")
+
+    model_config = models_config[model_key]
+
+    # Ensure spec.model section exists
+    if 'spec' not in isvc_data:
+        isvc_data['spec'] = {}
+    if 'model' not in isvc_data['spec']:
+        isvc_data['spec']['model'] = {}
+
+    # Apply model URI if configured
+    if 'uri' in model_config:
+        isvc_data['spec']['model']['uri'] = model_config['uri']
+        logging.info(f"Set model URI: {model_config['uri']}")
+    else:
+        # Construct PVC URI: pvc://<pvc_name>/<model_key>
+        pvc_name = config.project.get_config("prepare.pvc.name")
+        uri = f"pvc://{pvc_name}/{model_key}"
+        isvc_data['spec']['model']['uri'] = uri
+        logging.info(f"Set model URI: {uri}")
+
+    # Apply model name if configured
+    if 'name' in model_config:
+        isvc_data['spec']['model']['name'] = model_config['name']
+        logging.info(f"Set model name: {model_config['name']}")
+
+
 def reshape_isvc(flavor, llmisvc_path):
     """
     Reshape the ISVC YAML file based on configuration
@@ -308,14 +359,9 @@ def reshape_isvc(flavor, llmisvc_path):
         isvc_data = yaml.safe_load(f)
 
     # Apply modifications in order
-    # 1. Apply flavor modifications
     apply_flavor_modifications(isvc_data, flavor)
-
-    # 2. Apply Kueue configuration
     apply_kueue_configuration(isvc_data)
-
-    # 3. Future aspects can be added here as separate function calls
-    # apply_other_configuration(isvc_data)
+    apply_model_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
