@@ -162,16 +162,19 @@ echo "All done!"
 
 cd "$STORAGE_DIR"
 
-time find "./$SOURCE_NAME" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
+if command -v find >/dev/null 2>&1; then
+    time find "./$SOURCE_NAME" ! -path '*/.git/*' -type f -exec sha256sum {} \; | tee -a "${SOURCE_NAME}.sha256sum"
+    echo "---"
+fi
 
-echo "---"
+if command -v du >/dev/null 2>&1; then
+    du -sh "./$SOURCE_NAME"
+    echo "---"
+fi
 
-du -sh "./$SOURCE_NAME"
-
-echo "---"
-
-df -h "$STORAGE_DIR"
-
-echo "---"
+if command -v df >/dev/null 2>&1; then
+    df -h "$STORAGE_DIR"
+    echo "---"
+fi
 
 exit 0
