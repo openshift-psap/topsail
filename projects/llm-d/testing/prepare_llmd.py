@@ -519,7 +519,7 @@ def preload_llm_model_image():
         logging.info("Fetching additional images from RHODS operator CSV")
 
         # First get the actual CSV name
-        csv_name_result = run.run("oc get csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator -oname", capture_stdout=True)
+        csv_name_result = run.run("oc get csv -n redhat-ods-operator -l operators.coreos.com/rhods-operator.redhat-ods-operator -oname", capture_stdout=True, check=False)
 
         if csv_name_result.returncode != 0:
             logging.warning(f"Failed to get RHODS operator CSV name: {csv_name_result.stderr}")
