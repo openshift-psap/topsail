@@ -28,7 +28,15 @@ if [[ -e "$STORAGE_DIR/$SOURCE_NAME" ]]; then
     rm -rfv "$STORAGE_DIR/$SOURCE_NAME"
 fi
 
-if [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
+if [[ "$DOWNLOAD_SOURCE" == "hf://"* ]];
+then
+   export HF_HOME=/tmp
+   export HF_HUB_ENABLE_HF_TRANSFER=1
+   export HF_XET_HIGH_PERFORMANCE=1
+   export HF_XET_NUM_CONCURRENT_RANGE_GETS=8
+
+   /storage-initializer/scripts/initializer-entrypoint "$DOWNLOAD_SOURCE" "$STORAGE_DIR/$SOURCE_NAME"
+elif [[ "$DOWNLOAD_SOURCE" == "https://huggingface.co/"* ]];
 then
     dnf install --quiet -y git-lfs
 
