@@ -506,10 +506,14 @@ def preload_llm_model_image():
         if image_result.returncode != 0:
             raise RuntimeError(f"Failed to extract model URI from {yaml_file}: {image_result.stderr}")
 
-        model_image = image_result.stdout.strip().strip('"').strip("oci://")
-        image_name = run.run(f"cat {yaml_file} | yq .spec.model.name", capture_stdout=True).stdout.strip().strip('"')
-        logging.info(f"Preloading model image: {model_image} ({image_name})")
-        all_images[image_name] = model_image
+        model_uri = image_result.stdout.strip().strip('"')
+        if model_uri.startswith("oci://"):
+            model_image = model_uri.strip("oci://")
+            image_name = run.run(f"cat {yaml_file} | yq .spec.model.name", capture_stdout=True).stdout.strip().strip('"')
+            logging.info(f"Preloading model image: {model_image} ({image_name})")
+            all_images[image_name] = model_image
+        else:
+            logging.info(f"Model URI ({model_uri}) isn't an OCI image, ignoring.")
 
         # Get additional images from RHODS operator CSV
         logging.info("Fetching additional images from RHODS operator CSV")
