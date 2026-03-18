@@ -104,6 +104,9 @@ prepare:
     namespaces:
       - "@prepare.namespace.name"
 
+  preload:
+    extra_images: {}
+
   cleanup:
     skip: false
 
@@ -119,9 +122,18 @@ tests:
       timeout: 900
       do_simple_test: true
 
+      kueue:
+        enabled: true
+        prefix: "kueue.x-k8s.io/"
+        labels:
+          pod-group-name: llmisvc
+          managed: "true"
+        annotations:
+          queue-name: perf-gpu-queue
+
     benchmarks:
       multiturn:
-        enabled: true
+        enabled: false
         name: multiturn-benchmark
         parallel: 9
         timeout: 900
