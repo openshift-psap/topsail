@@ -93,14 +93,18 @@ def test():
                     if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
                         flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
 
-                    # Capture state for analysis
-                    capture_llm_inference_service_state(llmisvc_name, namespace)
-
                 except Exception as e:
                     logging.exception(f"Test failed for flavor {flavor} :/")
                     flavor_failed = e
 
                 finally:
+                    # Always capture LLM inference service state (success or failure)
+                    logging.info("Capturing LLM inference service state for debugging")
+                    try:
+                        capture_llm_inference_service_state(llmisvc_name, namespace)
+                    except Exception as capture_e:
+                        logging.warning(f"Failed to capture LLM inference service state: {capture_e}")
+
                     # Always dump Prometheus data after testing (success or failure)
                     logging.info("Dumping Prometheus database after testing")
                     namespace = config.project.get_config("tests.llmd.namespace")
