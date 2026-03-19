@@ -6,6 +6,8 @@ import projects.matrix_benchmarking.visualizations.helpers.plotting.report as re
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from .utils import check_prometheus_data_availability
+
 
 def register():
     """Register all VLLM-specific Prometheus metrics as individual plots"""
@@ -273,6 +275,12 @@ class VLLMMetricsReport():
 
         if not entries:
             header.append(html.P("No test entries found."))
+            return None, header
+
+        # Check if Prometheus UWM metrics data is available
+        has_data, error_elements = check_prometheus_data_availability("uwm", "VLLM metrics report")
+        if not has_data:
+            header.extend(error_elements)
             return None, header
 
         # End-to-End Latency Section

@@ -5,6 +5,8 @@ import projects.matrix_benchmarking.visualizations.helpers.plotting.report as re
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+from .utils import check_prometheus_data_availability
+
 
 def register():
     """Register all Prometheus report classes"""
@@ -37,6 +39,12 @@ class PrometheusResourceUsageReport():
 
         if not entries:
             header.append(html.P("No test entries found."))
+            return None, header
+
+        # Check if main Prometheus metrics data is available
+        has_data, error_elements = check_prometheus_data_availability("sutest", "resource usage report")
+        if not has_data:
+            header.extend(error_elements)
             return None, header
 
         # Application Resource Usage Section
@@ -95,6 +103,12 @@ class PrometheusGPUPerformanceReport():
 
         if not entries:
             header.append(html.P("No test entries found."))
+            return None, header
+
+        # Check if main Prometheus metrics data is available
+        has_data, error_elements = check_prometheus_data_availability("sutest", "GPU performance report")
+        if not has_data:
+            header.extend(error_elements)
             return None, header
 
         # GPU Memory Usage Section
@@ -165,6 +179,12 @@ class PrometheusSystemHealthReport():
 
         if not entries:
             header.append(html.P("No test entries found."))
+            return None, header
+
+        # Check if main Prometheus metrics data is available
+        has_data, error_elements = check_prometheus_data_availability("sutest", "system health report")
+        if not has_data:
+            header.extend(error_elements)
             return None, header
 
         # API Server Performance Section
