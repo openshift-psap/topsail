@@ -649,7 +649,7 @@ oc rsh -n {namespace} -c main deploy/{deployment_name} \\
             return False
 
         completion = response["choices"][0]["text"]
-        logging.info(f"Simple LLM test successful. Completion: {completion[:100]}...")
+        logging.info(f"Simple LLM test successful. Completion: {test_payload['prompt']} ... {completion[:100]}")
 
         return True
 
