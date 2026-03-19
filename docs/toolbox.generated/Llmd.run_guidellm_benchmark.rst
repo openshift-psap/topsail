@@ -46,7 +46,7 @@ Parameters
 
 * Version tag for the benchmark image
 
-* default value: ``v0.5.3``
+* default value: ``pr-590``
 
 
 ``timeout``  
@@ -56,11 +56,11 @@ Parameters
 * default value: ``900``
 
 
-``profile``  
+``rate``  
 
-* Guidellm profile to use
+* Request rate for the benchmark
 
-* default value: ``sweep``
+* default value: ``1``
 
 
 ``max_seconds``  
@@ -68,13 +68,6 @@ Parameters
 * Maximum seconds to run benchmark
 
 * default value: ``30``
-
-
-``processor``  
-
-* Model processor name
-
-* default value: ``RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic``
 
 
 ``data``  

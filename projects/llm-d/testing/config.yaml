@@ -13,6 +13,17 @@ ci_presets:
   multi-flavor:
     tests.llmd.flavors: [simple, simple-x2, intelligent-routing-x2]
     prepare.cluster.nodes.count: 2
+
+  guidellm_light:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
+    tests.llmd.benchmarks.guidellm.rate: 1
+    tests.llmd.benchmarks.guidellm.max_seconds: 60
+
+  guidellm_multiturn_eval:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.rate: 650,300,100,50,1
+    tests.llmd.benchmarks.guidellm.max_seconds: 600
+
 clusters:
   cleanup_on_exit: false
 
@@ -168,11 +179,11 @@ tests:
       guidellm:
         enabled: true
         name: guidellm-benchmark
-        profile: concurrent
-        max_seconds: 30
+        rate-type: concurrent
+        max_seconds: 60
         timeout: 900
-        processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
         data: prompt_tokens=256,output_tokens=128
+        rate: 1
 
   capture_prom: true
   capture_prom_uwm: true

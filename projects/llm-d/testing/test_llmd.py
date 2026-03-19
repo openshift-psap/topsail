@@ -491,10 +491,9 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     logging.info("Running Guidellm benchmark")
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
-    profile = config.project.get_config("tests.llmd.benchmarks.guidellm.profile")
+    rate = config.project.get_config("tests.llmd.benchmarks.guidellm.rate")
     max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
     timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
-    processor = config.project.get_config("tests.llmd.benchmarks.guidellm.processor")
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
 
     failed = False
@@ -504,10 +503,9 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                        endpoint_url=endpoint_url,
                        name=benchmark_name,
                        namespace=namespace,
-                       profile=profile,
+                       rate=rate,
                        max_seconds=max_seconds,
                        timeout=timeout,
-                       processor=processor,
                        data=data)
 
         logging.info("Guidellm benchmark completed successfully")
