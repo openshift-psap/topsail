@@ -16,6 +16,7 @@ ci_presets:
   cks:
     tests.capture_prom: false
     tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
     prepare.preload.node_selector_key: gpu.nvidia.com/class
     prepare.preload.node_selector_value: "H200"
@@ -164,6 +165,7 @@ models:
 tests:
   llmd:
     skip: false
+    skip_prepare: false
     flavors: intelligentrouting
     namespace: "@prepare.namespace.name"
 

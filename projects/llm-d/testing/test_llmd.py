@@ -125,7 +125,10 @@ def test():
             raise ValueError("tests.llmd.inference_service.skip_deployment is set "
                              f"but got multiple flavors to deploy: {', '.join(flavors)}")
 
-    prepare_for_test()
+    if not config.project.get_config("tests.llmd.skip_prepare"):
+        prepare_for_test()
+    else:
+        logging.info("Skipping test preparation (tests.llmd.skip_prepare=True)")
 
     logging.info(f"Running tests for flavors: {flavors}")
 
