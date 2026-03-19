@@ -120,14 +120,21 @@ prepare:
     skip: false
 
 models:
+  llama3.1-8b:
+    name: RedHatAI/podllama-3-1-8b-instruct-fp8
+    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
+
   llama3.3-70b:
-    name: Llama-3.3-70B-Instruct-FP8-dynamic
+    name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
     source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
 
   gpt-oss-120:
-    name: gpt-oss-120b
+    name: openai/gpt-oss-120b
     source: hf://openai/gpt-oss-120b
 
+  granite4-tiny:
+    name: RedHatAI/granite-4.0-h-tiny-FP8-dynamic
+    source: hf://RedHatAI/granite-4.0-h-tiny-FP8-dynamic
 tests:
   llmd:
     skip: false
