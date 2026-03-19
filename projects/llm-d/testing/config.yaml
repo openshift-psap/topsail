@@ -20,6 +20,16 @@ ci_presets:
     prepare.namespace.name: kpouget-dev
     prepare.preload.node_selector_key: gpu.nvidia.com/class
     prepare.preload.node_selector_value: "H200"
+    tests.llmd.inference_service.extra_properties:
+      spec.template.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - gf48e48
     prepare.preload.extra_images:
       vllm-cuda-rhel9: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:094db84a1da5e8a575d0c9eade114fa30f4a2061064a338e3e032f3578f8082a
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
@@ -196,6 +206,9 @@ tests:
           managed: "true"
         annotations:
           queue-name: perf-gpu-queue
+
+      # Extra properties to inject into the LLMISVC YAML using dotted-key notation
+      extra_properties: {}
 
     benchmarks:
       multiturn:

@@ -605,6 +605,62 @@ def apply_gpu_resources(main_container, gpu_count):
     logging.info(f"Set GPU resources: nvidia.com/gpu={gpu_count} (for TP size {gpu_count})")
 
 
+def apply_extra_properties(isvc_data):
+    """
+    Apply extra properties from configuration to the ISVC
+
+    Allows injecting arbitrary YAML properties using dotted-key notation.
+    Example config:
+        tests.llmd.inference_service.extra_properties:
+          spec.template.affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                    - gf48e48
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    extra_properties = config.project.get_config("tests.llmd.inference_service.extra_properties", {})
+
+    if not extra_properties:
+        logging.debug("No extra properties configured")
+        return
+
+    logging.info(f"Applying {len(extra_properties)} extra properties to ISVC")
+
+    for dotted_key, value in extra_properties.items():
+        _set_nested_property(isvc_data, dotted_key, value)
+        logging.info(f"Applied extra property: {dotted_key}")
+
+
+def _set_nested_property(data, dotted_key, value):
+    """
+    Set a nested property in a dict using dotted notation
+
+    Args:
+        data: Dictionary to modify
+        dotted_key: Key path like 'spec.template.affinity'
+        value: Value to set
+    """
+    keys = dotted_key.split('.')
+    current = data
+
+    # Navigate to the parent of the final key
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = current[key]
+
+    # Set the final value
+    final_key = keys[-1]
+    current[final_key] = value
+
+
 def reshape_isvc(flavor, llmisvc_path):
     """
     Reshape the ISVC YAML file based on configuration
@@ -612,7 +668,9 @@ def reshape_isvc(flavor, llmisvc_path):
     This method applies various modifications to the ISVC in a modular way:
     1. Flavor-specific modifications (routing, replicas, etc.)
     2. Kueue annotations and labels
-    3. Future extensions can be added as separate functions
+    3. Model configuration
+    4. vLLM arguments
+    5. Extra properties (arbitrary YAML injection)
 
     Args:
         flavor: The flavor string to apply
@@ -632,6 +690,7 @@ def reshape_isvc(flavor, llmisvc_path):
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
+    apply_extra_properties(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
