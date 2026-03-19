@@ -17,6 +17,93 @@ import prepare_llmd
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
 
+def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
+    """
+    Run tests for a single flavor
+
+    Args:
+        flavor: The flavor string to test
+        flavor_index: Current flavor number (1-indexed)
+        total_flavors: Total number of flavors being tested
+        namespace: Kubernetes namespace to use
+
+    Returns:
+        False if test succeeded, Exception or True if test failed
+    """
+    logging.info(f"Running test for flavor: {flavor} ({flavor_index}/{total_flavors})")
+
+    flavor_failed = False
+    prom_start_ts = None
+
+    llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
+    llmisvc_name += f"-{flavor}"
+
+    with env.NextArtifactDir(f"flavor_{flavor}"):
+        try:
+            # Clean up any existing LLM inference services and pods before testing
+            if not config.project.get_config("tests.llmd.inference_service.skip_deployment"):
+                cleanup_llm_inference_resources()
+
+            # Reset Prometheus before testing
+            if config.project.get_config("tests.capture_prom"):
+                logging.info("Resetting Prometheus database before testing")
+                prom_start_ts = prom.reset_prometheus()
+
+            # Deploy LLM inference service
+            _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
+
+            # Extract the model name from configuration
+            model_ref = config.project.get_config("tests.llmd.inference_service.model")
+
+            models = config.project.get_config(f"models")
+            model_name = models[model_ref]["name"]
+            logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
+
+            # Get the service URL
+            endpoint_url = get_llm_inference_url(llmisvc_name, namespace, flavor)
+
+            if config.project.get_config("tests.llmd.inference_service.do_simple_test"):
+                if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name):
+                    raise RuntimeError("Simple inference test failed :/")
+
+            # Run benchmarks
+            if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
+                flavor_failed |= run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace)
+
+            if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
+                flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
+
+        except Exception as e:
+            logging.exception(f"Test failed for flavor {flavor} :/")
+            flavor_failed = e
+
+        finally:
+            # Always capture LLM inference service state (success or failure)
+            logging.info("Capturing LLM inference service state for debugging")
+            try:
+                capture_llm_inference_service_state(llmisvc_name, namespace)
+            except Exception as capture_e:
+                logging.warning(f"Failed to capture LLM inference service state: {capture_e}")
+
+            # Always dump Prometheus data after testing (success or failure)
+            logging.info("Dumping Prometheus database after testing")
+            namespace = config.project.get_config("tests.llmd.namespace")
+            if prom_start_ts:
+                prom.dump_prometheus(prom_start_ts, namespace)
+
+            # Clean up LLM inference service resources after this flavor
+            logging.info(f"Cleaning up LLM inference service resources for flavor {flavor}")
+            try:
+                cleanup_llm_inference_resources()
+            except Exception as cleanup_e:
+                logging.warning(f"Failed to cleanup LLM inference service resources: {cleanup_e}")
+
+        # Generate test metadata files for this flavor
+        _generate_test_metadata(flavor_failed, flavor)
+
+        return flavor_failed
+
+
 def test():
     """
     Runs the main LLM-D test
@@ -50,75 +137,20 @@ def test():
         test_directory = env.ARTIFACT_DIR
 
         for i, flavor in enumerate(flavors):
-            logging.info(f"Running test for flavor: {flavor} ({i+1}/{len(flavors)})")
+            flavor_failed = test_single_flavor(flavor, i + 1, len(flavors), namespace)
 
-            flavor_failed = False
-            prom_start_ts = None
+            if flavor_failed:
+                overall_failed = True
+                logging.error(f"Test failed for flavor: {flavor}")
+            else:
+                logging.info(f"Test completed successfully for flavor: {flavor}")
 
-            llmisvc_name = config.project.get_config("tests.llmd.inference_service.name")
-            llmisvc_name += f"-{flavor}"
-
-            with env.NextArtifactDir(f"flavor_{flavor}"):
-                try:
-                    # Clean up any existing LLM inference services and pods before testing
-                    if not config.project.get_config("tests.llmd.inference_service.skip_deployment"):
-                        cleanup_llm_inference_resources()
-
-                    # Reset Prometheus before testing
-                    if config.project.get_config("tests.capture_prom"):
-                        logging.info("Resetting Prometheus database before testing")
-                        prom_start_ts = prom.reset_prometheus()
-
-                    # Deploy LLM inference service
-                    _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
-
-                    # Extract the model name from configuration
-                    model_ref = config.project.get_config("tests.llmd.inference_service.model")
-
-                    models = config.project.get_config(f"models")
-                    model_name = models[model_ref]["name"]
-                    logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
-
-                    # Get the service URL
-                    endpoint_url = get_llm_inference_url(llmisvc_name, namespace, flavor)
-
-                    if config.project.get_config("tests.llmd.inference_service.do_simple_test"):
-                        if not test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name):
-                            raise RuntimeError("Simple inference test failed :/")
-
-                    # Run benchmarks
-                    if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-                        flavor_failed |= run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace)
-
-                    if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
-                        flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
-
-                except Exception as e:
-                    logging.exception(f"Test failed for flavor {flavor} :/")
-                    flavor_failed = e
-
-                finally:
-                    # Always capture LLM inference service state (success or failure)
-                    logging.info("Capturing LLM inference service state for debugging")
-                    try:
-                        capture_llm_inference_service_state(llmisvc_name, namespace)
-                    except Exception as capture_e:
-                        logging.warning(f"Failed to capture LLM inference service state: {capture_e}")
-
-                    # Always dump Prometheus data after testing (success or failure)
-                    logging.info("Dumping Prometheus database after testing")
-                    namespace = config.project.get_config("tests.llmd.namespace")
-                    if prom_start_ts:
-                        prom.dump_prometheus(prom_start_ts, namespace)
-
-                # Generate test metadata files for this flavor
-                _generate_test_metadata(flavor_failed, flavor)
-
-                if flavor_failed:
-                    overall_failed = True
-                    logging.error(f"Test failed for flavor: {flavor}")
-                else:
-                    logging.info(f"Test completed successfully for flavor: {flavor}")
+    # Final cleanup of all LLM inference service resources after all flavors complete
+    logging.info("Final cleanup of all LLM inference service resources")
+    try:
+        cleanup_llm_inference_resources()
+    except Exception as cleanup_e:
+        logging.warning(f"Failed to perform final cleanup of LLM inference service resources: {cleanup_e}")
 
     # Handle conditional GPU scaling after all tests complete
     conditional_scale_down()
