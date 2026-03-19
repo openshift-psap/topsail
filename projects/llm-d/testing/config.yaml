@@ -109,8 +109,9 @@ prepare:
     extra_images: {}
 
   pvc:
-    size: 1000Gi
-    name: llmd-models
+    size: 2000Gi
+    name: storage-rwx
+    access_mode: ReadWriteMany
 
   model_downloader:
     image: ghcr.io/opendatahub-io/rhaii-on-xks/kserve-storage-initializer:e6b5db0@sha256:b305264fe2211be2c6063500c4c11da79e8357af4b34dd8567b0d8e8dea7e1d4

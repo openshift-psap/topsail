@@ -537,11 +537,11 @@ def download_single_model(model_key):
         source = model_config['source']
 
         # Get PVC configuration
-        pvc_name = config.project.get_config("prepare.pvc.name", "llmd-models")
-        pvc_size = config.project.get_config("prepare.pvc.size", "1000Gi")
+        pvc_name = config.project.get_config("prepare.pvc.name")
+        pvc_size = config.project.get_config("prepare.pvc.size")
+        pvc_access_mode = config.project.get_config("prepare.pvc.access_mode")
         namespace = config.project.get_config("prepare.namespace.name")
-        downloader_image = config.project.get_config("prepare.model_downloader.image",
-                                                     "registry.access.redhat.com/ubi9/ubi")
+        downloader_image = config.project.get_config("prepare.model_downloader.image")
 
         # Check if model already exists in PVC
         check_result = run.run(f'oc get pvc -l {model_key}=yes -oname',
