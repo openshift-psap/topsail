@@ -677,11 +677,14 @@ def preload_single_image(namespace, image, image_name=""):
     """
     try:
         logging.info(f"Preloading image{f' {image_name}' if image_name else ''}: {image}")
+        node_selector_key = config.project.get_config("prepare.preload.node_selector_key")
+        node_selector_value = config.project.get_config("prepare.preload.node_selector_value")
+
         run.run_toolbox("cluster", "preload_image",
                         name=image_name or "preload",
                         namespace=namespace,
-                        node_selector_key="nvidia.com/gpu.present",
-                        node_selector_value="true",
+                        node_selector_key=node_selector_key,
+                        node_selector_value=node_selector_value,
                         image=image)
     except Exception as e:
         logging.error(f"Failed to preload image{f' {image_name}' if image_name else ''} {image}: {e}")
