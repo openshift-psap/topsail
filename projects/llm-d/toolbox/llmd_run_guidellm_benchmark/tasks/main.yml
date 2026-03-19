@@ -59,8 +59,8 @@
       oc get job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --no-headers | awk '{print $2; print "Job duration:", $4 > "/dev/stderr"}'
     register: job_status_result
     until: job_status_result.stdout in ['Complete', 'Failed']
-    retries: "{{ (llmd_run_guidellm_benchmark_timeout | int / 10) | round(0, 'ceil') | int }}"
-    delay: 10
+    retries: 900
+    delay: 30
     failed_when: false
 
   - name: Check final job status and fail if not completed successfully
