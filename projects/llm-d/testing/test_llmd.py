@@ -28,12 +28,17 @@ def test():
 
     logging.info("Running LLM-D test")
 
-    prepare_for_test()
-
     # Get test flavors from config
     flavors = config.project.get_config("tests.llmd.flavors")
     if not isinstance(flavors, list):
         flavors = [flavors]
+
+    if config.project.get_config("tests.llmd.inference_service.skip_deployment"):
+        if len(flavors) != 1:
+            raise ValueError("tests.llmd.inference_service.skip_deployment is set "
+                             f"but got multiple flavors to deploy: {', '.join(flavors)}")
+
+    prepare_for_test()
 
     logging.info(f"Running tests for flavors: {flavors}")
 
@@ -56,7 +61,8 @@ def test():
             with env.NextArtifactDir(f"flavor_{flavor}"):
                 try:
                     # Clean up any existing LLM inference services and pods before testing
-                    cleanup_llm_inference_resources()
+                    if not config.project.get_config("tests.llmd.inference_service.skip_deployment"):
+                        cleanup_llm_inference_resources()
 
                     # Reset Prometheus before testing
                     if config.project.get_config("tests.capture_prom"):
@@ -195,6 +201,48 @@ def generate_visualization(test_artifact_dir, test_failed):
     return exc
 
 
+def parse_flavor_components(flavor):
+    """
+    Parse flavor string into components dictionary
+
+    Examples:
+    - 'intelligentrouting-tp2-x2' -> {'base': 'intelligentrouting', 'tp_size': 2, 'replicas': 2}
+    - 'simple' -> {'base': 'simple', 'tp_size': None, 'replicas': None}
+    - 'intelligentrouting-x2' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': 2}
+    - 'intelligentrouting' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': None}
+
+    Args:
+        flavor: The flavor string to parse
+
+    Returns:
+        dict: {'base': str, 'tp_size': int|None, 'replicas': int|None}
+    """
+    parts = flavor.split('-')
+    components = {
+        'base': parts[0],
+        'tp_size': None,
+        'replicas': None
+    }
+
+    # Parse remaining parts
+    for part in parts[1:]:
+        if part.startswith('tp') and len(part) > 2:
+            try:
+                components['tp_size'] = int(part[2:])
+            except ValueError:
+                raise ValueError(f"Invalid TP specification: {part}. Expected format: tp<number> (e.g., tp2, tp8)")
+        elif part.startswith('x') and len(part) > 1:
+            try:
+                components['replicas'] = int(part[1:])
+            except ValueError:
+                raise ValueError(f"Invalid replica specification: {part}. Expected format: x<number> (e.g., x2, x4)")
+        else:
+            raise ValueError(f"Unknown flavor component: {part}. Expected format: <base>-[tp<number>]-[x<number>] (e.g., simple-tp8-x2)")
+
+    logging.info(f"Parsed flavor '{flavor}' -> {components}")
+    return components
+
+
 def apply_flavor_modifications(isvc_data, flavor):
     """
     Apply flavor-specific modifications to the ISVC data
@@ -205,26 +253,110 @@ def apply_flavor_modifications(isvc_data, flavor):
     """
     logging.info(f"Applying flavor modifications for: {flavor}")
 
-    # Apply flavor-specific modifications
-    if "simple" in flavor:
-        logging.info("Applying 'simple' flavor modifications")
+    # Parse the flavor components
+    components = parse_flavor_components(flavor)
+    base_flavor = components['base']
+    tp_size = components['tp_size']
+    replicas = components['replicas']
 
+    # Apply base flavor modifications
+    if base_flavor == "simple":
+        logging.info("Applying 'simple' flavor modifications")
         # Remove spec.router if it exists
         if 'router' in isvc_data.get('spec', {}):
             del isvc_data['spec']['router']
             logging.info("Removed spec.router for 'simple' flavor")
 
-    elif "intelligent-routing" in flavor or "default" in flavor:
+    elif base_flavor in ["intelligentrouting", "intelligent-routing"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
         # No modifications - keep original ISVC configuration
+
+    elif base_flavor == "default":
+        logging.info("Applying 'default' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
+
     else:
         # Unknown flavor
-        raise ValueError(f"Unknown flavor '{flavor}'. Supported flavors: simple, intelligent-routing")
+        raise ValueError(f"Unknown base flavor '{base_flavor}'. Supported flavors: simple, intelligentrouting")
 
-    # Handle replica scaling
-    if "x2" in flavor:
-        isvc_data['spec']['replicas'] = 2
-        logging.info("Setting spec.replicas = 2")
+    # Ensure spec section exists
+    if 'spec' not in isvc_data:
+        isvc_data['spec'] = {}
+
+    # Apply replica scaling from flavor
+    if replicas is not None:
+        isvc_data['spec']['replicas'] = replicas
+        logging.info(f"Setting spec.replicas = {replicas}")
+
+    # Apply tensor parallelism from flavor
+    if tp_size is not None:
+        apply_flavor_tensor_parallelism(isvc_data, tp_size)
+
+
+def apply_flavor_tensor_parallelism(isvc_data, tp_size):
+    """
+    Apply tensor parallelism configuration from flavor to the ISVC
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        tp_size: Tensor parallel size from flavor
+    """
+    logging.info(f"Applying tensor parallelism from flavor: TP={tp_size}")
+
+    # Ensure template.containers section exists
+    if 'template' not in isvc_data['spec']:
+        isvc_data['spec']['template'] = {}
+    if 'containers' not in isvc_data['spec']['template']:
+        isvc_data['spec']['template']['containers'] = [{'name': 'main'}]
+
+    # Find the main container
+    main_container = None
+    for container in isvc_data['spec']['template']['containers']:
+        if container.get('name') == 'main':
+            main_container = container
+            break
+
+    if not main_container:
+        main_container = {'name': 'main'}
+        isvc_data['spec']['template']['containers'].append(main_container)
+
+    # Ensure env section exists
+    if 'env' not in main_container:
+        main_container['env'] = []
+
+    # Find or create VLLM_ADDITIONAL_ARGS environment variable
+    vllm_args_env = None
+    for env_var in main_container['env']:
+        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+            vllm_args_env = env_var
+            break
+
+    if not vllm_args_env:
+        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
+        main_container['env'].append(vllm_args_env)
+
+    # Add tensor parallelism argument
+    current_args = vllm_args_env.get('value', '').strip()
+    tp_arg = f"--tensor-parallel-size={tp_size}"
+
+    # Check if TP argument already exists and update it
+    import re
+    if re.search(r'--tensor-parallel-size=\d+', current_args):
+        # Replace existing TP argument
+        current_args = re.sub(r'--tensor-parallel-size=\d+', tp_arg, current_args)
+    else:
+        # Add new TP argument
+        if current_args:
+            current_args = f"{current_args} {tp_arg}"
+        else:
+            current_args = tp_arg
+
+    vllm_args_env['value'] = current_args
+
+    # Set GPU resources to match tensor parallel size
+    apply_gpu_resources(main_container, tp_size)
+
+    logging.info(f"Applied flavor TP: {tp_arg}, GPU resources: {tp_size}")
 
 
 def apply_kueue_configuration(isvc_data):
@@ -337,6 +469,103 @@ def apply_model_configuration(isvc_data):
         logging.info(f"Set model name: {model_config['name']}")
 
 
+
+def apply_vllm_args_configuration(isvc_data):
+    """
+    Apply vLLM arguments configuration (always applied)
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    vllm_args = config.project.get_config("tests.llmd.inference_service.vllm_args", [])
+
+    if not vllm_args:
+        logging.info("No vLLM args configured")
+        return
+
+    logging.info(f"Applying vLLM args: {vllm_args}")
+
+    # Ensure template.containers section exists
+    if 'spec' not in isvc_data:
+        isvc_data['spec'] = {}
+    if 'template' not in isvc_data['spec']:
+        isvc_data['spec']['template'] = {}
+    if 'containers' not in isvc_data['spec']['template']:
+        isvc_data['spec']['template']['containers'] = [{'name': 'main'}]
+
+    # Find the main container
+    main_container = None
+    for container in isvc_data['spec']['template']['containers']:
+        if container.get('name') == 'main':
+            main_container = container
+            break
+
+    if not main_container:
+        main_container = {'name': 'main'}
+        isvc_data['spec']['template']['containers'].append(main_container)
+
+    # Ensure env section exists
+    if 'env' not in main_container:
+        main_container['env'] = []
+
+    # Find or create VLLM_ADDITIONAL_ARGS environment variable
+    vllm_args_env = None
+    for env_var in main_container['env']:
+        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+            vllm_args_env = env_var
+            break
+
+    if not vllm_args_env:
+        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
+        main_container['env'].append(vllm_args_env)
+
+    # Build vLLM arguments
+    current_args = vllm_args_env.get('value', '').strip()
+
+    if isinstance(vllm_args, list):
+        new_args = vllm_args
+    else:
+        # Handle string format for backward compatibility
+        new_args = [vllm_args]
+
+    # Combine existing and new arguments
+    if new_args:
+        if current_args:
+            combined_args = f"{current_args} {' '.join(new_args)}"
+        else:
+            combined_args = ' '.join(new_args)
+
+        vllm_args_env['value'] = combined_args
+        logging.info(f"Set VLLM_ADDITIONAL_ARGS: {combined_args}")
+
+
+
+
+
+
+def apply_gpu_resources(main_container, gpu_count):
+    """
+    Set GPU resource requests and limits based on tensor parallel size
+
+    Args:
+        main_container: The main container definition
+        gpu_count: Number of GPUs needed (tensor_parallel_size)
+    """
+    # Ensure resources section exists
+    if 'resources' not in main_container:
+        main_container['resources'] = {}
+    if 'requests' not in main_container['resources']:
+        main_container['resources']['requests'] = {}
+    if 'limits' not in main_container['resources']:
+        main_container['resources']['limits'] = {}
+
+    # Set GPU resources
+    main_container['resources']['requests']['nvidia.com/gpu'] = str(gpu_count)
+    main_container['resources']['limits']['nvidia.com/gpu'] = str(gpu_count)
+
+    logging.info(f"Set GPU resources: nvidia.com/gpu={gpu_count} (for TP size {gpu_count})")
+
+
 def reshape_isvc(flavor, llmisvc_path):
     """
     Reshape the ISVC YAML file based on configuration
@@ -363,6 +592,7 @@ def reshape_isvc(flavor, llmisvc_path):
     apply_flavor_modifications(isvc_data, flavor)
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
+    apply_vllm_args_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
@@ -390,31 +620,69 @@ def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
 
     llmisvc_path = reshape_isvc(flavor, llmisvc_path)
 
-    logging.info(f"Deploying LLM inference service {llmisvc_name} in namespace {namespace}")
+    if config.project.get_config("tests.llmd.inference_service.skip_deployment"):
+        logging.info("Skipping the deployment LLM inference service "
+                     f"{llmisvc_name} in namespace {namespace}")
+    else:
+        logging.info(f"Deploying LLM inference service {llmisvc_name} in namespace {namespace}")
 
-    # Deploy the inference service
-    run.run_toolbox("llmd", "deploy_llm_inference_service",
-                   name=llmisvc_name,
-                   namespace=namespace,
-                   yaml_file=llmisvc_path)
+        # Deploy the inference service
+        run.run_toolbox("llmd", "deploy_llm_inference_service",
+                        name=llmisvc_name,
+                        namespace=namespace,
+                        yaml_file=llmisvc_path)
 
     return llmisvc_name, namespace, llmisvc_path
 
 
 def get_llm_inference_url(llmisvc_name, namespace, flavor):
     """
-    Gets the URL of the deployed LLM inference service using the service name pattern
+    Gets the URL of the deployed LLM inference service
     """
 
     logging.info(f"Getting LLM inference service URL for flavor: {flavor}")
 
-    # Construct the service URL using the standard pattern:
-    # https://{llmisvc-name}-kserve-workload-svc.{namespace}.svc.cluster.local
-    service_name = f"{llmisvc_name}-kserve-workload-svc"
+    # Parse flavor components
+    components = parse_flavor_components(flavor)
+    base_flavor = components['base']
+
+    # For intelligent-routing flavors, get the gateway-internal URL from status
+    if base_flavor in ["intelligentrouting", "intelligent-routing"]:
+        logging.info("Intelligent-routing flavor detected - looking up gateway-internal URL from status")
+
+        # Get the LLMInferenceService status addresses
+        addresses_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
+                                  f"-o jsonpath='{{.status.addresses}}'",
+                                  capture_stdout=True, check=False)
+
+        if addresses_result.returncode != 0:
+            raise RuntimeError(f"Failed to get LLMInferenceService addresses: {addresses_result.stderr}")
+
+        # Parse the addresses JSON to find gateway-internal URL
+        import json
+        try:
+            addresses = json.loads(addresses_result.stdout)
+            gateway_internal_url = None
+
+            for address in addresses:
+                if address.get('name') == 'gateway-internal':
+                    gateway_internal_url = address.get('url')
+                    break
+
+            if not gateway_internal_url:
+                raise RuntimeError("gateway-internal URL not found in LLMInferenceService status addresses")
+
+            logging.info(f"Intelligent-routing flavor - using gateway-internal URL: {gateway_internal_url}")
+            return gateway_internal_url
+
+        except (json.JSONDecodeError, KeyError) as e:
+            raise RuntimeError(f"Failed to parse LLMInferenceService addresses: {e}")
 
     # For simple flavors, we need to append the HTTPS port from the service
-    if flavor.startswith("simple"):
+    elif base_flavor == "simple":
         logging.info("Simple flavor detected - looking up service port")
+
+        service_name = f"{llmisvc_name}-kserve-workload-svc"
 
         # Get the HTTPS port from the service
         port_result = run.run(f"oc get svc {service_name} -n {namespace} "
@@ -427,22 +695,15 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
         endpoint_url = f"https://{service_name}.{namespace}.svc.cluster.local:{https_port}"
         logging.info(f"Simple flavor - using port {https_port} from service")
 
+        return endpoint_url
+
     else:
-        # For intelligent-routing and other flavors, use standard URL without port
+        # For other flavors, use standard URL without port
+        service_name = f"{llmisvc_name}-kserve-workload-svc"
         endpoint_url = f"https://{service_name}.{namespace}.svc.cluster.local"
-        logging.info("Non-simple flavor - using standard URL without port")
+        logging.info(f"Other flavor - using standard URL without port: {endpoint_url}")
 
-    logging.info(f"Constructed LLM inference service URL: {endpoint_url}")
-
-    # Verify the service exists
-    svc_check = run.run(f"oc get svc {service_name} -n {namespace}", capture_stdout=True, check=False)
-    if svc_check.returncode != 0:
-        logging.warning(f"Service {service_name} not found in namespace {namespace}")
-        logging.warning(f"Service check output: {svc_check.stderr}")
-        # Still return the constructed URL as it might be accessible
-        logging.info("Returning constructed URL despite service check failure")
-
-    return endpoint_url
+        return endpoint_url
 
 
 def run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace):

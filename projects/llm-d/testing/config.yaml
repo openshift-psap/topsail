@@ -11,8 +11,7 @@ ci_presets:
     prepare.cluster.nodes.auto_scale_down_on_exit: true
 
   multi-flavor:
-    tests.llmd.flavors: [simple, simple-x2, intelligent-routing-x2]
-    prepare.cluster.nodes.count: 2
+    tests.llmd.flavors: [intelligentrouting-x2-tp2] #simple-x2, intelligentrouting-x2]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
@@ -149,16 +148,27 @@ models:
 tests:
   llmd:
     skip: false
-    flavors: intelligent-routing
+    flavors: intelligentrouting
     namespace: "@prepare.namespace.name"
 
     inference_service:
+      skip_deployment: false
       name: llama-llm-d
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
 
       model: llama3.3-70b
+
+      # vLLM arguments (always applied)
+      vllm_args:
+        - "--disable-uvicorn-access-log"
+        - "--enable-prefix-caching"
+        - "--uvicorn-log-level=debug"
+        - "--trust-remote-code"
+        - "--disable-log-requests"
+        - "--max-model-len=40960"
+        - "--gpu-memory-utilization=0.9"
 
       kueue:
         enabled: false
