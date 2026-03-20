@@ -36,16 +36,21 @@ ci_presets:
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
   multi-flavor:
-    tests.llmd.flavors: [simple-tp8-x2, intelligentrouting-x2-tp8, simple, simple-x2, simple-tp8, intelligentrouting-tp8]
+    tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
-    tests.llmd.benchmarks.guidellm.rate: 1,10,50
+    tests.llmd.benchmarks.guidellm.rate: "1,10,50"
     tests.llmd.benchmarks.guidellm.max_seconds: 30
 
   guidellm_multiturn_eval:
-    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=4500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
-    tests.llmd.benchmarks.guidellm.rate: 1,10,50,100,200,300
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count=64
+    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
+    tests.llmd.benchmarks.guidellm.max_requests: 320
+
+  guidellm_heterogeneous_eval:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.rate: "1,10,50,100,200,300"
     tests.llmd.benchmarks.guidellm.max_seconds: 600
 
 clusters:
