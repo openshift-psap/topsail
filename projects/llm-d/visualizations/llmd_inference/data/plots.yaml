@@ -3,6 +3,7 @@ visualize:
   generate:
   - "report: LLM-D Inference Error Report"
   - "report: GuideLLM Results Table"
+  - "report: GuideLLM Performance Analysis"
   - "report: Multi-turn Results Table"
   - "report: Prometheus Resource Usage"
   - "report: Prometheus GPU Performance"

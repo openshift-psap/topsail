@@ -189,6 +189,13 @@ def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[G
     with open(register_important_file(dirname, log_file_path)) as f:
         content = f.read()
 
+    logging.debug(f"Parsing GuideLLM log file: {log_file_path} (length: {len(content)} chars)")
+
+    # Check if log contains the expected output format
+    if "Run Summary Info" not in content:
+        logging.warning(f"GuideLLM log appears to be incomplete or malformed - no 'Run Summary Info' section found in {log_file_path}")
+        return []
+
     benchmarks = []
 
     # Parse the Run Summary Info table for basic info
@@ -297,15 +304,15 @@ def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[G
                 output_tokens_per_request=output_tokens_per_request,
                 total_tokens_per_request=total_tokens_per_request,
 
-                # Latency metrics (convert ms to seconds where needed)
-                request_latency_median=request_latency_median,
-                request_latency_p95=request_latency_p95,
-                ttft_median=ttft_median / 1000.0,  # Convert ms to seconds
-                ttft_p95=ttft_p95 / 1000.0,        # Convert ms to seconds
-                itl_median=itl_median / 1000.0,    # Convert ms to seconds
-                itl_p95=itl_p95 / 1000.0,          # Convert ms to seconds
-                tpot_median=tpot_median / 1000.0,  # Convert ms to seconds
-                tpot_p95=tpot_p95 / 1000.0,        # Convert ms to seconds
+                # Latency metrics (convert to consistent units)
+                request_latency_median=request_latency_median / 1000.0,  # Convert ms to seconds
+                request_latency_p95=request_latency_p95 / 1000.0,        # Convert ms to seconds
+                ttft_median=ttft_median / 1000.0,    # Convert ms to seconds
+                ttft_p95=ttft_p95 / 1000.0,          # Convert ms to seconds
+                itl_median=itl_median / 1000.0,      # Convert ms to seconds
+                itl_p95=itl_p95 / 1000.0,            # Convert ms to seconds
+                tpot_median=tpot_median / 1000.0,    # Convert ms to seconds
+                tpot_p95=tpot_p95 / 1000.0,          # Convert ms to seconds
 
                 # Throughput metrics
                 tokens_per_second=total_tokens_per_second,
@@ -314,10 +321,30 @@ def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[G
             )
 
             benchmarks.append(benchmark)
-            logging.info(f"Parsed Guidellm benchmark: {strategy}, rate={request_rate:.2f} req/s, concurrency={concurrency_mean:.1f}")
+            logging.info(f"Parsed Guidellm benchmark: {strategy}, rate={request_rate:.2f} req/s, concurrency={concurrency_mean:.1f}, tokens/s={total_tokens_per_second:.1f}")
+
+            # Highlight unexpected throughput values
+            if total_tokens_per_second > 1000 or total_tokens_per_second < 1:
+                logging.warning(f"Unusual tokens/second value: {total_tokens_per_second:.1f} for strategy {strategy}")
+
+            # Debug logging for troubleshooting
+            logging.debug(f"  Raw parsed values for {strategy}:")
+            logging.debug(f"    Latency: TTFT={ttft_median:.3f}ms, TPOT={tpot_median:.3f}ms, ITL={itl_median:.3f}ms")
+            logging.debug(f"    Request Latency: median={request_latency_median:.3f}ms, p95={request_latency_p95:.3f}ms")
+            logging.debug(f"    Throughput: input={input_tokens_per_second:.1f}, output={output_tokens_per_second:.1f}, total={total_tokens_per_second:.1f}")
+            logging.debug(f"    Raw table rows:")
+            logging.debug(f"      Summary: {summary_row}")
+            logging.debug(f"      Latency: {latency_rows[i]}")
+            logging.debug(f"      Throughput: {throughput_rows[i]}")
 
         except (ValueError, IndexError) as e:
             logging.warning(f"Failed to parse Guidellm benchmark row {i}: {e}")
+            logging.debug(f"  Problem row data:")
+            logging.debug(f"    Summary row: {summary_row}")
+            if i < len(latency_rows):
+                logging.debug(f"    Latency row: {latency_rows[i]}")
+            if i < len(throughput_rows):
+                logging.debug(f"    Throughput row: {throughput_rows[i]}")
             continue
 
     return benchmarks

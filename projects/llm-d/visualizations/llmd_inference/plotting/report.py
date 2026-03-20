@@ -8,6 +8,7 @@ import matrix_benchmarking.common as common
 def register():
     GuidellmResultsTable()
     MultiturnResultsTable()
+    GuidellmPerformanceAnalysisReport()
 
     # Register Prometheus reports
     from . import prometheus_reports
@@ -146,8 +147,6 @@ class GuidellmResultsTable():
         header.append(self._create_html_table(overview_headers, overview_rows))
         header.append(html.Br())
 
-        header += report.Plot_and_Text(f"Guidellm Latency vs Throughput", args)
-
         # Create latency breakdown table
         header.append(html.H3("⏱️ Latency Component Breakdown"))
 
@@ -175,8 +174,6 @@ class GuidellmResultsTable():
         header.append(self._create_html_table(latency_headers, latency_rows))
         header.append(html.Br())
 
-        header += report.Plot_and_Text(f"Guidellm Latency Overview", args)
-
         # Create token throughput table
         header.append(html.H3("🔤 Token Throughput Analysis"))
 
@@ -201,9 +198,6 @@ class GuidellmResultsTable():
 
         header.append(self._create_html_table(token_headers, token_rows))
         header.append(html.Br())
-
-        header += report.Plot_and_Text(f"Guidellm Throughput Scaling", args)
-        header += report.Plot_and_Text(f"Token Throughput Analysis", args)
 
         # Add summary statistics
         header.append(html.H3("📈 Summary Statistics"))
@@ -607,3 +601,136 @@ class MultiturnResultsTable():
             data_rows.append(html.Tr(cells))
 
         return html.Table([header_row] + data_rows, style=table_style)
+
+
+class GuidellmPerformanceAnalysisReport():
+    def __init__(self):
+        self.name = "report: GuideLLM Performance Analysis"
+        self.id_name = self.name.lower().replace(" ", "_").replace("-", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, *args):
+        """
+        Generate focused report showing token throughput and TTFT performance analysis
+        """
+        ordered_vars, settings, setting_lists, variables, cfg = args
+        entries = list(common.Matrix.all_records(settings, setting_lists))
+
+        header = []
+        header.append(html.H2("📊 GuideLLM: Performance Analysis"))
+        header.append(html.P("Comprehensive performance analysis including token throughput scaling and TTFT latency patterns across different test configurations"))
+        header.append(html.Br())
+
+        if not entries:
+            header.append(html.P("No test entries found."))
+            return None, header
+
+        # Check if we have GuideLLM benchmark data
+        has_guidellm_data = False
+        for entry in entries:
+            if hasattr(entry.results, 'guidellm_benchmarks') and entry.results.guidellm_benchmarks:
+                has_guidellm_data = True
+                break
+
+        if not has_guidellm_data:
+            header.append(html.P("⚠️ No GuideLLM benchmark data available."))
+            header.append(html.P("This report requires GuideLLM benchmark results to analyze token throughput scaling."))
+            header.append(html.P("To enable benchmarks, set tests.llmd.benchmarks.guidellm.enabled: true in the configuration."))
+            return None, header
+
+        # Token Throughput Analysis Section
+        header.append(html.H3("🚀 Token Throughput vs Concurrency"))
+        header.append(html.P("Analysis of how token generation throughput scales with concurrency levels"))
+        header += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
+
+        # TTFT Analysis Section
+        header.append(html.H3("⚡ Time to First Token (TTFT) Analysis"))
+        header.append(html.P("Latency analysis showing response time percentiles across different concurrency levels"))
+        header += report.Plot_and_Text("Guidellm TTFT Analysis", args)
+
+        # TPOT Analysis Section
+        header.append(html.H3("🔄 Time Per Output Token (TPOT) Analysis"))
+        header.append(html.P("Token generation speed analysis showing how quickly individual tokens are produced"))
+        header += report.Plot_and_Text("Guidellm TPOT Analysis", args)
+
+        # ITL Analysis Section
+        header.append(html.H3("⏱️ Inter-Token Latency (ITL) Analysis"))
+        header.append(html.P("Streaming responsiveness analysis showing the delay between consecutive tokens"))
+        header += report.Plot_and_Text("Guidellm ITL Analysis", args)
+
+        # E2E Latency Analysis Section
+        header.append(html.H3("🎯 End-to-End (E2E) Latency Analysis"))
+        header.append(html.P("Complete request duration analysis from request initiation to final response completion"))
+        header += report.Plot_and_Text("Guidellm E2E Latency Analysis", args)
+
+        # Add summary analysis section
+        header.append(html.H3("📈 Key Insights"))
+
+        # Collect all GuideLLM benchmarks for analysis
+        all_benchmarks = []
+        benchmark_configs = []
+        for entry in entries:
+            if hasattr(entry.results, 'guidellm_benchmarks') and entry.results.guidellm_benchmarks:
+                entry_name = entry.get_name(variables) if variables else f"Unknown Configuration"
+                for benchmark in entry.results.guidellm_benchmarks:
+                    if benchmark.strategy != "throughput":  # Skip throughput-only strategies
+                        all_benchmarks.append(benchmark)
+                        benchmark_configs.append(entry_name)
+
+        if all_benchmarks:
+            # Find best token throughput performers
+            best_tokens_idx = max(range(len(all_benchmarks)), key=lambda i: all_benchmarks[i].tokens_per_second)
+            best_efficiency_idx = max(range(len(all_benchmarks)), key=lambda i: all_benchmarks[i].tokens_per_second / max(all_benchmarks[i].request_concurrency, 1))
+
+            best_tokens = all_benchmarks[best_tokens_idx]
+            best_efficiency = all_benchmarks[best_efficiency_idx]
+
+            # Configuration analysis
+            configurations = {}
+            for i, benchmark in enumerate(all_benchmarks):
+                config = benchmark_configs[i]
+                if config not in configurations:
+                    configurations[config] = {
+                        'max_tokens': 0,
+                        'optimal_concurrency': 0,
+                        'strategies': 0
+                    }
+
+                if benchmark.tokens_per_second > configurations[config]['max_tokens']:
+                    configurations[config]['max_tokens'] = benchmark.tokens_per_second
+                    configurations[config]['optimal_concurrency'] = benchmark.request_concurrency
+
+                configurations[config]['strategies'] += 1
+
+            # Sort configurations by performance
+            sorted_configs = sorted(configurations.items(), key=lambda x: x[1]['max_tokens'], reverse=True)
+
+            insights = [
+                f"🏆 Best token throughput: {best_tokens.strategy} in {benchmark_configs[best_tokens_idx]} ({best_tokens.tokens_per_second:.0f} tok/s)",
+                f"⚡ Most efficient: {best_efficiency.strategy} in {benchmark_configs[best_efficiency_idx]} ({(best_efficiency.tokens_per_second / max(best_efficiency.request_concurrency, 1)):.0f} tok/s per concurrency unit)",
+                f"📊 Total configurations tested: {len(configurations)}",
+                f"🎯 Total strategies analyzed: {len(all_benchmarks)}"
+            ]
+
+            for insight in insights:
+                header.append(html.P(insight))
+
+            if len(sorted_configs) > 1:
+                header.append(html.Br())
+                header.append(html.H4("🔧 Configuration Performance Ranking"))
+
+                for i, (config, metrics) in enumerate(sorted_configs):
+                    rank_emoji = ["🥇", "🥈", "🥉"][i] if i < 3 else "📍"
+                    header.append(html.P(f"{rank_emoji} {config}: {metrics['max_tokens']:.0f} tok/s (optimal concurrency: {metrics['optimal_concurrency']:.0f}, {metrics['strategies']} strategies)"))
+
+            header.append(html.Br())
+            header.append(html.P("💡 Use this analysis to identify optimal concurrency settings for maximum token generation throughput in your specific deployment configuration."))
+
+        else:
+            header.append(html.P("No benchmark data available for analysis."))
+
+        return None, header
