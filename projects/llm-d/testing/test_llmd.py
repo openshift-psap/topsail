@@ -828,6 +828,36 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     else:
         rate_values = [rate]
 
+    def apply_rate_scaleup(value, rate):
+        """
+        Apply rate-based scaling to configuration values.
+
+        Evaluates expressions like:
+        - "{10*rate}" with rate=32 -> "320"
+        - "prefix_count={2*rate}" with rate=32 -> "prefix_count=64"
+        """
+        if not isinstance(value, str):
+            return value
+
+        import re
+
+        # Find all expressions in curly braces
+        pattern = r'\{([^}]+)\}'
+
+        def evaluate_expression(match):
+            expression = match.group(1)
+            try:
+                # Create a safe evaluation context with only 'rate' variable
+                context = {"rate": rate}
+                result = eval(expression, {"__builtins__": {}}, context)
+                return str(result)
+            except Exception as e:
+                logging.warning(f"Failed to evaluate expression '{expression}' with rate={rate}: {e}")
+                return match.group(0)  # Return original if evaluation fails
+
+        # Replace all expressions with their evaluated results
+        return re.sub(pattern, evaluate_expression, value)
+
     for rate_value in rate_values:
         try:
             logging.info(f"Running Guidellm benchmark with rate: {rate_value}")
@@ -855,13 +885,13 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                 guidellm_args.append(f"--max-seconds={max_seconds}")
 
             if max_requests is not None:
-                guidellm_args.append(f"--max-requests={max_requests}")
+                guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
 
             # Add data parameter
             if data:
-                guidellm_args.append(f"--data={data}")
+                guidellm_args.append(f"--data={apply_rate_scaleup(data, rate_value)}")
 
-            suffix = f"_rate{rate_value}" if len(rate) > 1\
+            suffix = f"_rate{rate_value}" if len(rate_values) > 1\
                 else None
 
             run.run_toolbox(

@@ -45,9 +45,9 @@ ci_presets:
     tests.llmd.benchmarks.guidellm.max_seconds: 30
 
   guidellm_multiturn_eval:
-    tests.llmd.benchmarks.guidellm.data: prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count=64
+    tests.llmd.benchmarks.guidellm.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
     tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
-    tests.llmd.benchmarks.guidellm.max_requests: 320
+    tests.llmd.benchmarks.guidellm.max_requests: "{10*rate}"
 
   guidellm_heterogeneous_eval:
     tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
