@@ -175,6 +175,20 @@ class ConfigManager:
             'supported_container_engines': config.project.get_config(
                 f"{benchmark_name}.supported_container_engines", default_value=["podman", "docker"], print=False),
             'runs': config.project.get_config(f"{benchmark_name}.runs", print=False),
+            'is_machine_benchmark': config.project.get_config(
+                f"{benchmark_name}.machine_benchmark", default_value=False, print=False) or False,
+        }
+
+    @staticmethod
+    def get_benchmark_machine_config(benchmark_name):
+        """Returns the machine hardware config for a machine benchmark.
+        Each machine benchmark owns its config section: {benchmark_name}.machine.*
+        """
+        return {
+            'provider': config.project.get_config(f"{benchmark_name}.machine.provider", print=False),
+            'cpus': config.project.get_config(f"{benchmark_name}.machine.cpus", print=False),
+            'memory': config.project.get_config(f"{benchmark_name}.machine.memory", print=False),
+            'rootful': config.project.get_config(f"{benchmark_name}.machine.rootful", print=False),
         }
 
     @staticmethod
