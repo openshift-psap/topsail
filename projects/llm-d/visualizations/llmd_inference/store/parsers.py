@@ -9,13 +9,12 @@ import types
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
 
-from ..models import MultiturnBenchmark, GuidellmBenchmark
+from ..models import GuidellmBenchmark
 
 register_important_file = None # will be when importing store/__init__.py
 
 # Define artifact directory patterns
 artifact_dirnames = types.SimpleNamespace()
-artifact_dirnames.MULTITURN_BENCHMARK_DIR = "*__llmd__run_multiturn_benchmark"
 artifact_dirnames.GUIDELLM_BENCHMARK_DIR = "*__llmd__run_guidellm_benchmark"
 artifact_dirnames.PROMETHEUS_DUMP_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
 artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db_uwm"
@@ -27,7 +26,6 @@ IMPORTANT_FILES = [
     "exit_code",
     "settings.yaml",
 
-    f"{artifact_dirnames.MULTITURN_BENCHMARK_DIR}/artifacts/multiturn_benchmark_job.logs",
     f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/guidellm_benchmark_job.logs",
     f"{artifact_dirnames.PROMETHEUS_DUMP_DIR}/prometheus.t*",
     f"{artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR}/prometheus.t*",
@@ -41,15 +39,6 @@ def parse_always(results, dirname, import_settings):
 
 def parse_once(results, dirname):
     """Parse the benchmark log files once"""
-
-    # Parse multiturn benchmark
-    multiturn_log_path = (artifact_paths.MULTITURN_BENCHMARK_DIR / "artifacts/multiturn_benchmark_job.logs") if artifact_paths.MULTITURN_BENCHMARK_DIR else None
-    if multiturn_log_path and (dirname / multiturn_log_path).exists():
-        results.multiturn_benchmark = parse_multiturn_benchmark_log(dirname, pathlib.Path(multiturn_log_path))
-        logging.info(f"Parsed multiturn benchmark from {multiturn_log_path}")
-    else:
-        logging.warning(f"Multiturn benchmark log not found at {multiturn_log_path}")
-        results.multiturn_benchmark = None
 
     # Parse guidellm benchmark
     guidellm_log_path = (artifact_paths.GUIDELLM_BENCHMARK_DIR / "artifacts/guidellm_benchmark_job.logs") if artifact_paths.GUIDELLM_BENCHMARK_DIR else None
@@ -73,111 +62,6 @@ def parse_once(results, dirname):
 
     # Parse Prometheus UWM metrics
     results.metrics = _extract_metrics(dirname)
-
-def parse_multiturn_benchmark_log(dirname, log_file_path: pathlib.Path) -> MultiturnBenchmark:
-    """Parse multiturn benchmark log file and extract metrics"""
-
-    if not (dirname / log_file_path).exists():
-        logging.warning(f"Multiturn benchmark log not found: {log_file_path}")
-        return None
-
-    with open(register_important_file(dirname, log_file_path)) as f:
-        content = f.read()
-
-    benchmark = MultiturnBenchmark(
-        total_time=0, total_requests=0, completed_conversations=0,
-        total_conversations=0, requests_per_second=0,
-        ttft_min=0, ttft_max=0, ttft_mean=0, ttft_p50=0, ttft_p95=0, ttft_p99=0,
-        total_request_time_min=0, total_request_time_max=0, total_request_time_mean=0,
-        total_request_time_p50=0, total_request_time_p95=0
-    )
-
-    # Parse summary section
-    summary_match = re.search(r'BENCHMARK SUMMARY\s*=+\s*(.*?)(?:TTFT by Turn Number|=+|\Z)', content, re.DOTALL)
-    if summary_match:
-        summary_text = summary_match.group(1)
-
-        # Parse basic metrics
-        if match := re.search(r'Total time:\s*(\d+\.?\d*)s', summary_text):
-            benchmark.total_time = float(match.group(1))
-
-        if match := re.search(r'Total requests:\s*(\d+)', summary_text):
-            benchmark.total_requests = int(match.group(1))
-
-        if match := re.search(r'Completed conversations:\s*(\d+)/(\d+)', summary_text):
-            benchmark.completed_conversations = int(match.group(1))
-            benchmark.total_conversations = int(match.group(2))
-
-        if match := re.search(r'Requests per second:\s*(\d+\.?\d*)', summary_text):
-            benchmark.requests_per_second = float(match.group(1))
-
-        # Parse TTFT metrics
-        ttft_section = re.search(r'Time to First Token \(TTFT\):\s*(.*?)(?:Total Request Time:|$)', summary_text, re.DOTALL)
-        if ttft_section:
-            ttft_text = ttft_section.group(1)
-
-            if match := re.search(r'Min:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_min = float(match.group(1))
-            if match := re.search(r'Max:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_max = float(match.group(1))
-            if match := re.search(r'Mean:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_mean = float(match.group(1))
-            if match := re.search(r'P50:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_p50 = float(match.group(1))
-            if match := re.search(r'P95:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_p95 = float(match.group(1))
-            if match := re.search(r'P99:\s*(\d+\.?\d*)\s*ms', ttft_text):
-                benchmark.ttft_p99 = float(match.group(1))
-
-        # Parse Total Request Time metrics
-        total_time_section = re.search(r'Total Request Time:\s*(.*?)(?:TTFT by Turn Number:|$)', summary_text, re.DOTALL)
-        if total_time_section:
-            total_time_text = total_time_section.group(1)
-
-            if match := re.search(r'Min:\s*(\d+\.?\d*)\s*ms', total_time_text):
-                benchmark.total_request_time_min = float(match.group(1))
-            if match := re.search(r'Max:\s*(\d+\.?\d*)\s*ms', total_time_text):
-                benchmark.total_request_time_max = float(match.group(1))
-            if match := re.search(r'Mean:\s*(\d+\.?\d*)\s*ms', total_time_text):
-                benchmark.total_request_time_mean = float(match.group(1))
-            if match := re.search(r'P50:\s*(\d+\.?\d*)\s*ms', total_time_text):
-                benchmark.total_request_time_p50 = float(match.group(1))
-            if match := re.search(r'P95:\s*(\d+\.?\d*)\s*ms', total_time_text):
-                benchmark.total_request_time_p95 = float(match.group(1))
-
-    # Parse TTFT by turn number
-    turn_section = re.search(r'TTFT by Turn Number:\s*(.*?)(?:TTFT by Document Type:|$)', content, re.DOTALL)
-    if turn_section:
-        turn_text = turn_section.group(1)
-        for line in turn_text.strip().split('\n'):
-            if match := re.search(r'Turn\s+(\d+):\s*(\d+\.?\d*)\s*ms\s*avg', line):
-                turn_num = int(match.group(1))
-                avg_ttft = float(match.group(2))
-                benchmark.ttft_by_turn[turn_num] = avg_ttft
-
-    # Parse TTFT by document type
-    doc_type_section = re.search(r'TTFT by Document Type:\s*(.*?)(?:First Turn vs Subsequent Turns|$)', content, re.DOTALL)
-    if doc_type_section:
-        doc_type_text = doc_type_section.group(1)
-        for line in doc_type_text.strip().split('\n'):
-            if match := re.search(r'(\w+):\s*(\d+\.?\d*)\s*ms\s*avg', line):
-                doc_type = match.group(1)
-                avg_ttft = float(match.group(2))
-                benchmark.ttft_by_doc_type[doc_type] = avg_ttft
-
-    # Parse first turn vs subsequent turns
-    speedup_section = re.search(r'First Turn vs Subsequent Turns.*?:\s*(.*?)(?:=+|\Z)', content, re.DOTALL)
-    if speedup_section:
-        speedup_text = speedup_section.group(1)
-
-        if match := re.search(r'First turn avg:\s*(\d+\.?\d*)\s*ms', speedup_text):
-            benchmark.first_turn_avg = float(match.group(1))
-        if match := re.search(r'Later turns avg:\s*(\d+\.?\d*)\s*ms', speedup_text):
-            benchmark.later_turns_avg = float(match.group(1))
-        if match := re.search(r'Speedup ratio:\s*(\d+\.?\d*)x', speedup_text):
-            benchmark.speedup_ratio = float(match.group(1))
-
-    return benchmark
 
 def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[GuidellmBenchmark]:
     """Parse Guidellm benchmark log file and extract metrics for each strategy"""

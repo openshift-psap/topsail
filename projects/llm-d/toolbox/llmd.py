@@ -46,30 +46,6 @@ class Llmd:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("llmd_run_multiturn_benchmark")
-    @AnsibleMappedParams
-    def run_multiturn_benchmark(
-            self,
-            endpoint_url,
-            name="multi-turn-benchmark", namespace="",
-            image="quay.io/hayesphilip/multi-turn-benchmark", version="0.0.1",
-            timeout=900, parallel=9
-    ):
-        """
-        Runs a multi-turn benchmark job against the LLM inference service
-
-        Args:
-          endpoint_url: Endpoint URL for the LLM inference service to benchmark
-          name: Name of the benchmark job
-          namespace: Namespace to run the benchmark job in (empty string auto-detects current namespace)
-          image: Container image for the benchmark
-          version: Version tag for the benchmark image
-          timeout: Timeout in seconds to wait for job completion
-          parallel: Number of parallel connections
-        """
-
-        return RunAnsibleRole(locals())
-
     @AnsibleRole("llmd_run_guidellm_benchmark")
     @AnsibleMappedParams
     def run_guidellm_benchmark(

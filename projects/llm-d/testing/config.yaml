@@ -216,12 +216,6 @@ tests:
       extra_properties: {}
 
     benchmarks:
-      multiturn:
-        enabled: false
-        name: multiturn-benchmark
-        parallel: 9
-        timeout: 900
-
       guidellm:
         enabled: true
         name: guidellm-benchmark

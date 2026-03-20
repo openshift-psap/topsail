@@ -67,9 +67,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
                     raise RuntimeError("Simple inference test failed :/")
 
             # Run benchmarks
-            if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-                flavor_failed |= run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace)
-
             if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
                 flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
 
@@ -802,41 +799,6 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
         logging.info(f"Other flavor - using standard URL without port: {endpoint_url}")
 
         return endpoint_url
-
-
-def run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace):
-    """
-    Runs the multi-turn benchmark
-    """
-
-    if not config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-        return False
-
-    logging.info("Running multi-turn benchmark")
-
-    benchmark_name = config.project.get_config("tests.llmd.benchmarks.multiturn.name")
-    parallel = config.project.get_config("tests.llmd.benchmarks.multiturn.parallel")
-    timeout = config.project.get_config("tests.llmd.benchmarks.multiturn.timeout")
-
-    failed = False
-
-    endpoint_url = f"{endpoint_url}/v1"
-
-    try:
-        run.run_toolbox("llmd", "run_multiturn_benchmark",
-                       endpoint_url=endpoint_url,
-                       name=benchmark_name,
-                       namespace=namespace,
-                       parallel=parallel,
-                       timeout=timeout)
-
-        logging.info("Multi-turn benchmark completed successfully")
-
-    except Exception as e:
-        logging.error(f"Multi-turn benchmark failed: {e}")
-        failed = True
-
-    return failed
 
 
 def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
