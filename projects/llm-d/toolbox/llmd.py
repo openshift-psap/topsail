@@ -53,8 +53,8 @@ class Llmd:
             endpoint_url,
             name="guidellm-benchmark", namespace="",
             image="ghcr.io/vllm-project/guidellm", version="pr-590",
-            timeout=900, rate=1, max_seconds=30,
-            data="prompt_tokens=256,output_tokens=128"
+            timeout=900,
+            guidellm_args=[],
     ):
         """
         Runs a Guidellm benchmark job against the LLM inference service
@@ -66,13 +66,8 @@ class Llmd:
           image: Container image for the benchmark
           version: Version tag for the benchmark image
           timeout: Timeout in seconds to wait for job completion
-          rate: Request rate for the benchmark
-          max_seconds: Maximum seconds to run benchmark
-          data: Data configuration
+          guidellm_args: List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
         """
-
-        if isinstance(rate, tuple):
-            rate = ",".join(map(str, rate))
 
         return RunAnsibleRole(locals())
 

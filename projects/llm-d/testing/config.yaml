@@ -219,8 +219,10 @@ tests:
       guidellm:
         enabled: true
         name: guidellm-benchmark
-        rate-type: concurrent
-        max_seconds: 60
+        backend_type: openai_http
+        rate_type: concurrent
+        max_seconds: null
+        max_requests: null
         timeout: 900
         data: prompt_tokens=256,output_tokens=128
         rate: 1

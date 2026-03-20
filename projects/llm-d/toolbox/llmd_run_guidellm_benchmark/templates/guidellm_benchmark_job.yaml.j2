@@ -18,11 +18,9 @@ spec:
             - benchmark
             - run
             - --target={{ benchmark_endpoint_url }}
-            - --backend-type=openai_http
-            - --rate-type=concurrent
-            - --rate={{ llmd_run_guidellm_benchmark_rate }}
-            - --max-seconds={{ llmd_run_guidellm_benchmark_max_seconds }}
-            - --data={{ llmd_run_guidellm_benchmark_data }}
+{% for arg in llmd_run_guidellm_benchmark_guidellm_args %}
+            - {{ arg }}
+{% endfor %}
             - --outputs=json
           env:
             - name: USER # version 0.6.0-pr590 currently needs that ...

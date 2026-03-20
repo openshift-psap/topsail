@@ -813,27 +813,72 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
     rate = config.project.get_config("tests.llmd.benchmarks.guidellm.rate")
+    backend_type = config.project.get_config("tests.llmd.benchmarks.guidellm.backend_type")
+    rate_type = config.project.get_config("tests.llmd.benchmarks.guidellm.rate_type")
     max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
+    max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
     timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
 
     failed = False
 
-    try:
-        run.run_toolbox("llmd", "run_guidellm_benchmark",
-                       endpoint_url=endpoint_url,
-                       name=benchmark_name,
-                       namespace=namespace,
-                       rate=rate,
-                       max_seconds=max_seconds,
-                       timeout=timeout,
-                       data=data)
+    # Handle rate as list/tuple - iterate over each rate value
+    if isinstance(rate, (list, tuple)):
+        rate_values = rate
+    else:
+        rate_values = [rate]
 
-        logging.info("Guidellm benchmark completed successfully")
+    for rate_value in rate_values:
+        try:
+            logging.info(f"Running Guidellm benchmark with rate: {rate_value}")
 
-    except Exception as e:
-        logging.error(f"Guidellm benchmark failed: {e}")
-        failed = True
+            # Create unique name for each rate if multiple rates
+            current_name = benchmark_name
+            if len(rate_values) > 1:
+                current_name = f"{benchmark_name}-rate-{rate_value}"
+
+            # Construct guidellm arguments list
+            guidellm_args = []
+
+            # Add default parameters from config
+            if backend_type:
+                guidellm_args.append(f"--backend-type={backend_type}")
+
+            if rate_type:
+                guidellm_args.append(f"--rate-type={rate_type}")
+
+            # Add rate parameter
+            guidellm_args.append(f"--rate={rate_value}")
+
+            # Add optional parameters if provided
+            if max_seconds is not None:
+                guidellm_args.append(f"--max-seconds={max_seconds}")
+
+            if max_requests is not None:
+                guidellm_args.append(f"--max-requests={max_requests}")
+
+            # Add data parameter
+            if data:
+                guidellm_args.append(f"--data={data}")
+
+            suffix = f"_rate{rate_value}" if len(rate) > 1\
+                else None
+
+            run.run_toolbox(
+                "llmd", "run_guidellm_benchmark",
+                endpoint_url=endpoint_url,
+                name=current_name,
+                namespace=namespace,
+                timeout=timeout,
+                guidellm_args=guidellm_args,
+                artifact_dir_suffix=suffix,
+            )
+
+            logging.info(f"Guidellm benchmark completed successfully for rate: {rate_value}")
+
+        except Exception as e:
+            logging.error(f"Guidellm benchmark failed for rate {rate_value}: {e}")
+            failed = True
 
     return failed
 

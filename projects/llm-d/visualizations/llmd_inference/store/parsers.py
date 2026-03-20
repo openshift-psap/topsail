@@ -5,6 +5,7 @@ import re
 import json
 import csv
 import types
+import glob
 
 import projects.matrix_benchmarking.visualizations.helpers.store.prom as helper_prom_store
 import projects.matrix_benchmarking.visualizations.helpers.store.parsers as helpers_store_parsers
@@ -26,7 +27,8 @@ IMPORTANT_FILES = [
     "exit_code",
     "settings.yaml",
 
-    f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/guidellm_benchmark_job.logs",
+    # Note: GuideLLM benchmark files are now handled dynamically in parse_once()
+    # to support multiple benchmark directories (multi-rate scenarios)
     f"{artifact_dirnames.PROMETHEUS_DUMP_DIR}/prometheus.t*",
     f"{artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR}/prometheus.t*",
 ]
@@ -37,17 +39,41 @@ def parse_always(results, dirname, import_settings):
     results.from_local_env = helpers_store_parsers.parse_local_env(dirname)
 
 
+def find_guidellm_benchmark_directories(dirname):
+    """Find all guidellm benchmark directories, including multi-rate directories"""
+    # Look for all directories matching the guidellm benchmark pattern
+    # This includes both single directory and multi-rate directories
+    pattern = "*__llmd__run_guidellm_benchmark*"
+    guidellm_dirs = []
+
+    for path in glob.glob(str(dirname / pattern)):
+        path_obj = pathlib.Path(path)
+        if path_obj.is_dir():
+            guidellm_dirs.append(path_obj)
+
+    # Sort to ensure consistent ordering
+    return sorted(guidellm_dirs)
+
 def parse_once(results, dirname):
     """Parse the benchmark log files once"""
 
-    # Parse guidellm benchmark
-    guidellm_log_path = (artifact_paths.GUIDELLM_BENCHMARK_DIR / "artifacts/guidellm_benchmark_job.logs") if artifact_paths.GUIDELLM_BENCHMARK_DIR else None
-    if guidellm_log_path and (dirname / guidellm_log_path).exists():
-        results.guidellm_benchmarks = parse_guidellm_benchmark_log(dirname, pathlib.Path(guidellm_log_path))
-        logging.info(f"Parsed {len(results.guidellm_benchmarks)} guidellm benchmarks from {guidellm_log_path}")
+    # Parse guidellm benchmarks - support multiple benchmark directories
+    results.guidellm_benchmarks = []
+    guidellm_directories = find_guidellm_benchmark_directories(dirname)
+
+    if guidellm_directories:
+        for guidellm_dir in guidellm_directories:
+            log_file_path = guidellm_dir / "artifacts" / "guidellm_benchmark_job.logs"
+            if log_file_path.exists():
+                benchmarks = parse_guidellm_benchmark_log(dirname, log_file_path.relative_to(dirname))
+                results.guidellm_benchmarks.extend(benchmarks)
+                logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from {log_file_path}")
+            else:
+                logging.warning(f"Guidellm benchmark log not found at {log_file_path}")
+
+        logging.info(f"Total parsed guidellm benchmarks: {len(results.guidellm_benchmarks)}")
     else:
-        logging.warning(f"Guidellm benchmark log not found at {guidellm_log_path}")
-        results.guidellm_benchmarks = []
+        logging.warning("No guidellm benchmark directories found")
 
     # Parse test metadata
     exit_code_path = "exit_code"
