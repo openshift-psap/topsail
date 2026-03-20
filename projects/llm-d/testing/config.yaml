@@ -202,7 +202,7 @@ tests:
         - "--trust-remote-code"
         - "--disable-log-requests"
         - "--max-model-len=40960"
-        - "--gpu-memory-utilization=0.9"
+        - "--gpu-memory-utilization=0.92"
 
       kueue:
         enabled: false

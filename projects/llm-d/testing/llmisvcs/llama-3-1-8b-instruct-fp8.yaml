@@ -49,7 +49,6 @@ spec:
                 apiVersion: inference.networking.x-k8s.io/v1alpha1
                 kind: EndpointPickerConfig
                 plugins:
-                - type: single-profile-handler
                 - type: queue-scorer
                 - type: kv-cache-utilization-scorer
                 - type: prefix-cache-scorer
