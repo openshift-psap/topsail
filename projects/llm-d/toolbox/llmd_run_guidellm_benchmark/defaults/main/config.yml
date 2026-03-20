@@ -17,19 +17,16 @@ llmd_run_guidellm_benchmark_namespace:
 llmd_run_guidellm_benchmark_image: ghcr.io/vllm-project/guidellm
 
 # Version tag for the benchmark image
-llmd_run_guidellm_benchmark_version: v0.5.3
+llmd_run_guidellm_benchmark_version: pr-590
 
 # Timeout in seconds to wait for job completion
 llmd_run_guidellm_benchmark_timeout: 900
 
-# Guidellm profile to use
-llmd_run_guidellm_benchmark_profile: sweep
+# Request rate for the benchmark
+llmd_run_guidellm_benchmark_rate: 1
 
 # Maximum seconds to run benchmark
 llmd_run_guidellm_benchmark_max_seconds: 30
-
-# Model processor name
-llmd_run_guidellm_benchmark_processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
 
 # Data configuration
 llmd_run_guidellm_benchmark_data: prompt_tokens=256,output_tokens=128

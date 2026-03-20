@@ -191,82 +191,133 @@ def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[G
 
     benchmarks = []
 
-    # Parse the latency statistics table
-    latency_match = re.search(r'Request Latency Statistics.*?\n(.*?)(?:\n\n|\Z)', content, re.DOTALL)
+    # Parse the Run Summary Info table for basic info
+    summary_match = re.search(r'ℹ Run Summary Info.*?\n(.*?)(?=ℹ Text Metrics Statistics|\Z)', content, re.DOTALL)
+    if not summary_match:
+        logging.warning("Could not find Run Summary Info table in Guidellm log")
+        return benchmarks
+
+    summary_table = summary_match.group(1)
+
+    # Parse the Request Latency Statistics table
+    latency_match = re.search(r'ℹ Request Latency Statistics.*?\n(.*?)(?=ℹ Server Throughput Statistics|\Z)', content, re.DOTALL)
     if not latency_match:
-        logging.warning("Could not find latency statistics table in Guidellm log")
+        logging.warning("Could not find Request Latency Statistics table in Guidellm log")
         return benchmarks
 
     latency_table = latency_match.group(1)
 
-    # Parse the throughput statistics table
-    throughput_match = re.search(r'Server Throughput Statistics.*?\n(.*?)(?:\n\n|\Z)', content, re.DOTALL)
+    # Parse the Server Throughput Statistics table
+    throughput_match = re.search(r'ℹ Server Throughput Statistics.*?\n(.*?)(?=\n\n|\Z)', content, re.DOTALL)
     if not throughput_match:
-        logging.warning("Could not find throughput statistics table in Guidellm log")
+        logging.warning("Could not find Server Throughput Statistics table in Guidellm log")
         return benchmarks
 
     throughput_table = throughput_match.group(1)
 
-    # Parse each row of the latency table
-    latency_lines = [line.strip() for line in latency_table.split('\n') if '|' in line and not line.startswith('|===')]
-    throughput_lines = [line.strip() for line in throughput_table.split('\n') if '|' in line and not line.startswith('|===')]
+    # Extract data rows (skip headers and separators)
+    def extract_data_rows(table_text):
+        lines = [line.strip() for line in table_text.split('\n') if line.strip()]
+        data_rows = []
+        for line in lines:
+            if '|' in line and not line.startswith('|===') and 'Benchmark' not in line and 'Strategy' not in line and '------' not in line:
+                data_rows.append(line)
+        return data_rows
 
-    for i, latency_line in enumerate(latency_lines):
-        if i >= len(throughput_lines):
+    summary_rows = extract_data_rows(summary_table)
+    latency_rows = extract_data_rows(latency_table)
+    throughput_rows = extract_data_rows(throughput_table)
+
+    # Parse each benchmark strategy
+    for i, summary_row in enumerate(summary_rows):
+        if i >= len(latency_rows) or i >= len(throughput_rows):
             break
 
-        # Parse latency row
-        latency_parts = [part.strip() for part in latency_line.split('|') if part.strip()]
-        if len(latency_parts) < 9:
-            continue
-
-        strategy = latency_parts[0]
-        if strategy in ['Benchmark', 'Strategy'] or '------' in strategy:
-            continue
-
-        # Parse throughput row
-        throughput_parts = [part.strip() for part in throughput_lines[i].split('|') if part.strip()]
-        if len(throughput_parts) < 11:
-            continue
-
         try:
+            # Parse summary row: | concurrent | 17:10:09 | 17:11:09 | 60.0 | 0.0  | 0.0  | 6809.0   | 0.0       | 0.0 | 3048.0 | 0.0     | 0.0 |
+            summary_parts = [part.strip() for part in summary_row.split('|') if part.strip()]
+            if len(summary_parts) < 12:
+                continue
+
+            strategy = summary_parts[0]
+            duration = float(summary_parts[3]) if summary_parts[3] else 60.0
+            warmup_time = float(summary_parts[4]) if summary_parts[4] else 0.0
+            cooldown_time = float(summary_parts[5]) if summary_parts[5] else 0.0
+            input_tokens_comp = float(summary_parts[6]) if summary_parts[6] else 0.0
+            output_tokens_comp = float(summary_parts[9]) if summary_parts[9] else 0.0
+
+            # Parse latency row: | concurrent | 68.6    | 68.6   | 1366.9  | 1366.9  | 22.1  | 22.1   | 22.5  | 22.5   |
+            latency_parts = [part.strip() for part in latency_rows[i].split('|') if part.strip()]
+            if len(latency_parts) < 9:
+                continue
+
+            request_latency_median = float(latency_parts[1]) if latency_parts[1] else 0.0
+            request_latency_p95 = float(latency_parts[2]) if latency_parts[2] else 0.0
+            ttft_median = float(latency_parts[3]) if latency_parts[3] else 0.0
+            ttft_p95 = float(latency_parts[4]) if latency_parts[4] else 0.0
+            itl_median = float(latency_parts[5]) if latency_parts[5] else 0.0
+            itl_p95 = float(latency_parts[6]) if latency_parts[6] else 0.0
+            tpot_median = float(latency_parts[7]) if latency_parts[7] else 0.0
+            tpot_p95 = float(latency_parts[8]) if latency_parts[8] else 0.0
+
+            # Parse throughput row: | concurrent | 1.0   | 1.0   | 0.0     | 0.0          | 45.3          | 146.5        |
+            throughput_parts = [part.strip() for part in throughput_rows[i].split('|') if part.strip()]
+            if len(throughput_parts) < 7:
+                continue
+
+            concurrency_median = float(throughput_parts[1]) if throughput_parts[1] else 0.0
+            concurrency_mean = float(throughput_parts[2]) if throughput_parts[2] else 0.0
+            request_rate = float(throughput_parts[3]) if throughput_parts[3] else 0.0
+            input_tokens_per_second = float(throughput_parts[4]) if throughput_parts[4] else 0.0
+            output_tokens_per_second = float(throughput_parts[5]) if throughput_parts[5] else 0.0
+            total_tokens_per_second = float(throughput_parts[6]) if throughput_parts[6] else 0.0
+
+            # Calculate requests completed during the run
+            completed_requests = int(request_rate * duration) if request_rate > 0 else 0
+
+            # Calculate tokens per request
+            input_tokens_per_request = (input_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+            output_tokens_per_request = (output_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+            total_tokens_per_request = (total_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+
             benchmark = GuidellmBenchmark(
                 strategy=strategy,
-                duration=30.0,  # From the sweep profile config
-                warmup_time=0.0,
-                cooldown_time=0.0,
+                duration=duration,
+                warmup_time=warmup_time,
+                cooldown_time=cooldown_time,
 
-                # From throughput table
-                request_rate=float(throughput_parts[2]) if throughput_parts[2] != '' else 0.0,
-                request_concurrency=float(throughput_parts[4]) if throughput_parts[4] != '' else 0.0,
-                completed_requests=0,  # Not directly available in this format
-                failed_requests=0,
+                # Request metrics
+                request_rate=request_rate,
+                request_concurrency=concurrency_mean,
+                completed_requests=completed_requests,
+                failed_requests=0,  # Not available in current format
 
-                # Token metrics per request (calculated from per-second rates and request rate)
-                input_tokens_per_request=float(throughput_parts[6]) / float(throughput_parts[2]) if throughput_parts[2] and float(throughput_parts[2]) > 0 else 0.0,
-                output_tokens_per_request=float(throughput_parts[8]) / float(throughput_parts[2]) if throughput_parts[2] and float(throughput_parts[2]) > 0 else 0.0,
-                total_tokens_per_request=float(throughput_parts[10]) / float(throughput_parts[2]) if throughput_parts[2] and float(throughput_parts[2]) > 0 else 0.0,
+                # Token metrics per request
+                input_tokens_per_request=input_tokens_per_request,
+                output_tokens_per_request=output_tokens_per_request,
+                total_tokens_per_request=total_tokens_per_request,
 
-                # From latency table
-                request_latency_median=float(latency_parts[1]) if latency_parts[1] != '' else 0.0,
-                request_latency_p95=float(latency_parts[2]) if latency_parts[2] != '' else 0.0,
-                ttft_median=float(latency_parts[3]) if latency_parts[3] != '' else 0.0,
-                ttft_p95=float(latency_parts[4]) if latency_parts[4] != '' else 0.0,
-                itl_median=float(latency_parts[5]) if latency_parts[5] != '' else 0.0,
-                itl_p95=float(latency_parts[6]) if latency_parts[6] != '' else 0.0,
-                tpot_median=float(latency_parts[7]) if latency_parts[7] != '' else 0.0,
-                tpot_p95=float(latency_parts[8]) if latency_parts[8] != '' else 0.0,
+                # Latency metrics (convert ms to seconds where needed)
+                request_latency_median=request_latency_median,
+                request_latency_p95=request_latency_p95,
+                ttft_median=ttft_median / 1000.0,  # Convert ms to seconds
+                ttft_p95=ttft_p95 / 1000.0,        # Convert ms to seconds
+                itl_median=itl_median / 1000.0,    # Convert ms to seconds
+                itl_p95=itl_p95 / 1000.0,          # Convert ms to seconds
+                tpot_median=tpot_median / 1000.0,  # Convert ms to seconds
+                tpot_p95=tpot_p95 / 1000.0,        # Convert ms to seconds
 
-                # From throughput table
-                tokens_per_second=float(throughput_parts[10]) if throughput_parts[10] != '' else 0.0,
-                input_tokens_per_second=float(throughput_parts[6]) if throughput_parts[6] != '' else 0.0,
-                output_tokens_per_second=float(throughput_parts[8]) if throughput_parts[8] != '' else 0.0,
+                # Throughput metrics
+                tokens_per_second=total_tokens_per_second,
+                input_tokens_per_second=input_tokens_per_second,
+                output_tokens_per_second=output_tokens_per_second,
             )
 
             benchmarks.append(benchmark)
+            logging.info(f"Parsed Guidellm benchmark: {strategy}, rate={request_rate:.2f} req/s, concurrency={concurrency_mean:.1f}")
 
         except (ValueError, IndexError) as e:
-            logging.warning(f"Failed to parse Guidellm benchmark row: {e}")
+            logging.warning(f"Failed to parse Guidellm benchmark row {i}: {e}")
             continue
 
     return benchmarks

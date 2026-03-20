@@ -76,9 +76,8 @@ class Llmd:
             self,
             endpoint_url,
             name="guidellm-benchmark", namespace="",
-            image="ghcr.io/vllm-project/guidellm", version="v0.5.3",
-            timeout=900, profile="sweep", max_seconds=30,
-            processor="RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic",
+            image="ghcr.io/vllm-project/guidellm", version="pr-590",
+            timeout=900, rate=1, max_seconds=30,
             data="prompt_tokens=256,output_tokens=128"
     ):
         """
@@ -91,11 +90,13 @@ class Llmd:
           image: Container image for the benchmark
           version: Version tag for the benchmark image
           timeout: Timeout in seconds to wait for job completion
-          profile: Guidellm profile to use
+          rate: Request rate for the benchmark
           max_seconds: Maximum seconds to run benchmark
-          processor: Model processor name
           data: Data configuration
         """
+
+        if isinstance(rate, tuple):
+            rate = ",".join(map(str, rate))
 
         return RunAnsibleRole(locals())
 

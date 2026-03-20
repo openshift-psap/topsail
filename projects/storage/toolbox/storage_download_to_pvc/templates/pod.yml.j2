@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
- name: {{ download_name }}
- namespace: {{ storage_download_to_pvc_namespace }}
- labels:
-   download-to-pvc: "yes"
+  name: {{ download_name }}
+  namespace: {{ storage_download_to_pvc_namespace }}
+  labels:
+    download-to-pvc: "yes"
 spec:
   restartPolicy: Never
   containers:
@@ -21,7 +21,7 @@ spec:
     - name: SOURCE_NAME
       value: {{ storage_download_to_pvc_name }}
     - name: STORAGE_DIR
-      value: /storage/{{ storage_download_to_pvc_storage_dir }}
+      value: /storage{{ storage_download_to_pvc_storage_dir if storage_download_to_pvc_storage_dir.startswith('/') else '/' + storage_download_to_pvc_storage_dir }}
     - name: CLEAN_FIRST
       value: "{{ storage_download_to_pvc_clean_first }}"
     volumeMounts:

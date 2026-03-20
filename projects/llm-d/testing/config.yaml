@@ -10,9 +10,44 @@ ci_presets:
     prepare.cluster.nodes.auto_scale: true
     prepare.cluster.nodes.auto_scale_down_on_exit: true
 
+  dev:
+    matbench.enabled: false
+
+  cks:
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: true
+    prepare.namespace.name: kpouget-dev
+    prepare.preload.node_selector_key: gpu.nvidia.com/class
+    prepare.preload.node_selector_value: "H200"
+    tests.llmd.inference_service.extra_properties:
+      spec.template.affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - gf48e48
+    prepare.preload.extra_images:
+      vllm-cuda-rhel9: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:094db84a1da5e8a575d0c9eade114fa30f4a2061064a338e3e032f3578f8082a
+      llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
+      guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
+
   multi-flavor:
-    tests.llmd.flavors: [simple, simple-x2, intelligent-routing-x2]
-    prepare.cluster.nodes.count: 2
+    tests.llmd.flavors: [simple-tp8-x2, intelligentrouting-x2-tp8, simple, simple-x2, simple-tp8, intelligentrouting-tp8]
+
+  guidellm_light:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
+    tests.llmd.benchmarks.guidellm.rate: 1,10,50
+    tests.llmd.benchmarks.guidellm.max_seconds: 30
+
+  guidellm_multiturn_eval:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=4500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.rate: 1,10,50,100,200,300
+    tests.llmd.benchmarks.guidellm.max_seconds: 600
+
 clusters:
   cleanup_on_exit: false
 
@@ -21,6 +56,7 @@ secrets:
     name: psap-ods-secret
     env_key: PSAP_ODS_SECRET_PATH
   rhoai_rc: rhoai_rc.secret
+  hf_token: git-credentials
 
 prepare:
   skip: false
@@ -104,24 +140,79 @@ prepare:
     namespaces:
       - "@prepare.namespace.name"
 
+  preload:
+    extra_images: {}
+    node_selector_key: nvidia.com/gpu.present
+    node_selector_value: "true"
+
+  pvc:
+    size: 2000Gi
+    name: storage-rwx
+    access_mode: ReadWriteMany
+
+  model_downloader:
+    image: ghcr.io/opendatahub-io/rhaii-on-xks/kserve-storage-initializer:e6b5db0@sha256:b305264fe2211be2c6063500c4c11da79e8357af4b34dd8567b0d8e8dea7e1d4
+
   cleanup:
     skip: false
 
+models:
+  llama3.1-8b:
+    name: RedHatAI/podllama-3-1-8b-instruct-fp8
+    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
+
+  llama3.3-70b:
+    name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+    source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+
+  gpt-oss-120:
+    name: openai/gpt-oss-120b
+    source: hf://openai/gpt-oss-120b
+
+  granite4-tiny:
+    name: RedHatAI/granite-4.0-h-tiny-FP8-dynamic
+    source: hf://RedHatAI/granite-4.0-h-tiny-FP8-dynamic
 tests:
   llmd:
     skip: false
-    flavors: intelligent-routing
+    skip_prepare: false
+    flavors: intelligentrouting
     namespace: "@prepare.namespace.name"
 
     inference_service:
+      skip_deployment: false
       name: llama-llm-d
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
 
+      model: llama3.3-70b
+
+      # vLLM arguments (always applied)
+      vllm_args:
+        - "--disable-uvicorn-access-log"
+        - "--enable-prefix-caching"
+        - "--uvicorn-log-level=debug"
+        - "--trust-remote-code"
+        - "--disable-log-requests"
+        - "--max-model-len=40960"
+        - "--gpu-memory-utilization=0.9"
+
+      kueue:
+        enabled: false
+        prefix: "kueue.x-k8s.io/"
+        labels:
+          pod-group-name: llmisvc
+          managed: "true"
+        annotations:
+          queue-name: perf-gpu-queue
+
+      # Extra properties to inject into the LLMISVC YAML using dotted-key notation
+      extra_properties: {}
+
     benchmarks:
       multiturn:
-        enabled: true
+        enabled: false
         name: multiturn-benchmark
         parallel: 9
         timeout: 900
@@ -129,11 +220,11 @@ tests:
       guidellm:
         enabled: true
         name: guidellm-benchmark
-        profile: sweep
-        max_seconds: 30
+        rate-type: concurrent
+        max_seconds: 60
         timeout: 900
-        processor: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
         data: prompt_tokens=256,output_tokens=128
+        rate: 1
 
   capture_prom: true
   capture_prom_uwm: true

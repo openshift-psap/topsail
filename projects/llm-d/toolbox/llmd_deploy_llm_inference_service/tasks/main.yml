@@ -84,7 +84,7 @@
          -o json | jq -r '.items[] | select(.status.phase == "Pending") | .metadata.name' | wc -l
     register: llm_pods_pending
     until: llm_pods_pending.stdout | int == 0
-    retries: 18
+    retries: 360
     delay: 10
     failed_when: llm_pods_pending.stdout | int > 0
 
@@ -125,8 +125,9 @@
          -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
     register: llm_inference_service_ready_status
     until: llm_inference_service_ready_status.stdout == "True"
-    retries: 20
+    retries: 30
     delay: 10
+    failed_when: llm_inference_service_ready_status.rc != 0
 
   always:
   - name: Capture the final LLM inference service YAML
@@ -135,10 +136,40 @@
         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
         -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.final.yaml"
+    failed_when: false
+
+  - name: Capture pod status with oc get pods
+    shell:
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -o wide \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.status"
+    failed_when: false
+
+  - name: Capture deployment YAML
+    shell:
+      oc get deployments \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.deployments.yaml"
+    failed_when: false
+
+  - name: Capture replicaset YAML
+    shell:
+      oc get replicasets \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.replicasets.yaml"
+    failed_when: false
 
   - name: Capture the LLM inference service pods YAML
     shell:
-      oc get pods -l "llminferenceservice={{ llmd_deploy_llm_inference_service_name }}" \
+      oc get pods \
+         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.yaml"
+    failed_when: false

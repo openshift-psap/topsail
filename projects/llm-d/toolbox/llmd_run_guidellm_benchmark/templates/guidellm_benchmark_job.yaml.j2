@@ -18,10 +18,15 @@ spec:
             - benchmark
             - run
             - --target={{ benchmark_endpoint_url }}
-            - --profile={{ llmd_run_guidellm_benchmark_profile }}
+            - --backend-type=openai_http
+            - --rate-type=concurrent
+            - --rate={{ llmd_run_guidellm_benchmark_rate }}
             - --max-seconds={{ llmd_run_guidellm_benchmark_max_seconds }}
-            - --processor={{ llmd_run_guidellm_benchmark_processor }}
             - --data={{ llmd_run_guidellm_benchmark_data }}
+            - --outputs=json
+          env:
+            - name: USER # version 0.6.0-pr590 currently needs that ...
+              value: guidellm
           volumeMounts:
             - name: home
               mountPath: /home/guidellm

@@ -81,24 +81,29 @@ spec:
         effect: "NoSchedule"
     containers:
       - name: main
-        env:
-          - name: VLLM_ADDITIONAL_ARGS
-            value: "--disable-uvicorn-access-log --max-model-len=16000"
         resources:
           limits:
-            cpu: '1'
-            memory: 8Gi
             nvidia.com/gpu: "1"
           requests:
-            cpu: '1'
-            memory: 8Gi
+            cpu: '4'
+            memory: 64Gi
             nvidia.com/gpu: "1"
         livenessProbe:
           httpGet:
             path: /health
             port: 8000
             scheme: HTTPS
-          initialDelaySeconds: 120
+          initialDelaySeconds: 900
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 1000
+        readinessProbe:
+          failureThreshold: 10000
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTPS
+          initialDelaySeconds: 60
           periodSeconds: 30
+          successThreshold: 1
           timeoutSeconds: 30
-          failureThreshold: 5
