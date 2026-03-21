@@ -16,37 +16,6 @@ class Settings(BaseModel):
     class Config:
         extra = "allow"
 
-class MultiturnBenchmark(matbench_models.ExclusiveModel):
-    total_time: float
-    total_requests: int
-    completed_conversations: int
-    total_conversations: int
-    requests_per_second: float
-
-    # Time to First Token (TTFT) metrics
-    ttft_min: float
-    ttft_max: float
-    ttft_mean: float
-    ttft_p50: float
-    ttft_p95: float
-    ttft_p99: float
-
-    # Total Request Time metrics
-    total_request_time_min: float
-    total_request_time_max: float
-    total_request_time_mean: float
-    total_request_time_p50: float
-    total_request_time_p95: float
-
-    # TTFT by turn number and document type
-    ttft_by_turn: Dict[int, float] = Field(default_factory=dict)
-    ttft_by_doc_type: Dict[str, float] = Field(default_factory=dict)
-
-    # First turn vs subsequent turns
-    first_turn_avg: Optional[float] = None
-    later_turns_avg: Optional[float] = None
-    speedup_ratio: Optional[float] = None
-
 class GuidellmBenchmark(matbench_models.ExclusiveModel):
     strategy: str
     duration: float
@@ -93,11 +62,7 @@ class Results(matbench_models.ExclusiveModel):
     test_failure_reason: Optional[str] = None
 
     # Benchmark results
-    multiturn_benchmark: Optional[MultiturnBenchmark] = None
     guidellm_benchmarks: List[GuidellmBenchmark] = Field(default_factory=list)
-
-    # Raw data paths for reference
-    multiturn_log_path: Optional[str] = None
     guidellm_log_path: Optional[str] = None
     prometheus_path: Optional[str] = None
 

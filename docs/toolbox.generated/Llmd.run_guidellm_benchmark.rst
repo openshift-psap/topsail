@@ -56,23 +56,7 @@ Parameters
 * default value: ``900``
 
 
-``rate``  
+``guidellm_args``  
 
-* Request rate for the benchmark
-
-* default value: ``1``
-
-
-``max_seconds``  
-
-* Maximum seconds to run benchmark
-
-* default value: ``30``
-
-
-``data``  
-
-* Data configuration
-
-* default value: ``prompt_tokens=256,output_tokens=128``
+* List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
 

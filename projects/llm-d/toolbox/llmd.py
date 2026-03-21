@@ -46,30 +46,6 @@ class Llmd:
 
         return RunAnsibleRole(locals())
 
-    @AnsibleRole("llmd_run_multiturn_benchmark")
-    @AnsibleMappedParams
-    def run_multiturn_benchmark(
-            self,
-            endpoint_url,
-            name="multi-turn-benchmark", namespace="",
-            image="quay.io/hayesphilip/multi-turn-benchmark", version="0.0.1",
-            timeout=900, parallel=9
-    ):
-        """
-        Runs a multi-turn benchmark job against the LLM inference service
-
-        Args:
-          endpoint_url: Endpoint URL for the LLM inference service to benchmark
-          name: Name of the benchmark job
-          namespace: Namespace to run the benchmark job in (empty string auto-detects current namespace)
-          image: Container image for the benchmark
-          version: Version tag for the benchmark image
-          timeout: Timeout in seconds to wait for job completion
-          parallel: Number of parallel connections
-        """
-
-        return RunAnsibleRole(locals())
-
     @AnsibleRole("llmd_run_guidellm_benchmark")
     @AnsibleMappedParams
     def run_guidellm_benchmark(
@@ -77,8 +53,8 @@ class Llmd:
             endpoint_url,
             name="guidellm-benchmark", namespace="",
             image="ghcr.io/vllm-project/guidellm", version="pr-590",
-            timeout=900, rate=1, max_seconds=30,
-            data="prompt_tokens=256,output_tokens=128"
+            timeout=900,
+            guidellm_args=[],
     ):
         """
         Runs a Guidellm benchmark job against the LLM inference service
@@ -90,13 +66,8 @@ class Llmd:
           image: Container image for the benchmark
           version: Version tag for the benchmark image
           timeout: Timeout in seconds to wait for job completion
-          rate: Request rate for the benchmark
-          max_seconds: Maximum seconds to run benchmark
-          data: Data configuration
+          guidellm_args: List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
         """
-
-        if isinstance(rate, tuple):
-            rate = ",".join(map(str, rate))
 
         return RunAnsibleRole(locals())
 

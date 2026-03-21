@@ -67,9 +67,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
                     raise RuntimeError("Simple inference test failed :/")
 
             # Run benchmarks
-            if config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-                flavor_failed |= run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace)
-
             if config.project.get_config("tests.llmd.benchmarks.guidellm.enabled"):
                 flavor_failed |= run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace)
 
@@ -804,41 +801,6 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
         return endpoint_url
 
 
-def run_multiturn_benchmark(endpoint_url, llmisvc_name, namespace):
-    """
-    Runs the multi-turn benchmark
-    """
-
-    if not config.project.get_config("tests.llmd.benchmarks.multiturn.enabled"):
-        return False
-
-    logging.info("Running multi-turn benchmark")
-
-    benchmark_name = config.project.get_config("tests.llmd.benchmarks.multiturn.name")
-    parallel = config.project.get_config("tests.llmd.benchmarks.multiturn.parallel")
-    timeout = config.project.get_config("tests.llmd.benchmarks.multiturn.timeout")
-
-    failed = False
-
-    endpoint_url = f"{endpoint_url}/v1"
-
-    try:
-        run.run_toolbox("llmd", "run_multiturn_benchmark",
-                       endpoint_url=endpoint_url,
-                       name=benchmark_name,
-                       namespace=namespace,
-                       parallel=parallel,
-                       timeout=timeout)
-
-        logging.info("Multi-turn benchmark completed successfully")
-
-    except Exception as e:
-        logging.error(f"Multi-turn benchmark failed: {e}")
-        failed = True
-
-    return failed
-
-
 def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     """
     Runs the Guidellm benchmark
@@ -851,27 +813,102 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
     rate = config.project.get_config("tests.llmd.benchmarks.guidellm.rate")
+    backend_type = config.project.get_config("tests.llmd.benchmarks.guidellm.backend_type")
+    rate_type = config.project.get_config("tests.llmd.benchmarks.guidellm.rate_type")
     max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
+    max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
     timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
 
     failed = False
 
-    try:
-        run.run_toolbox("llmd", "run_guidellm_benchmark",
-                       endpoint_url=endpoint_url,
-                       name=benchmark_name,
-                       namespace=namespace,
-                       rate=rate,
-                       max_seconds=max_seconds,
-                       timeout=timeout,
-                       data=data)
+    # Handle rate as list/tuple - iterate over each rate value
+    if isinstance(rate, (list, tuple)):
+        rate_values = rate
+    else:
+        rate_values = [rate]
 
-        logging.info("Guidellm benchmark completed successfully")
+    def apply_rate_scaleup(value, rate):
+        """
+        Apply rate-based scaling to configuration values.
 
-    except Exception as e:
-        logging.error(f"Guidellm benchmark failed: {e}")
-        failed = True
+        Evaluates expressions like:
+        - "{10*rate}" with rate=32 -> "320"
+        - "prefix_count={2*rate}" with rate=32 -> "prefix_count=64"
+        """
+        if not isinstance(value, str):
+            return value
+
+        import re
+
+        # Find all expressions in curly braces
+        pattern = r'\{([^}]+)\}'
+
+        def evaluate_expression(match):
+            expression = match.group(1)
+            try:
+                # Create a safe evaluation context with only 'rate' variable
+                context = {"rate": rate}
+                result = eval(expression, {"__builtins__": {}}, context)
+                return str(result)
+            except Exception as e:
+                logging.warning(f"Failed to evaluate expression '{expression}' with rate={rate}: {e}")
+                return match.group(0)  # Return original if evaluation fails
+
+        # Replace all expressions with their evaluated results
+        return re.sub(pattern, evaluate_expression, value)
+
+    for rate_value in rate_values:
+        try:
+            logging.info(f"Running Guidellm benchmark with rate: {rate_value}")
+
+            # Create unique name for each rate if multiple rates
+            current_name = benchmark_name
+            if len(rate_values) > 1:
+                current_name = f"{benchmark_name}-rate-{rate_value}"
+
+            # Construct guidellm arguments list
+            guidellm_args = []
+
+            # Add default parameters from config
+            if backend_type:
+                guidellm_args.append(f"--backend-type={backend_type}")
+
+            if rate_type:
+                guidellm_args.append(f"--rate-type={rate_type}")
+
+            # Add rate parameter
+            guidellm_args.append(f"--rate={rate_value}")
+
+            # Add optional parameters if provided
+            if max_seconds is not None:
+                guidellm_args.append(f"--max-seconds={max_seconds}")
+
+            if max_requests is not None:
+                guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
+
+            # Add data parameter
+            if data:
+                guidellm_args.append(f"--data={apply_rate_scaleup(data, rate_value)}")
+
+            suffix = f"_rate{rate_value}" if len(rate_values) > 1\
+                else None
+
+            run.run_toolbox(
+                "llmd", "run_guidellm_benchmark",
+                endpoint_url=endpoint_url,
+                name=current_name,
+                namespace=namespace,
+                timeout=timeout,
+                guidellm_args=guidellm_args,
+                artifact_dir_suffix=suffix,
+            )
+
+            logging.info(f"Guidellm benchmark completed successfully for rate: {rate_value}")
+
+        except Exception as e:
+            logging.error(f"Guidellm benchmark failed for rate {rate_value}: {e}")
+            failed = True
 
     return failed
 
