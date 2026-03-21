@@ -9,7 +9,7 @@ import matrix_benchmarking.models as matbench_models
 import matrix_benchmarking.parsing as matbench_parsing
 
 from ..models.lts import LTS_SCHEMA_VERSION, KPI_SETTINGS_VERSION, Settings, Metadata, Results, Payload
-from .parsers import parse_multiturn_benchmark_log, parse_guidellm_benchmark_log
+from .parsers import parse_guidellm_benchmark_log
 
 def generate_lts_payload(results, import_settings):
     lts_payload = types.SimpleNamespace()
@@ -32,7 +32,6 @@ def generate_lts_metadata(results, import_settings):
         "kpi_settings_version": KPI_SETTINGS_VERSION,
         "test_name": "llm-d-inference",
         "namespace": "llm-d-project",  # Default, could be read from config
-        "multiturn_enabled": results.multiturn_benchmark is not None,
         "guidellm_enabled": len(results.guidellm_benchmarks) > 0,
     }
 
@@ -72,14 +71,9 @@ def generate_lts_results(results):
     results_lts.test_failure_reason = getattr(results, 'test_failure_reason', None)
 
     # Copy benchmark results
-    results_lts.multiturn_benchmark = results.multiturn_benchmark
     results_lts.guidellm_benchmarks = results.guidellm_benchmarks
 
     # Copy data paths only if they have values
-    multiturn_log_path = getattr(results, 'multiturn_log_path', None)
-    if multiturn_log_path:
-        results_lts.multiturn_log_path = multiturn_log_path
-
     guidellm_log_path = getattr(results, 'guidellm_log_path', None)
     if guidellm_log_path:
         results_lts.guidellm_log_path = guidellm_log_path

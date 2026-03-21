@@ -30,23 +30,32 @@ ci_presets:
                 operator: NotIn
                 values:
                 - gf48e48
+                - gf4334a
     prepare.preload.extra_images:
       vllm-cuda-rhel9: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:094db84a1da5e8a575d0c9eade114fa30f4a2061064a338e3e032f3578f8082a
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
   multi-flavor:
-    tests.llmd.flavors: [simple-tp8-x2, intelligentrouting-x2-tp8, simple, simple-x2, simple-tp8, intelligentrouting-tp8]
+    tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
-    tests.llmd.benchmarks.guidellm.rate: 1,10,50
+    tests.llmd.benchmarks.guidellm.rate: "1,10,50"
     tests.llmd.benchmarks.guidellm.max_seconds: 30
 
   guidellm_multiturn_eval:
-    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=4500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
-    tests.llmd.benchmarks.guidellm.rate: 1,10,50,100,200,300
+    tests.llmd.benchmarks.guidellm.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
+    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
+    tests.llmd.benchmarks.guidellm.max_requests: "{10*rate}"
+
+  guidellm_heterogeneous_eval:
+    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.rate: "1,10,50,100,200,300"
     tests.llmd.benchmarks.guidellm.max_seconds: 600
+
+  gpt-oss:
+    tests.llmd.inference_service.model: gpt-oss-120
 
 clusters:
   cleanup_on_exit: false
@@ -181,7 +190,7 @@ tests:
 
     inference_service:
       skip_deployment: false
-      name: llama-llm-d
+      name: llm-d
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
@@ -196,7 +205,7 @@ tests:
         - "--trust-remote-code"
         - "--disable-log-requests"
         - "--max-model-len=40960"
-        - "--gpu-memory-utilization=0.9"
+        - "--gpu-memory-utilization=0.92"
 
       kueue:
         enabled: false
@@ -211,17 +220,13 @@ tests:
       extra_properties: {}
 
     benchmarks:
-      multiturn:
-        enabled: false
-        name: multiturn-benchmark
-        parallel: 9
-        timeout: 900
-
       guidellm:
         enabled: true
         name: guidellm-benchmark
-        rate-type: concurrent
-        max_seconds: 60
+        backend_type: openai_http
+        rate_type: concurrent
+        max_seconds: null
+        max_requests: null
         timeout: 900
         data: prompt_tokens=256,output_tokens=128
         rate: 1

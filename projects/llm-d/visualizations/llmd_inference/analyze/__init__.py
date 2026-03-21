@@ -1,40 +1,5 @@
 # Analysis functions for LLM-D inference results
 
-def analyze_multiturn_performance(results):
-    """
-    Analyze multi-turn benchmark performance and provide insights
-    """
-    if not results.multiturn_benchmark:
-        return "No multi-turn benchmark data available"
-
-    mb = results.multiturn_benchmark
-    insights = []
-
-    # Analyze completion rate
-    if mb.total_conversations == 0:
-        completion_rate = 0.0
-        insights.append("⚠ No conversations completed (total conversations: 0)")
-    else:
-        completion_rate = mb.completed_conversations / mb.total_conversations
-        if completion_rate < 0.95:
-            insights.append(f"⚠ Low completion rate: {completion_rate:.1%}")
-        else:
-            insights.append(f"✓ Good completion rate: {completion_rate:.1%}")
-
-    # Analyze TTFT performance
-    if mb.ttft_p95 > 10000:  # > 10 seconds
-        insights.append("⚠ High TTFT P95 indicates potential performance issues")
-    elif mb.ttft_p95 < 2000:  # < 2 seconds
-        insights.append("✓ Excellent TTFT performance")
-
-    # Analyze prefix caching effectiveness
-    if mb.speedup_ratio and mb.speedup_ratio > 1.5:
-        insights.append(f"✓ Effective prefix caching: {mb.speedup_ratio:.1f}x speedup")
-    elif mb.speedup_ratio and mb.speedup_ratio < 1.2:
-        insights.append("⚠ Limited prefix caching benefit")
-
-    return "\n".join(insights)
-
 def analyze_guidellm_performance(results):
     """
     Analyze Guidellm benchmark performance and provide insights
@@ -97,9 +62,6 @@ def analyze_overall_performance(results, kpis):
 
     # Recommendations
     recommendations = []
-
-    if results.multiturn_benchmark and results.multiturn_benchmark.ttft_p95 > 5000:
-        recommendations.append("• Consider optimizing model loading or caching")
 
     if results.guidellm_benchmarks:
         max_rate = max(b.request_rate for b in results.guidellm_benchmarks)
