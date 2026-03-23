@@ -85,7 +85,7 @@ spec:
             nvidia.com/gpu: "1"
           requests:
             cpu: '4'
-            memory: 64Gi
+            memory: 8Gi
             nvidia.com/gpu: "1"
         livenessProbe:
           httpGet:
