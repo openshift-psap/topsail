@@ -14,6 +14,7 @@ ci_presets:
     matbench.enabled: false
 
   cks:
+    tests.llmd.inference_service.model: llama3.3-70b
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -167,8 +168,9 @@ prepare:
 
 models:
   llama3.1-8b:
-    name: RedHatAI/podllama-3-1-8b-instruct-fp8
+    name: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
     uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
+    # source: hf://RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
 
   llama3.3-70b:
     name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
@@ -195,7 +197,7 @@ tests:
       timeout: 900
       do_simple_test: true
 
-      model: llama3.3-70b
+      model: llama3.1-8b
 
       # vLLM arguments (always applied)
       vllm_args:
@@ -225,7 +227,7 @@ tests:
         name: guidellm-benchmark
         backend_type: openai_http
         rate_type: concurrent
-        max_seconds: null
+        max_seconds: 120
         max_requests: null
         timeout: 900
         data: prompt_tokens=256,output_tokens=128
