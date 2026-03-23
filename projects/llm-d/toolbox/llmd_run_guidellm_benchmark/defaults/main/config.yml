@@ -22,14 +22,8 @@ llmd_run_guidellm_benchmark_version: pr-590
 # Timeout in seconds to wait for job completion
 llmd_run_guidellm_benchmark_timeout: 900
 
-# Request rate for the benchmark
-llmd_run_guidellm_benchmark_rate: 1
-
-# Maximum seconds to run benchmark
-llmd_run_guidellm_benchmark_max_seconds: 30
-
-# Data configuration
-llmd_run_guidellm_benchmark_data: prompt_tokens=256,output_tokens=128
+# List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
+llmd_run_guidellm_benchmark_guidellm_args: []
 
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone

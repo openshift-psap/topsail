@@ -35,7 +35,6 @@ class LlmdInferenceErrorReport():
         successful_tests = 0
         failed_tests = 0
         guidellm_available = 0
-        multiturn_available = 0
         prometheus_available = 0
 
         for entry in entries:
@@ -50,9 +49,6 @@ class LlmdInferenceErrorReport():
             # Count available data sources
             if hasattr(results, 'guidellm_benchmarks') and results.guidellm_benchmarks:
                 guidellm_available += 1
-
-            if hasattr(results, 'multiturn_benchmark') and results.multiturn_benchmark:
-                multiturn_available += 1
 
             if hasattr(results, 'metrics') and results.metrics:
                 prometheus_available += 1
@@ -84,11 +80,6 @@ class LlmdInferenceErrorReport():
                 "🎯 GuideLLM benchmarks: ",
                 html.Span(f"{guidellm_available}/{total_tests}", style={"font-weight": "bold"}),
                 f" ({guidellm_available/total_tests*100:.1f}%)"
-            ]),
-            html.Li([
-                "🔄 Multi-turn benchmarks: ",
-                html.Span(f"{multiturn_available}/{total_tests}", style={"font-weight": "bold"}),
-                f" ({multiturn_available/total_tests*100:.1f}%)"
             ]),
             html.Li([
                 "📊 Prometheus monitoring: ",
@@ -165,28 +156,6 @@ class LlmdInferenceErrorReport():
                                 "  └─ ", html.A("benchmark logs", href=str(log_file), target="_blank")
                             ]))
 
-                # Multi-turn benchmark results
-                if hasattr(results, 'multiturn_benchmark') and results.multiturn_benchmark:
-                    # Look for multiturn benchmark directory
-                    multiturn_dir = None
-                    for item in artifacts_basedir.iterdir():
-                        if item.is_dir() and 'multiturn_benchmark' in item.name:
-                            multiturn_dir = item
-                            break
-
-                    if multiturn_dir:
-                        artifact_links.append(html.Li([
-                            html.A("🔄 Multi-turn benchmark results",
-                                  href=str(multiturn_dir), target="_blank")
-                        ]))
-
-                        # Link to specific log file if it exists
-                        log_file = multiturn_dir / "000__llmd__run_multiturn_benchmark" / "artifacts" / "multiturn_benchmark_job.logs"
-                        if log_file.exists():
-                            artifact_links.append(html.Li([
-                                "  └─ ", html.A("benchmark logs", href=str(log_file), target="_blank")
-                            ]))
-
                 # Prometheus monitoring data
                 if hasattr(results, 'metrics') and results.metrics:
                     # Look for prometheus dump directory
@@ -210,11 +179,6 @@ class LlmdInferenceErrorReport():
                 data_sources.append(f"✅ GuideLLM ({strategy_count} strategies)")
             else:
                 data_sources.append("❌ GuideLLM")
-
-            if hasattr(results, 'multiturn_benchmark') and results.multiturn_benchmark:
-                data_sources.append("✅ Multi-turn")
-            else:
-                data_sources.append("❌ Multi-turn")
 
             if hasattr(results, 'metrics') and results.metrics:
                 data_sources.append("✅ Prometheus")

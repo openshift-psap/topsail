@@ -191,7 +191,6 @@ Toolbox Documentation
 * :doc:`deploy_gateway <Llmd.deploy_gateway>`	 Deploys a GatewayClass and Gateway object
 * :doc:`deploy_llm_inference_service <Llmd.deploy_llm_inference_service>`	 Deploys an LLM InferenceService from a YAML file
 * :doc:`run_guidellm_benchmark <Llmd.run_guidellm_benchmark>`	 Runs a Guidellm benchmark job against the LLM inference service
-* :doc:`run_multiturn_benchmark <Llmd.run_multiturn_benchmark>`	 Runs a multi-turn benchmark job against the LLM inference service
 
 ``local_ci``
 ************
