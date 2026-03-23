@@ -175,10 +175,16 @@ models:
   llama3.3-70b:
     name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
     source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+    resources:
+      cpu: 4
+      memory: 64Gi
 
   gpt-oss-120:
     name: openai/gpt-oss-120b
     source: hf://openai/gpt-oss-120b
+    resources:
+      cpu: 4
+      memory: 64Gi
 
   granite4-tiny:
     name: RedHatAI/granite-4.0-h-tiny-FP8-dynamic

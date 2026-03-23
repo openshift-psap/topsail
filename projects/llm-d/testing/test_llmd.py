@@ -49,11 +49,11 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
                 logging.info("Resetting Prometheus database before testing")
                 prom_start_ts = prom.reset_prometheus()
 
-            # Deploy LLM inference service
-            _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
-
             # Extract the model name from configuration
             model_ref = config.project.get_config("tests.llmd.inference_service.model")
+
+            # Deploy LLM inference service
+            _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
@@ -602,6 +602,59 @@ def apply_gpu_resources(main_container, gpu_count):
     logging.info(f"Set GPU resources: nvidia.com/gpu={gpu_count} (for TP size {gpu_count})")
 
 
+def apply_resource_configuration(isvc_data, model_key):
+    """
+    Apply CPU and memory resource configuration to the ISVC template
+
+    Checks for explicit test-level resource configuration first, then falls back
+    to model-specific resource requirements.
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        model_key: The model key to lookup model-specific resources
+    """
+    # First, check for explicit test-level resource configuration
+
+    models = config.project.get_config("models", {})
+    model_data = models[model_key]
+    import pdb;pdb.set_trace()
+    model_resources = model_data.get("resources")
+    if not model_resources: return
+    cpu_request = model_resources.get("cpu")
+    memory_request = model_resources.get("memory")
+
+    if not cpu_request and not memory_request:
+        return
+
+    # Navigate to spec.template.containers[0].resources.requests
+    try:
+        template = isvc_data['spec']['template']
+        containers = template['containers']
+        main_container = containers[0]  # Assume first container is main
+
+        # Ensure resources.requests exists
+        if 'resources' not in main_container:
+            main_container['resources'] = {}
+        if 'requests' not in main_container['resources']:
+            main_container['resources']['requests'] = {}
+
+        requests = main_container['resources']['requests']
+
+        # Apply CPU request if configured
+        if cpu_request:
+            requests['cpu'] = str(cpu_request)
+            logging.info(f"Set CPU request: {cpu_request}")
+
+        # Apply memory request if configured
+        if memory_request:
+            requests['memory'] = str(memory_request)
+            logging.info(f"Set memory request: {memory_request}")
+
+    except (KeyError, IndexError) as e:
+        logging.error(f"Failed to apply resource configuration: {e}")
+        logging.error("Expected structure: spec.template.containers[0].resources.requests")
+
+
 def apply_extra_properties(isvc_data):
     """
     Apply extra properties from configuration to the ISVC
@@ -658,7 +711,7 @@ def _set_nested_property(data, dotted_key, value):
     current[final_key] = value
 
 
-def reshape_isvc(flavor, llmisvc_path):
+def reshape_isvc(flavor, llmisvc_path, model_key):
     """
     Reshape the ISVC YAML file based on configuration
 
@@ -687,6 +740,7 @@ def reshape_isvc(flavor, llmisvc_path):
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
+    apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
@@ -701,7 +755,7 @@ def reshape_isvc(flavor, llmisvc_path):
     return output_path
 
 
-def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
+def deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_key):
     """
     Deploys the LLM inference service
     """
@@ -713,7 +767,7 @@ def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
     if not llmisvc_path.is_absolute():
         llmisvc_path = TESTING_THIS_DIR / "llmisvcs" / llmisvc_path
 
-    llmisvc_path = reshape_isvc(flavor, llmisvc_path)
+    llmisvc_path = reshape_isvc(flavor, llmisvc_path, model_key)
 
     if config.project.get_config("tests.llmd.inference_service.skip_deployment"):
         logging.info("Skipping the deployment LLM inference service "
