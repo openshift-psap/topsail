@@ -873,6 +873,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
     timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
+    sample_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.sample_requests")
 
     failed = False
 
@@ -940,6 +941,9 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
             if max_requests is not None:
                 guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
+
+            if sample_requests is not None:
+                guidellm_args.append(f"--sample-requests={sample_requests}")
 
             # Add data parameter
             if data:

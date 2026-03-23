@@ -238,6 +238,7 @@ tests:
         timeout: 900
         data: prompt_tokens=256,output_tokens=128
         rate: 1
+        sample_requests: 20
 
   capture_prom: true
   capture_prom_uwm: true
