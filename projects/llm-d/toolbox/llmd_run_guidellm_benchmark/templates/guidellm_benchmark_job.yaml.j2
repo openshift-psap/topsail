@@ -9,6 +9,22 @@ spec:
     spec:
       serviceAccountName: default
       restartPolicy: Never
+      initContainers:
+        - name: permission-fixer
+          image: "{{ llmd_run_guidellm_benchmark_image }}:{{ llmd_run_guidellm_benchmark_version }}"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "Fixing permissions on /results directory..."
+              chmod 777 /results
+              chown -R 1001:1001 /results || true
+              echo "Permissions fixed successfully"
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: results
+              mountPath: /results
       containers:
         - name: guidellm
           image: "{{ llmd_run_guidellm_benchmark_image }}:{{ llmd_run_guidellm_benchmark_version }}"
@@ -25,6 +41,10 @@ spec:
           env:
             - name: USER # version 0.6.0-pr590 currently needs that ...
               value: guidellm
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: home
               mountPath: /home/guidellm
@@ -34,4 +54,5 @@ spec:
         - name: home
           emptyDir: {}
         - name: results
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: "{{ llmd_run_guidellm_benchmark_name }}"

@@ -54,6 +54,7 @@ class Llmd:
             name="guidellm-benchmark", namespace="",
             image="ghcr.io/vllm-project/guidellm", version="pr-590",
             timeout=900,
+            pvc_size="1Gi",
             guidellm_args=[],
     ):
         """
@@ -66,6 +67,7 @@ class Llmd:
           image: Container image for the benchmark
           version: Version tag for the benchmark image
           timeout: Timeout in seconds to wait for job completion
+          pvc_size: Size of the PersistentVolumeClaim for storing results
           guidellm_args: List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
         """
 

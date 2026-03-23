@@ -22,6 +22,9 @@ llmd_run_guidellm_benchmark_version: pr-590
 # Timeout in seconds to wait for job completion
 llmd_run_guidellm_benchmark_timeout: 900
 
+# Size of the PersistentVolumeClaim for storing results
+llmd_run_guidellm_benchmark_pvc_size: 1Gi
+
 # List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
 llmd_run_guidellm_benchmark_guidellm_args: []
 

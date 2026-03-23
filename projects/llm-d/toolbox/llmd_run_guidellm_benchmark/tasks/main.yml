@@ -20,9 +20,19 @@
   set_fact:
     target_namespace: "{{ current_namespace_result.stdout if llmd_run_guidellm_benchmark_namespace == '' else llmd_run_guidellm_benchmark_namespace }}"
 
-- name: Delete the old guidellm benchmark job
+- name: Delete the old guidellm benchmark job and PVC
   command:
-    oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
+    oc delete job,pvc "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
+
+- name: Create the guidellm benchmark PVC YAML
+  template:
+    src: "{{ guidellm_benchmark_pvc_template }}"
+    dest: "{{ artifact_extra_logs_dir }}/src/guidellm_benchmark_pvc.yaml"
+    mode: '0700'
+
+- name: Create the guidellm benchmark PVC
+  command:
+    oc create -f "{{ artifact_extra_logs_dir }}/src/guidellm_benchmark_pvc.yaml"
 
 - name: Set the benchmark endpoint URL
   set_fact:
@@ -83,3 +93,51 @@
     shell:
       oc logs job/{{ llmd_run_guidellm_benchmark_name }} -n "{{ target_namespace }}" \
          > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.logs"
+
+  - name: Create the results subdirectory
+    file:
+      path: "{{ artifact_extra_logs_dir }}/artifacts/results/"
+      state: directory
+      mode: '0755'
+
+  - name: Get the node where the GuideLLM job pod ran
+    shell: |
+      set -o pipefail;
+      oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --no-headers -o custom-columns=":spec.nodeName" | head -1
+    register: guidellm_node_result
+    failed_when: false
+
+  - name: Set the target node for helper pod
+    set_fact:
+      helper_pod_node: "{{ guidellm_node_result.stdout | trim }}"
+
+  - name: Create the copy helper pod YAML
+    template:
+      src: "{{ copy_helper_pod_template }}"
+      dest: "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
+      mode: '0700'
+
+  - name: Create the copy helper pod
+    command:
+      oc create -f "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
+
+  - name: Wait for copy helper pod to be ready
+    shell: |
+      oc wait --for=condition=Ready pod/{{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" --timeout=60s
+
+  - name: Copy benchmarks.json from PVC to artifacts directory
+    shell: |
+      oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- cat /results/benchmarks.json > "{{ artifact_extra_logs_dir }}/artifacts/results/benchmarks.json" 2>/dev/null || echo "Warning: benchmarks.json not found in PVC"
+    failed_when: false
+
+  - name: Delete the copy helper pod
+    command:
+      oc delete pod "{{ llmd_run_guidellm_benchmark_name }}-copy" -n "{{ target_namespace }}" --ignore-not-found
+
+  - name: Delete the guidellm benchmark job
+    command:
+      oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
+
+  - name: Delete the guidellm benchmark PVC
+    command:
+      oc delete pvc "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found

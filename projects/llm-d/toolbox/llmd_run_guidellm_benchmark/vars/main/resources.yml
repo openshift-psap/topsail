@@ -1,1 +1,3 @@
 guidellm_benchmark_job_template: templates/guidellm_benchmark_job.yaml.j2
+guidellm_benchmark_pvc_template: templates/guidellm_benchmark_pvc.yaml.j2
+copy_helper_pod_template: templates/copy_helper_pod.yaml.j2

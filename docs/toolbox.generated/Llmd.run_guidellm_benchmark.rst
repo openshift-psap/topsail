@@ -56,6 +56,13 @@ Parameters
 * default value: ``900``
 
 
+``pvc_size``  
+
+* Size of the PersistentVolumeClaim for storing results
+
+* default value: ``1Gi``
+
+
 ``guidellm_args``  
 
 * List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
