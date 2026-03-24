@@ -809,9 +809,9 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
     components = parse_flavor_components(flavor)
     base_flavor = components['base']
 
-    # For intelligent-routing flavors, get the gateway-internal URL from status
+    # For intelligent-routing flavors, get the URL from status
     if base_flavor in ["intelligentrouting", "intelligent-routing"]:
-        logging.info("Intelligent-routing flavor detected - looking up gateway-internal URL from status")
+        logging.info("Intelligent-routing flavor detected - looking up the gateway URL from status")
 
         # Get the LLMInferenceService status addresses
         addresses_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
@@ -821,22 +821,23 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
         if addresses_result.returncode != 0:
             raise RuntimeError(f"Failed to get LLMInferenceService addresses: {addresses_result.stderr}")
 
-        # Parse the addresses JSON to find gateway-internal URL
+        # Parse the addresses JSON to find the URL
+        gateway_name = config.project.get_config("tests.llmd.inference_service.gateway.name")
         import json
         try:
             addresses = json.loads(addresses_result.stdout)
-            gateway_internal_url = None
+            gateway_url = None
 
             for address in addresses:
-                if address.get('name') == 'gateway-internal':
-                    gateway_internal_url = address.get('url')
+                if address.get('name') == gateway_name:
+                    gateway_url = address.get('url')
                     break
 
-            if not gateway_internal_url:
-                raise RuntimeError("gateway-internal URL not found in LLMInferenceService status addresses")
+            if not gateway_url:
+                raise RuntimeError(f"{gateway_name} URL not found in LLMInferenceService status addresses")
 
-            logging.info(f"Intelligent-routing flavor - using gateway-internal URL: {gateway_internal_url}")
-            return gateway_internal_url
+            logging.info(f"Intelligent-routing flavor - using {gateway_name} URL: {gateway_url}")
+            return gateway_url
 
         except (json.JSONDecodeError, KeyError) as e:
             raise RuntimeError(f"Failed to parse LLMInferenceService addresses: {e}")
@@ -1082,10 +1083,10 @@ def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name)
 
     logging.info("Running simple LLM inference test from inside cluster")
 
-    # Construct the internal service URL
+    # Construct the service URL
     deployment_name = f"{llmisvc_name}-kserve"
 
-    logging.info(f"Testing internal URL: {endpoint_url}")
+    logging.info(f"Testing URL: {endpoint_url}")
 
     # Test with a simple completion request
     test_payload = {

@@ -247,7 +247,8 @@ tests:
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
-
+      gateway:
+        name: gateway-external
       model: llama3-1-8b
 
       # vLLM arguments (always applied)
