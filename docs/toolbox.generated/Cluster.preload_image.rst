@@ -54,3 +54,10 @@ Parameters
 
 * Pod toleration to apply to the DaemonSet.
 
+
+``run_as_user``  
+
+* User ID to run the preloader container as (defaults to 10001 if not specified).
+
+* default value: ``10001``
+
