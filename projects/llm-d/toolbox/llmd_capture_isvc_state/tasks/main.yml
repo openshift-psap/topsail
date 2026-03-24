@@ -35,7 +35,7 @@
 - name: Capture all pods related to the LLMInferenceService
   shell:
     oc get pods \
-       -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.yaml"
   ignore_errors: true
@@ -96,7 +96,7 @@
 - name: Capture logs from LLMInferenceService pods
   shell: |
     for pod in $(oc get pods \
-       -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -o jsonpath='{.items[*].metadata.name}'); do
       echo "=== Logs for pod: $pod ===" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.logs"
@@ -108,7 +108,7 @@
 - name: Capture previous logs from LLMInferenceService pods if available
   shell: |
     for pod in $(oc get pods \
-       -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -o jsonpath='{.items[*].metadata.name}'); do
       echo "=== Previous logs for pod: $pod ===" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.previous.logs"
@@ -127,7 +127,7 @@
 - name: Capture describe output for related pods
   shell: |
     for pod in $(oc get pods \
-       -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -o jsonpath='{.items[*].metadata.name}'); do
       echo "=== Describe for pod: $pod ===" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.describe.txt"
