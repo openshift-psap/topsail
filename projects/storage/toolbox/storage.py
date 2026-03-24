@@ -63,6 +63,7 @@ class Storage:
             pvc_size="80Gi",
             pvc_storage_class_name=None,
             image="registry.access.redhat.com/ubi9/ubi",
+            run_as_root=False,
     ):
         """
         Downloads the a dataset into a PVC of the cluster
@@ -79,6 +80,7 @@ class Storage:
             pvc_size: the size of the PVC to request, when creating the PVC
             pvc_storage_class_name: the name of the storage class to pass when creating the PVC
             image: the image to use for running the download Pod
+            run_as_root: Run the download container as root user
         """
 
         return RunAnsibleRole(locals())

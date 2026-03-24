@@ -7,30 +7,15 @@ metadata:
     download-to-pvc: "yes"
 spec:
   restartPolicy: Never
-  initContainers:
-  - name: permission-fixer
-    image: {{ storage_download_to_pvc_image }}
-    command: ["/bin/sh", "-c"]
-    args:
-      - |
-        echo "Fixing permissions on /storage directory..."
-        chmod 777 /storage
-        chown -R 1001:1001 /storage || true
-        echo "Permissions fixed successfully"
-    securityContext:
-      runAsUser: 0
-      allowPrivilegeEscalation: true
-    volumeMounts:
-    - name: storage
-      mountPath: /storage
   containers:
   - name: downloader
     image: {{ storage_download_to_pvc_image }}
-    command: [bash, /mnt/entrypoint/entrypoint.sh]
+    command: [bash, -c, "/mnt/entrypoint/entrypoint.sh && chmod -R a+rX /storage"]
+{% if storage_download_to_pvc_run_as_root %}
     securityContext:
-      runAsUser: 1001
-      runAsNonRoot: true
-      allowPrivilegeEscalation: false
+      runAsUser: 0
+      allowPrivilegeEscalation: true
+{% endif %}
     env:
     - name: DOWNLOAD_SOURCE
       value: "{{ storage_download_to_pvc_source }}"
