@@ -56,6 +56,7 @@ class Llmd:
             timeout=900,
             pvc_size="1Gi",
             guidellm_args=[],
+            run_as_root=False,
     ):
         """
         Runs a Guidellm benchmark job against the LLM inference service
@@ -69,6 +70,7 @@ class Llmd:
           timeout: Timeout in seconds to wait for job completion
           pvc_size: Size of the PersistentVolumeClaim for storing results
           guidellm_args: List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
+          run_as_root: Run the GuideLLM container as root user
         """
 
         return RunAnsibleRole(locals())

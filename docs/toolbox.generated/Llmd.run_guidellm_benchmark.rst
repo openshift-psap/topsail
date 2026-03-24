@@ -67,3 +67,8 @@ Parameters
 
 * List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
 
+
+``run_as_root``  
+
+* Run the GuideLLM container as root user
+

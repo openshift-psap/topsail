@@ -28,6 +28,9 @@ llmd_run_guidellm_benchmark_pvc_size: 1Gi
 # List of additional guidellm arguments (e.g., ["--rate=10", "--max-seconds=30"])
 llmd_run_guidellm_benchmark_guidellm_args: []
 
+# Run the GuideLLM container as root user
+llmd_run_guidellm_benchmark_run_as_root: false
+
 # Default Ansible variables
 # Default value for ansible_os_family to ensure role remains standalone
 ansible_os_family: Linux
