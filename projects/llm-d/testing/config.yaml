@@ -14,7 +14,9 @@ ci_presets:
     matbench.enabled: false
 
   cks:
-    tests.llmd.inference_service.model: llama3.3-70b
+    extends: [pvc_rwx]
+
+    tests.llmd.inference_service.model: llama3-3-70b
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -173,12 +175,20 @@ prepare:
     skip: false
 
 models:
-  llama3.1-8b:
+  facebook-opt-125m:
+    name: facebook/opt-125m
+    source: hf://facebook/opt-125m
+    resources:
+      cpu: 2
+      memory: 8Gi
+
+  llama3-1-8b:
     name: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
     uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
     # source: hf://RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
+    resources: {}
 
-  llama3.3-70b:
+  llama3-3-70b:
     name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
     source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
     resources:
@@ -209,7 +219,7 @@ tests:
       timeout: 900
       do_simple_test: true
 
-      model: llama3.1-8b
+      model: llama3-1-8b
 
       # vLLM arguments (always applied)
       vllm_args:
