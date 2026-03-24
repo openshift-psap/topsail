@@ -79,65 +79,68 @@
     when: job_status_result.stdout != 'Complete'
 
   always:
-  - name: Capture the final guidellm benchmark job YAML
-    shell:
-      oc get job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
-         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.final.yaml"
+  - name: Capture artifacts
+    block:
+    - name: Capture the final guidellm benchmark job YAML
+      shell:
+        oc get job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
+           > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.final.yaml"
 
-  - name: Capture the guidellm benchmark job pods YAML
-    shell:
-      oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
-         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.pods.yaml"
+    - name: Capture the guidellm benchmark job pods YAML
+      shell:
+        oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" -oyaml \
+           > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.pods.yaml"
 
-  - name: Capture the guidellm benchmark job logs
-    shell:
-      oc logs job/{{ llmd_run_guidellm_benchmark_name }} -n "{{ target_namespace }}" \
-         > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.logs"
+    - name: Capture the guidellm benchmark job logs
+      shell:
+        oc logs job/{{ llmd_run_guidellm_benchmark_name }} -n "{{ target_namespace }}" \
+           > "{{ artifact_extra_logs_dir }}/artifacts/guidellm_benchmark_job.logs"
+    always:
+    - name: Create the results subdirectory
+      file:
+        path: "{{ artifact_extra_logs_dir }}/artifacts/results/"
+        state: directory
+        mode: '0755'
 
-  - name: Create the results subdirectory
-    file:
-      path: "{{ artifact_extra_logs_dir }}/artifacts/results/"
-      state: directory
-      mode: '0755'
+    - name: Get the node where the GuideLLM job pod ran
+      shell: |
+        set -o pipefail;
+        oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --no-headers -o custom-columns=":spec.nodeName" | head -1
+      register: guidellm_node_result
+      failed_when: false
 
-  - name: Get the node where the GuideLLM job pod ran
-    shell: |
-      set -o pipefail;
-      oc get pods -l "job-name={{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --no-headers -o custom-columns=":spec.nodeName" | head -1
-    register: guidellm_node_result
-    failed_when: false
+    - name: Set the target node for helper pod
+      set_fact:
+        helper_pod_node: "{{ guidellm_node_result.stdout | trim }}"
 
-  - name: Set the target node for helper pod
-    set_fact:
-      helper_pod_node: "{{ guidellm_node_result.stdout | trim }}"
+    - name: Create the copy helper pod YAML
+      template:
+        src: "{{ copy_helper_pod_template }}"
+        dest: "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
+        mode: '0700'
 
-  - name: Create the copy helper pod YAML
-    template:
-      src: "{{ copy_helper_pod_template }}"
-      dest: "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
-      mode: '0700'
+    - name: Create the copy helper pod
+      command:
+        oc create -f "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
 
-  - name: Create the copy helper pod
-    command:
-      oc create -f "{{ artifact_extra_logs_dir }}/src/copy_helper_pod.yaml"
+    - name: Retrieve the test results locally
+      block:
+      - name: Wait for copy helper pod to be ready
+        shell: |
+          oc wait --for=condition=Ready pod/{{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" --timeout=60s
 
-  - name: Wait for copy helper pod to be ready
-    shell: |
-      oc wait --for=condition=Ready pod/{{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" --timeout=60s
+      - name: Copy benchmarks.json from PVC to artifacts directory
+        shell: |
+          oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- cat /results/benchmarks.json > "{{ artifact_extra_logs_dir }}/artifacts/results/benchmarks.json" 2>/dev/null || echo "Warning: benchmarks.json not found in PVC"
+      always:
+      - name: Delete the copy helper pod
+        command:
+          oc delete pod "{{ llmd_run_guidellm_benchmark_name }}-copy" -n "{{ target_namespace }}" --ignore-not-found
 
-  - name: Copy benchmarks.json from PVC to artifacts directory
-    shell: |
-      oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- cat /results/benchmarks.json > "{{ artifact_extra_logs_dir }}/artifacts/results/benchmarks.json" 2>/dev/null || echo "Warning: benchmarks.json not found in PVC"
-    failed_when: false
+      - name: Delete the guidellm benchmark job
+        command:
+          oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
 
-  - name: Delete the copy helper pod
-    command:
-      oc delete pod "{{ llmd_run_guidellm_benchmark_name }}-copy" -n "{{ target_namespace }}" --ignore-not-found
-
-  - name: Delete the guidellm benchmark job
-    command:
-      oc delete job "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
-
-  - name: Delete the guidellm benchmark PVC
-    command:
-      oc delete pvc "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
+      - name: Delete the guidellm benchmark PVC
+        command:
+          oc delete pvc "{{ llmd_run_guidellm_benchmark_name }}" -n "{{ target_namespace }}" --ignore-not-found
