@@ -13,6 +13,26 @@ ci_presets:
   dev:
     matbench.enabled: false
 
+  pvc_rwx:
+    prepare.pvc.name: storage-rwx
+    prepare.pvc.access_mode: ReadWriteMany
+
+  azure:
+    prepare.preload.skip: true
+    prepare.operators.skip: true
+    prepare.cluster.skip: true
+    prepare.rhoai.skip: true
+
+    tests.llmd.inference_service.model: llama3-1-8b
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: false
+
+  azure_light:
+    extends: [azure, opt-125m]
+    prepare.pvc.storage_class: managed-csi
+
+
   cks:
     extends: [pvc_rwx]
 
@@ -205,6 +225,8 @@ models:
   granite4-tiny:
     name: RedHatAI/granite-4.0-h-tiny-FP8-dynamic
     source: hf://RedHatAI/granite-4.0-h-tiny-FP8-dynamic
+    resources: {}
+
 tests:
   llmd:
     skip: false
