@@ -195,10 +195,15 @@ def prepare():
     prepare_gateway()
     scale_up()
 
+    model_ref = config.project.get_config("tests.llmd.inference_service.model")
     with run.Parallel("prepare_node") as parallel:
-        parallel.delayed(download_models_to_pvc)
-        parallel.delayed(wait_for_gpu_readiness)
-        parallel.delayed(preload_llm_model_image)
+        parallel.delayed(download_single_model, model_ref)
+
+        if config.project.get_config("prepare.gpu.wait_for_readiness"):
+            parallel.delayed(wait_for_gpu_readiness)
+
+        if not config.project.get_config("prepare.preload.skip"):
+            parallel.delayed(preload_llm_model_image)
 
 
 def prepare_operators():
