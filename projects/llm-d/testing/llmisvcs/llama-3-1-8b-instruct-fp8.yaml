@@ -71,6 +71,8 @@ spec:
             emptyDir: {}
           - name: cachi2-cache
             emptyDir: {}
+        nodeSelector:
+          nvidia.com/gpu.present: "true"
     route: {}
     gateway: {}
   template:
