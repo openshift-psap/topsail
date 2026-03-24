@@ -488,16 +488,27 @@ def apply_model_configuration(isvc_data):
     if 'model' not in isvc_data['spec']:
         isvc_data['spec']['model'] = {}
 
-    # Apply model URI if configured
+    # Check if PVC prefetch is enabled
+    pvc_enabled = config.project.get_config("prepare.pvc.enabled", True)  # Default to True for backward compatibility
+
+    # Apply model URI based on configuration priority
     if 'uri' in model_config:
+        # Explicit URI in model config takes precedence
         isvc_data['spec']['model']['uri'] = model_config['uri']
-        logging.info(f"Set model URI: {model_config['uri']}")
+        logging.info(f"Set model URI from model config: {model_config['uri']}")
+    elif not pvc_enabled:
+        # PVC disabled - use model source directly as URI
+        if 'source' in model_config:
+            isvc_data['spec']['model']['uri'] = model_config['source']
+            logging.info(f"Set model URI from source (PVC disabled): {model_config['source']}")
+        else:
+            logging.warning(f"Model '{model_key}' has no source configured and PVC is disabled")
     else:
-        # Construct PVC URI: pvc://<pvc_name>/<model_key>
+        # PVC enabled - construct PVC URI: pvc://<pvc_name>/<model_key>
         pvc_name = config.project.get_config("prepare.pvc.name")
         uri = f"pvc://{pvc_name}/{model_key}"
         isvc_data['spec']['model']['uri'] = uri
-        logging.info(f"Set model URI: {uri}")
+        logging.info(f"Set model URI from PVC: {uri}")
 
     # Apply model name if configured
     if 'name' in model_config:
@@ -617,7 +628,7 @@ def apply_resource_configuration(isvc_data, model_key):
 
     models = config.project.get_config("models", {})
     model_data = models[model_key]
-    import pdb;pdb.set_trace()
+
     model_resources = model_data.get("resources")
     if not model_resources: return
     cpu_request = model_resources.get("cpu")
