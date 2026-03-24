@@ -63,6 +63,20 @@
        -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.replicasets.yaml"
   ignore_errors: true
 
+- name: Capture all pods in the namespace with wide output
+  shell:
+    oc get pods -owide \
+       -n "{{ target_namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/artifacts/namespace.pods.status"
+  ignore_errors: true
+
+- name: Capture all services in the namespace
+  shell:
+    oc get svc \
+       -n "{{ target_namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/artifacts/namespace.services.status"
+  ignore_errors: true
+
 - name: Capture ServiceMonitors for monitoring
   shell:
     oc get servicemonitor \
@@ -140,6 +154,8 @@
       - Related ReplicaSets
       - Related ServiceMonitors
       - Related PodMonitors
+      - All Namespace Pods (wide format)
+      - All Namespace Services
 
       All files are saved in the artifacts directory.
     dest: "{{ artifact_extra_logs_dir }}/artifacts/capture_summary.txt"
