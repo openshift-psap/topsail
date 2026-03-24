@@ -974,6 +974,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                 namespace=namespace,
                 timeout=timeout,
                 guidellm_args=guidellm_args,
+                run_as_root=config.project.get_config("security.run_as_root"),
                 artifact_dir_suffix=suffix,
             )
 

@@ -589,7 +589,8 @@ def download_single_model(model_key):
             "pvc_access_mode": pvc_access_mode,
             "image": downloader_image,
             "creds": str(hf_creds_path),
-            "clean_first": False  # Don't clean to allow multiple models in same PVC
+            "clean_first": False,  # Don't clean to allow multiple models in same PVC
+            "run_as_root": config.project.get_config("security.run_as_root")
         }
 
         # Add storage class if configured

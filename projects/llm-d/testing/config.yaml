@@ -29,6 +29,7 @@ ci_presets:
     prepare.pvc.access_mode: ReadWriteMany
 
   azure:
+    security.run_as_root: true
     prepare.preload.skip: true
     prepare.operators.skip: true
     prepare.cluster.skip: true
@@ -93,6 +94,10 @@ ci_presets:
 
 clusters:
   cleanup_on_exit: false
+
+security:
+  # Run containers as root user (affects both GuideLLM benchmarks and storage download operations)
+  run_as_root: false
 
 secrets:
   dir:
