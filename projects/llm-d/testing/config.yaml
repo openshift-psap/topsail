@@ -12,6 +12,13 @@ ci_presets:
 
   dev:
     matbench.enabled: false
+    tests.llmd.inference_service.model: facebook-opt-125m
+
+  psap_h200:
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: true
+    prepare.namespace.name: kpouget-dev
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
