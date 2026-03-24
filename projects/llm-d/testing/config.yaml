@@ -14,6 +14,10 @@ ci_presets:
     matbench.enabled: false
     tests.llmd.inference_service.model: facebook-opt-125m
 
+  opt-125m:
+    tests.llmd.inference_service.model: facebook-opt-125m
+    tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
+
   psap_h200:
     tests.capture_prom: false
     tests.capture_prom_uwm: false
@@ -258,7 +262,7 @@ tests:
         - "--uvicorn-log-level=debug"
         - "--trust-remote-code"
         - "--disable-log-requests"
-        - "--max-model-len=40960"
+        - "--max-model-len=40960" # keep in 5th position or udpdate the presets
         - "--gpu-memory-utilization=0.92"
 
       kueue:
