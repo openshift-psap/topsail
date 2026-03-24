@@ -25,6 +25,11 @@ spec:
           env:
             - name: USER # version 0.6.0-pr590 currently needs that ...
               value: guidellm
+{% if llmd_run_guidellm_benchmark_run_as_root %}
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+{% endif %}
           volumeMounts:
             - name: home
               mountPath: /home/guidellm
@@ -34,4 +39,5 @@ spec:
         - name: home
           emptyDir: {}
         - name: results
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: "{{ llmd_run_guidellm_benchmark_name }}"

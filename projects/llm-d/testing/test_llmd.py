@@ -49,11 +49,11 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
                 logging.info("Resetting Prometheus database before testing")
                 prom_start_ts = prom.reset_prometheus()
 
-            # Deploy LLM inference service
-            _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace)
-
             # Extract the model name from configuration
             model_ref = config.project.get_config("tests.llmd.inference_service.model")
+
+            # Deploy LLM inference service
+            _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
@@ -185,8 +185,11 @@ def prepare_for_test():
     model_ref = config.project.get_config("tests.llmd.inference_service.model")
 
     with run.Parallel("prepare_gpu_node") as parallel:
-        parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
-        parallel.delayed(prepare_llmd.preload_llm_model_image)
+        if config.project.get_config("prepare.gpu.wait_for_readiness"):
+            parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
+        if not config.project.get_config("prepare.preload.skip"):
+            parallel.delayed(prepare_llmd.preload_llm_model_image)
+
         parallel.delayed(prepare_llmd.download_single_model, model_ref)
 
 def _generate_test_metadata(failed, flavor):
@@ -488,16 +491,27 @@ def apply_model_configuration(isvc_data):
     if 'model' not in isvc_data['spec']:
         isvc_data['spec']['model'] = {}
 
-    # Apply model URI if configured
+    # Check if PVC prefetch is enabled
+    pvc_enabled = config.project.get_config("prepare.pvc.enabled", True)  # Default to True for backward compatibility
+
+    # Apply model URI based on configuration priority
     if 'uri' in model_config:
+        # Explicit URI in model config takes precedence
         isvc_data['spec']['model']['uri'] = model_config['uri']
-        logging.info(f"Set model URI: {model_config['uri']}")
+        logging.info(f"Set model URI from model config: {model_config['uri']}")
+    elif not pvc_enabled:
+        # PVC disabled - use model source directly as URI
+        if 'source' in model_config:
+            isvc_data['spec']['model']['uri'] = model_config['source']
+            logging.info(f"Set model URI from source (PVC disabled): {model_config['source']}")
+        else:
+            logging.warning(f"Model '{model_key}' has no source configured and PVC is disabled")
     else:
-        # Construct PVC URI: pvc://<pvc_name>/<model_key>
+        # PVC enabled - construct PVC URI: pvc://<pvc_name>/<model_key>
         pvc_name = config.project.get_config("prepare.pvc.name")
         uri = f"pvc://{pvc_name}/{model_key}"
         isvc_data['spec']['model']['uri'] = uri
-        logging.info(f"Set model URI: {uri}")
+        logging.info(f"Set model URI from PVC: {uri}")
 
     # Apply model name if configured
     if 'name' in model_config:
@@ -602,6 +616,59 @@ def apply_gpu_resources(main_container, gpu_count):
     logging.info(f"Set GPU resources: nvidia.com/gpu={gpu_count} (for TP size {gpu_count})")
 
 
+def apply_resource_configuration(isvc_data, model_key):
+    """
+    Apply CPU and memory resource configuration to the ISVC template
+
+    Checks for explicit test-level resource configuration first, then falls back
+    to model-specific resource requirements.
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        model_key: The model key to lookup model-specific resources
+    """
+    # First, check for explicit test-level resource configuration
+
+    models = config.project.get_config("models", {})
+    model_data = models[model_key]
+
+    model_resources = model_data.get("resources")
+    if not model_resources: return
+    cpu_request = model_resources.get("cpu")
+    memory_request = model_resources.get("memory")
+
+    if not cpu_request and not memory_request:
+        return
+
+    # Navigate to spec.template.containers[0].resources.requests
+    try:
+        template = isvc_data['spec']['template']
+        containers = template['containers']
+        main_container = containers[0]  # Assume first container is main
+
+        # Ensure resources.requests exists
+        if 'resources' not in main_container:
+            main_container['resources'] = {}
+        if 'requests' not in main_container['resources']:
+            main_container['resources']['requests'] = {}
+
+        requests = main_container['resources']['requests']
+
+        # Apply CPU request if configured
+        if cpu_request:
+            requests['cpu'] = str(cpu_request)
+            logging.info(f"Set CPU request: {cpu_request}")
+
+        # Apply memory request if configured
+        if memory_request:
+            requests['memory'] = str(memory_request)
+            logging.info(f"Set memory request: {memory_request}")
+
+    except (KeyError, IndexError) as e:
+        logging.error(f"Failed to apply resource configuration: {e}")
+        logging.error("Expected structure: spec.template.containers[0].resources.requests")
+
+
 def apply_extra_properties(isvc_data):
     """
     Apply extra properties from configuration to the ISVC
@@ -658,7 +725,7 @@ def _set_nested_property(data, dotted_key, value):
     current[final_key] = value
 
 
-def reshape_isvc(flavor, llmisvc_path):
+def reshape_isvc(flavor, llmisvc_path, model_key):
     """
     Reshape the ISVC YAML file based on configuration
 
@@ -687,6 +754,7 @@ def reshape_isvc(flavor, llmisvc_path):
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
+    apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
@@ -701,7 +769,7 @@ def reshape_isvc(flavor, llmisvc_path):
     return output_path
 
 
-def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
+def deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_key):
     """
     Deploys the LLM inference service
     """
@@ -713,7 +781,7 @@ def deploy_llm_inference_service(flavor, llmisvc_name, namespace):
     if not llmisvc_path.is_absolute():
         llmisvc_path = TESTING_THIS_DIR / "llmisvcs" / llmisvc_path
 
-    llmisvc_path = reshape_isvc(flavor, llmisvc_path)
+    llmisvc_path = reshape_isvc(flavor, llmisvc_path, model_key)
 
     if config.project.get_config("tests.llmd.inference_service.skip_deployment"):
         logging.info("Skipping the deployment LLM inference service "
@@ -741,9 +809,9 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
     components = parse_flavor_components(flavor)
     base_flavor = components['base']
 
-    # For intelligent-routing flavors, get the gateway-internal URL from status
+    # For intelligent-routing flavors, get the URL from status
     if base_flavor in ["intelligentrouting", "intelligent-routing"]:
-        logging.info("Intelligent-routing flavor detected - looking up gateway-internal URL from status")
+        logging.info("Intelligent-routing flavor detected - looking up the gateway URL from status")
 
         # Get the LLMInferenceService status addresses
         addresses_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
@@ -753,22 +821,23 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
         if addresses_result.returncode != 0:
             raise RuntimeError(f"Failed to get LLMInferenceService addresses: {addresses_result.stderr}")
 
-        # Parse the addresses JSON to find gateway-internal URL
+        # Parse the addresses JSON to find the URL
+        gateway_name = config.project.get_config("tests.llmd.inference_service.gateway.name")
         import json
         try:
             addresses = json.loads(addresses_result.stdout)
-            gateway_internal_url = None
+            gateway_url = None
 
             for address in addresses:
-                if address.get('name') == 'gateway-internal':
-                    gateway_internal_url = address.get('url')
+                if address.get('name') == gateway_name:
+                    gateway_url = address.get('url')
                     break
 
-            if not gateway_internal_url:
-                raise RuntimeError("gateway-internal URL not found in LLMInferenceService status addresses")
+            if not gateway_url:
+                raise RuntimeError(f"{gateway_name} URL not found in LLMInferenceService status addresses")
 
-            logging.info(f"Intelligent-routing flavor - using gateway-internal URL: {gateway_internal_url}")
-            return gateway_internal_url
+            logging.info(f"Intelligent-routing flavor - using {gateway_name} URL: {gateway_url}")
+            return gateway_url
 
         except (json.JSONDecodeError, KeyError) as e:
             raise RuntimeError(f"Failed to parse LLMInferenceService addresses: {e}")
@@ -819,6 +888,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
     timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
+    sample_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.sample_requests")
 
     failed = False
 
@@ -887,6 +957,9 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
             if max_requests is not None:
                 guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
 
+            if sample_requests is not None:
+                guidellm_args.append(f"--sample-requests={sample_requests}")
+
             # Add data parameter
             if data:
                 guidellm_args.append(f"--data={apply_rate_scaleup(data, rate_value)}")
@@ -901,6 +974,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                 namespace=namespace,
                 timeout=timeout,
                 guidellm_args=guidellm_args,
+                run_as_root=config.project.get_config("security.run_as_root"),
                 artifact_dir_suffix=suffix,
             )
 
@@ -1010,10 +1084,10 @@ def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name)
 
     logging.info("Running simple LLM inference test from inside cluster")
 
-    # Construct the internal service URL
+    # Construct the service URL
     deployment_name = f"{llmisvc_name}-kserve"
 
-    logging.info(f"Testing internal URL: {endpoint_url}")
+    logging.info(f"Testing URL: {endpoint_url}")
 
     # Test with a simple completion request
     test_payload = {

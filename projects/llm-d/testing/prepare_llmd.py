@@ -195,10 +195,15 @@ def prepare():
     prepare_gateway()
     scale_up()
 
+    model_ref = config.project.get_config("tests.llmd.inference_service.model")
     with run.Parallel("prepare_node") as parallel:
-        parallel.delayed(download_models_to_pvc)
-        parallel.delayed(wait_for_gpu_readiness)
-        parallel.delayed(preload_llm_model_image)
+        parallel.delayed(download_single_model, model_ref)
+
+        if config.project.get_config("prepare.gpu.wait_for_readiness"):
+            parallel.delayed(wait_for_gpu_readiness)
+
+        if not config.project.get_config("prepare.preload.skip"):
+            parallel.delayed(preload_llm_model_image)
 
 
 def prepare_operators():
@@ -493,6 +498,13 @@ def download_models_to_pvc():
     """
     logging.info("Starting model download process")
 
+    # Check if PVC prefetch is enabled
+    pvc_enabled = config.project.get_config("prepare.pvc.enabled", True)  # Default to True for backward compatibility
+
+    if not pvc_enabled:
+        logging.info("PVC prefetch disabled (prepare.pvc.enabled: false) - skipping model downloads")
+        return
+
     try:
         # Get models configuration
         models_config = config.project.get_config("models")
@@ -500,7 +512,7 @@ def download_models_to_pvc():
             logging.info("No models configured for download - skipping")
             return
 
-        logging.info(f"Downloading {len(models_config)} model(s) to PVC...")
+        logging.info(f"PVC prefetch enabled - downloading {len(models_config)} model(s) to PVC...")
 
         # Download models in parallel for efficiency
         with run.Parallel("download_models") as parallel:
@@ -522,6 +534,13 @@ def download_single_model(model_key):
         model_key: The key identifying the model in the models configuration
     """
     try:
+        # Check if PVC prefetch is enabled
+        pvc_enabled = config.project.get_config("prepare.pvc.enabled", True)  # Default to True for backward compatibility
+
+        if not pvc_enabled:
+            logging.info(f"PVC prefetch disabled - skipping download for model '{model_key}'")
+            return
+
         logging.info(f"Starting download for model '{model_key}'")
 
         # Get model configuration
@@ -540,6 +559,7 @@ def download_single_model(model_key):
         pvc_name = config.project.get_config("prepare.pvc.name")
         pvc_size = config.project.get_config("prepare.pvc.size")
         pvc_access_mode = config.project.get_config("prepare.pvc.access_mode")
+        pvc_storage_class = config.project.get_config("prepare.pvc.storage_class", None)
         namespace = config.project.get_config("prepare.namespace.name")
         downloader_image = config.project.get_config("prepare.model_downloader.image")
 
@@ -559,15 +579,26 @@ def download_single_model(model_key):
         secret_dir = config.project.get_config("secrets.dir.env_key")
         hf_creds_path = pathlib.Path(os.environ[secret_dir]) / hf_token_secret
 
-        run.run_toolbox("storage", "download_to_pvc",
-                       name=model_key,
-                       source=source,
-                       pvc_name=pvc_name,
-                       namespace=namespace,
-                       pvc_size=pvc_size,
-                       image=downloader_image,
-                       creds=str(hf_creds_path),
-                       clean_first=False)  # Don't clean to allow multiple models in same PVC
+        # Prepare download_to_pvc arguments
+        download_args = {
+            "name": model_key,
+            "source": source,
+            "pvc_name": pvc_name,
+            "namespace": namespace,
+            "pvc_size": pvc_size,
+            "pvc_access_mode": pvc_access_mode,
+            "image": downloader_image,
+            "creds": str(hf_creds_path),
+            "clean_first": False,  # Don't clean to allow multiple models in same PVC
+            "run_as_root": config.project.get_config("security.run_as_root")
+        }
+
+        # Add storage class if configured
+        if pvc_storage_class:
+            download_args["pvc_storage_class_name"] = pvc_storage_class
+            logging.info(f"Using PVC storage class: {pvc_storage_class}")
+
+        run.run_toolbox("storage", "download_to_pvc", **download_args)
 
         logging.info(f"Successfully downloaded model '{model_key}'")
 

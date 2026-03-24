@@ -316,7 +316,8 @@ class Cluster:
     def preload_image(self,
                       name, image, namespace="default",
                       node_selector_key="", node_selector_value="",
-                      pod_toleration_key="", pod_toleration_effect=""):
+                      pod_toleration_key="", pod_toleration_effect="",
+                      run_as_user="10001"):
         """
         Preload a container image on all the nodes of a cluster.
 
@@ -328,6 +329,7 @@ class Cluster:
           node_selector_value: NodeSelector value to apply to the DaemonSet.
           pod_toleration_key: Pod toleration to apply to the DaemonSet.
           pod_toleration_effect: Pod toleration to apply to the DaemonSet.
+          run_as_user: User ID to run the preloader container as (defaults to 10001 if not specified).
         """
 
         toolbox_name_suffix = os.environ.get("ARTIFACT_TOOLBOX_NAME_SUFFIX", "")

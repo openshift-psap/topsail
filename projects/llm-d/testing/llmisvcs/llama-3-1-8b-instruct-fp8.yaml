@@ -71,6 +71,8 @@ spec:
             emptyDir: {}
           - name: cachi2-cache
             emptyDir: {}
+        nodeSelector:
+          nvidia.com/gpu.present: "true"
     route: {}
     gateway: {}
   template:
@@ -85,7 +87,7 @@ spec:
             nvidia.com/gpu: "1"
           requests:
             cpu: '4'
-            memory: 64Gi
+            memory: 8Gi
             nvidia.com/gpu: "1"
         livenessProbe:
           httpGet:

@@ -63,13 +63,20 @@ def parse_once(results, dirname):
 
     if guidellm_directories:
         for guidellm_dir in guidellm_directories:
+            # Check for JSON file first, fallback to log file
+            json_file_path = guidellm_dir / "artifacts" / "results" / "benchmarks.json"
             log_file_path = guidellm_dir / "artifacts" / "guidellm_benchmark_job.logs"
-            if log_file_path.exists():
+
+            if json_file_path.exists():
+                benchmarks = parse_guidellm_benchmark_json(dirname, json_file_path.relative_to(dirname))
+                results.guidellm_benchmarks.extend(benchmarks)
+                logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from JSON: {json_file_path}")
+            elif log_file_path.exists():
                 benchmarks = parse_guidellm_benchmark_log(dirname, log_file_path.relative_to(dirname))
                 results.guidellm_benchmarks.extend(benchmarks)
-                logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from {log_file_path}")
+                logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from log: {log_file_path}")
             else:
-                logging.warning(f"Guidellm benchmark log not found at {log_file_path}")
+                logging.warning(f"Neither JSON nor log file found in {guidellm_dir / 'artifacts'}")
 
         logging.info(f"Total parsed guidellm benchmarks: {len(results.guidellm_benchmarks)}")
     else:
@@ -258,6 +265,149 @@ def parse_guidellm_benchmark_log(dirname, log_file_path: pathlib.Path) -> list[G
             continue
 
     return benchmarks
+
+
+def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list[GuidellmBenchmark]:
+    """Parse Guidellm benchmark JSON file and extract metrics"""
+
+    if not (dirname / json_file_path).exists():
+        logging.warning(f"Guidellm benchmark JSON not found: {json_file_path}")
+        return []
+
+    try:
+        with open(register_important_file(dirname, json_file_path)) as f:
+            json_data = json.load(f)
+
+        logging.debug(f"Parsing GuideLLM JSON file: {json_file_path} (found {len(json_data.get('benchmarks', []))} benchmarks)")
+
+        benchmarks = []
+
+        # Parse each benchmark in the JSON
+        for benchmark_data in json_data.get('benchmarks', []):
+            try:
+                # Extract strategy and concurrency info with fallback logic
+                scheduler = benchmark_data.get('scheduler', {})
+                config = benchmark_data.get('config', {})
+                strategy_info = config.get('strategy', {})
+                strategy = strategy_info.get('type_', 'unknown')
+
+                # Try multiple paths for concurrency extraction
+                concurrency = 1.0
+                concurrency_source = "default"
+                try:
+                    # First try: scheduler.strategy.streams
+                    concurrency = float(strategy_info.get('streams', 0))
+                    if concurrency <= 0:
+                        raise ValueError("Invalid streams value")
+                    concurrency_source = "config.strategy.streams"
+                except (ValueError, TypeError):
+                    try:
+                        # Second try: profile.stream
+                        sched_strategy = scheduler.get("strategy", {})
+                        streams = sched_strategy.get('streams')
+                        if not streams or streams <= 0:
+                            raise ValueError("No valid streams found")
+                        concurrency = float(streams)
+                        concurrency_source = "profile.scheduler.streams"
+
+                    except (ValueError, TypeError, IndexError):
+                        logging.warning(f"Could not find concurrency 'streams' for benchmark. Using default value 1.0")
+                        concurrency = 1.0
+                        concurrency_source = "default"
+
+                # Extract timing info
+                state = scheduler.get('state', {})
+                start_time = state.get('start_time', 0)
+                end_time = state.get('end_time', 0)
+                duration = end_time - start_time if end_time > start_time else 60.0
+
+                # Extract metrics
+                metrics = benchmark_data.get('metrics', {})
+
+                # Helper function to safely extract metric values
+                def get_metric_value(metric_name, stat_type='median', default=0.0):
+                    metric_data = metrics.get(metric_name, {}).get('successful', {})
+                    if stat_type in ['p95', 'p50']:
+                        return float(metric_data.get('percentiles', {}).get(stat_type, default))
+                    else:
+                        return float(metric_data.get(stat_type, default))
+
+                # Extract latency metrics (convert ms to seconds for consistency)
+                request_latency_median = get_metric_value('request_latency', 'median') / 1000.0
+                request_latency_p95 = get_metric_value('request_latency', 'p95') / 1000.0
+                ttft_median = get_metric_value('time_to_first_token_ms', 'median') / 1000.0
+                ttft_p95 = get_metric_value('time_to_first_token_ms', 'p95') / 1000.0
+                itl_median = get_metric_value('inter_token_latency_ms', 'median') / 1000.0
+                itl_p95 = get_metric_value('inter_token_latency_ms', 'p95') / 1000.0
+                tpot_median = get_metric_value('time_per_output_token_ms', 'median') / 1000.0
+                tpot_p95 = get_metric_value('time_per_output_token_ms', 'p95') / 1000.0
+
+                # Extract throughput metrics
+                request_rate = get_metric_value('requests_per_second', 'median')
+                input_tokens_per_second = get_metric_value('input_tokens_per_second', 'median')
+                output_tokens_per_second = get_metric_value('output_tokens_per_second', 'median')
+                total_tokens_per_second = input_tokens_per_second + output_tokens_per_second
+
+                # Calculate requests completed and tokens per request
+                completed_requests = int(request_rate * duration) if request_rate > 0 else 0
+                input_tokens_per_request = (input_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+                output_tokens_per_request = (output_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+                total_tokens_per_request = (total_tokens_per_second / request_rate) if request_rate > 0 else 0.0
+
+                # Create GuidellmBenchmark object
+                benchmark = GuidellmBenchmark(
+                    strategy=strategy,
+                    duration=duration,
+                    warmup_time=0.0,  # Not available in JSON format
+                    cooldown_time=0.0,  # Not available in JSON format
+
+                    # Request metrics
+                    request_rate=request_rate,
+                    request_concurrency=concurrency,
+                    completed_requests=completed_requests,
+                    failed_requests=0,  # Could extract from unsuccessful metrics if needed
+
+                    # Token metrics per request
+                    input_tokens_per_request=input_tokens_per_request,
+                    output_tokens_per_request=output_tokens_per_request,
+                    total_tokens_per_request=total_tokens_per_request,
+
+                    # Latency metrics (already in seconds)
+                    request_latency_median=request_latency_median,
+                    request_latency_p95=request_latency_p95,
+                    ttft_median=ttft_median,
+                    ttft_p95=ttft_p95,
+                    itl_median=itl_median,
+                    itl_p95=itl_p95,
+                    tpot_median=tpot_median,
+                    tpot_p95=tpot_p95,
+
+                    # Throughput metrics
+                    tokens_per_second=total_tokens_per_second,
+                    input_tokens_per_second=input_tokens_per_second,
+                    output_tokens_per_second=output_tokens_per_second,
+                )
+
+                benchmarks.append(benchmark)
+                logging.info(f"Parsed JSON benchmark: {strategy}, rate={request_rate:.2f} req/s, concurrency={concurrency:.1f} (from {concurrency_source}), tokens/s={total_tokens_per_second:.1f}")
+
+                # Debug logging
+                logging.debug(f"  JSON parsed values for {strategy}:")
+                logging.debug(f"    Concurrency: {concurrency:.1f} (extracted from {concurrency_source})")
+                logging.debug(f"    Latency: TTFT={ttft_median*1000:.3f}ms, TPOT={tpot_median*1000:.3f}ms, ITL={itl_median*1000:.3f}ms")
+                logging.debug(f"    Request Latency: median={request_latency_median*1000:.3f}ms, p95={request_latency_p95*1000:.3f}ms")
+                logging.debug(f"    Throughput: input={input_tokens_per_second:.1f}, output={output_tokens_per_second:.1f}, total={total_tokens_per_second:.1f}")
+
+            except (KeyError, ValueError, TypeError) as e:
+                logging.warning(f"Failed to parse benchmark data in JSON: {e}")
+                logging.debug(f"Problematic benchmark data: {benchmark_data}")
+                continue
+
+        return benchmarks
+
+    except (json.JSONDecodeError, ValueError) as e:
+        logging.warning(f"Failed to parse Guidellm JSON {json_file_path}: {e}")
+        return []
 
 
 def _extract_metrics(dirname):

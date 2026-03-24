@@ -80,3 +80,8 @@ Parameters
 
 * default value: ``registry.access.redhat.com/ubi9/ubi``
 
+
+``run_as_root``  
+
+* Run the download container as root user
+

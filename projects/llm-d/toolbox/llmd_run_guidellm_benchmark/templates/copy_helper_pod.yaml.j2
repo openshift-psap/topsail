@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ llmd_run_guidellm_benchmark_name }}-copy
+  namespace: {{ target_namespace }}
+spec:
+  restartPolicy: Never
+{% if helper_pod_node and helper_pod_node != "" %}
+  nodeName: "{{ helper_pod_node }}"
+{% endif %}
+  initContainers:
+  - name: permission-fixer
+    image: "{{ llmd_run_guidellm_benchmark_image }}:{{ llmd_run_guidellm_benchmark_version }}"
+    command: ["/bin/sh", "-c", "chmod 755 /results && chown -R 1001:1001 /results || true"]
+    securityContext:
+      runAsUser: 0
+      allowPrivilegeEscalation: true
+    volumeMounts:
+    - name: results
+      mountPath: /results
+  containers:
+  - name: copy-helper
+    image: "{{ llmd_run_guidellm_benchmark_image }}:{{ llmd_run_guidellm_benchmark_version }}"
+    command: ["/bin/sleep", "300"]
+    securityContext:
+      runAsUser: 1001
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+    volumeMounts:
+    - name: results
+      mountPath: /results
+  volumes:
+  - name: results
+    persistentVolumeClaim:
+      claimName: "{{ llmd_run_guidellm_benchmark_name }}"

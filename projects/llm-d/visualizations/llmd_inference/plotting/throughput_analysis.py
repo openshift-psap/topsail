@@ -7,6 +7,32 @@ from dash import html
 import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
+
+def _get_plot_title_with_load_shape(base_title, variables, settings):
+    """
+    Helper function to add load_shape info to plot titles if not in variables
+
+    Args:
+        base_title: The base title/subtitle (e.g., "Token Throughput vs Concurrency<br><sub>Higher is better</sub>")
+        variables: Dict of variables being varied in the test
+        settings: Test settings object
+
+    Returns:
+        Updated title with load_shape appended if needed
+    """
+    if "load_shape" not in variables:
+        load_shape = getattr(settings, 'load_shape', None)
+        if load_shape:
+            # Insert load_shape info before the closing </sub> tag or at the end
+            if "<br><sub>" in base_title and "</sub>" in base_title:
+                # Insert before closing </sub>
+                return base_title.replace("</sub>", f" • Load Shape: {load_shape}</sub>")
+            else:
+                # Append as subtitle
+                return f"{base_title}<br><sub>Load Shape: {load_shape}</sub>"
+    return base_title
+
+
 def register():
     GuidellmThroughputScaling()
     GuidellmLatencyVsThroughput()
@@ -80,7 +106,16 @@ class GuidellmThroughputScaling():
 
         df = pd.DataFrame(data)
 
+        # Sort by Concurrency for proper plot ordering
+        df = df.sort_values('Concurrency')
+
         # 2. Generate plotly express plot
+        title = _get_plot_title_with_load_shape(
+            'Request Throughput vs Concurrency by Configuration',
+            variables,
+            settings
+        )
+
         fig = px.scatter(df,
                         hover_data=df.columns,
                         x='Concurrency',
@@ -89,7 +124,7 @@ class GuidellmThroughputScaling():
                         symbol='Strategy Type',
                         size='Tokens/s',
                         text='Strategy',
-                        title='Request Throughput vs Concurrency by Configuration')
+                        title=title)
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
@@ -183,7 +218,16 @@ class GuidellmLatencyVsThroughput():
 
         df = pd.DataFrame(data)
 
+        # Sort by Concurrency for consistent ordering
+        df = df.sort_values('Concurrency')
+
         # 2. Generate plotly express plot
+        title = _get_plot_title_with_load_shape(
+            'Latency vs Throughput Trade-off by Configuration',
+            variables,
+            settings
+        )
+
         fig = px.scatter(df,
                         hover_data=df.columns,
                         x='Request Rate (req/s)',
@@ -192,7 +236,7 @@ class GuidellmLatencyVsThroughput():
                         symbol='Test Configuration',
                         size='Tokens/s',
                         text='Strategy',
-                        title='Latency vs Throughput Trade-off by Configuration')
+                        title=title)
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
@@ -264,13 +308,19 @@ class GuidellmLatencyOverview():
         df = df.sort_values('Request Latency (ms)')
 
         # 2. Generate plotly express plot
+        title = _get_plot_title_with_load_shape(
+            'Latency Overview by Strategy and Configuration',
+            variables,
+            settings
+        )
+
         fig = px.bar(df,
                     hover_data=df.columns,
                     x='Full Strategy Name',
                     y='Request Latency (ms)',
                     color='Test Configuration',
                     text='Request Latency (ms)',
-                    title='Latency Overview by Strategy and Configuration')
+                    title=title)
 
         fig.update_traces(texttemplate='%{text:.1f}ms', textposition="outside")
         fig.update_layout(showlegend=True, xaxis_tickangle=-45)
@@ -359,7 +409,7 @@ class GuidellmTokensConcurrency():
                 data.append({
                     'Test Configuration': entry_name,
                     'Concurrency': benchmark.request_concurrency,
-                    'Tokens/s': benchmark.output_tokens_per_second,  # Use output tokens instead of total
+                    'Tokens/s': benchmark.output_tokens_per_second,
                     'Input Tokens/s': benchmark.input_tokens_per_second,
                     'Output Tokens/s': benchmark.output_tokens_per_second,
                     'Total Tokens/s': benchmark.tokens_per_second,
@@ -375,11 +425,21 @@ class GuidellmTokensConcurrency():
 
         df = pd.DataFrame(data)
 
+        # Sort by Concurrency for proper plot ordering
+        df = df.sort_values('Concurrency')
+
         # 2. Generate plotly express plot with consistent color scheme
         # Sort configurations to ensure consistent color assignment
         configurations = sorted(df['Test Configuration'].unique())
         colors = px.colors.qualitative.Set1[:len(configurations)]
         color_map = {config: colors[i] for i, config in enumerate(configurations)}
+
+        # Create title with load_shape if missing from variables
+        title = _get_plot_title_with_load_shape(
+            'Token Throughput vs Concurrency by Configuration (P50)<br><sub>Higher is better</sub>',
+            variables,
+            settings
+        )
 
         fig = px.scatter(df,
                         hover_data=df.columns,
@@ -387,7 +447,7 @@ class GuidellmTokensConcurrency():
                         y='Tokens/s',
                         color='Test Configuration',
                         color_discrete_map=color_map,
-                        title='Token Throughput vs Concurrency by Configuration<br><sub>Higher is better</sub>')
+                        title=title)
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
@@ -546,8 +606,15 @@ class GuidellmLatencyAnalysisBase():
                 showlegend=False  # Don't duplicate legend
             ), row=1, col=2)
 
+        # Create title with load_shape if missing from variables
+        title = _get_plot_title_with_load_shape(
+            f'{config["description"]} Analysis by Concurrency<br><sub>Lower is better</sub>',
+            variables,
+            settings
+        )
+
         fig.update_layout(
-            title_text=f'{config["description"]} Analysis by Concurrency<br><sub>Lower is better</sub>',
+            title_text=title,
             showlegend=True,
             hovermode='closest',
             height=500
@@ -703,13 +770,19 @@ class TokenThroughputAnalysis():
         df = df.sort_values('Total Tokens/s', ascending=False)
 
         # 2. Generate plotly express plot
+        title = _get_plot_title_with_load_shape(
+            'Token Throughput by Strategy and Configuration',
+            variables,
+            settings
+        )
+
         fig = px.bar(df,
                     hover_data=df.columns,
                     x='Full Strategy Name',
                     y='Total Tokens/s',
                     color='Test Configuration',
                     text='Total Tokens/s',
-                    title='Token Throughput by Strategy and Configuration')
+                    title=title)
 
         fig.update_traces(texttemplate='%{text:.0f}', textposition="outside")
         fig.update_layout(showlegend=True, xaxis_tickangle=-45)
@@ -720,11 +793,18 @@ class TokenThroughputAnalysis():
                            value_vars=['Input Tokens/s', 'Output Tokens/s'],
                            var_name='Token Type', value_name='Tokens/s')
 
+        # Create title with load_shape if missing from variables
+        breakdown_title = _get_plot_title_with_load_shape(
+            'Token Throughput Breakdown by Strategy',
+            variables,
+            settings
+        )
+
         fig_stacked = px.bar(df_stacked,
                            x='Strategy',
                            y='Tokens/s',
                            color='Token Type',
-                           title='Token Throughput Breakdown by Strategy')
+                           title=breakdown_title)
 
         fig_stacked.update_layout(xaxis_tickangle=-45)
 
@@ -755,5 +835,3 @@ class TokenThroughputAnalysis():
 
         # 4. Return fig, msg
         return fig, msg
-
-

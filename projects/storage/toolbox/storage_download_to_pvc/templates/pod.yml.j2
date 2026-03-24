@@ -10,7 +10,12 @@ spec:
   containers:
   - name: downloader
     image: {{ storage_download_to_pvc_image }}
-    command: [bash, /mnt/entrypoint/entrypoint.sh]
+    command: [bash, -c, "/mnt/entrypoint/entrypoint.sh && chmod -R a+rX /storage"]
+{% if storage_download_to_pvc_run_as_root %}
+    securityContext:
+      runAsUser: 0
+      allowPrivilegeEscalation: true
+{% endif %}
     env:
     - name: DOWNLOAD_SOURCE
       value: "{{ storage_download_to_pvc_source }}"

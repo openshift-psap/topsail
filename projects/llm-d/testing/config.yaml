@@ -12,8 +12,43 @@ ci_presets:
 
   dev:
     matbench.enabled: false
+    tests.llmd.inference_service.model: facebook-opt-125m
+
+  opt-125m:
+    tests.llmd.inference_service.model: facebook-opt-125m
+    tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
+
+  psap_h200:
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: true
+    prepare.namespace.name: kpouget-dev
+
+  pvc_rwx:
+    prepare.pvc.name: storage-rwx
+    prepare.pvc.access_mode: ReadWriteMany
+
+  azure:
+    security.run_as_root: true
+    prepare.preload.skip: true
+    prepare.operators.skip: true
+    prepare.cluster.skip: true
+    prepare.rhoai.skip: true
+
+    tests.llmd.inference_service.model: llama3-1-8b
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.skip_prepare: false
+
+  azure_light:
+    extends: [azure, opt-125m]
+    prepare.pvc.storage_class: managed-csi
+
 
   cks:
+    extends: [pvc_rwx]
+
+    tests.llmd.inference_service.model: llama3-3-70b
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -59,6 +94,10 @@ ci_presets:
 
 clusters:
   cleanup_on_exit: false
+
+security:
+  # Run containers as root user (affects both GuideLLM benchmarks and storage download operations)
+  run_as_root: false
 
 secrets:
   dir:
@@ -149,15 +188,21 @@ prepare:
     namespaces:
       - "@prepare.namespace.name"
 
+  gpu:
+    wait_for_readiness: false
+
   preload:
+    skip: false
     extra_images: {}
     node_selector_key: nvidia.com/gpu.present
     node_selector_value: "true"
 
   pvc:
+    enabled: true
     size: 2000Gi
-    name: storage-rwx
-    access_mode: ReadWriteMany
+    name: storage
+    access_mode: ReadWriteOnce
+    storage_class: null
 
   model_downloader:
     image: ghcr.io/opendatahub-io/rhaii-on-xks/kserve-storage-initializer:e6b5db0@sha256:b305264fe2211be2c6063500c4c11da79e8357af4b34dd8567b0d8e8dea7e1d4
@@ -166,21 +211,38 @@ prepare:
     skip: false
 
 models:
-  llama3.1-8b:
-    name: RedHatAI/podllama-3-1-8b-instruct-fp8
-    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
+  facebook-opt-125m:
+    name: facebook/opt-125m
+    source: hf://facebook/opt-125m
+    resources:
+      cpu: 2
+      memory: 8Gi
 
-  llama3.3-70b:
+  llama3-1-8b:
+    name: RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
+    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
+    # source: hf://RedHatAI/Meta-Llama-3.1-8B-Instruct-FP8-dynamic
+    resources: {}
+
+  llama3-3-70b:
     name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
     source: hf://RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+    resources:
+      cpu: 4
+      memory: 64Gi
 
   gpt-oss-120:
     name: openai/gpt-oss-120b
     source: hf://openai/gpt-oss-120b
+    resources:
+      cpu: 4
+      memory: 64Gi
 
   granite4-tiny:
     name: RedHatAI/granite-4.0-h-tiny-FP8-dynamic
     source: hf://RedHatAI/granite-4.0-h-tiny-FP8-dynamic
+    resources: {}
+
 tests:
   llmd:
     skip: false
@@ -194,8 +256,9 @@ tests:
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
       timeout: 900
       do_simple_test: true
-
-      model: llama3.3-70b
+      gateway:
+        name: gateway-external
+      model: llama3-1-8b
 
       # vLLM arguments (always applied)
       vllm_args:
@@ -204,7 +267,7 @@ tests:
         - "--uvicorn-log-level=debug"
         - "--trust-remote-code"
         - "--disable-log-requests"
-        - "--max-model-len=40960"
+        - "--max-model-len=40960" # keep in 5th position or udpdate the presets
         - "--gpu-memory-utilization=0.92"
 
       kueue:
@@ -225,11 +288,12 @@ tests:
         name: guidellm-benchmark
         backend_type: openai_http
         rate_type: concurrent
-        max_seconds: null
+        max_seconds: 120
         max_requests: null
         timeout: 900
         data: prompt_tokens=256,output_tokens=128
         rate: 1
+        sample_requests: 20
 
   capture_prom: true
   capture_prom_uwm: true
