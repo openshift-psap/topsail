@@ -40,13 +40,6 @@
        -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.yaml"
   ignore_errors: true
 
-- name: Capture regular InferenceServices that may be created
-  shell:
-    oc get inferenceservice \
-       -n "{{ target_namespace }}" \
-       -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/inferenceservices.yaml"
-  ignore_errors: true
-
 - name: Capture deployments related to the LLMInferenceService
   shell:
     oc get deployments \
