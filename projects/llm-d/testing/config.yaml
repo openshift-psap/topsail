@@ -35,7 +35,6 @@ ci_presets:
     prepare.cluster.skip: true
     prepare.rhoai.skip: true
 
-    tests.llmd.inference_service.model: llama3-1-8b
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: false
@@ -44,11 +43,9 @@ ci_presets:
     extends: [azure, opt-125m]
     prepare.pvc.storage_class: managed-csi
 
-
   cks:
-    extends: [pvc_rwx]
+    extends: [pvc_rwx, llama-70b]
 
-    tests.llmd.inference_service.model: llama3-3-70b
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -91,6 +88,9 @@ ci_presets:
 
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
+
+  llama-70b:
+    tests.llmd.inference_service.model: llama3-3-70b
 
 clusters:
   cleanup_on_exit: false

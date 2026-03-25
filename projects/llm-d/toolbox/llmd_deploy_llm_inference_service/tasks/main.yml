@@ -79,7 +79,7 @@
     shell: |
       set -o pipefail;
       oc get pods \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -o json | jq -r '.items[] | select(.status.phase == "Pending") | .metadata.name' | wc -l
     register: llm_pods_pending
@@ -92,7 +92,7 @@
     shell: |
       set -o pipefail;
       oc get pods \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -o json | jq -r '.items[] | select(.status.phase != "Running" and .status.phase != "Succeeded") | .metadata.name' | wc -l
     register: llm_pods_not_running
@@ -104,19 +104,10 @@
   - name: Debug - show pod status during startup wait
     command:
       oc get pods \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -o wide
     when: llm_pods_not_running.stdout | int > 0
-
-  - name: Debug - show pod events if pods are still not running
-    shell:
-      set -o pipefail;
-      oc get events --field-selector involvedObject.kind=Pod \
-         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
-         --sort-by='.lastTimestamp' | tail -10
-    when: llm_pods_not_running.stdout | int > 0
-    failed_when: false
 
   - name: Wait for the LLM inference service to be ready
     command:
@@ -141,7 +132,7 @@
   - name: Capture pod status with oc get pods
     shell:
       oc get pods \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -o wide \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.status"
@@ -150,7 +141,7 @@
   - name: Capture deployment YAML
     shell:
       oc get deployments \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.deployments.yaml"
@@ -159,7 +150,7 @@
   - name: Capture replicaset YAML
     shell:
       oc get replicasets \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.replicasets.yaml"
@@ -168,7 +159,7 @@
   - name: Capture the LLM inference service pods YAML
     shell:
       oc get pods \
-         -l "app.kubernetes.io/component=llminferenceservice-workload,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -l "app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
          -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
          -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.yaml"
