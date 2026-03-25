@@ -126,6 +126,8 @@ def test():
         prepare_for_test()
     else:
         logging.info("Skipping test preparation (tests.llmd.skip_prepare=True)")
+        model_ref = config.project.get_config("tests.llmd.inference_service.model")
+        prepare_llmd.download_single_model(model_ref)
 
     logging.info(f"Running tests for flavors: {flavors}")
 
