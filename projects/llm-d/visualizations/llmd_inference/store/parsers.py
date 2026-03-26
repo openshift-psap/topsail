@@ -343,9 +343,9 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                 tpot_p95 = get_metric_value('time_per_output_token_ms', 'p95') / 1000.0
 
                 # Extract throughput metrics
-                request_rate = get_metric_value('requests_per_second', 'median')
-                input_tokens_per_second = get_metric_value('input_tokens_per_second', 'median')
-                output_tokens_per_second = get_metric_value('output_tokens_per_second', 'median')
+                request_rate = get_metric_value('requests_per_second', 'mean')
+                input_tokens_per_second = get_metric_value('input_tokens_per_second', 'mean')
+                output_tokens_per_second = get_metric_value('output_tokens_per_second', 'mean')
                 total_tokens_per_second = input_tokens_per_second + output_tokens_per_second
 
                 # Calculate requests completed and tokens per request
