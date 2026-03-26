@@ -1,0 +1,98 @@
+---
+- name: Get current namespace if not specified
+  command: oc project -q
+  register: current_namespace_result
+  when: cluster_capture_servicemonitor_metrics_namespace == ""
+
+- name: Set the target namespace
+  set_fact:
+    target_namespace: "{{ current_namespace_result.stdout if cluster_capture_servicemonitor_metrics_namespace == '' else cluster_capture_servicemonitor_metrics_namespace }}"
+
+- name: Create capture directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts"
+    state: directory
+    mode: '0755'
+
+- name: "[Finalize mode] capture logs and delete existing pod"
+  when: cluster_capture_servicemonitor_metrics_finalize
+  block:
+  - name: Check if pod exists for finalization
+    shell: |
+      oc get pod topsail-metrics-capture-{{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} --no-headers -o name
+    register: pod_exists_check
+
+  - name: Capture pod logs
+    shell: |
+      oc logs topsail-metrics-capture-{{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/metrics_capture_logs.txt"
+
+- name: Delete metrics capture pod
+  shell: |
+    oc delete pod topsail-metrics-capture-{{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }}  --grace-period=0 --ignore-not-found
+
+- name: "[Finalize mode] capture logs and delete existing pod"
+  when: cluster_capture_servicemonitor_metrics_finalize
+  meta: end_play
+
+# Normal deployment mode: discover resources and create pod
+- name: Include ServiceMonitor tasks
+  include_tasks: servicemonitor.yml
+  when: not cluster_capture_servicemonitor_metrics_is_podmonitor
+
+- name: Include PodMonitor tasks
+  include_tasks: podmonitor.yml
+  when: cluster_capture_servicemonitor_metrics_is_podmonitor
+
+# Ensure auth_secret_name is always defined with proper structure (fallback for edge cases)
+- name: Set default auth secret name if not defined
+  set_fact:
+    auth_secret_name: "{% if auth_secret_name_cmd is defined %}{{ auth_secret_name_cmd.stdout }}{% endif %}"
+
+# Common tasks for deployment mode
+- name: Read metrics URL
+  shell: cat "{{ artifact_extra_logs_dir }}/artifacts/metrics_url.txt"
+  register: metrics_url_content
+
+- name: Check if auth secret exists
+  shell: |
+    oc get secret {{ auth_secret_name }} -n {{ target_namespace }} --no-headers -o name
+  register: auth_secret_exists
+  when: auth_secret_name != ""
+
+- name: Save authentication info
+  shell: |
+    {% if cluster_capture_servicemonitor_metrics_is_podmonitor %}
+    echo "PodMonitor: {{ cluster_capture_servicemonitor_metrics_service_name }}" > "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+    {% else %}
+    echo "ServiceMonitor: {{ cluster_capture_servicemonitor_metrics_service_name }}" > "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+    {% endif %}
+    echo "Auth secret name: {{ auth_secret_name | default('none') }}" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+    if [ -n "{{ auth_secret_name }}" ]; then
+      {% if auth_secret_name != '' and auth_secret_exists.rc == 0 %}
+      echo "Secret exists: yes" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+      echo "Secret will be mounted at: /var/run/secrets/auth/token" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+      {% else %}
+      echo "Secret exists: no" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+      echo "WARNING: Secret not found!" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+      {% endif %}
+    else
+      echo "No authentication required" >> "{{ artifact_extra_logs_dir }}/artifacts/auth_info.txt"
+    fi
+
+- name: Create metrics capture pod manifest
+  template:
+    src: metrics_capture_pod.yaml.j2
+    dest: "{{ artifact_extra_logs_dir }}/artifacts/metrics_capture_pod.yaml"
+    mode: '0644'
+  vars:
+    metrics_url: "{{ metrics_url_content.stdout }}"
+    auth_secret_name: "{{ auth_secret_name | default('') }}"
+    capture_frequency: "{{ cluster_capture_servicemonitor_metrics_capture_frequency }}"
+
+- name: Create metrics capture pod
+  shell: |
+    oc create -f "{{ artifact_extra_logs_dir }}/artifacts/metrics_capture_pod.yaml"
+
+- name: Wait for pod to start
+  shell: |
+    oc wait --for=condition=Ready pod/topsail-metrics-capture-{{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} --timeout=60s

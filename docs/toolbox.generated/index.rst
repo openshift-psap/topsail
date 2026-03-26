@@ -14,6 +14,7 @@ Toolbox Documentation
                 
 * :doc:`build_push_image <Cluster.build_push_image>`	 Build and publish an image to quay using either a Dockerfile or git repo.
 * :doc:`capture_environment <Cluster.capture_environment>`	 Captures the cluster environment
+* :doc:`capture_servicemonitor_metrics <Cluster.capture_servicemonitor_metrics>`	 Captures ServiceMonitor or PodMonitor YAML and status for a given service
 * :doc:`create_htpasswd_adminuser <Cluster.create_htpasswd_adminuser>`	 Create an htpasswd admin user.
 * :doc:`create_osd <Cluster.create_osd>`	 Create an OpenShift Dedicated cluster.
 * :doc:`deploy_operator <Cluster.deploy_operator>`	 Deploy an operator from OperatorHub catalog entry.
