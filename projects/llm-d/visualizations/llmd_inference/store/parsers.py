@@ -31,6 +31,8 @@ IMPORTANT_FILES = [
     # to support multiple benchmark directories (multi-rate scenarios)
     f"{artifact_dirnames.PROMETHEUS_DUMP_DIR}/prometheus.t*",
     f"{artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR}/prometheus.t*",
+    f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/results/benchmarks.json",
+    f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/guidellm_benchmark_job.logs",
 ]
 
 
