@@ -103,6 +103,35 @@ class LlmdInferenceErrorReport():
             if hasattr(results, 'test_name'):
                 header.append(html.P(f"Test name: {results.test_name}"))
 
+            # Show test entry labels
+            labels_list = []
+
+            for key, value in entry.settings.__dict__.items():
+                labels_list.append(html.Span(f"{key}={value}", style={
+                    "background-color": "#f0f0f0",
+                    "padding": "2px 6px",
+                    "margin": "2px",
+                    "border-radius": "3px",
+                    "font-family": "monospace",
+                    "font-size": "0.9em"
+                }))
+                labels_list.append(" ")
+
+            header.append(html.P([
+                "Settings: ",
+                html.Span(labels_list)
+            ]))
+
+            header.append(html.P([
+                "Directory: ",
+                html.Code(str(entry.location).strip("./"), style={
+                    "background-color": "#f8f8f8",
+                    "padding": "2px 4px",
+                    "border-radius": "3px",
+                    "font-size": "0.9em"
+                })
+            ]))
+
             if hasattr(results, 'test_failure_reason') and results.test_failure_reason:
                 header.append(html.P([
                     "Failure reason: ",
