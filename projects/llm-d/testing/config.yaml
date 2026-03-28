@@ -48,6 +48,8 @@ ci_presets:
 
     tests.capture_prom: false
     tests.capture_prom_uwm: false
+    tests.llmd.inference_service.metrics.manual_capture: true
+
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
     prepare.preload.node_selector_key: gpu.nvidia.com/class
@@ -259,6 +261,10 @@ tests:
       gateway:
         name: gateway-external
       model: llama3-1-8b
+      metrics:
+        manual_capture: false
+        scheduler_servicemonitor_name: kserve-llm-isvc-scheduler
+        vllm_podmonitor_name: kserve-llm-isvc-vllm-engine
 
       # vLLM arguments (always applied)
       vllm_args:

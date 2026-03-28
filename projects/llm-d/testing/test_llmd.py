@@ -55,6 +55,9 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             # Deploy LLM inference service
             _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
+            # Start metrics capture after deployment
+            start_metrics_capture(flavor)
+
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
             logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
@@ -75,6 +78,12 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             flavor_failed = e
 
         finally:
+            # Stop metrics capture after testing (success or failure)
+            try:
+                stop_metrics_capture(flavor)
+            except Exception as metrics_e:
+                logging.exception(f"Failed to stop metrics capture: {metrics_e}")
+
             # Always capture LLM inference service state (success or failure)
             logging.info("Capturing LLM inference service state for debugging")
             try:
@@ -1005,6 +1014,84 @@ def capture_llm_inference_service_state(llmisvc_name, namespace):
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
+
+
+def start_metrics_capture(flavor):
+    """
+    Starts metrics capture for both ServiceMonitor and PodMonitor if enabled
+    """
+    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
+        return
+
+    logging.info("Starting metrics capture")
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
+    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
+
+    # Parse flavor to check if it's simple
+    components = parse_flavor_components(flavor)
+    is_simple_flavor = components['base'] == "simple"
+
+    # Start vLLM PodMonitor capture (always)
+    logging.info(f"Starting PodMonitor metrics capture for {vllm_name}")
+    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                    service_name=vllm_name,
+                    namespace=namespace,
+                    is_podmonitor=True,
+                    mute_stdout=True)
+
+    # Start scheduler ServiceMonitor capture (only for non-simple flavors)
+    if not is_simple_flavor:
+        logging.info(f"Starting ServiceMonitor metrics capture for {scheduler_name}")
+        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                        service_name=scheduler_name,
+                        namespace=namespace,
+                        mute_stdout=True)
+    else:
+        logging.info("Skipping scheduler metrics capture for simple flavor")
+
+    logging.info("Metrics capture started successfully")
+
+
+def stop_metrics_capture(flavor):
+    """
+    Stops metrics capture for both ServiceMonitor and PodMonitor if enabled
+    """
+    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
+        return
+
+    logging.info("Stopping metrics capture")
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
+    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
+
+    # Parse flavor to check if it's simple
+    components = parse_flavor_components(flavor)
+    is_simple_flavor = components['base'] == "simple"
+
+    # Stop vLLM PodMonitor capture (always)
+    logging.info(f"Stopping PodMonitor metrics capture for {vllm_name}")
+    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                    service_name=vllm_name,
+                    namespace=namespace,
+                    is_podmonitor=True,
+                    finalize=True,
+                    mute_stdout=True,
+                    artifact_dir_suffix="_finalize",)
+
+    # Stop scheduler ServiceMonitor capture (only for non-simple flavors)
+    if not is_simple_flavor:
+        logging.info(f"Stopping ServiceMonitor metrics capture for {scheduler_name}")
+        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                        service_name=scheduler_name,
+                        namespace=namespace,
+                        finalize=True,
+                        mute_stdout=True,
+                        artifact_dir_suffix="_finalize",)
+
+    logging.info("Metrics capture stopped successfully")
 
 
 def cleanup_llm_inference_resources():
