@@ -48,7 +48,8 @@ ci_presets:
 
     tests.capture_prom: false
     tests.capture_prom_uwm: false
-    tests.llmd.inference_service.metrics.manual_capture: true
+    tests.llmd.inference_service.metrics.manual_capture: false
+    tests.llmd.inference_service.gateway.name: gateway-internal
 
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
