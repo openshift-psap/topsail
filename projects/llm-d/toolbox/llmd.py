@@ -52,7 +52,7 @@ class Llmd:
             self,
             endpoint_url,
             name="guidellm-benchmark", namespace="",
-            image="ghcr.io/vllm-project/guidellm", version="pr-590",
+            image="ghcr.io/albertoperdomo2/guidellm", version="nightly",
             timeout=900,
             pvc_size="1Gi",
             guidellm_args=[],

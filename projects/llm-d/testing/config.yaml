@@ -293,6 +293,11 @@ tests:
       guidellm:
         enabled: true
         name: guidellm-benchmark
+
+        image:
+          name: ghcr.io/vllm-project/guidellm
+          version: pr-590
+
         backend_type: openai_http
         rate_type: concurrent
         max_seconds: 120
@@ -301,6 +306,7 @@ tests:
         data: prompt_tokens=256,output_tokens=128
         rate: 1
         sample_requests: 20
+        request_type: text_completions
 
   capture_prom: true
   capture_prom_uwm: true

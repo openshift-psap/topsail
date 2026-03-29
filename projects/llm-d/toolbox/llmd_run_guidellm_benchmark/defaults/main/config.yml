@@ -14,10 +14,10 @@ llmd_run_guidellm_benchmark_name: guidellm-benchmark
 llmd_run_guidellm_benchmark_namespace:
 
 # Container image for the benchmark
-llmd_run_guidellm_benchmark_image: ghcr.io/vllm-project/guidellm
+llmd_run_guidellm_benchmark_image: ghcr.io/albertoperdomo2/guidellm
 
 # Version tag for the benchmark image
-llmd_run_guidellm_benchmark_version: pr-590
+llmd_run_guidellm_benchmark_version: nightly
 
 # Timeout in seconds to wait for job completion
 llmd_run_guidellm_benchmark_timeout: 900

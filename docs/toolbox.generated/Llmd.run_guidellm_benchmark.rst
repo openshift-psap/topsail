@@ -39,14 +39,14 @@ Parameters
 
 * Container image for the benchmark
 
-* default value: ``ghcr.io/vllm-project/guidellm``
+* default value: ``ghcr.io/albertoperdomo2/guidellm``
 
 
 ``version``  
 
 * Version tag for the benchmark image
 
-* default value: ``pr-590``
+* default value: ``nightly``
 
 
 ``timeout``  

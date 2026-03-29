@@ -901,6 +901,8 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
     data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
     sample_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.sample_requests")
 
+    request_type = config.project.get_config("tests.llmd.benchmarks.guidellm.request_type")
+
     failed = False
 
     # Handle rate as list/tuple - iterate over each rate value
@@ -957,6 +959,9 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
             if rate_type:
                 guidellm_args.append(f"--rate-type={rate_type}")
+
+            if request_type:
+                guidellm_args.append(f"--request-type={request_type}")
 
             # Add rate parameter
             guidellm_args.append(f"--rate={rate_value}")
