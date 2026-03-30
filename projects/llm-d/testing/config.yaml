@@ -23,6 +23,7 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
+    prepare.cluster.skip: true
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
