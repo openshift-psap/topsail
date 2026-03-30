@@ -175,9 +175,9 @@ prepare:
 
   rhoai:
     skip: false
-    image: "quay.io/rhoai/rhoai-fbc-fragment"
-    tag: "rhoai-3.3@sha256:f6e7db613cd040e53da2d47850477a9b914de18979adaaac47e15dc7c76f8a76"
-    channel: "stable-3.x"
+    image: "quay.io/rhoai/rhoai-fbc-fragment@sha256"
+    tag: "cc054ef120d1b22c92d046ce5d4c175f302134b62dbbf965ceb964134de5c477"
+    channel: "beta"
     datasciencecluster:
       enable: "[kserve]"
       extra_settings: '{"spec.components.kserve.rawDeploymentServiceConfig": "Headless"}'
