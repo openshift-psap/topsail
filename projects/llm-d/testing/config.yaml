@@ -75,19 +75,23 @@ ci_presets:
     tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
 
   guidellm_light:
-    tests.llmd.benchmarks.guidellm.data: prompt_tokens=256,output_tokens=128
+    tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
     tests.llmd.benchmarks.guidellm.rate: "1,10,50"
-    tests.llmd.benchmarks.guidellm.max_seconds: 30
+    tests.llmd.benchmarks.guidellm.args.data: prompt_tokens=256,output_tokens=128
+    tests.llmd.benchmarks.guidellm.args.max_seconds: 30
 
   guidellm_multiturn_eval:
-    tests.llmd.benchmarks.guidellm.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
+    tests.llmd.benchmarks.guidellm.load_shape_name: Multiturn
     tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
-    tests.llmd.benchmarks.guidellm.max_requests: "{10*rate}"
+    tests.llmd.benchmarks.guidellm.args.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
+    tests.llmd.benchmarks.guidellm.args.max_requests: "{10*rate}"
 
   guidellm_heterogeneous_eval:
-    tests.llmd.benchmarks.guidellm.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.load_shape_name: Heterogeneous
     tests.llmd.benchmarks.guidellm.rate: "1,10,50,100,200,300"
-    tests.llmd.benchmarks.guidellm.max_seconds: 600
+    tests.llmd.benchmarks.guidellm.args.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.args.data: prompt_tokens=8000,prompt_tokens_stdev=8500,prompt_tokens_min=50,prompt_tokens_max=30000,output_tokens=800,output_tokens_stdev=1500,output_tokens_min=20,output_tokens_max=8000
+    tests.llmd.benchmarks.guidellm.args.max_seconds: 600
 
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
@@ -257,7 +261,7 @@ tests:
       skip_deployment: false
       name: llm-d
       yaml_file: llama-3-1-8b-instruct-fp8.yaml
-      timeout: 900
+
       do_simple_test: true
       gateway:
         name: gateway-external
@@ -293,14 +297,25 @@ tests:
       guidellm:
         enabled: true
         name: guidellm-benchmark
-        backend_type: openai_http
-        rate_type: concurrent
-        max_seconds: 120
-        max_requests: null
-        timeout: 900
-        data: prompt_tokens=256,output_tokens=128
-        rate: 1
-        sample_requests: 20
+        load_shape_name: default
+
+        image:
+          name: ghcr.io/vllm-project/guidellm
+          version: pr-590
+
+        rate: 1 # might be iterated, don't pass it in the args
+
+        args:
+          backend_type: openai_http
+          rate_type: concurrent
+          max_seconds: 120
+          max_requests: null
+          request_type: null
+          sample_requests: 20
+          data: prompt_tokens=256,output_tokens=128
+
+        extra_args: {}
+
 
   capture_prom: true
   capture_prom_uwm: true

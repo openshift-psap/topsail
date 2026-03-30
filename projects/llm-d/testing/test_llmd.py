@@ -893,13 +893,6 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
     rate = config.project.get_config("tests.llmd.benchmarks.guidellm.rate")
-    backend_type = config.project.get_config("tests.llmd.benchmarks.guidellm.backend_type")
-    rate_type = config.project.get_config("tests.llmd.benchmarks.guidellm.rate_type")
-    max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
-    max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
-    timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
-    data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
-    sample_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.sample_requests")
 
     failed = False
 
@@ -951,29 +944,29 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
             # Construct guidellm arguments list
             guidellm_args = []
 
-            # Add default parameters from config
-            if backend_type:
-                guidellm_args.append(f"--backend-type={backend_type}")
-
-            if rate_type:
-                guidellm_args.append(f"--rate-type={rate_type}")
-
             # Add rate parameter
             guidellm_args.append(f"--rate={rate_value}")
 
-            # Add optional parameters if provided
-            if max_seconds is not None:
-                guidellm_args.append(f"--max-seconds={max_seconds}")
+            # Iterate over tests.llmd.benchmarks.guidellm.args
+            # to generate --{arg_name.replace('_', '-')={apply_rate_scaleup(arg_value, rate_value)}}
+            guidellm_config_args = config.project.get_config("tests.llmd.benchmarks.guidellm.args")
+            for arg_name, arg_value in guidellm_config_args.items():
+                if arg_value is None:  # Guard: skip null values
+                    continue
+                processed_value = apply_rate_scaleup(arg_value, rate_value)
+                guidellm_args.append(f"--{arg_name.replace('_', '-')}={processed_value}")
 
-            if max_requests is not None:
-                guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
+            # Add tests.llmd.benchmarks.guidellm.extra_args
+            extra_args = config.project.get_config("tests.llmd.benchmarks.guidellm.extra_args")
+            for extra_arg_name, extra_arg_value in extra_args.items():
+                if extra_arg_value is None:  # Guard: skip null values
+                    continue
+                processed_value = apply_rate_scaleup(extra_arg_value, rate_value)
+                guidellm_args.append(f"--{extra_arg_name.replace('_', '-')}={processed_value}")
 
-            if sample_requests is not None:
-                guidellm_args.append(f"--sample-requests={sample_requests}")
-
-            # Add data parameter
-            if data:
-                guidellm_args.append(f"--data={apply_rate_scaleup(data, rate_value)}")
+            # Construct image reference
+            image_name = config.project.get_config("tests.llmd.benchmarks.guidellm.image.name")
+            image_version = config.project.get_config("tests.llmd.benchmarks.guidellm.image.version")
 
             suffix = f"_rate{rate_value}" if len(rate_values) > 1\
                 else None
@@ -983,7 +976,8 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                 endpoint_url=endpoint_url,
                 name=current_name,
                 namespace=namespace,
-                timeout=timeout,
+                image=image_name,
+                version=image_version,
                 guidellm_args=guidellm_args,
                 run_as_root=config.project.get_config("security.run_as_root"),
                 artifact_dir_suffix=suffix,
@@ -992,7 +986,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
             logging.info(f"Guidellm benchmark completed successfully for rate: {rate_value}")
 
         except Exception as e:
-            logging.error(f"Guidellm benchmark failed for rate {rate_value}: {e}")
+            logging.exception(f"Guidellm benchmark failed for rate {rate_value}: {e}")
             failed = True
 
     return failed
