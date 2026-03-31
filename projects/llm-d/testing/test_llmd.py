@@ -834,7 +834,7 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
 
         # Parse the addresses JSON to find the URL
         gateway_name = config.project.get_config("tests.llmd.inference_service.gateway.name")
-        import json
+
         try:
             addresses = json.loads(addresses_result.stdout)
             gateway_url = None
@@ -1184,16 +1184,28 @@ def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name)
         # Convert payload to JSON string for inline use
         payload_json = json.dumps(test_payload)
 
-        # Execute curl inside the pod with inline JSON
-        result = run.run(f"""
-oc rsh -n {namespace} -c main deploy/{deployment_name} \\
-  curl -k -sSf "{endpoint_url}/v1/completions" \\
-  -H "Content-Type: application/json" \\
-  -d '{payload_json}'
-""", capture_stdout=True)
+        remaining_tries = 30
+        DELAY = 10
+        result = None
+
+        while remaining_tries != 0:
+            # Execute curl inside the pod with inline JSON
+            result = run.run(f"""
+              oc rsh -n {namespace} -c main deploy/{deployment_name} \\
+                  curl -k -sSf "{endpoint_url}/v1/completions" \\
+                       -H "Content-Type: application/json" \\
+                       -d '{payload_json}'
+            """, capture_stdout=True, check=False)
+
+            logging.info(f"Request result: {result.returncode}")
+            if result.returncode == 0:
+                break
+            logging.info(f"Waiting {DELAY}s before retrying ...")
+            time.sleep(DELAY)
+            remaining_tries -= 1
 
         if result.returncode != 0:
-            logging.error(f"Request failed: {result.stderr}")
+            logging.error(f"Request failed :/")
             return False
 
         response = json.loads(result.stdout)
