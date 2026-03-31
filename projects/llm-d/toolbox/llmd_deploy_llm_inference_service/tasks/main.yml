@@ -118,7 +118,6 @@
     until: llm_inference_service_ready_status.stdout == "True"
     retries: 30
     delay: 10
-    failed_when: llm_inference_service_ready_status.rc != 0
 
   always:
   - name: Capture the final LLM inference service YAML
