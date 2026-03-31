@@ -5,6 +5,12 @@
     state: directory
     mode: '0755'
 
+- name: Create the logs directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/artifacts/logs/"
+    state: directory
+    mode: '0755'
+
 - name: Get current timestamp
   command: date -Iseconds
   register: capture_timestamp
@@ -92,9 +98,7 @@
        -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -o jsonpath='{.items[*].metadata.name}'); do
-      echo "=== Logs for pod: $pod ===" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.logs"
-      oc logs "$pod" -n "{{ target_namespace }}" --all-containers=true >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.logs" 2>&1 || true
-      echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.logs"
+      oc logs "$pod" -n "{{ target_namespace }}" --all-containers=true > "{{ artifact_extra_logs_dir }}/artifacts/logs/$pod.log" 2>&1 || true
     done
   ignore_errors: true
 
@@ -104,9 +108,7 @@
        -l "app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
        -n "{{ target_namespace }}" \
        -o jsonpath='{.items[*].metadata.name}'); do
-      echo "=== Previous logs for pod: $pod ===" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.previous.logs"
-      oc logs "$pod" -n "{{ target_namespace }}" --previous --all-containers=true >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.previous.logs" 2>&1 || true
-      echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.previous.logs"
+      oc logs "$pod" -n "{{ target_namespace }}" --previous --all-containers=true > "{{ artifact_extra_logs_dir }}/artifacts/logs/$pod.previous.log" 2>&1 || true
     done
   ignore_errors: true
 
@@ -129,31 +131,3 @@
     done
   ignore_errors: true
 
-- name: Create capture summary
-  copy:
-    content: |
-      LLMInferenceService State Capture Summary
-      =========================================
-
-      LLMInferenceService Name: {{ llmd_capture_isvc_state_llmisvc_name }}
-      Namespace: {{ target_namespace }}
-      Capture Time: {{ capture_timestamp.stdout }}
-
-      Captured Objects:
-      - LLMInferenceService definition (YAML and JSON)
-      - Related Pods (YAML, logs, previous logs, describe)
-      - Regular InferenceServices
-      - Related Deployments
-      - Related ReplicaSets
-      - Related ServiceMonitors
-      - Related PodMonitors
-      - All Namespace Pods (wide format)
-      - All Namespace Services
-
-      All files are saved in the artifacts directory.
-    dest: "{{ artifact_extra_logs_dir }}/artifacts/capture_summary.txt"
-    mode: '0644'
-
-- name: "Show the capture summary"
-  command:
-    cat "{{ artifact_extra_logs_dir }}/artifacts/capture_summary.txt"
