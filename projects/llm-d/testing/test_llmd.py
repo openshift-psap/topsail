@@ -558,13 +558,8 @@ def apply_vllm_args_configuration(isvc_data):
 
     logging.info(f"Applying vLLM args: {vllm_args}")
 
-    # Apply to main container (decode container for P/D)
+    # Apply to main container only
     _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
-
-    # Apply to prefill container if this is a P/D deployment
-    if 'spec' in isvc_data and 'prefill' in isvc_data['spec']:
-        logging.info("P/D deployment detected - applying vLLM args to prefill container")
-        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', vllm_args, 'main')
 
 
 def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
