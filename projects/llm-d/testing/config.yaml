@@ -263,7 +263,9 @@ tests:
     inference_service:
       skip_deployment: false
       name: llm-d
-      yaml_file: llama-3-1-8b-instruct-fp8.yaml
+      yaml_file: llmisvc-simple.yaml
+
+      epp: epp-approximate-prefix-cache
 
       do_simple_test: true
       gateway:

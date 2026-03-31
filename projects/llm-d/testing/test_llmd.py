@@ -736,6 +736,40 @@ def _set_nested_property(data, dotted_key, value):
     current[final_key] = value
 
 
+def apply_epp_configuration(isvc_data):
+    """
+    Apply EPP (Endpoint Picker) configuration to the LLMISVC router container
+
+    Adds the EPP configuration file path as a command line argument to the router container.
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp", None)
+
+    if not epp_config_name:
+        logging.debug("No EPP configuration specified")
+        return
+
+    logging.info(f"Applying EPP configuration: {epp_config_name}")
+
+    # Verify EPP configuration file exists
+    epp_config_path = TESTING_THIS_DIR / "epp-config" / f"{epp_config_name}.yaml"
+    if not epp_config_path.exists():
+        raise ValueError(f"EPP configuration file not found: {epp_config_path}")
+
+    epp_value = epp_config_path.read_text()
+
+    router_template = isvc_data['spec']['router']['scheduler']['template']
+    router_container = router_template['containers'][0]
+
+    if router_container['args'][-1] != '--config-text':
+        raise ValueError(f"Excepted to find --config-text as last argument of the LLMISVC. Got '{router_container['args'][-1]}'.")
+
+    # Add the new EPP configuration argument
+    router_container['args'].append(epp_value)
+
+
 def reshape_isvc(flavor, llmisvc_path, model_key):
     """
     Reshape the ISVC YAML file based on configuration
@@ -767,6 +801,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_vllm_args_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
+    apply_epp_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
