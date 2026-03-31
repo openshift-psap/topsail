@@ -816,13 +816,16 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
 
     logging.info(f"Getting LLM inference service URL for flavor: {flavor}")
 
-    # Parse flavor components
-    components = parse_flavor_components(flavor)
-    base_flavor = components['base']
+    # Check if the LLM inference service has intelligent routing configured
+    scheduler_result = run.run(f"oc get llmisvc/{llmisvc_name} -o jsonpath='{{.spec.router.scheduler}}' -n {namespace}",
+                              capture_stdout=True, check=False)
 
-    # For intelligent-routing flavors, get the URL from status
-    if base_flavor in ["intelligentrouting", "intelligent-routing"]:
-        logging.info("Intelligent-routing flavor detected - looking up the gateway URL from status")
+    has_router_scheduler = (scheduler_result.returncode == 0 and
+                          scheduler_result.stdout.strip() != "")
+
+    # For services with intelligent routing, get the URL from status
+    if has_router_scheduler:
+        logging.info("LLM inference service has router scheduler - looking up the gateway URL from status")
 
         # Get the LLMInferenceService status addresses
         addresses_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
