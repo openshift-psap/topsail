@@ -24,6 +24,12 @@ ci_presets:
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
     prepare.cluster.skip: true
+    tests.llmd.inference_service.gateway.name: gateway-internal
+
+  llmisvc_pd:
+    tests.llmd.inference_service.epp: epp-pd
+    tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
+    tests.llmd.flavors: [pd-tp2-x3]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx

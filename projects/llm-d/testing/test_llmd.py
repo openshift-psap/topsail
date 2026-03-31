@@ -309,6 +309,14 @@ def apply_flavor_modifications(isvc_data, flavor):
     tp_size = components['tp_size']
     replicas = components['replicas']
 
+    if base_flavor in ["pd"]:
+        if "prefill" not in isvc_data['spec']:
+            raise ValueError(f"No spec.prefill field in the {base_flavor} LLMISVC")
+    else:
+        if "prefill" in isvc_data['spec']:
+            raise ValueError(f"Field spec.prefill unexpected in the {base_flavor} LLMISVC")
+
+
     # Apply base flavor modifications
     if base_flavor == "simple":
         logging.info("Applying 'simple' flavor modifications")
@@ -317,10 +325,12 @@ def apply_flavor_modifications(isvc_data, flavor):
             del isvc_data['spec']['router']
             logging.info("Removed spec.router for 'simple' flavor")
 
-    elif base_flavor in ["intelligentrouting", "intelligent-routing"]:
+    elif base_flavor in ["intelligentrouting"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
         # No modifications - keep original ISVC configuration
-
+    elif base_flavor in ["pd"]:
+        logging.info("Applying 'pd' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
     elif base_flavor == "default":
         logging.info("Applying 'default' flavor - keeping ISVC untouched")
         # No modifications - keep original ISVC configuration
@@ -533,7 +543,9 @@ def apply_model_configuration(isvc_data):
 
 def apply_vllm_args_configuration(isvc_data):
     """
-    Apply vLLM arguments configuration (always applied)
+    Apply vLLM arguments configuration to ISVC containers
+
+    Applies VLLM args to both main container and prefill container (for P/D deployments).
 
     Args:
         isvc_data: The loaded YAML data structure
@@ -546,39 +558,67 @@ def apply_vllm_args_configuration(isvc_data):
 
     logging.info(f"Applying vLLM args: {vllm_args}")
 
-    # Ensure template.containers section exists
-    if 'spec' not in isvc_data:
-        isvc_data['spec'] = {}
-    if 'template' not in isvc_data['spec']:
-        isvc_data['spec']['template'] = {}
-    if 'containers' not in isvc_data['spec']['template']:
-        isvc_data['spec']['template']['containers'] = [{'name': 'main'}]
+    # Apply to main container (decode container for P/D)
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
 
-    # Find the main container
-    main_container = None
-    for container in isvc_data['spec']['template']['containers']:
-        if container.get('name') == 'main':
-            main_container = container
+    # Apply to prefill container if this is a P/D deployment
+    if 'spec' in isvc_data and 'prefill' in isvc_data['spec']:
+        logging.info("P/D deployment detected - applying vLLM args to prefill container")
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', vllm_args, 'main')
+
+
+def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
+    """
+    Apply vLLM arguments to a specific container section
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        container_path: Dotted path to containers section (e.g., 'spec.template.containers')
+        vllm_args: List of vLLM arguments to apply
+        container_name: Name of the container to modify
+    """
+    # Navigate to the container section
+    path_parts = container_path.split('.')
+    current = isvc_data
+
+    # Create the path if it doesn't exist
+    for part in path_parts[:-1]:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+
+    # Ensure containers array exists
+    containers_key = path_parts[-1]
+    if containers_key not in current:
+        current[containers_key] = [{'name': container_name}]
+
+    containers = current[containers_key]
+
+    # Find the target container
+    target_container = None
+    for container in containers:
+        if container.get('name') == container_name:
+            target_container = container
             break
 
-    if not main_container:
-        main_container = {'name': 'main'}
-        isvc_data['spec']['template']['containers'].append(main_container)
+    if not target_container:
+        target_container = {'name': container_name}
+        containers.append(target_container)
 
     # Ensure env section exists
-    if 'env' not in main_container:
-        main_container['env'] = []
+    if 'env' not in target_container:
+        target_container['env'] = []
 
     # Find or create VLLM_ADDITIONAL_ARGS environment variable
     vllm_args_env = None
-    for env_var in main_container['env']:
+    for env_var in target_container['env']:
         if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
             vllm_args_env = env_var
             break
 
     if not vllm_args_env:
         vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
-        main_container['env'].append(vllm_args_env)
+        target_container['env'].append(vllm_args_env)
 
     # Build vLLM arguments
     current_args = vllm_args_env.get('value', '').strip()
@@ -597,11 +637,7 @@ def apply_vllm_args_configuration(isvc_data):
             combined_args = ' '.join(new_args)
 
         vllm_args_env['value'] = combined_args
-        logging.info(f"Set VLLM_ADDITIONAL_ARGS: {combined_args}")
-
-
-
-
+        logging.info(f"Set VLLM_ADDITIONAL_ARGS in {container_path}[{container_name}]: {combined_args}")
 
 
 def apply_gpu_resources(main_container, gpu_count):
@@ -892,7 +928,7 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
             raise RuntimeError(f"Failed to parse LLMInferenceService addresses: {e}")
 
     # For simple flavors, we need to append the HTTPS port from the service
-    elif base_flavor == "simple":
+    elif flavor.startswith("simple"):
         logging.info("Simple flavor detected - looking up service port")
 
         service_name = f"{llmisvc_name}-kserve-workload-svc"
