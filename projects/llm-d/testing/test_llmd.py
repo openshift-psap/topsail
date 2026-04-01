@@ -635,6 +635,30 @@ def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, 
         logging.info(f"Set VLLM_ADDITIONAL_ARGS in {container_path}[{container_name}]: {combined_args}")
 
 
+def apply_max_model_len_configuration(isvc_data):
+    """
+    Apply max-model-len configuration to ISVC containers
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    max_model_len = config.project.get_config("tests.llmd.inference_service.max_model_len", None)
+
+    if not max_model_len:
+        logging.debug("No max-model-len configured")
+        return
+
+    logging.info(f"Applying max-model-len: {max_model_len}")
+
+    # Apply to main container
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', ["--max-model-len", f"{max_model_len}"], 'main')
+
+    # Apply to prefill container if this is a P/D deployment
+    if 'spec' in isvc_data and 'prefill' in isvc_data['spec']:
+        logging.info("P/D deployment detected - applying max-model-len to prefill container")
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', ["--max-model-len", f"{max_model_len}"], 'main')
+
+
 def apply_gpu_resources(main_container, gpu_count):
     """
     Set GPU resource requests and limits based on tensor parallel size
@@ -830,6 +854,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
+    apply_max_model_len_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
     apply_epp_configuration(isvc_data)

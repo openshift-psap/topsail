@@ -277,6 +277,7 @@ tests:
       gateway:
         name: gateway-external
       model: llama3-1-8b
+      max_model_len: 40960
       metrics:
         manual_capture: false
         scheduler_servicemonitor_name: kserve-llm-isvc-scheduler
@@ -288,8 +289,6 @@ tests:
         - "--enable-prefix-caching"
         - "--uvicorn-log-level=debug"
         - "--trust-remote-code"
-        - "--disable-log-requests"
-        - "--max-model-len=40960" # keep in 5th position or udpdate the presets
         - "--gpu-memory-utilization=0.92"
 
       kueue:
