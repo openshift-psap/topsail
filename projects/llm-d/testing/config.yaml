@@ -57,6 +57,7 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.inference_service.metrics.manual_capture: false
     tests.llmd.inference_service.gateway.name: gateway-internal
+    tests.llmd.inference_service.image_pull_secrets: kpouget-pull-secret
 
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
@@ -270,6 +271,7 @@ tests:
       skip_deployment: false
       name: llm-d
       yaml_file: llmisvc-simple.yaml
+      image_pull_secrets: null
 
       epp: epp-approximate-prefix-cache
 

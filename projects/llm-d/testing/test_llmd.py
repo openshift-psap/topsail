@@ -656,7 +656,32 @@ def apply_max_model_len_configuration(isvc_data):
     # Apply to prefill container if this is a P/D deployment
     if 'spec' in isvc_data and 'prefill' in isvc_data['spec']:
         logging.info("P/D deployment detected - applying max-model-len to prefill container")
-        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', ["--max-model-len", f"{max_model_len}"], 'main')
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', [f"--max-model-len={max_model_len}"], 'main')
+
+
+def apply_image_pull_secrets_configuration(isvc_data):
+    """
+    Apply image pull secrets configuration to ISVC templates
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    image_pull_secrets = config.project.get_config("tests.llmd.inference_service.image_pull_secrets", None)
+
+    if not image_pull_secrets:
+        logging.debug("No image pull secrets configured")
+        return
+
+    logging.info(f"Applying image pull secrets: {image_pull_secrets}")
+
+    # Apply to main template
+    isvc_data['spec']['template']['spec']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+    logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in main template")
+
+    # Apply to prefill template if this is a P/D deployment
+    if 'prefill' in isvc_data['spec']:
+        isvc_data['spec']['prefill']['template']['spec']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+        logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in prefill template")
 
 
 def apply_gpu_resources(main_container, gpu_count):
@@ -855,6 +880,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
     apply_max_model_len_configuration(isvc_data)
+    apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
     apply_epp_configuration(isvc_data)
