@@ -564,8 +564,8 @@ def download_single_model(model_key):
         downloader_image = config.project.get_config("prepare.model_downloader.image")
 
         # Check if model already exists in PVC
-        check_result = run.run(f'oc get pvc -l {model_key}=yes -oname',
-                              capture_stdout=True, check=False)
+        check_result = run.run(f'oc get pvc -l {model_key}=yes -oname -n {namespace}',
+                               capture_stdout=True, check=False)
 
         expected_pvc = f"persistentvolumeclaim/{pvc_name}"
         if check_result.returncode == 0 and expected_pvc in check_result.stdout:
