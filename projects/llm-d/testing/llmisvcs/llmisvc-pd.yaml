@@ -30,7 +30,7 @@ spec:
               - name: XDG_CACHE_HOME
                 value: /tmp
             args:
-              - '--cert-path'
+              - --cert-path
               - /var/run/kserve/tls
               - --pool-group
               - inference.networking.x-k8s.io
@@ -119,6 +119,7 @@ spec:
         env:
         - name: VLLM_ADDITIONAL_ARGS
           value: >-
+             --disable-uvicorn-access-log
              --block-size 128
              --kv-transfer-config '{"kv_connector":"NixlConnector", "kv_role":"kv_both"}'
         - name: VLLM_NIXL_SIDE_CHANNEL_HOST
