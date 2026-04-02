@@ -130,4 +130,3 @@
       echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.pods.describe.txt"
     done
   ignore_errors: true
-
