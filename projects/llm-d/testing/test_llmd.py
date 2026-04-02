@@ -55,6 +55,9 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             # Deploy LLM inference service
             _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
+            # Start metrics capture after deployment
+            start_metrics_capture(flavor)
+
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
             logging.info(f"Using model: {model_name} (from config reference: {model_ref})")
@@ -75,6 +78,12 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             flavor_failed = e
 
         finally:
+            # Stop metrics capture after testing (success or failure)
+            try:
+                stop_metrics_capture(flavor)
+            except Exception as metrics_e:
+                logging.exception(f"Failed to stop metrics capture: {metrics_e}")
+
             # Always capture LLM inference service state (success or failure)
             logging.info("Capturing LLM inference service state for debugging")
             try:
@@ -249,36 +258,47 @@ def parse_flavor_components(flavor):
     Examples:
     - 'intelligentrouting-tp2-x2' -> {'base': 'intelligentrouting', 'tp_size': 2, 'replicas': 2}
     - 'simple' -> {'base': 'simple', 'tp_size': None, 'replicas': None}
-    - 'intelligentrouting-x2' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': 2}
-    - 'intelligentrouting' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': None}
+    - 'pd-x2-tp4-ptp1-px4' -> {'base': 'pd', 'tp_size': 4, 'replicas': 2, 'prefill_tp_size': 1, 'prefill_replicas': 4}
+    - 'pd-x2-dtp4-ptp1-px4' -> {'base': 'pd', 'tp_size': 4, 'replicas': 2, 'prefill_tp_size': 1, 'prefill_replicas': 4}
 
     Args:
         flavor: The flavor string to parse
 
     Returns:
-        dict: {'base': str, 'tp_size': int|None, 'replicas': int|None}
+        dict: {'base': str, 'tp_size': int|None, 'replicas': int|None, 'prefill_tp_size': int|None, 'prefill_replicas': int|None}
     """
     parts = flavor.split('-')
     components = {
         'base': parts[0],
         'tp_size': None,
-        'replicas': None
+        'replicas': None,
+        'prefill_tp_size': None,
+        'prefill_replicas': None
+    }
+    # Mapping of prefixes to field names and descriptions (order matters - longer prefixes first)
+    prefix_map = {
+        'ptp': ('prefill_tp_size',  'prefill TP',      'ptp<number> (e.g., ptp1, ptp2)'),
+        'px':  ('prefill_replicas', 'prefill replica', 'px<number> (e.g., px2, px4)'),
+        'dtp': ('tp_size',          'decode TP',       'dtp<number> (e.g., dtp2, dtp8)'),
+        'tp':  ('tp_size',          'TP',              'tp<number> (e.g., tp2, tp8)'),
+        'x':   ('replicas',         'replica',         'x<number> (e.g., x2, x4)'),
     }
 
     # Parse remaining parts
     for part in parts[1:]:
-        if part.startswith('tp') and len(part) > 2:
+        matched = False
+        for prefix, (field, desc, format_example) in prefix_map.items():
+            if not part.startswith(prefix):
+                continue
             try:
-                components['tp_size'] = int(part[2:])
+                components[field] = int(part[len(prefix):])
+                matched = True
+                break
             except ValueError:
-                raise ValueError(f"Invalid TP specification: {part}. Expected format: tp<number> (e.g., tp2, tp8)")
-        elif part.startswith('x') and len(part) > 1:
-            try:
-                components['replicas'] = int(part[1:])
-            except ValueError:
-                raise ValueError(f"Invalid replica specification: {part}. Expected format: x<number> (e.g., x2, x4)")
-        else:
-            raise ValueError(f"Unknown flavor component: {part}. Expected format: <base>-[tp<number>]-[x<number>] (e.g., simple-tp8-x2)")
+                raise ValueError(f"Invalid {desc} specification: {part}. Expected format: {format_example}")
+
+        if not matched:
+            raise ValueError(f"Unknown flavor component: {part}. Expected format: <base>-[tp<number>|dtp<number>]-[x<number>]-[ptp<number>]-[px<number>]")
 
     logging.info(f"Parsed flavor '{flavor}' -> {components}")
     return components
@@ -299,6 +319,16 @@ def apply_flavor_modifications(isvc_data, flavor):
     base_flavor = components['base']
     tp_size = components['tp_size']
     replicas = components['replicas']
+    prefill_tp_size = components['prefill_tp_size']
+    prefill_replicas = components['prefill_replicas']
+
+    if base_flavor in ["pd"]:
+        if "prefill" not in isvc_data['spec']:
+            raise ValueError(f"No spec.prefill field in the {base_flavor} LLMISVC")
+    else:
+        if "prefill" in isvc_data['spec']:
+            raise ValueError(f"Field spec.prefill unexpected in the {base_flavor} LLMISVC")
+
 
     # Apply base flavor modifications
     if base_flavor == "simple":
@@ -308,10 +338,12 @@ def apply_flavor_modifications(isvc_data, flavor):
             del isvc_data['spec']['router']
             logging.info("Removed spec.router for 'simple' flavor")
 
-    elif base_flavor in ["intelligentrouting", "intelligent-routing"]:
+    elif base_flavor in ["intelligentrouting"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
         # No modifications - keep original ISVC configuration
-
+    elif base_flavor in ["pd"]:
+        logging.info("Applying 'pd' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
     elif base_flavor == "default":
         logging.info("Applying 'default' flavor - keeping ISVC untouched")
         # No modifications - keep original ISVC configuration
@@ -332,6 +364,17 @@ def apply_flavor_modifications(isvc_data, flavor):
     # Apply tensor parallelism from flavor
     if tp_size is not None:
         apply_flavor_tensor_parallelism(isvc_data, tp_size)
+
+    # Apply prefill-specific configurations for P/D deployments
+    if base_flavor == "pd":
+        if prefill_replicas is not None:
+            # Multiply prefill replicas by main replicas
+            final_prefill_replicas = prefill_replicas * (replicas if replicas is not None else 1)
+            isvc_data['spec']['prefill']['replicas'] = final_prefill_replicas
+            logging.info(f"Setting spec.prefill.replicas = {final_prefill_replicas} (p.x{prefill_replicas} * x{replicas if replicas is not None else 1})")
+
+        if prefill_tp_size is not None:
+            apply_prefill_tensor_parallelism(isvc_data, prefill_tp_size)
 
 
 def apply_flavor_tensor_parallelism(isvc_data, tp_size):
@@ -398,6 +441,25 @@ def apply_flavor_tensor_parallelism(isvc_data, tp_size):
     apply_gpu_resources(main_container, tp_size)
 
     logging.info(f"Applied flavor TP: {tp_arg}, GPU resources: {tp_size}")
+
+
+def apply_prefill_tensor_parallelism(isvc_data, tp_size):
+    """
+    Apply tensor parallelism configuration to the prefill container
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        tp_size: Tensor parallel size for prefill
+    """
+    logging.info(f"Applying prefill tensor parallelism: TP={tp_size}")
+
+    # Find the main container in prefill
+    main_container = isvc_data['spec']['prefill']['template']['containers'][0]
+
+    # Set GPU resources to match tensor parallel size
+    apply_gpu_resources(main_container, tp_size)
+
+    logging.info(f"Applied prefill GPU resources: {tp_size}")
 
 
 def apply_kueue_configuration(isvc_data):
@@ -524,7 +586,9 @@ def apply_model_configuration(isvc_data):
 
 def apply_vllm_args_configuration(isvc_data):
     """
-    Apply vLLM arguments configuration (always applied)
+    Apply vLLM arguments configuration to ISVC containers
+
+    Applies VLLM args to both main container and prefill container (for P/D deployments).
 
     Args:
         isvc_data: The loaded YAML data structure
@@ -537,39 +601,62 @@ def apply_vllm_args_configuration(isvc_data):
 
     logging.info(f"Applying vLLM args: {vllm_args}")
 
-    # Ensure template.containers section exists
-    if 'spec' not in isvc_data:
-        isvc_data['spec'] = {}
-    if 'template' not in isvc_data['spec']:
-        isvc_data['spec']['template'] = {}
-    if 'containers' not in isvc_data['spec']['template']:
-        isvc_data['spec']['template']['containers'] = [{'name': 'main'}]
+    # Apply to main container only
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
 
-    # Find the main container
-    main_container = None
-    for container in isvc_data['spec']['template']['containers']:
-        if container.get('name') == 'main':
-            main_container = container
+
+def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
+    """
+    Apply vLLM arguments to a specific container section
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        container_path: Dotted path to containers section (e.g., 'spec.template.containers')
+        vllm_args: List of vLLM arguments to apply
+        container_name: Name of the container to modify
+    """
+    # Navigate to the container section
+    path_parts = container_path.split('.')
+    current = isvc_data
+
+    # Create the path if it doesn't exist
+    for part in path_parts[:-1]:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+
+    # Ensure containers array exists
+    containers_key = path_parts[-1]
+    if containers_key not in current:
+        current[containers_key] = [{'name': container_name}]
+
+    containers = current[containers_key]
+
+    # Find the target container
+    target_container = None
+    for container in containers:
+        if container.get('name') == container_name:
+            target_container = container
             break
 
-    if not main_container:
-        main_container = {'name': 'main'}
-        isvc_data['spec']['template']['containers'].append(main_container)
+    if not target_container:
+        target_container = {'name': container_name}
+        containers.append(target_container)
 
     # Ensure env section exists
-    if 'env' not in main_container:
-        main_container['env'] = []
+    if 'env' not in target_container:
+        target_container['env'] = []
 
     # Find or create VLLM_ADDITIONAL_ARGS environment variable
     vllm_args_env = None
-    for env_var in main_container['env']:
+    for env_var in target_container['env']:
         if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
             vllm_args_env = env_var
             break
 
     if not vllm_args_env:
         vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
-        main_container['env'].append(vllm_args_env)
+        target_container['env'].append(vllm_args_env)
 
     # Build vLLM arguments
     current_args = vllm_args_env.get('value', '').strip()
@@ -588,11 +675,62 @@ def apply_vllm_args_configuration(isvc_data):
             combined_args = ' '.join(new_args)
 
         vllm_args_env['value'] = combined_args
-        logging.info(f"Set VLLM_ADDITIONAL_ARGS: {combined_args}")
+        logging.info(f"Set VLLM_ADDITIONAL_ARGS in {container_path}[{container_name}]: {combined_args}")
 
 
+def apply_max_model_len_configuration(isvc_data):
+    """
+    Apply max-model-len configuration to ISVC containers
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    max_model_len = config.project.get_config("tests.llmd.inference_service.max_model_len", None)
+
+    if not max_model_len:
+        logging.debug("No max-model-len configured")
+        return
+
+    logging.info(f"Applying max-model-len: {max_model_len}")
+
+    # Apply to main container
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', ["--max-model-len", f"{max_model_len}"], 'main')
+
+    # Apply to prefill container if this is a P/D deployment
+    if 'spec' in isvc_data and 'prefill' in isvc_data['spec']:
+        logging.info("P/D deployment detected - applying max-model-len to prefill container")
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', [f"--max-model-len={max_model_len}"], 'main')
 
 
+def apply_image_pull_secrets_configuration(isvc_data):
+    """
+    Apply image pull secrets configuration to ISVC templates
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    image_pull_secrets = config.project.get_config("tests.llmd.inference_service.image_pull_secrets", None)
+
+    if not image_pull_secrets:
+        logging.debug("No image pull secrets configured")
+        return
+
+    logging.info(f"Applying image pull secrets: {image_pull_secrets}")
+
+    # Apply to main template
+    isvc_data['spec']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+    logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in main template")
+
+    # Apply to router scheduler template if this is a LLM-D deployment
+    if 'router' in isvc_data['spec'] and 'scheduler' in isvc_data['spec']['router']:
+        isvc_data['spec']['router']['scheduler']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+        logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in router.scheduler template")
+
+
+    # Apply to prefill template if this is a P/D deployment
+    if 'prefill' in isvc_data['spec']:
+        isvc_data['spec']['prefill']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+        logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in prefill template")
 
 
 def apply_gpu_resources(main_container, gpu_count):
@@ -727,6 +865,40 @@ def _set_nested_property(data, dotted_key, value):
     current[final_key] = value
 
 
+def apply_epp_configuration(isvc_data):
+    """
+    Apply EPP (Endpoint Picker) configuration to the LLMISVC router container
+
+    Adds the EPP configuration file path as a command line argument to the router container.
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp", None)
+
+    if not epp_config_name:
+        logging.debug("No EPP configuration specified")
+        return
+
+    logging.info(f"Applying EPP configuration: {epp_config_name}")
+
+    # Verify EPP configuration file exists
+    epp_config_path = TESTING_THIS_DIR / "epp-config" / f"{epp_config_name}.yaml"
+    if not epp_config_path.exists():
+        raise ValueError(f"EPP configuration file not found: {epp_config_path}")
+
+    epp_value = epp_config_path.read_text()
+
+    router_template = isvc_data['spec']['router']['scheduler']['template']
+    router_container = router_template['containers'][0]
+
+    if router_container['args'][-1] != '--config-text':
+        raise ValueError(f"Excepted to find --config-text as last argument of the LLMISVC. Got '{router_container['args'][-1]}'.")
+
+    # Add the new EPP configuration argument
+    router_container['args'].append(epp_value)
+
+
 def reshape_isvc(flavor, llmisvc_path, model_key):
     """
     Reshape the ISVC YAML file based on configuration
@@ -756,8 +928,11 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_kueue_configuration(isvc_data)
     apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
+    apply_max_model_len_configuration(isvc_data)
+    apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
+    apply_epp_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
@@ -807,13 +982,16 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
 
     logging.info(f"Getting LLM inference service URL for flavor: {flavor}")
 
-    # Parse flavor components
-    components = parse_flavor_components(flavor)
-    base_flavor = components['base']
+    # Check if the LLM inference service has intelligent routing configured
+    scheduler_result = run.run(f"oc get llmisvc/{llmisvc_name} -o jsonpath='{{.spec.router.scheduler}}' -n {namespace}",
+                              capture_stdout=True, check=False)
 
-    # For intelligent-routing flavors, get the URL from status
-    if base_flavor in ["intelligentrouting", "intelligent-routing"]:
-        logging.info("Intelligent-routing flavor detected - looking up the gateway URL from status")
+    has_router_scheduler = (scheduler_result.returncode == 0 and
+                          scheduler_result.stdout.strip() != "")
+
+    # For services with intelligent routing, get the URL from status
+    if has_router_scheduler:
+        logging.info("LLM inference service has router scheduler - looking up the gateway URL from status")
 
         # Get the LLMInferenceService status addresses
         addresses_result = run.run(f"oc get llminferenceservice {llmisvc_name} -n {namespace} "
@@ -825,7 +1003,7 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
 
         # Parse the addresses JSON to find the URL
         gateway_name = config.project.get_config("tests.llmd.inference_service.gateway.name")
-        import json
+
         try:
             addresses = json.loads(addresses_result.stdout)
             gateway_url = None
@@ -845,7 +1023,7 @@ def get_llm_inference_url(llmisvc_name, namespace, flavor):
             raise RuntimeError(f"Failed to parse LLMInferenceService addresses: {e}")
 
     # For simple flavors, we need to append the HTTPS port from the service
-    elif base_flavor == "simple":
+    elif flavor.startswith("simple"):
         logging.info("Simple flavor detected - looking up service port")
 
         service_name = f"{llmisvc_name}-kserve-workload-svc"
@@ -884,13 +1062,6 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
 
     benchmark_name = config.project.get_config("tests.llmd.benchmarks.guidellm.name")
     rate = config.project.get_config("tests.llmd.benchmarks.guidellm.rate")
-    backend_type = config.project.get_config("tests.llmd.benchmarks.guidellm.backend_type")
-    rate_type = config.project.get_config("tests.llmd.benchmarks.guidellm.rate_type")
-    max_seconds = config.project.get_config("tests.llmd.benchmarks.guidellm.max_seconds")
-    max_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.max_requests")
-    timeout = config.project.get_config("tests.llmd.benchmarks.guidellm.timeout")
-    data = config.project.get_config("tests.llmd.benchmarks.guidellm.data")
-    sample_requests = config.project.get_config("tests.llmd.benchmarks.guidellm.sample_requests")
 
     failed = False
 
@@ -942,29 +1113,29 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
             # Construct guidellm arguments list
             guidellm_args = []
 
-            # Add default parameters from config
-            if backend_type:
-                guidellm_args.append(f"--backend-type={backend_type}")
-
-            if rate_type:
-                guidellm_args.append(f"--rate-type={rate_type}")
-
             # Add rate parameter
             guidellm_args.append(f"--rate={rate_value}")
 
-            # Add optional parameters if provided
-            if max_seconds is not None:
-                guidellm_args.append(f"--max-seconds={max_seconds}")
+            # Iterate over tests.llmd.benchmarks.guidellm.args
+            # to generate --{arg_name.replace('_', '-')={apply_rate_scaleup(arg_value, rate_value)}}
+            guidellm_config_args = config.project.get_config("tests.llmd.benchmarks.guidellm.args")
+            for arg_name, arg_value in guidellm_config_args.items():
+                if arg_value is None:  # Guard: skip null values
+                    continue
+                processed_value = apply_rate_scaleup(arg_value, rate_value)
+                guidellm_args.append(f"--{arg_name.replace('_', '-')}={processed_value}")
 
-            if max_requests is not None:
-                guidellm_args.append(f"--max-requests={apply_rate_scaleup(max_requests, rate_value)}")
+            # Add tests.llmd.benchmarks.guidellm.extra_args
+            extra_args = config.project.get_config("tests.llmd.benchmarks.guidellm.extra_args")
+            for extra_arg_name, extra_arg_value in extra_args.items():
+                if extra_arg_value is None:  # Guard: skip null values
+                    continue
+                processed_value = apply_rate_scaleup(extra_arg_value, rate_value)
+                guidellm_args.append(f"--{extra_arg_name.replace('_', '-')}={processed_value}")
 
-            if sample_requests is not None:
-                guidellm_args.append(f"--sample-requests={sample_requests}")
-
-            # Add data parameter
-            if data:
-                guidellm_args.append(f"--data={apply_rate_scaleup(data, rate_value)}")
+            # Construct image reference
+            image_name = config.project.get_config("tests.llmd.benchmarks.guidellm.image.name")
+            image_version = config.project.get_config("tests.llmd.benchmarks.guidellm.image.version")
 
             suffix = f"_rate{rate_value}" if len(rate_values) > 1\
                 else None
@@ -974,7 +1145,8 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
                 endpoint_url=endpoint_url,
                 name=current_name,
                 namespace=namespace,
-                timeout=timeout,
+                image=image_name,
+                version=image_version,
                 guidellm_args=guidellm_args,
                 run_as_root=config.project.get_config("security.run_as_root"),
                 artifact_dir_suffix=suffix,
@@ -983,7 +1155,7 @@ def run_guidellm_benchmark(endpoint_url, llmisvc_name, namespace):
             logging.info(f"Guidellm benchmark completed successfully for rate: {rate_value}")
 
         except Exception as e:
-            logging.error(f"Guidellm benchmark failed for rate {rate_value}: {e}")
+            logging.exception(f"Guidellm benchmark failed for rate {rate_value}: {e}")
             failed = True
 
     return failed
@@ -1005,6 +1177,84 @@ def capture_llm_inference_service_state(llmisvc_name, namespace):
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
+
+
+def start_metrics_capture(flavor):
+    """
+    Starts metrics capture for both ServiceMonitor and PodMonitor if enabled
+    """
+    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
+        return
+
+    logging.info("Starting metrics capture")
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
+    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
+
+    # Parse flavor to check if it's simple
+    components = parse_flavor_components(flavor)
+    is_simple_flavor = components['base'] == "simple"
+
+    # Start vLLM PodMonitor capture (always)
+    logging.info(f"Starting PodMonitor metrics capture for {vllm_name}")
+    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                    service_name=vllm_name,
+                    namespace=namespace,
+                    is_podmonitor=True,
+                    mute_stdout=True)
+
+    # Start scheduler ServiceMonitor capture (only for non-simple flavors)
+    if not is_simple_flavor:
+        logging.info(f"Starting ServiceMonitor metrics capture for {scheduler_name}")
+        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                        service_name=scheduler_name,
+                        namespace=namespace,
+                        mute_stdout=True)
+    else:
+        logging.info("Skipping scheduler metrics capture for simple flavor")
+
+    logging.info("Metrics capture started successfully")
+
+
+def stop_metrics_capture(flavor):
+    """
+    Stops metrics capture for both ServiceMonitor and PodMonitor if enabled
+    """
+    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
+        return
+
+    logging.info("Stopping metrics capture")
+
+    namespace = config.project.get_config("tests.llmd.namespace")
+    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
+    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
+
+    # Parse flavor to check if it's simple
+    components = parse_flavor_components(flavor)
+    is_simple_flavor = components['base'] == "simple"
+
+    # Stop vLLM PodMonitor capture (always)
+    logging.info(f"Stopping PodMonitor metrics capture for {vllm_name}")
+    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                    service_name=vllm_name,
+                    namespace=namespace,
+                    is_podmonitor=True,
+                    finalize=True,
+                    mute_stdout=True,
+                    artifact_dir_suffix="_finalize",)
+
+    # Stop scheduler ServiceMonitor capture (only for non-simple flavors)
+    if not is_simple_flavor:
+        logging.info(f"Stopping ServiceMonitor metrics capture for {scheduler_name}")
+        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
+                        service_name=scheduler_name,
+                        namespace=namespace,
+                        finalize=True,
+                        mute_stdout=True,
+                        artifact_dir_suffix="_finalize",)
+
+    logging.info("Metrics capture stopped successfully")
 
 
 def cleanup_llm_inference_resources():
@@ -1103,16 +1353,28 @@ def test_llm_inference_simple(endpoint_url, llmisvc_name, namespace, model_name)
         # Convert payload to JSON string for inline use
         payload_json = json.dumps(test_payload)
 
-        # Execute curl inside the pod with inline JSON
-        result = run.run(f"""
-oc rsh -n {namespace} -c main deploy/{deployment_name} \\
-  curl -k -sSf "{endpoint_url}/v1/completions" \\
-  -H "Content-Type: application/json" \\
-  -d '{payload_json}'
-""", capture_stdout=True)
+        remaining_tries = 30
+        DELAY = 10
+        result = None
+
+        while remaining_tries != 0:
+            # Execute curl inside the pod with inline JSON
+            result = run.run(f"""
+              oc rsh -n {namespace} -c main deploy/{deployment_name} \\
+                  curl -k -sSf "{endpoint_url}/v1/completions" \\
+                       -H "Content-Type: application/json" \\
+                       -d '{payload_json}'
+            """, capture_stdout=True, check=False)
+
+            logging.info(f"Request result: {result.returncode}")
+            if result.returncode == 0:
+                break
+            logging.info(f"Waiting {DELAY}s before retrying ...")
+            time.sleep(DELAY)
+            remaining_tries -= 1
 
         if result.returncode != 0:
-            logging.error(f"Request failed: {result.stderr}")
+            logging.error(f"Request failed :/")
             return False
 
         response = json.loads(result.stdout)

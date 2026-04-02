@@ -1,0 +1,24 @@
+# Auto-generated file, do not edit manually ...
+# Toolbox generate command: repo generate_ansible_default_settings
+# Source component: Cluster.capture_servicemonitor_metrics
+
+# Parameters
+# Name of the service to capture ServiceMonitor/PodMonitor metrics for
+# Mandatory value
+cluster_capture_servicemonitor_metrics_service_name:
+
+# Namespace where the service and ServiceMonitor/PodMonitor are located (empty string auto-detects current namespace)
+cluster_capture_servicemonitor_metrics_namespace:
+
+# How often to capture metrics in seconds (default: 15)
+cluster_capture_servicemonitor_metrics_capture_frequency: 60
+
+# Whether to use PodMonitor instead of ServiceMonitor (default: False)
+cluster_capture_servicemonitor_metrics_is_podmonitor: false
+
+# Whether to finalize (capture logs and delete) an existing pod instead of creating new one (default: False)
+cluster_capture_servicemonitor_metrics_finalize: false
+
+# Default Ansible variables
+# Default value for ansible_os_family to ensure role remains standalone
+ansible_os_family: Linux

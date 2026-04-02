@@ -1,3 +1,5 @@
+# https://kserve.github.io/website/docs/model-serving/generative-inference/llmisvc/llmisvc-configuration#prefill-decode-separation-configuration
+
 apiVersion: serving.kserve.io/v1alpha1
 kind: LLMInferenceService
 metadata:
@@ -10,13 +12,14 @@ metadata:
 spec:
   replicas: 1
   model:
-    uri: oci://registry.redhat.io/rhelai1/modelcar-llama-3-1-8b-instruct-fp8-dynamic:1.5
-    name: llama-3-1-8b-instruct-fp8
+    uri: pvc://storage-rwx/gpt-oss-120
+    name: openai/gpt-oss-120b
   router:
     scheduler:
       template:
         containers:
           - name: main
+            image: 'ghcr.io/llm-d/llm-d-inference-scheduler:v0.6.0'
             env:
               - name: TOKENIZER_CACHE_DIR
                 value: /tmp/tokenizer-cache
@@ -44,23 +47,12 @@ spec:
               - '--secure-serving'
               - '--model-server-metrics-scheme'
               - https
+
+              - '--kv-cache-usage-percentage-metric'
+              - vllm:kv_cache_usage_perc
+
               - '--config-text'
-              - |
-                apiVersion: inference.networking.x-k8s.io/v1alpha1
-                kind: EndpointPickerConfig
-                plugins:
-                - type: queue-scorer
-                - type: kv-cache-utilization-scorer
-                - type: prefix-cache-scorer
-                schedulingProfiles:
-                - name: default
-                  plugins:
-                  - pluginRef: queue-scorer
-                    weight: 2
-                  - pluginRef: kv-cache-utilization-scorer
-                    weight: 2
-                  - pluginRef: prefix-cache-scorer
-                    weight: 3
+
             volumeMounts:
               - name: tokenizer-cache
                 mountPath: /tmp/tokenizer-cache
@@ -82,12 +74,64 @@ spec:
         effect: "NoSchedule"
     containers:
       - name: main
+        env:
+        - name: VLLM_ADDITIONAL_ARGS
+          value: |
+                  --block-size 128 --kv-transfer-config '{"kv_connector":"NixlConnector", "kv_role":"kv_both"}'
+
+        - name: VLLM_NIXL_SIDE_CHANNEL_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
         resources:
           limits:
             nvidia.com/gpu: "1"
           requests:
             cpu: '4'
             memory: 8Gi
+            nvidia.com/gpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTPS
+          initialDelaySeconds: 900
+          periodSeconds: 60
+          timeoutSeconds: 60
+          failureThreshold: 1000
+        readinessProbe:
+          failureThreshold: 10000
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTPS
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 30
+ # Prefill workload (separate pool)
+  prefill:
+    replicas: 2
+    template:
+      containers:
+      - name: main
+        env:
+        - name: VLLM_ADDITIONAL_ARGS
+          value: >-
+             --block-size 128
+             --kv-transfer-config '{"kv_connector":"NixlConnector", "kv_role":"kv_both"}'
+        - name: VLLM_NIXL_SIDE_CHANNEL_HOST
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: '4'
+            memory: 64Gi
             nvidia.com/gpu: "1"
         livenessProbe:
           httpGet:

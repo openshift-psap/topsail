@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topsail-metrics-capture-{{ cluster_capture_servicemonitor_metrics_service_name }}
+  namespace: {{ target_namespace }}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: metrics-capture
+    image: registry.access.redhat.com/ubi9/ubi:latest
+    command: ["/bin/bash"]
+    args:
+    - -c
+    - |
+      {% if auth_secret_name -%}
+      echo "Using authorization token from mounted secret: {{ auth_secret_name }}"
+      {% endif %}
+
+      # Function to fetch metrics with proper options
+      fetch_metrics() {
+        local url="$1"
+        local token="$2"
+
+        # Build curl options
+        local curl_opts="-sSf"
+        if [[ "$url" =~ ^https:// ]]; then
+          curl_opts="${curl_opts}k"
+        fi
+
+        # Execute curl with proper auth handling and filter output
+        local curl_cmd="curl $curl_opts"
+        if [ -n "$token" ]; then
+          if $curl_cmd -H "Authorization: Bearer $token" "$url" | grep -v "^# HELP\|^# TYPE\|^go_\|^process_\|^controller_runtime_\|^rest_client_\|^http_request_duration_\|^python_gc_"; then
+            return 0
+          else
+            echo "Failed to fetch metrics from $url"
+            return 1
+          fi
+        else
+          if $curl_cmd "$url" | grep -v "^# HELP\|^# TYPE\|^go_\|^process_\|^controller_runtime_\|^rest_client_\|^http_request_duration_\|^python_gc_"; then
+            return 0
+          else
+            echo "Failed to fetch metrics from $url"
+            return 1
+          fi
+        fi
+      }
+
+      # Get list of URLs to monitor from environment variable
+      echo "Monitoring the following URLs:"
+      echo "$METRICS_URLS"
+      echo ""
+
+      while true; do
+        echo "=== $(date) ==="
+
+        echo "$METRICS_URLS" | while IFS= read -r url; do
+          if [ -n "$url" ] && [ "$url" != " " ]; then
+            echo "Fetching from: $url at $(date +%s)"
+
+            {% if auth_secret_name %}
+            if [ -f /var/run/secrets/auth/token ]; then
+              TOKEN=$(cat /var/run/secrets/auth/token)
+              fetch_metrics "$url" "$TOKEN"
+            else
+              echo "Auth token file not found"
+            fi
+            {% else %}
+            fetch_metrics "$url" ""
+            {% endif %}
+
+            echo "--- End of $url at $(date +%s) ---"
+          fi
+        done
+
+        echo ""
+        sleep {{ capture_frequency }}
+      done
+    env:
+    - name: METRICS_URLS
+      value: |
+{{ metrics_url | indent(8, true) }}
+{% if auth_secret_name %}
+    volumeMounts:
+    - name: auth-token
+      mountPath: /var/run/secrets/auth
+      readOnly: true
+{% endif %}
+{% if auth_secret_name %}
+  volumes:
+  - name: auth-token
+    secret:
+      secretName: {{ auth_secret_name }}
+{% endif %}

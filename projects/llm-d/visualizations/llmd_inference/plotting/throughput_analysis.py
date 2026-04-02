@@ -8,9 +8,9 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 
-def _get_plot_title_with_load_shape(base_title, variables, settings):
+def _get_plot_title_with_context_info(base_title, variables, settings):
     """
-    Helper function to add load_shape info to plot titles if not in variables
+    Helper function to add context info (model, load_shape) to plot titles if not in variables
 
     Args:
         base_title: The base title/subtitle (e.g., "Token Throughput vs Concurrency<br><sub>Higher is better</sub>")
@@ -18,19 +18,34 @@ def _get_plot_title_with_load_shape(base_title, variables, settings):
         settings: Test settings object
 
     Returns:
-        Updated title with load_shape appended if needed
+        Updated title with context info appended if needed
     """
-    if "load_shape" not in variables:
-        load_shape = getattr(settings, 'load_shape', None)
-        if load_shape:
-            # Insert load_shape info before the closing </sub> tag or at the end
-            if "<br><sub>" in base_title and "</sub>" in base_title:
-                # Insert before closing </sub>
-                return base_title.replace("</sub>", f" • Load Shape: {load_shape}</sub>")
-            else:
-                # Append as subtitle
-                return f"{base_title}<br><sub>Load Shape: {load_shape}</sub>"
-    return base_title
+    context_info = []
+
+    # settings to show in the subtitle if not part of the 'variables'
+    SUBTITLE_SETTINGS = "model", "flavor", "load_shape",
+
+    for setting_name  in SUBTITLE_SETTINGS :
+        if setting_name in variables:
+            continue
+
+        setting_value = settings.get(setting_name)
+        if not setting_value:
+            continue
+        context_info.append(f"{setting_name.replace('_', ' ').title()}: {setting_value}")
+
+
+    if not context_info:
+        return base_title
+
+    context_str = " • ".join(context_info)
+    # Insert context info before the closing </sub> tag or at the end
+    if "<br><sub>" in base_title and "</sub>" in base_title:
+        # Insert before closing </sub>
+        return base_title.replace("</sub>", f" • {context_str}</sub>")
+    else:
+        # Append as subtitle
+        return f"{base_title}<br><sub>{context_str}</sub>"
 
 
 def register():
@@ -110,10 +125,10 @@ class GuidellmThroughputScaling():
         df = df.sort_values('Concurrency')
 
         # 2. Generate plotly express plot
-        title = _get_plot_title_with_load_shape(
+        title = _get_plot_title_with_context_info(
             'Request Throughput vs Concurrency by Configuration',
             variables,
-            settings
+            settings,
         )
 
         fig = px.scatter(df,
@@ -222,10 +237,10 @@ class GuidellmLatencyVsThroughput():
         df = df.sort_values('Concurrency')
 
         # 2. Generate plotly express plot
-        title = _get_plot_title_with_load_shape(
+        title = _get_plot_title_with_context_info(
             'Latency vs Throughput Trade-off by Configuration',
             variables,
-            settings
+            settings,
         )
 
         fig = px.scatter(df,
@@ -308,10 +323,10 @@ class GuidellmLatencyOverview():
         df = df.sort_values('Request Latency (ms)')
 
         # 2. Generate plotly express plot
-        title = _get_plot_title_with_load_shape(
+        title = _get_plot_title_with_context_info(
             'Latency Overview by Strategy and Configuration',
             variables,
-            settings
+            settings,
         )
 
         fig = px.bar(df,
@@ -426,7 +441,7 @@ class GuidellmTokensConcurrency():
         df = pd.DataFrame(data)
 
         # Sort by Concurrency for proper plot ordering
-        df = df.sort_values('Concurrency')
+        df = df.sort_values(['Concurrency', "Test Configuration"])
 
         # 2. Generate plotly express plot with consistent color scheme
         # Sort configurations to ensure consistent color assignment
@@ -435,10 +450,10 @@ class GuidellmTokensConcurrency():
         color_map = {config: colors[i] for i, config in enumerate(configurations)}
 
         # Create title with load_shape if missing from variables
-        title = _get_plot_title_with_load_shape(
-            'Token Throughput vs Concurrency by Configuration (P50)<br><sub>Higher is better</sub>',
+        title = _get_plot_title_with_context_info(
+            'Token Throughput vs Concurrency by Configuration<br><sub>Higher is better</sub>',
             variables,
-            settings
+            settings,
         )
 
         fig = px.scatter(df,
@@ -607,10 +622,10 @@ class GuidellmLatencyAnalysisBase():
             ), row=1, col=2)
 
         # Create title with load_shape if missing from variables
-        title = _get_plot_title_with_load_shape(
+        title = _get_plot_title_with_context_info(
             f'{config["description"]} Analysis by Concurrency<br><sub>Lower is better</sub>',
             variables,
-            settings
+            settings,
         )
 
         fig.update_layout(
@@ -770,10 +785,10 @@ class TokenThroughputAnalysis():
         df = df.sort_values('Total Tokens/s', ascending=False)
 
         # 2. Generate plotly express plot
-        title = _get_plot_title_with_load_shape(
+        title = _get_plot_title_with_context_info(
             'Token Throughput by Strategy and Configuration',
             variables,
-            settings
+            settings,
         )
 
         fig = px.bar(df,
@@ -794,10 +809,10 @@ class TokenThroughputAnalysis():
                            var_name='Token Type', value_name='Tokens/s')
 
         # Create title with load_shape if missing from variables
-        breakdown_title = _get_plot_title_with_load_shape(
+        breakdown_title = _get_plot_title_with_context_info(
             'Token Throughput Breakdown by Strategy',
             variables,
-            settings
+            settings,
         )
 
         fig_stacked = px.bar(df_stacked,

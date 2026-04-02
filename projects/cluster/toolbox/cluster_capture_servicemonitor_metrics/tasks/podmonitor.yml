@@ -1,0 +1,75 @@
+---
+# PodMonitor-specific tasks
+
+- name: Capture PodMonitor YAML
+  shell: |
+    oc get podmonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/podmonitor.yaml"
+
+- name: Get PodMonitor status
+  shell: |
+    oc get podmonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/podmonitor.status"
+
+- name: Capture pod targets by PodMonitor selector
+  shell: |
+    oc get pod -l "app.kubernetes.io/component in (llminferenceservice-workload,llminferenceservice-workload-prefill,llminferenceservice-workload-worker,llminferenceservice-workload-leader,llminferenceservice-workload-leader-prefill,llminferenceservice-workload-worker-prefill),app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/target_pods.status"
+
+- name: Capture pod targets by PodMonitor selector YAML
+  shell: |
+    oc get pod -l "app.kubernetes.io/component in (llminferenceservice-workload,llminferenceservice-workload-prefill,llminferenceservice-workload-worker,llminferenceservice-workload-leader,llminferenceservice-workload-leader-prefill,llminferenceservice-workload-worker-prefill),app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/target_pods.yaml"
+
+- name: Get all target pod IPs and names
+  shell: |
+    oc get pod -l "app.kubernetes.io/component in (llminferenceservice-workload,llminferenceservice-workload-prefill,llminferenceservice-workload-worker,llminferenceservice-workload-leader,llminferenceservice-workload-leader-prefill,llminferenceservice-workload-worker-prefill),app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} --no-headers -o custom-columns=":metadata.name,:status.podIP"
+  register: target_pods_info
+
+- name: Extract scheme from PodMonitor
+  shell: |
+    oc get podmonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -o jsonpath='{.spec.podMetricsEndpoints[0].scheme}' 2>/dev/null || echo "http"
+  register: metrics_scheme
+
+- name: Extract target port from PodMonitor
+  shell: |
+    oc get podmonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -o jsonpath='{.spec.podMetricsEndpoints[0].targetPort}' 2>/dev/null || echo "9090"
+  register: metrics_port
+
+- name: Build metrics URLs for all matching pods
+  shell: |
+    set -o pipefail;
+
+    SCHEME="{{ metrics_scheme.stdout | trim | default('http') }}"
+    PORT="{{ metrics_port.stdout | trim | default('9090') }}"
+
+    # Count total pods and initialize files
+    TOTAL_PODS=$(echo "{{ target_pods_info.stdout }}" | wc -l)
+
+    # Initialize files
+    echo "" > "{{ artifact_extra_logs_dir }}/artifacts/metrics_url.txt"
+    echo "PodMonitor target pods (found: $TOTAL_PODS):" > "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Scheme: $SCHEME" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Port: $PORT" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+
+    # Build URL list for each pod
+    while IFS= read -r line; do
+      if [ -n "$line" ]; then
+        POD_NAME=$(echo "$line" | awk '{print $1}')
+        POD_IP=$(echo "$line" | awk '{print $2}')
+        if [ -n "$POD_IP" ] && [ "$POD_IP" != "<none>" ]; then
+          URL="$SCHEME://$POD_IP:$PORT/metrics"
+          echo "$URL" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_url.txt"
+          echo "Pod: $POD_NAME ($POD_IP) -> $URL" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+        else
+          echo "Pod: $POD_NAME (no IP available)" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+        fi
+      fi
+    done <<< "{{ target_pods_info.stdout }}"
+
+    # Count valid URLs and add summary
+    VALID_URLS=$(grep -c "^http" "{{ artifact_extra_logs_dir }}/artifacts/metrics_url.txt" || echo "0")
+    echo "" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Total metrics URLs: $VALID_URLS" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+
+- name: Extract authorization secret name from PodMonitor
+  shell: |
+    oc get podmonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -o jsonpath='{.spec.podMetricsEndpoints[0].authorization.credentials.name}' 2>/dev/null || echo ""
+  register: auth_secret_name

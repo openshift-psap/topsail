@@ -31,6 +31,8 @@ IMPORTANT_FILES = [
     # to support multiple benchmark directories (multi-rate scenarios)
     f"{artifact_dirnames.PROMETHEUS_DUMP_DIR}/prometheus.t*",
     f"{artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR}/prometheus.t*",
+    f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/results/benchmarks.json",
+    f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/guidellm_benchmark_job.logs",
 ]
 
 
@@ -72,6 +74,7 @@ def parse_once(results, dirname):
                 results.guidellm_benchmarks.extend(benchmarks)
                 logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from JSON: {json_file_path}")
             elif log_file_path.exists():
+                raise RuntimeException("Don't want to use log-file parsing (hardcoded)")
                 benchmarks = parse_guidellm_benchmark_log(dirname, log_file_path.relative_to(dirname))
                 results.guidellm_benchmarks.extend(benchmarks)
                 logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from log: {log_file_path}")

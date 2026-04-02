@@ -1,0 +1,76 @@
+---
+# ServiceMonitor-specific tasks
+
+- name: Capture ServiceMonitor YAML
+  shell: |
+    oc get servicemonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/servicemonitor.yaml"
+
+- name: Get ServiceMonitor status
+  shell: |
+    oc get servicemonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/servicemonitor.status"
+
+- name: Capture service target by ServiceMonitor selector
+  shell: |
+    oc get service -l "app.kubernetes.io/component=llminferenceservice-router-scheduler,app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} > "{{ artifact_extra_logs_dir }}/artifacts/target_service.status"
+
+- name: Capture service target by ServiceMonitor selector YAML
+  shell: |
+    oc get service -l "app.kubernetes.io/component=llminferenceservice-router-scheduler,app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/target_service.yaml"
+
+- name: Get target service name
+  shell: |
+    set -o pipefail;
+    oc get service -l "app.kubernetes.io/component=llminferenceservice-router-scheduler,app.kubernetes.io/part-of=llminferenceservice" -n {{ target_namespace }} --no-headers -o custom-columns=":metadata.name" | head -1
+  register: target_service_name
+
+- name: Extract port name from ServiceMonitor
+  shell: |
+    oc get servicemonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -o jsonpath='{.spec.endpoints[0].port}' 2>/dev/null || echo "metrics"
+  register: metrics_port_name
+
+- name: Get port number from Service by name
+  shell: |
+    SERVICE_NAME='{{ target_service_name.stdout | trim }}'
+    PORT_NAME='{{ metrics_port_name.stdout | trim | default("metrics") }}'
+    oc get service "$SERVICE_NAME" -n {{ target_namespace }} -o jsonpath="{.spec.ports[?(@.name=='$PORT_NAME')].port}" 2>/dev/null || echo ""
+  register: named_port_result
+
+- name: Get first port as fallback
+  shell: |
+    SERVICE_NAME='{{ target_service_name.stdout | trim }}'
+    oc get service "$SERVICE_NAME" -n {{ target_namespace }} -o jsonpath='{.spec.ports[0].port}' 2>/dev/null || echo "9090"
+  register: first_port_result
+  when: named_port_result.stdout == ""
+
+- name: Set final port number
+  set_fact:
+    final_port: "{{ named_port_result.stdout if named_port_result.stdout != '' else first_port_result.stdout | default('9090') }}"
+
+- name: Determine scheme from port
+  set_fact:
+    final_scheme: >-
+      {{
+        'https' if (
+          final_port in ['443', '8443', '6443'] or
+          (metrics_port_name.stdout | trim | default('metrics')) is match('.*(https|secure|tls).*')
+        ) else 'http'
+      }}
+
+- name: Build metrics URL for ServiceMonitor
+  shell: |
+    SERVICE_NAME='{{ target_service_name.stdout | trim }}'
+    PORT_NAME='{{ metrics_port_name.stdout | trim | default("metrics") }}'
+    PORT_NUMBER='{{ final_port }}'
+    SCHEME='{{ final_scheme }}'
+
+    echo "$SCHEME://$SERVICE_NAME.{{ target_namespace }}.svc:$PORT_NUMBER/metrics" > "{{ artifact_extra_logs_dir }}/artifacts/metrics_url.txt"
+    echo "Service: $SERVICE_NAME" > "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Port name: $PORT_NAME" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Port number: $PORT_NUMBER" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "Scheme: $SCHEME" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+    echo "URL: $SCHEME://$SERVICE_NAME.{{ target_namespace }}.svc:$PORT_NUMBER/metrics" >> "{{ artifact_extra_logs_dir }}/artifacts/metrics_info.txt"
+
+- name: Extract authorization secret name from ServiceMonitor
+  shell: |
+    oc get servicemonitor {{ cluster_capture_servicemonitor_metrics_service_name }} -n {{ target_namespace }} -o jsonpath='{.spec.endpoints[0].authorization.credentials.name}' 2>/dev/null || echo ""
+  register: auth_secret_name_cmd
