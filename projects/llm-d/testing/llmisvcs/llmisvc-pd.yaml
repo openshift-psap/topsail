@@ -84,12 +84,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: DP_SIZE
-          value: "1"
-        - name: TP_SIZE
-          value: "1"
-        - name: DP_SIZE_LOCAL
-          value: "1"
         resources:
           limits:
             nvidia.com/gpu: "1"
@@ -132,12 +126,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        - name: DP_SIZE
-          value: "1"
-        - name: TP_SIZE
-          value: "1"
-        - name: DP_SIZE_LOCAL
-          value: "1"
         resources:
           limits:
             nvidia.com/gpu: "1"

@@ -258,36 +258,47 @@ def parse_flavor_components(flavor):
     Examples:
     - 'intelligentrouting-tp2-x2' -> {'base': 'intelligentrouting', 'tp_size': 2, 'replicas': 2}
     - 'simple' -> {'base': 'simple', 'tp_size': None, 'replicas': None}
-    - 'intelligentrouting-x2' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': 2}
-    - 'intelligentrouting' -> {'base': 'intelligentrouting', 'tp_size': None, 'replicas': None}
+    - 'pd-x2-tp4-ptp1-px4' -> {'base': 'pd', 'tp_size': 4, 'replicas': 2, 'prefill_tp_size': 1, 'prefill_replicas': 4}
+    - 'pd-x2-dtp4-ptp1-px4' -> {'base': 'pd', 'tp_size': 4, 'replicas': 2, 'prefill_tp_size': 1, 'prefill_replicas': 4}
 
     Args:
         flavor: The flavor string to parse
 
     Returns:
-        dict: {'base': str, 'tp_size': int|None, 'replicas': int|None}
+        dict: {'base': str, 'tp_size': int|None, 'replicas': int|None, 'prefill_tp_size': int|None, 'prefill_replicas': int|None}
     """
     parts = flavor.split('-')
     components = {
         'base': parts[0],
         'tp_size': None,
-        'replicas': None
+        'replicas': None,
+        'prefill_tp_size': None,
+        'prefill_replicas': None
+    }
+    # Mapping of prefixes to field names and descriptions (order matters - longer prefixes first)
+    prefix_map = {
+        'ptp': ('prefill_tp_size',  'prefill TP',      'ptp<number> (e.g., ptp1, ptp2)'),
+        'px':  ('prefill_replicas', 'prefill replica', 'px<number> (e.g., px2, px4)'),
+        'dtp': ('tp_size',          'decode TP',       'dtp<number> (e.g., dtp2, dtp8)'),
+        'tp':  ('tp_size',          'TP',              'tp<number> (e.g., tp2, tp8)'),
+        'x':   ('replicas',         'replica',         'x<number> (e.g., x2, x4)'),
     }
 
     # Parse remaining parts
     for part in parts[1:]:
-        if part.startswith('tp') and len(part) > 2:
+        matched = False
+        for prefix, (field, desc, format_example) in prefix_map.items():
+            if not part.startswith(prefix):
+                continue
             try:
-                components['tp_size'] = int(part[2:])
+                components[field] = int(part[len(prefix):])
+                matched = True
+                break
             except ValueError:
-                raise ValueError(f"Invalid TP specification: {part}. Expected format: tp<number> (e.g., tp2, tp8)")
-        elif part.startswith('x') and len(part) > 1:
-            try:
-                components['replicas'] = int(part[1:])
-            except ValueError:
-                raise ValueError(f"Invalid replica specification: {part}. Expected format: x<number> (e.g., x2, x4)")
-        else:
-            raise ValueError(f"Unknown flavor component: {part}. Expected format: <base>-[tp<number>]-[x<number>] (e.g., simple-tp8-x2)")
+                raise ValueError(f"Invalid {desc} specification: {part}. Expected format: {format_example}")
+
+        if not matched:
+            raise ValueError(f"Unknown flavor component: {part}. Expected format: <base>-[tp<number>|dtp<number>]-[x<number>]-[ptp<number>]-[px<number>]")
 
     logging.info(f"Parsed flavor '{flavor}' -> {components}")
     return components
@@ -308,6 +319,8 @@ def apply_flavor_modifications(isvc_data, flavor):
     base_flavor = components['base']
     tp_size = components['tp_size']
     replicas = components['replicas']
+    prefill_tp_size = components['prefill_tp_size']
+    prefill_replicas = components['prefill_replicas']
 
     if base_flavor in ["pd"]:
         if "prefill" not in isvc_data['spec']:
@@ -351,6 +364,17 @@ def apply_flavor_modifications(isvc_data, flavor):
     # Apply tensor parallelism from flavor
     if tp_size is not None:
         apply_flavor_tensor_parallelism(isvc_data, tp_size)
+
+    # Apply prefill-specific configurations for P/D deployments
+    if base_flavor == "pd":
+        if prefill_replicas is not None:
+            # Multiply prefill replicas by main replicas
+            final_prefill_replicas = prefill_replicas * (replicas if replicas is not None else 1)
+            isvc_data['spec']['prefill']['replicas'] = final_prefill_replicas
+            logging.info(f"Setting spec.prefill.replicas = {final_prefill_replicas} (p.x{prefill_replicas} * x{replicas if replicas is not None else 1})")
+
+        if prefill_tp_size is not None:
+            apply_prefill_tensor_parallelism(isvc_data, prefill_tp_size)
 
 
 def apply_flavor_tensor_parallelism(isvc_data, tp_size):
@@ -417,6 +441,25 @@ def apply_flavor_tensor_parallelism(isvc_data, tp_size):
     apply_gpu_resources(main_container, tp_size)
 
     logging.info(f"Applied flavor TP: {tp_arg}, GPU resources: {tp_size}")
+
+
+def apply_prefill_tensor_parallelism(isvc_data, tp_size):
+    """
+    Apply tensor parallelism configuration to the prefill container
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        tp_size: Tensor parallel size for prefill
+    """
+    logging.info(f"Applying prefill tensor parallelism: TP={tp_size}")
+
+    # Find the main container in prefill
+    main_container = isvc_data['spec']['prefill']['template']['containers'][0]
+
+    # Set GPU resources to match tensor parallel size
+    apply_gpu_resources(main_container, tp_size)
+
+    logging.info(f"Applied prefill GPU resources: {tp_size}")
 
 
 def apply_kueue_configuration(isvc_data):
@@ -675,12 +718,18 @@ def apply_image_pull_secrets_configuration(isvc_data):
     logging.info(f"Applying image pull secrets: {image_pull_secrets}")
 
     # Apply to main template
-    isvc_data['spec']['template']['spec']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+    isvc_data['spec']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
     logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in main template")
+
+    # Apply to router scheduler template if this is a LLM-D deployment
+    if 'router' in isvc_data['spec'] and 'scheduler' in isvc_data['spec']['router']:
+        isvc_data['spec']['router']['scheduler']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+        logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in router.scheduler template")
+
 
     # Apply to prefill template if this is a P/D deployment
     if 'prefill' in isvc_data['spec']:
-        isvc_data['spec']['prefill']['template']['spec']['imagePullSecrets'] = [{'name': image_pull_secrets}]
+        isvc_data['spec']['prefill']['template']['imagePullSecrets'] = [{'name': image_pull_secrets}]
         logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in prefill template")
 
 
