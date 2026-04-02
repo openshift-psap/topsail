@@ -50,7 +50,7 @@ remote_host:
   docker:
     # To use Docker, you need to have Docker Desktop installed and running.
     # User must be logged in system to use Docker Desktop.
-    enabled: true
+    enabled: false
     docker_bin: docker
   # Empty environment values are ignored.
   env:
@@ -236,7 +236,31 @@ artifact_add_benchmark:
   supported_container_engines:
     - podman
 
-# Synthetic Benchmarks
+machine_first_start_benchmark:
+  runs: 10
+  machine_benchmark: true
+  supported_container_engines:
+    - podman
+  machine:
+    provider: "applehv"  # e.g. libkrun, applehv, wsl, hyperv. Empty = use system default.
+    cpus: 4
+    memory: 4096  # in MB
+    rootful: false
+
+machine_start_benchmark:
+  runs: 10
+  machine_benchmark: true
+  supported_container_engines:
+    - podman
+  machine:
+    provider: "applehv"  # e.g. libkrun, applehv, wsl, hyperv. Empty = use system default.
+    cpus: 4
+    memory: 4096  # in MB
+    rootful: false
+
+# Synthetic Benchmarks (sysbench, iperf)
+#
+# Most of the benchmarks don't measure multi-core CPU performance
 sysbench_cpu_benchmark:
   runs: 1
 
@@ -264,29 +288,34 @@ iperf_host_to_container_benchmark:
 test:
   platform: *all_platforms
   platforms_to_skip:
+   - docker
   benchmark:
-    - run_container_benchmark
-    - exec_container_benchmark
-    - image_build_large_build_context_benchmark
+    # - run_container_benchmark
+    # - exec_container_benchmark
+    # - image_build_large_build_context_benchmark
     # - artifact_add_benchmark
-    - sysbench_cpu_benchmark
-    - sysbench_memory_read_benchmark
-    - sysbench_memory_write_benchmark
-    - sysbench_fileio_container_benchmark
-    - sysbench_fileio_mount_benchmark
-    - iperf_net_bridge_benchmark
-    - iperf_net_host_benchmark
-    - iperf_host_to_container_benchmark
-    - commit_container_benchmark
-    - create_container_benchmark
-    - list_images_benchmark
-    - pull_image_benchmark
-    - remove_image_benchmark
-    - remove_container_benchmark
-    - start_container_benchmark
-    - load_image_benchmark
-    - save_image_benchmark
-    - parallel_remove_image_benchmark
+    # - sysbench_cpu_benchmark
+    # - sysbench_memory_read_benchmark
+    # - sysbench_memory_write_benchmark
+    # - sysbench_fileio_container_benchmark
+    # - sysbench_fileio_mount_benchmark
+    # - iperf_net_bridge_benchmark
+    # - iperf_net_host_benchmark
+    # - iperf_host_to_container_benchmark
+    # - commit_container_benchmark
+    # - create_container_benchmark
+    # - list_images_benchmark
+    # - pull_image_benchmark
+    # - remove_image_benchmark
+    # - remove_container_benchmark
+    # - start_container_benchmark
+    # - load_image_benchmark
+    # - save_image_benchmark
+    # - parallel_remove_image_benchmark
+    # Machine benchmarks:
+    - machine_first_start_benchmark
+    - machine_start_benchmark
+
   podman:
     machine_provider:
      - libkrun
@@ -303,8 +332,42 @@ test:
     runtime: # Linux only
      - crun
      - runc
+    # Machine configuration for regular benchmarks (prepare.podman.machine.configuration).
+    # Varying these changes the podman machine that runs the actual benchmark containers.
+    # Independent from benchmark_machine which controls the machine benchmarks machine.
+    machine_config:
+      cpus:
+        - 2
+        - 6
+        - 8
+      memory:
+        - 2048
+        - 4096
+        - 8192
+      rootful:
+        - false
+        - true
   capture_metrics:
     enabled: true
+
+  # Machine configuration for machine benchmarks
+  benchmark_machine:
+    provider:
+     - libkrun
+     - applehv
+     - wsl
+     - hyperv
+    cpus:
+      - 2
+      - 6
+      - 8
+    memory:
+      - 2048
+      - 4096
+      - 8192
+    rootful:
+      - false
+      - true
 
   matbenchmarking:
     enabled: true
@@ -313,8 +376,17 @@ test:
      - test.platform
     # - test.podman.repo_version
     # - test.podman.rootful
-     - test.podman.machine_provider
+    # - test.podman.machine_provider
     # - test.podman.runtime
+    # --- podman machine config (for regular benchmarks) ---
+    # - test.podman.machine_config.cpus
+    # - test.podman.machine_config.memory
+    # - test.podman.machine_config.rootful
+    # --- machine benchmarks: machine config (independent from above) ---
+     - test.benchmark_machine.provider
+     - test.benchmark_machine.cpus
+     - test.benchmark_machine.memory
+    # - test.benchmark_machine.rootful
     map_iterable_test_fields:
       test.platform: test.platform
       test.podman.repo_version: prepare.podman.repo.version
@@ -323,6 +395,24 @@ test:
         - prepare.podman.linux.rootful
       test.podman.runtime: prepare.podman.linux.runtime
       test.podman.machine_provider: prepare.podman.machine.env.CONTAINERS_MACHINE_PROVIDER
+      # podman machine configuration for regular benchmarks
+      test.podman.machine_config.cpus: prepare.podman.machine.configuration.cpus
+      test.podman.machine_config.memory: prepare.podman.machine.configuration.memory
+      test.podman.machine_config.rootful: prepare.podman.machine.configuration.rootful
+      # machine benchmarks: machine configuration (separate from above)
+      # Both machine_first_start_benchmark and machine_start_benchmark use the same hardware config
+      test.benchmark_machine.provider:
+        - machine_first_start_benchmark.machine.provider
+        - machine_start_benchmark.machine.provider
+      test.benchmark_machine.cpus:
+        - machine_first_start_benchmark.machine.cpus
+        - machine_start_benchmark.machine.cpus
+      test.benchmark_machine.memory:
+        - machine_first_start_benchmark.machine.memory
+        - machine_start_benchmark.machine.memory
+      test.benchmark_machine.rootful:
+        - machine_first_start_benchmark.machine.rootful
+        - machine_start_benchmark.machine.rootful
 
 matbench:
   enabled: true
