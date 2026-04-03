@@ -87,7 +87,9 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: "1"
+            rdma/ib: "1"
           requests:
+            rdma/ib: "1"
             cpu: '4'
             memory: 8Gi
             nvidia.com/gpu: "1"
@@ -130,7 +132,9 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: "1"
+            rdma/ib: "1"
           requests:
+            rdma/ib: "1"
             cpu: '4'
             memory: 64Gi
             nvidia.com/gpu: "1"
