@@ -27,7 +27,7 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.inference_service.epp: epp-pd
+    tests.llmd.inference_service.epp: epp-pd.v0.4
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
     tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
 

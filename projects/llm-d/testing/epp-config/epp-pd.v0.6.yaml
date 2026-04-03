@@ -1,4 +1,3 @@
-# ALWAYS DO PD IN THIS EXAMPLE (THRESHOLD 0)
 apiVersion: inference.networking.x-k8s.io/v1alpha1
 kind: EndpointPickerConfig
 featureGates:
@@ -37,4 +36,3 @@ schedulingProfiles:
     weight: 2
   - pluginRef: queue-scorer
     weight: 1
-# All profiles using max score picker by default
