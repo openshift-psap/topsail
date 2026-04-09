@@ -932,7 +932,8 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
-    apply_epp_configuration(isvc_data)
+    if not flavor.startswith("simple"):
+        apply_epp_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
