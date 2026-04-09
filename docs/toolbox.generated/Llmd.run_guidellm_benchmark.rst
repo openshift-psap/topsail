@@ -46,7 +46,7 @@ Parameters
 
 * Version tag for the benchmark image
 
-* default value: ``pr-590``
+* default value: ``v0.6.0``
 
 
 ``timeout``  
