@@ -48,6 +48,13 @@ class GuidellmBenchmark(matbench_models.ExclusiveModel):
     input_tokens_per_second: float
     output_tokens_per_second: float
 
+    # Output token percentiles
+    output_tokens_per_second_p10: float = 0.0
+    output_tokens_per_second_p25: float = 0.0
+    output_tokens_per_second_p50: float = 0.0
+    output_tokens_per_second_p75: float = 0.0
+    output_tokens_per_second_p90: float = 0.0
+
 LTS_SCHEMA_VERSION = "1.0"
 
 class Metadata(matbench_models.Metadata):

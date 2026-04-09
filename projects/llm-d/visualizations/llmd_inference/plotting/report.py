@@ -175,6 +175,7 @@ class GuidellmResultsTable():
 
         # Create token throughput table
         header.append(html.H3("🔤 Token Throughput Analysis"))
+        header.append(html.H3("🔤 Token Throughput Analysis"))
 
         token_headers = [
             "Configuration", "Strategy", "Total Tokens/s", "Input Tokens/s", "Output Tokens/s",
@@ -333,6 +334,7 @@ class GuidellmPerformanceAnalysisReport():
         header.append(html.H3("🚀 Token Throughput vs Concurrency"))
         header.append(html.P("Analysis of how token generation throughput scales with concurrency levels"))
         header += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
+        header += report.Plot_and_Text("Token Throughput Percentiles Analysis", args)
 
         # TTFT Analysis Section
         header.append(html.H3("⚡ Time to First Token (TTFT) Analysis"))
