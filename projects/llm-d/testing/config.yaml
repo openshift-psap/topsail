@@ -317,7 +317,7 @@ tests:
 
         image:
           name: ghcr.io/vllm-project/guidellm
-          version: pr-590
+          version: v0.6.0
 
         rate: 1 # might be iterated, don't pass it in the args
 
