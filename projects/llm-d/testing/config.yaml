@@ -19,6 +19,7 @@ ci_presets:
     tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
 
   psap_h200:
+    extends: [llama-70b]
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -29,7 +30,7 @@ ci_presets:
   llmisvc_pd:
     tests.llmd.inference_service.epp: epp-pd.v0.4
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
-    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
+    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
@@ -78,6 +79,9 @@ ci_presets:
       vllm-cuda-rhel9: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:094db84a1da5e8a575d0c9eade114fa30f4a2061064a338e3e032f3578f8082a
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
+
+  base_line-flavor:
+    tests.llmd.flavors: [intelligentrouting-tp2-x4]
 
   multi-flavor:
     tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
