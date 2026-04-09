@@ -28,8 +28,6 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.inference_service.epp: epp-pd.v0.4
-    tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
     tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
 
   pvc_rwx:
@@ -231,6 +229,23 @@ prepare:
   cleanup:
     skip: false
 
+deployment_profiles:
+  __default__:
+    tests.llmd.inference_service.epp: epp-approximate-prefix-cache
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  simple:
+    tests.llmd.inference_service.epp: null
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  intelligentrouting:
+    tests.llmd.inference_service.epp: epp-approximate-prefix-cache
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  pd:
+    tests.llmd.inference_service.epp: epp-pd.v0.4
+    tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
+
 models:
   facebook-opt-125m:
     name: facebook/opt-125m
@@ -274,10 +289,10 @@ tests:
     inference_service:
       skip_deployment: false
       name: llm-d
-      yaml_file: llmisvc-simple.yaml
+      yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
 
-      epp: epp-approximate-prefix-cache
+      epp: null # defined in the deployment_profile
 
       do_simple_test: true
       gateway:

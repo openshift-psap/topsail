@@ -616,9 +616,14 @@ def preload_llm_model_image():
 
     try:
         all_images = {}
+
         # Get the model image URI from the YAML file
         llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        if not llmisvc_file:
+            return
+
         yaml_file = TESTING_THIS_DIR / "llmisvcs" / llmisvc_file
+
         namespace = config.project.get_config("tests.llmd.namespace")
 
         # Extract the model URI using yq
