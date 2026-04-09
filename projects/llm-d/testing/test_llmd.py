@@ -53,6 +53,8 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             model_ref = config.project.get_config("tests.llmd.inference_service.model")
 
             # Deploy LLM inference service
+            apply_llmisvc_deployment_profile(flavor)
+
             _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
             # Start metrics capture after deployment
@@ -249,6 +251,40 @@ def generate_visualization(test_artifact_dir, test_failed):
             logging.info(f"Test failed. See '{env.ARTIFACT_DIR}' for more details. {exc}")
 
     return exc
+
+
+def apply_llmisvc_deployment_profile(flavor):
+    """
+    Apply deployment profile configuration based on flavor
+
+    Always applies __default__ profile first, then applies the base_flavor profile
+
+    Args:
+        flavor: The flavor string to extract base flavor from
+    """
+    logging.info(f"Applying deployment profile for flavor: {flavor}")
+
+    # Parse flavor to get the base flavor
+    components = parse_flavor_components(flavor)
+    base_flavor = components['base']
+
+    # Get deployment profiles from config
+    deployment_profiles = config.project.get_config("deployment_profiles")
+
+    # Always apply __default__ profile first
+    logging.info("Applying __default__ deployment profile")
+    for config_key, config_value in deployment_profiles["__default__"].items():
+        logging.info(f"Setting {config_key} = {config_value}")
+        config.project.set_config(config_key, config_value)
+
+    if base_flavor == "__default__":
+        return
+
+    # Apply base flavor profile
+    logging.info(f"Applying {base_flavor} deployment profile")
+    for config_key, config_value in deployment_profiles[base_flavor].items():
+        logging.info(f"Setting {config_key} = {config_value}")
+        config.project.set_config(config_key, config_value)
 
 
 def parse_flavor_components(flavor):
