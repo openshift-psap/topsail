@@ -231,7 +231,7 @@ prepare:
 
 deployment_profiles:
   __default__:
-    tests.llmd.inference_service.epp: epp-approximate-prefix-cache
+    tests.llmd.inference_service.epp: epp-default-rhoai-3.4-ea.1
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   simple:
@@ -239,11 +239,11 @@ deployment_profiles:
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   intelligentrouting:
-    tests.llmd.inference_service.epp: epp-approximate-prefix-cache
+    # tests.llmd.inference_service.epp: epp-approximate-prefix-cache
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   pd:
-    tests.llmd.inference_service.epp: epp-pd.v0.4
+    # tests.llmd.inference_service.epp: epp-pd.v0.4
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
 
 models:
