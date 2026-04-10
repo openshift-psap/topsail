@@ -243,7 +243,7 @@ deployment_profiles:
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   pd:
-    # tests.llmd.inference_service.epp: epp-pd.v0.4
+    tests.llmd.inference_service.epp: epp-pd.v0.6
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
 
 models:
