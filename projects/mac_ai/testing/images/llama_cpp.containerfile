@@ -10,8 +10,8 @@ RUN  \
     dnf update -y && \
     dnf install -y --quiet python3-dnf-plugin-versionlock && \
     dnf copr enable -y slp/mesa-libkrun-vulkan && \
-    dnf install -y --quiet mesa-vulkan-drivers-${MESA_VERSION} && \
-    dnf versionlock add mesa-vulkan-drivers-${MESA_VERSION} && \
+    dnf install -y --quiet mesa-vulkan-drivers && \
+    dnf versionlock add mesa-vulkan-drivers && \
     dnf install -y --quiet vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
     dnf install -y --quiet glslc;
