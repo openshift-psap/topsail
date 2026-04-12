@@ -82,7 +82,7 @@ ci_presets:
     tests.llmd.flavors: [intelligentrouting-tp2-x4]
 
   multi-flavor:
-    tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
+    tests.llmd.flavors: [simple, simple-tp2-x4, intelligentrouting-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
@@ -92,7 +92,7 @@ ci_presets:
 
   guidellm_multiturn_eval:
     tests.llmd.benchmarks.guidellm.load_shape_name: Multiturn
-    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
+    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supported by guidellm-multiturn
     tests.llmd.benchmarks.guidellm.args.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
     tests.llmd.benchmarks.guidellm.args.max_requests: "{10*rate}"
 
@@ -105,8 +105,6 @@ ci_presets:
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
     tests.llmd.benchmarks.guidellm.args.request_type: text_completions
-    tests.llmd.benchmarks.guidellm.image.name: ghcr.io/albertoperdomo2/guidellm
-    tests.llmd.benchmarks.guidellm.image.version: nightly
 
   llama-70b:
     tests.llmd.inference_service.model: llama3-3-70b
