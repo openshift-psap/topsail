@@ -564,8 +564,8 @@ def download_single_model(model_key):
         downloader_image = config.project.get_config("prepare.model_downloader.image")
 
         # Check if model already exists in PVC
-        check_result = run.run(f'oc get pvc -l {model_key}=yes -oname',
-                              capture_stdout=True, check=False)
+        check_result = run.run(f'oc get pvc -l {model_key}=yes -oname -n {namespace}',
+                               capture_stdout=True, check=False)
 
         expected_pvc = f"persistentvolumeclaim/{pvc_name}"
         if check_result.returncode == 0 and expected_pvc in check_result.stdout:
@@ -616,9 +616,14 @@ def preload_llm_model_image():
 
     try:
         all_images = {}
+
         # Get the model image URI from the YAML file
         llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+        if not llmisvc_file:
+            return
+
         yaml_file = TESTING_THIS_DIR / "llmisvcs" / llmisvc_file
+
         namespace = config.project.get_config("tests.llmd.namespace")
 
         # Extract the model URI using yq

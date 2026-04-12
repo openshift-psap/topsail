@@ -328,12 +328,21 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                 metrics = benchmark_data.get('metrics', {})
 
                 # Helper function to safely extract metric values
-                def get_metric_value(metric_name, stat_type='median', default=0.0):
+                def get_metric_value(metric_name, stat_type='median', default=0.0, fail_if_missing=False):
                     metric_data = metrics.get(metric_name, {}).get('successful', {})
-                    if stat_type in ['p95', 'p50']:
-                        return float(metric_data.get('percentiles', {}).get(stat_type, default))
+                    if stat_type in ['p95', 'p90', 'p75', 'p50', 'p25', 'p10']:
+                        percentiles = metric_data.get('percentiles', {})
+                        if stat_type not in percentiles:
+                            if fail_if_missing:
+                                raise KeyError(f"Percentile {stat_type} not found in {metric_name} percentiles: {list(percentiles.keys())}")
+                            return default
+                        return float(percentiles[stat_type])
                     else:
-                        return float(metric_data.get(stat_type, default))
+                        if stat_type not in metric_data:
+                            if fail_if_missing:
+                                raise KeyError(f"Stat type {stat_type} not found in {metric_name} successful data: {list(metric_data.keys())}")
+                            return default
+                        return float(metric_data[stat_type])
 
                 # Extract latency metrics (convert ms to seconds for consistency)
                 request_latency_median = get_metric_value('request_latency', 'median') / 1000.0
@@ -350,6 +359,13 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                 input_tokens_per_second = get_metric_value('input_tokens_per_second', 'mean')
                 output_tokens_per_second = get_metric_value('output_tokens_per_second', 'mean')
                 total_tokens_per_second = input_tokens_per_second + output_tokens_per_second
+
+                # Extract output token percentiles (will fail if not available)
+                output_tokens_per_second_p10 = get_metric_value('output_tokens_per_second', 'p10', fail_if_missing=True)
+                output_tokens_per_second_p25 = get_metric_value('output_tokens_per_second', 'p25', fail_if_missing=True)
+                output_tokens_per_second_p50 = get_metric_value('output_tokens_per_second', 'p50', fail_if_missing=True)
+                output_tokens_per_second_p75 = get_metric_value('output_tokens_per_second', 'p75', fail_if_missing=True)
+                output_tokens_per_second_p90 = get_metric_value('output_tokens_per_second', 'p90', fail_if_missing=True)
 
                 # Calculate requests completed and tokens per request
                 completed_requests = int(request_rate * duration) if request_rate > 0 else 0
@@ -389,6 +405,13 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                     tokens_per_second=total_tokens_per_second,
                     input_tokens_per_second=input_tokens_per_second,
                     output_tokens_per_second=output_tokens_per_second,
+
+                    # Output token percentiles
+                    output_tokens_per_second_p10=output_tokens_per_second_p10,
+                    output_tokens_per_second_p25=output_tokens_per_second_p25,
+                    output_tokens_per_second_p50=output_tokens_per_second_p50,
+                    output_tokens_per_second_p75=output_tokens_per_second_p75,
+                    output_tokens_per_second_p90=output_tokens_per_second_p90,
                 )
 
                 benchmarks.append(benchmark)

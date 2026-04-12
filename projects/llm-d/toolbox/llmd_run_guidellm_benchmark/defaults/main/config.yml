@@ -17,7 +17,7 @@ llmd_run_guidellm_benchmark_namespace:
 llmd_run_guidellm_benchmark_image: ghcr.io/vllm-project/guidellm
 
 # Version tag for the benchmark image
-llmd_run_guidellm_benchmark_version: pr-590
+llmd_run_guidellm_benchmark_version: v0.6.0
 
 # Timeout in seconds to wait for job completion
 llmd_run_guidellm_benchmark_timeout: 900

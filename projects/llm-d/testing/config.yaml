@@ -19,6 +19,7 @@ ci_presets:
     tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
 
   psap_h200:
+    extends: [llama-70b]
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: true
@@ -27,9 +28,7 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.inference_service.epp: epp-pd
-    tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
-    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
+    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
@@ -79,8 +78,11 @@ ci_presets:
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
+  base_line-flavor:
+    tests.llmd.flavors: [intelligentrouting-tp2-x4]
+
   multi-flavor:
-    tests.llmd.flavors: [simple-tp4, simple-tp2-x4, intelligentrouting-tp2-x4]
+    tests.llmd.flavors: [simple, simple-tp2-x4, intelligentrouting-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
@@ -90,7 +92,7 @@ ci_presets:
 
   guidellm_multiturn_eval:
     tests.llmd.benchmarks.guidellm.load_shape_name: Multiturn
-    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supporte by guidellm-multiturn
+    tests.llmd.benchmarks.guidellm.rate: [32, 64, 128, 256, 512] # keep as a list, multi-rate not supported by guidellm-multiturn
     tests.llmd.benchmarks.guidellm.args.data: "prompt_tokens=128,output_tokens=128,turns=5,prefix_tokens=10000,prefix_count={2*rate}"
     tests.llmd.benchmarks.guidellm.args.max_requests: "{10*rate}"
 
@@ -103,8 +105,6 @@ ci_presets:
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
     tests.llmd.benchmarks.guidellm.args.request_type: text_completions
-    tests.llmd.benchmarks.guidellm.image.name: ghcr.io/albertoperdomo2/guidellm
-    tests.llmd.benchmarks.guidellm.image.version: nightly
 
   llama-70b:
     tests.llmd.inference_service.model: llama3-3-70b
@@ -227,6 +227,23 @@ prepare:
   cleanup:
     skip: false
 
+deployment_profiles:
+  __default__:
+    tests.llmd.inference_service.epp: epp-default-rhoai-3.4-ea.1
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  simple:
+    tests.llmd.inference_service.epp: null
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  intelligentrouting:
+    # tests.llmd.inference_service.epp: epp-approximate-prefix-cache
+    tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+
+  pd:
+    tests.llmd.inference_service.epp: epp-pd.v0.6
+    tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
+
 models:
   facebook-opt-125m:
     name: facebook/opt-125m
@@ -270,10 +287,10 @@ tests:
     inference_service:
       skip_deployment: false
       name: llm-d
-      yaml_file: llmisvc-simple.yaml
+      yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
 
-      epp: epp-approximate-prefix-cache
+      epp: null # defined in the deployment_profile
 
       do_simple_test: true
       gateway:
@@ -313,7 +330,7 @@ tests:
 
         image:
           name: ghcr.io/vllm-project/guidellm
-          version: pr-590
+          version: v0.6.0
 
         rate: 1 # might be iterated, don't pass it in the args
 

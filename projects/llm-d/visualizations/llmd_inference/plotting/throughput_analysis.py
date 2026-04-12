@@ -59,6 +59,7 @@ def register():
     GuidellmE2ELatencyAnalysis()
 
     TokenThroughputAnalysis()
+    TokenThroughputPercentilesAnalysis()
 
 class GuidellmThroughputScaling():
     def __init__(self):
@@ -421,13 +422,18 @@ class GuidellmTokensConcurrency():
                 elif 'ramp' in benchmark.strategy.lower():
                     strategy_type = "Ramp"
 
+                # Use P50 (median) values for more representative throughput
+                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second)
+                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second)
+                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second)
+
                 data.append({
                     'Test Configuration': entry_name,
                     'Concurrency': benchmark.request_concurrency,
-                    'Tokens/s': benchmark.output_tokens_per_second,
-                    'Input Tokens/s': benchmark.input_tokens_per_second,
-                    'Output Tokens/s': benchmark.output_tokens_per_second,
-                    'Total Tokens/s': benchmark.tokens_per_second,
+                    'Tokens/s': output_tokens_p50,
+                    'Input Tokens/s': input_tokens_p50,
+                    'Output Tokens/s': output_tokens_p50,
+                    'Total Tokens/s': total_tokens_p50,
                     'Strategy': benchmark.strategy,
                     'Strategy Type': strategy_type,
                     'Request Rate (req/s)': benchmark.request_rate,
@@ -446,12 +452,12 @@ class GuidellmTokensConcurrency():
         # 2. Generate plotly express plot with consistent color scheme
         # Sort configurations to ensure consistent color assignment
         configurations = sorted(df['Test Configuration'].unique())
-        colors = px.colors.qualitative.Set1[:len(configurations)]
-        color_map = {config: colors[i] for i, config in enumerate(configurations)}
+        available_colors = px.colors.qualitative.Set1
+        color_map = {config: available_colors[i % len(available_colors)] for i, config in enumerate(configurations)}
 
         # Create title with load_shape if missing from variables
         title = _get_plot_title_with_context_info(
-            'Token Throughput vs Concurrency by Configuration<br><sub>Higher is better</sub>',
+            'Token Throughput vs Concurrency by Configuration<br><sub>Higher is better • P50 (median) values</sub>',
             variables,
             settings,
         )
@@ -517,7 +523,7 @@ class GuidellmTokensConcurrency():
                 msg.append(html.Br())
             msg.append(html.Br())
 
-        msg.append("Note: Color shows test configuration, lines connect points for each configuration")
+        msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
 
         # 4. Return fig, msg
         return fig, msg
@@ -587,8 +593,8 @@ class GuidellmLatencyAnalysisBase():
 
         # Get unique configurations and colors (consistent with other plots)
         configurations = sorted(df['Test Configuration'].unique())
-        colors = px.colors.qualitative.Set1[:len(configurations)]
-        color_map = {config_name: colors[i] for i, config_name in enumerate(configurations)}
+        available_colors = px.colors.qualitative.Set1
+        color_map = {config_name: available_colors[i % len(available_colors)] for i, config_name in enumerate(configurations)}
 
         for i, config_name in enumerate(configurations):
             config_df = df[df['Test Configuration'] == config_name].sort_values('Concurrency')
@@ -766,13 +772,18 @@ class TokenThroughputAnalysis():
             entry_name = entry.get_name(variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
+                # Use P50 (median) values for more representative throughput
+                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second)
+                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second)
+                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second)
+
                 data.append({
                     'Test Configuration': entry_name,
                     'Strategy': benchmark.strategy,
                     'Full Strategy Name': f"{benchmark.strategy} ({entry_name})",
-                    'Input Tokens/s': benchmark.input_tokens_per_second,
-                    'Output Tokens/s': benchmark.output_tokens_per_second,
-                    'Total Tokens/s': benchmark.tokens_per_second,
+                    'Input Tokens/s': input_tokens_p50,
+                    'Output Tokens/s': output_tokens_p50,
+                    'Total Tokens/s': total_tokens_p50,
                     'Request Rate': benchmark.request_rate,
                     'TTFT (ms)': benchmark.ttft_median
                 })
@@ -786,7 +797,7 @@ class TokenThroughputAnalysis():
 
         # 2. Generate plotly express plot
         title = _get_plot_title_with_context_info(
-            'Token Throughput by Strategy and Configuration',
+            'Token Throughput by Strategy and Configuration<br><sub>P50 (median) values</sub>',
             variables,
             settings,
         )
@@ -847,6 +858,207 @@ class TokenThroughputAnalysis():
         msg.append(html.Br())
         msg.append(html.Br())
         msg.append(f"Best configuration overall: {best_config} ({config_tokens[best_config]:.0f} tok/s avg)")
+        msg.append(html.Br())
+        msg.append(html.Br())
+        msg.append("Note: All token throughput values shown are P50 (median) for more representative performance analysis.")
+
+        # 4. Return fig, msg
+        return fig, msg
+
+
+class TokenThroughputPercentilesAnalysis():
+    def __init__(self):
+        self.name = "Token Throughput Percentiles Analysis"
+        self.id_name = "token_throughput_percentiles_analysis"
+        self.no_graph = False
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        """
+        Plot output token throughput percentiles: P25, P50, P70, P90
+        """
+        entries = list(common.Matrix.all_records(settings, setting_lists))
+
+        # 1. Generate DataFrame
+        data = []
+        for entry in entries:
+            if not entry.results.guidellm_benchmarks:
+                continue
+
+            # Get unique name for this entry (includes flavor info)
+            entry_name = entry.get_name(variables)
+
+            for benchmark in entry.results.guidellm_benchmarks:
+                if benchmark.strategy == "throughput":
+                    continue
+
+                data.append({
+                    'Test Configuration': entry_name,
+                    'Concurrency': benchmark.request_concurrency,
+                    'Strategy': benchmark.strategy,
+
+                    # Output token percentiles
+                    'Output Tokens/s P10': benchmark.output_tokens_per_second_p10,
+                    'Output Tokens/s P25': benchmark.output_tokens_per_second_p25,
+                    'Output Tokens/s P50': benchmark.output_tokens_per_second_p50,
+                    'Output Tokens/s P75': benchmark.output_tokens_per_second_p75,
+                    'Output Tokens/s P90': benchmark.output_tokens_per_second_p90,
+
+                    'Request Rate (req/s)': benchmark.request_rate,
+                })
+
+        if not data:
+            return None, ["No Guidellm benchmark data available"]
+
+        df = pd.DataFrame(data)
+
+        # Sort by Concurrency for proper plot ordering
+        df = df.sort_values(['Concurrency', "Test Configuration"])
+
+        # 2. Generate plot for output token percentiles
+        fig = go.Figure()
+
+        # Get unique configurations and colors (consistent with other plots)
+        configurations = sorted(df['Test Configuration'].unique())
+        available_colors = px.colors.qualitative.Set1
+        color_map = {config_name: available_colors[i % len(available_colors)] for i, config_name in enumerate(configurations)}
+
+        # Define percentiles to plot with distinct line styles
+        percentiles_config = [
+            {'percentile': 'P10', 'line_style': {'width': 2, 'dash': 'longdash'}, 'opacity': 0.6},
+            {'percentile': 'P25', 'line_style': {'width': 2, 'dash': 'dot'}, 'opacity': 0.7},
+            {'percentile': 'P50', 'line_style': {'width': 4, 'dash': 'solid'}, 'opacity': 1.0},
+            {'percentile': 'P75', 'line_style': {'width': 3, 'dash': 'dash'}, 'opacity': 0.9},
+            {'percentile': 'P90', 'line_style': {'width': 2, 'dash': 'dashdot'}, 'opacity': 0.8},
+        ]
+
+        # Add traces for each configuration and percentile
+        for config_name in configurations:
+            config_df = df[df['Test Configuration'] == config_name].sort_values('Concurrency')
+
+            if len(config_df) == 0:
+                continue
+
+            for perc_config in percentiles_config:
+                percentile = perc_config['percentile']
+                column_name = f'Output Tokens/s {percentile}'
+
+                if column_name not in config_df.columns:
+                    continue
+
+                # Create unique trace name
+                trace_name = f'{config_name} - {percentile}'
+
+                # Use base color
+                base_color = color_map[config_name]
+
+                fig.add_trace(go.Scatter(
+                    x=config_df['Concurrency'],
+                    y=config_df[column_name],
+                    mode='lines+markers',
+                    name=trace_name,
+                    legendgroup=f'{config_name}',
+                    marker=dict(
+                        size=6
+                    ),
+                    line=dict(
+                        color=base_color,
+                        **perc_config['line_style']
+                    ),
+                    opacity=perc_config['opacity'],
+                    hovertemplate=f'<b>{config_name}</b><br>' +
+                                 f'Output Tokens/s {percentile}<br>' +
+                                 'Concurrency: %{x}<br>' +
+                                 'Value: %{y:.0f} tok/s<br>' +
+                                 '<extra></extra>',
+                    showlegend=True
+                ))
+
+        # Create title with context info
+        title = _get_plot_title_with_context_info(
+            'Output Token Throughput Percentiles vs Concurrency<br><sub>Higher is better • P10 (long dash), P25 (dotted), P50 (solid), P75 (dashed), P90 (dash-dot)</sub>',
+            variables,
+            settings,
+        )
+
+        fig.update_layout(
+            title_text=title,
+            showlegend=True,
+            hovermode='closest',
+            height=700,
+            xaxis_title="Concurrency",
+            yaxis_title="Output Tokens per Second",
+            legend=dict(
+                groupclick="toggleitem",
+                title="Configuration - Percentile",
+                orientation="v",
+                x=1.02,
+                y=1,
+                font=dict(size=10)
+            )
+        )
+
+        # 3. Generate summary text focusing on output token percentiles
+        msg = []
+        msg.append("🚀 <b>Output Token Throughput Percentiles Analysis:</b>")
+        msg.append(html.Br())
+
+        # Best performers for each percentile
+        percentiles_to_analyze = ['P10', 'P25', 'P50', 'P75', 'P90']
+        best_performers = {}
+
+        for perc in percentiles_to_analyze:
+            col_name = f'Output Tokens/s {perc}'
+            if col_name in df.columns:
+                best_idx = df[col_name].idxmax()
+                best_performers[perc] = {
+                    'value': df.loc[best_idx, col_name],
+                    'config': df.loc[best_idx, 'Test Configuration'],
+                    'strategy': df.loc[best_idx, 'Strategy'],
+                    'concurrency': df.loc[best_idx, 'Concurrency']
+                }
+
+        # Show best performers
+        for perc in percentiles_to_analyze:
+            if perc in best_performers:
+                best = best_performers[perc]
+                msg.append(f"• <b>Best {perc}</b>: {best['strategy']} in {best['config']} ({best['value']:.0f} tok/s at {best['concurrency']:.0f} concurrency)")
+                msg.append(html.Br())
+
+        msg.append(html.Br())
+
+        # Performance consistency analysis
+        msg.append("📊 <b>Performance Consistency:</b>")
+        msg.append(html.Br())
+
+        # Calculate spreads between percentiles
+        for config_name in configurations:
+            config_df = df[df['Test Configuration'] == config_name]
+            if len(config_df) > 0:
+                avg_p90 = config_df['Output Tokens/s P90'].mean()
+                avg_p10 = config_df['Output Tokens/s P10'].mean()
+                spread = ((avg_p90 - avg_p10) / avg_p10 * 100) if avg_p10 > 0 else 0
+                msg.append(f"• <b>{config_name}</b>: {spread:.1f}% spread (P90-P10)")
+                msg.append(html.Br())
+
+        msg.append(html.Br())
+        msg.append("📈 <b>Percentile Guide:</b>")
+        msg.append(html.Br())
+        msg.append("• <b>P10</b>: 10% of requests achieve this throughput or higher")
+        msg.append(html.Br())
+        msg.append("• <b>P25</b>: 25% of requests achieve this throughput or higher")
+        msg.append(html.Br())
+        msg.append("• <b>P50</b>: Median performance — 50% achieve this or higher")
+        msg.append(html.Br())
+        msg.append("• <b>P75</b>: Good performance — 75% achieve this or higher")
+        msg.append(html.Br())
+        msg.append("• <b>P90</b>: High performance — 90% achieve this or higher")
+        msg.append(html.Br())
+        msg.append(html.Br())
+        msg.append("💡 <b>Analysis</b>: Smaller spreads between percentiles indicate more consistent performance. Focus on configurations with high P50 and small P90—P10 gaps.")
 
         # 4. Return fig, msg
         return fig, msg
