@@ -38,11 +38,8 @@ spec:
               - '--secure-serving'
               - '--model-server-metrics-scheme'
               - https
-
               - '--kv-cache-usage-percentage-metric'
               - vllm:kv_cache_usage_perc
-
-              - '--config-text'
         volumes:
           - name: tokenizer-cache
             emptyDir: {}

@@ -229,20 +229,21 @@ prepare:
 
 deployment_profiles:
   __default__:
-    tests.llmd.inference_service.epp: epp-default-rhoai-3.4-ea.1
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+    tests.llmd.inference_service.epp.deploy: "default"
+    tests.llmd.inference_service.epp.config_file: null # use the default config
 
   simple:
-    tests.llmd.inference_service.epp: null
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+    tests.llmd.inference_service.epp.deploy: false
 
   intelligentrouting:
-    # tests.llmd.inference_service.epp: epp-approximate-prefix-cache
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   pd:
-    tests.llmd.inference_service.epp: epp-pd.v0.6
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
+    tests.llmd.inference_service.epp.deploy: "custom"
+    tests.llmd.inference_service.epp.config_file: epp-pd.v0.6.yaml
 
 models:
   facebook-opt-125m:
@@ -290,7 +291,9 @@ tests:
       yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
 
-      epp: null # defined in the deployment_profile
+      epp:
+        deploy: "default"
+        config_file: null # use the default config
 
       do_simple_test: true
       gateway:

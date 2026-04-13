@@ -368,11 +368,8 @@ def apply_flavor_modifications(isvc_data, flavor):
 
     # Apply base flavor modifications
     if base_flavor == "simple":
-        logging.info("Applying 'simple' flavor modifications")
-        # Remove spec.router if it exists
-        if 'router' in isvc_data.get('spec', {}):
-            del isvc_data['spec']['router']
-            logging.info("Removed spec.router for 'simple' flavor")
+        logging.info("Applying 'simple' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration)
 
     elif base_flavor in ["intelligentrouting"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
@@ -910,16 +907,28 @@ def apply_epp_configuration(isvc_data):
     Args:
         isvc_data: The loaded YAML data structure
     """
-    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp", None)
+    epp_deploy = config.project.get_config("tests.llmd.inference_service.epp.deploy")
+    if epp_deploy == False:
+        logging.info("No EPP to deploy, delete spec.router")
+        del isvc_data['spec']['router']
+        return
+    elif epp_deploy == "default":
+        logging.info("EPP 'default' configuration. Keep the router untouched.")
+        return
+    elif epp_deploy != "custom":
+        raise ValueError(f"EPP configuration '{epp_deploy}' is not suppored.")
+
+
+    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp.config_file")
 
     if not epp_config_name:
-        logging.debug("No EPP configuration specified")
+        raise ValueError(f"EPP configuration '{epp_deploy}' needs an EPP config file.")
         return
 
     logging.info(f"Applying EPP configuration: {epp_config_name}")
 
     # Verify EPP configuration file exists
-    epp_config_path = TESTING_THIS_DIR / "epp-config" / f"{epp_config_name}.yaml"
+    epp_config_path = TESTING_THIS_DIR / "epp-config" / epp_config_name
     if not epp_config_path.exists():
         raise ValueError(f"EPP configuration file not found: {epp_config_path}")
 
@@ -928,11 +937,8 @@ def apply_epp_configuration(isvc_data):
     router_template = isvc_data['spec']['router']['scheduler']['template']
     router_container = router_template['containers'][0]
 
-    if router_container['args'][-1] != '--config-text':
-        raise ValueError(f"Excepted to find --config-text as last argument of the LLMISVC. Got '{router_container['args'][-1]}'.")
-
     # Add the new EPP configuration argument
-    router_container['args'].append(epp_value)
+    router_container['args'] += ["--config-text", epp_value]
 
 
 def reshape_isvc(flavor, llmisvc_path, model_key):
