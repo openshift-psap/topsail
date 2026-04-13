@@ -368,11 +368,8 @@ def apply_flavor_modifications(isvc_data, flavor):
 
     # Apply base flavor modifications
     if base_flavor == "simple":
-        logging.info("Applying 'simple' flavor modifications")
-        # Remove spec.router if it exists
-        if 'router' in isvc_data.get('spec', {}):
-            del isvc_data['spec']['router']
-            logging.info("Removed spec.router for 'simple' flavor")
+        logging.info("Applying 'simple' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
 
     elif base_flavor in ["intelligentrouting"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
@@ -910,16 +907,27 @@ def apply_epp_configuration(isvc_data):
     Args:
         isvc_data: The loaded YAML data structure
     """
-    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp", None)
+    epp_deploy = config.project.get_config("tests.llmd.inference_service.epp.deploy")
+    if epp_deploy is False:
+        logging.info("No EPP to deploy, delete spec.router")
+        del isvc_data['spec']['router']
+        return
+    elif epp_deploy == "default":
+        logging.info("EPP 'default' configuration. Keep the router untouched.")
+        return
+    elif epp_deploy != "custom":
+        raise ValueError(f"EPP configuration '{epp_deploy}' is not suppored.")
+
+
+    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp.config_file")
 
     if not epp_config_name:
-        logging.debug("No EPP configuration specified")
-        return
+        raise ValueError(f"EPP configuration '{epp_deploy}' needs an EPP config file.")
 
     logging.info(f"Applying EPP configuration: {epp_config_name}")
 
     # Verify EPP configuration file exists
-    epp_config_path = TESTING_THIS_DIR / "epp-config" / f"{epp_config_name}.yaml"
+    epp_config_path = TESTING_THIS_DIR / "epp-config" / epp_config_name
     if not epp_config_path.exists():
         raise ValueError(f"EPP configuration file not found: {epp_config_path}")
 
@@ -928,11 +936,8 @@ def apply_epp_configuration(isvc_data):
     router_template = isvc_data['spec']['router']['scheduler']['template']
     router_container = router_template['containers'][0]
 
-    if router_container['args'][-1] != '--config-text':
-        raise ValueError(f"Excepted to find --config-text as last argument of the LLMISVC. Got '{router_container['args'][-1]}'.")
-
     # Add the new EPP configuration argument
-    router_container['args'].append(epp_value)
+    router_container['args'] = ["--config-text", epp_value]
 
 
 def reshape_isvc(flavor, llmisvc_path, model_key):
@@ -968,8 +973,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
-    if not flavor.startswith("simple"):
-        apply_epp_configuration(isvc_data)
+    apply_epp_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
@@ -1216,6 +1220,43 @@ def capture_llm_inference_service_state(llmisvc_name, namespace):
         logging.error(f"Failed to capture LLM inference service state: {e}")
 
 
+def _check_isvc_has_scheduler():
+    """
+    Check if the deployed ISVC has a scheduler by reading the actual ISVC spec
+
+    Returns:
+        bool: True if spec['router']['scheduler'] exists, False otherwise
+    """
+    try:
+        # Get the YAML file name from config
+        llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
+
+        # Construct path to the reshaped ISVC file in ARTIFACT_DIR
+        reshaped_isvc_path = env.ARTIFACT_DIR / llmisvc_file
+
+        if not reshaped_isvc_path.exists():
+            logging.warning(f"Reshaped ISVC file not found at {reshaped_isvc_path}, assuming no scheduler")
+            return False
+
+        # Read and parse the YAML
+        with open(reshaped_isvc_path, 'r') as f:
+            isvc_data = yaml.safe_load(f)
+
+        # Check if router scheduler exists
+        has_scheduler = 'router' in isvc_data.get('spec', {}) and 'scheduler' in isvc_data['spec'].get('router', {})
+
+        if has_scheduler:
+            logging.info("Scheduler found in ISVC spec - will capture scheduler metrics")
+        else:
+            logging.info("No scheduler found in ISVC spec - will skip scheduler metrics")
+
+        return has_scheduler
+
+    except Exception as e:
+        logging.warning(f"Failed to check ISVC scheduler presence: {e}, assuming no scheduler")
+        return False
+
+
 def start_metrics_capture(flavor):
     """
     Starts metrics capture for both ServiceMonitor and PodMonitor if enabled
@@ -1229,9 +1270,8 @@ def start_metrics_capture(flavor):
     scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
     vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
 
-    # Parse flavor to check if it's simple
-    components = parse_flavor_components(flavor)
-    is_simple_flavor = components['base'] == "simple"
+    # Check if scheduler is present in deployed ISVC
+    has_scheduler = _check_isvc_has_scheduler()
 
     # Start vLLM PodMonitor capture (always)
     logging.info(f"Starting PodMonitor metrics capture for {vllm_name}")
@@ -1241,15 +1281,15 @@ def start_metrics_capture(flavor):
                     is_podmonitor=True,
                     mute_stdout=True)
 
-    # Start scheduler ServiceMonitor capture (only for non-simple flavors)
-    if not is_simple_flavor:
+    # Start scheduler ServiceMonitor capture (only if scheduler exists in ISVC)
+    if has_scheduler:
         logging.info(f"Starting ServiceMonitor metrics capture for {scheduler_name}")
         run.run_toolbox("cluster", "capture_servicemonitor_metrics",
                         service_name=scheduler_name,
                         namespace=namespace,
                         mute_stdout=True)
     else:
-        logging.info("Skipping scheduler metrics capture for simple flavor")
+        logging.info("Skipping scheduler metrics capture - no scheduler found in ISVC")
 
     logging.info("Metrics capture started successfully")
 
@@ -1267,9 +1307,8 @@ def stop_metrics_capture(flavor):
     scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
     vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
 
-    # Parse flavor to check if it's simple
-    components = parse_flavor_components(flavor)
-    is_simple_flavor = components['base'] == "simple"
+    # Check if scheduler is present in deployed ISVC
+    has_scheduler = _check_isvc_has_scheduler()
 
     # Stop vLLM PodMonitor capture (always)
     logging.info(f"Stopping PodMonitor metrics capture for {vllm_name}")
@@ -1281,8 +1320,8 @@ def stop_metrics_capture(flavor):
                     mute_stdout=True,
                     artifact_dir_suffix="_finalize",)
 
-    # Stop scheduler ServiceMonitor capture (only for non-simple flavors)
-    if not is_simple_flavor:
+    # Stop scheduler ServiceMonitor capture (only if scheduler exists in ISVC)
+    if has_scheduler:
         logging.info(f"Stopping ServiceMonitor metrics capture for {scheduler_name}")
         run.run_toolbox("cluster", "capture_servicemonitor_metrics",
                         service_name=scheduler_name,
