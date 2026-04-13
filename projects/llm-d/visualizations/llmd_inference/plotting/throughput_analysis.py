@@ -144,6 +144,7 @@ class GuidellmThroughputScaling():
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # Add trend lines for constant strategies
         constant_data = df[df['Strategy Type'].str.contains('Constant', na=False)]
@@ -472,6 +473,7 @@ class GuidellmTokensConcurrency():
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # 3. Generate summary text
         max_tokens = df['Tokens/s'].max()
@@ -1000,6 +1002,7 @@ class TokenThroughputPercentilesAnalysis():
                 font=dict(size=10)
             )
         )
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # 3. Generate summary text focusing on output token percentiles
         msg = []
