@@ -3,6 +3,7 @@ import matrix_benchmarking.common as common
 from dash import html
 import yaml
 import pathlib
+import copy
 
 def analyze_llmisvc_deployment(llmisvc_config):
     """
@@ -52,7 +53,7 @@ def analyze_llmisvc_deployment(llmisvc_config):
     def get_epp_config(router_args):
         """Extract EPP config from router scheduler args"""
         if router_args == "missing":
-            return "missing"
+            return "router not defined"
         try:
             if isinstance(router_args, list) and len(router_args) > 0:
                 # Find --config-text and get the next argument
@@ -143,9 +144,55 @@ def analyze_llmisvc_deployment(llmisvc_config):
             f"resources: {format_resources(prefill_resources)}"
         ]
     else:
-        prefill_lines = ["not configured"]
+        prefill_lines = ["prefill not defined"]
 
     analysis_content.append(html.Pre("\n".join(prefill_lines), style=code_style))
+
+    return analysis_content
+
+
+def analyze_guidellm_configuration(results):
+    """
+    Analyze GuideLLM benchmark configuration
+
+    Args:
+        results: Results object containing guidellm_benchmarks and potentially args
+
+    Returns formatted HTML content showing benchmark configuration
+    """
+    if not hasattr(results, 'guidellm_benchmarks') or not results.guidellm_benchmarks:
+        return [html.P("❌ No GuideLLM benchmark data available")]
+
+    analysis_content = []
+
+    # Code block styling
+    code_style = {
+        "background-color": "#f8f8f8",
+        "padding": "10px",
+        "border-radius": "5px",
+        "font-family": "monospace",
+        "font-size": "0.9em",
+        "white-space": "pre-wrap",
+        "overflow": "auto",
+        "margin": "10px 0"
+    }
+
+    # Top-level configuration (including args)
+    analysis_content.append(html.H6("=== GUIDELLM CONFIGURATION ==="))
+
+    config_lines = []
+
+    # Show configuration if available
+    if hasattr(results, 'guidellm_configuration') and results.guidellm_configuration:
+        cfg = copy.deepcopy(results.guidellm_configuration)
+        for key in results.guidellm_configuration.get("args", {}).keys():
+            if cfg["args"][key] in (None, [], {}):
+                del cfg["args"][key]
+
+        config_lines.append(yaml.dump(cfg))
+
+    analysis_content.append(html.Pre("\n".join(config_lines), style=code_style))
+
 
     return analysis_content
 
@@ -376,6 +423,13 @@ class LlmdInferenceErrorReport():
             header.append(html.H5("LLMISVC Deployment Configuration"))
             llmisvc_analysis = analyze_llmisvc_deployment(results.llmisvc_config)
             header.extend(llmisvc_analysis)
+
+            header.append(html.Br())
+
+            # GuideLLM benchmark analysis
+            header.append(html.H5("GuideLLM Benchmark Configuration"))
+            guidellm_analysis = analyze_guidellm_configuration(results)
+            header.extend(guidellm_analysis)
 
             header.append(html.Br())
 

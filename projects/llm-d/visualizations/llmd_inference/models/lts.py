@@ -70,6 +70,7 @@ class Results(matbench_models.ExclusiveModel):
 
     # Benchmark results
     guidellm_benchmarks: List[GuidellmBenchmark] = Field(default_factory=list)
+    guidellm_configuration: Optional[dict] = None
     guidellm_log_path: Optional[str] = None
     prometheus_path: Optional[str] = None
 

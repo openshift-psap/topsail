@@ -63,6 +63,7 @@ def parse_once(results, dirname):
 
     # Parse guidellm benchmarks - support multiple benchmark directories
     results.guidellm_benchmarks = []
+    results.guidellm_configuration = None
     guidellm_directories = find_guidellm_benchmark_directories(dirname)
 
     if guidellm_directories:
@@ -75,6 +76,11 @@ def parse_once(results, dirname):
                 benchmarks = parse_guidellm_benchmark_json(dirname, json_file_path.relative_to(dirname))
                 results.guidellm_benchmarks.extend(benchmarks)
                 logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from JSON: {json_file_path}")
+
+                # Parse configuration from the first JSON file found
+                if results.guidellm_configuration is None:
+                    results.guidellm_configuration = _parse_guidellm_config(dirname, json_file_path.relative_to(dirname))
+
             elif log_file_path.exists():
                 raise RuntimeError("Don't want to use log-file parsing (hardcoded)")
                 benchmarks = parse_guidellm_benchmark_log(dirname, log_file_path.relative_to(dirname))
@@ -439,6 +445,35 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
     except (json.JSONDecodeError, ValueError) as e:
         logging.warning(f"Failed to parse Guidellm JSON {json_file_path}: {e}")
         return []
+
+
+def _parse_guidellm_config(dirname, json_file_path: pathlib.Path):
+    """Parse GuideLLM configuration from JSON file"""
+
+    if not (dirname / json_file_path).exists():
+        logging.warning(f"GuideLLM JSON config file not found: {json_file_path}")
+        return None
+
+    try:
+        with open(register_important_file(dirname, json_file_path)) as f:
+            json_data = json.load(f)
+
+        # Extract top-level configuration fields
+        config = {}
+
+        # Extract args if present
+        if 'args' in json_data and json_data['args']:
+            config['args'] = json_data['args']
+        if 'metadata' in json_data and json_data['metadata']:
+            config['metadata'] = json_data['metadata']
+
+        logging.info(f"Successfully parsed GuideLLM configuration from {json_file_path}")
+
+        return config if config else None
+
+    except Exception as e:
+        logging.error(f"Failed to parse GuideLLM configuration from {json_file_path}: {e}")
+        return None
 
 
 def _parse_llmisvc_config(dirname):
