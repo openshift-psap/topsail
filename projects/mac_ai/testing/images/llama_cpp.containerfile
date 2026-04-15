@@ -14,7 +14,7 @@ RUN  \
     dnf versionlock add mesa-vulkan-drivers && \
     dnf install -y --quiet vulkan-loader-devel vulkan-tools fmt-devel && \
     dnf copr enable -y jeffmaury/shaderc epel-9-aarch64 && \
-    dnf install -y --quiet glslc;
+    dnf install -y --quiet glslc spirv-headers-devel;
 
 
 # for API Remoting
