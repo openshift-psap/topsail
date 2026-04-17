@@ -8,3 +8,4 @@ visualize:
   - "report: Prometheus GPU Performance"
   - "report: Prometheus System Health"
   - "report: VLLM Metrics Analysis"
+  - "report: Throughput Comparisons"
