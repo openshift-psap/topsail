@@ -396,7 +396,7 @@ class GuidellmTokensConcurrency():
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
         # 2. Generate plotly express plot with consistent color scheme
-        use_platform_markers = cfg.get("markers_by") == "platform"
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
         if use_platform_markers and "platform" in variables:
             del variables["platform"]
 
