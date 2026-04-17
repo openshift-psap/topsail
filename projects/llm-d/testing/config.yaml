@@ -28,7 +28,7 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
+    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
@@ -243,7 +243,7 @@ deployment_profiles:
   pd:
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
     tests.llmd.inference_service.epp.deploy: "custom"
-    tests.llmd.inference_service.epp.config_file: epp-pd.v0.6.yaml
+    tests.llmd.inference_service.epp.config_file: epp-default-rhoai-3.4-ea.1.yaml
 
 models:
   facebook-opt-125m:
