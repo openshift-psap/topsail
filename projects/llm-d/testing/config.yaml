@@ -78,11 +78,11 @@ ci_presets:
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
-  base_line-flavor:
-    tests.llmd.flavors: [intelligentrouting-tp2-x4]
+  baseline-flavors:
+    tests.llmd.flavors: [simple, simple-tp4, simple-tp2-x4]
 
-  multi-flavor:
-    tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4, simple]
+  intelligentrouting-flavors:
+    tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
