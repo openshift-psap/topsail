@@ -397,6 +397,15 @@ class LlmdInferenceErrorReport():
                                 f"📈 Prometheus '{prom_name}' monitoring data",
                             ]))
 
+            # Add PROW artifacts link if available
+            if hasattr(results, 'from_env') and results.from_env:
+                if hasattr(results.from_env, 'test') and hasattr(results.from_env.test, 'urls'):
+                    prow_artifacts = results.from_env.test.urls.get('PROW_ARTIFACTS')
+                    if prow_artifacts:
+                        artifact_links.append(html.Li([
+                            html.A("🔗 PROW Artifacts", href=prow_artifacts, target="_blank")
+                        ]))
+
             # Show artifact links if available
             if artifact_links:
                 header.append(html.P("🔗 Artifact links:"))
@@ -432,5 +441,79 @@ class LlmdInferenceErrorReport():
             header.extend(guidellm_analysis)
 
             header.append(html.Br())
+
+        # Summary section with PROW artifacts links
+        header.append(html.H3("PROW Artifacts Summary"))
+        header.append(html.P("Quick access to PROW artifacts for all test entries organized by platform → model → load_shape:"))
+
+        # Filter out unwanted settings keys
+        FILTERED_SETTINGS_KEYS = {"owner", "llm-d", "platform", "model", "load_shape", "version"}
+
+        # Group entries hierarchically
+        hierarchy = {}
+        for i, entry in enumerate(entries):
+            results = entry.results
+
+            # Get hierarchy values
+            platform = getattr(entry.settings, 'platform', 'unknown')
+            version = getattr(entry.settings, 'version', '')
+            # Concatenate version to platform name
+            platform_with_version = f"{platform}-{version}" if version else platform
+
+            model = getattr(entry.settings, 'model', 'unknown')
+            load_shape = getattr(entry.settings, 'load_shape', 'unknown')
+
+            # Initialize hierarchy structure
+            if platform_with_version not in hierarchy:
+                hierarchy[platform_with_version] = {}
+            if model not in hierarchy[platform_with_version]:
+                hierarchy[platform_with_version][model] = {}
+            if load_shape not in hierarchy[platform_with_version][model]:
+                hierarchy[platform_with_version][model][load_shape] = []
+
+            # Build filtered settings string
+            settings_parts = []
+            for key, value in entry.settings.__dict__.items():
+                if key not in FILTERED_SETTINGS_KEYS:
+                    settings_parts.append(f"{key}={value}")
+            settings_str = ", ".join(settings_parts)
+
+            # Get PROW artifacts URL
+            prow_url = None
+            if hasattr(results, 'from_env') and results.from_env:
+                if hasattr(results.from_env, 'test') and hasattr(results.from_env.test, 'urls'):
+                    prow_url = results.from_env.test.urls.get('PROW_ARTIFACTS')
+
+            # Add to hierarchy
+            hierarchy[platform_with_version][model][load_shape].append({
+                'settings_str': settings_str,
+                'prow_url': prow_url
+            })
+
+        # Render hierarchical structure
+        for platform_version in sorted(hierarchy.keys()):
+            header.append(html.H2(f"🖥️  {platform_version}"))
+
+            for model in sorted(hierarchy[platform_version].keys()):
+                header.append(html.H3(f"  🤖 Model: {model}"))
+
+                for load_shape in sorted(hierarchy[platform_version][model].keys()):
+                    header.append(html.H4(f"    📊 {load_shape} load shape"))
+
+                    load_shape_list = []
+                    for entry_data in hierarchy[platform_version][model][load_shape]:
+                        if entry_data['prow_url']:
+                            list_item_content = [
+                                html.A(entry_data['settings_str'], href=entry_data['prow_url'], target="_blank",
+                                      style={"color": "#0066cc", "text-decoration": "underline"})
+                            ]
+                        else:
+                            list_item_content = [f"{entry_data['settings_str']} (No PROW artifacts available)"]
+
+                        load_shape_list.append(html.Li(list_item_content))
+
+                    header.append(html.Ul(load_shape_list, style={"margin-left": "20px"}))
+
+        header.append(html.Br())
 
         return None, header

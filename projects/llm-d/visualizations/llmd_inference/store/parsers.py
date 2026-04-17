@@ -61,6 +61,9 @@ def find_guidellm_benchmark_directories(dirname):
 def parse_once(results, dirname):
     """Parse the benchmark log files once"""
 
+    # Parse test configuration and environment for PROW URLs
+    results.from_env = helpers_store_parsers.parse_env(dirname, None, artifact_paths.LLMISVC_CAPTURE_DIR)
+
     # Parse guidellm benchmarks - support multiple benchmark directories
     results.guidellm_benchmarks = []
     results.guidellm_configuration = None
