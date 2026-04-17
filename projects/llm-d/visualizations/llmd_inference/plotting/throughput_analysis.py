@@ -431,10 +431,13 @@ class GuidellmTokensConcurrency():
                 elif 'ramp' in benchmark.strategy.lower():
                     strategy_type = "Ramp"
 
-                # Use P50 (median) values for more representative throughput
-                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second)
-                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second)
-                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second)
+                # Use P50 (median) values for more representative throughput - consistent with TokenThroughputPercentilesAnalysis
+                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_p50',
+                                          getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second))
+                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_p50',
+                                           getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second))
+                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_p50',
+                                          getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second))
 
                 data.append({
                     'Test Configuration': entry_name,
