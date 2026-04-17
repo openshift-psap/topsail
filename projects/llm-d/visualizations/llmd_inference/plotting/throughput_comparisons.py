@@ -63,6 +63,7 @@ class ThroughputComparisonsReport():
         ]))
         header.append(html.Br())
 
+        args = report.set_config(dict(markers_by="platform"), args)
 
         def filter_flavors(setting_lists, flavor_filter):
             """Filter flavors from setting_lists based on provided filter function"""
@@ -102,7 +103,7 @@ class ThroughputComparisonsReport():
                 # Filter out simple flavor from the remaining args if it exists
                 ordered_vars, settings, setting_lists, variables_filtered, cfg = ir_args
 
-                def include_flavor(v):
+                def include_ir_flavor(v):
                     if v.startswith('pd-'): return False
                     if not with_simple and v.startswith("simple"): return False
                     if v.startswith("simple") and not v.endswith("tp2-x4"): return False
@@ -110,10 +111,7 @@ class ThroughputComparisonsReport():
                     return True
 
                 # Remove simple and pd- flavors
-                filter_flavors(
-                    setting_lists,
-                    include_flavor,
-                )
+                filter_flavors(setting_lists, include_ir_flavor)
                 ir_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
 
                 header += _generate_throughput_plots(ir_args_final)
@@ -127,20 +125,26 @@ class ThroughputComparisonsReport():
             "comparing disaggregated configurations across different load shapes."
         ]))
 
-        if 'model' in variables and 'gpt-oss-120b' in variables['model'] and 'load_shape' in variables:
-            for load_shape in variables['load_shape']:
-                header.append(html.H3(f"📊 Load Shape: {load_shape}"))
+        for load_shape in variables['load_shape']:
+            header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
-                # Set gpt-oss-120b model
-                pd_settings = {"model": "gpt-oss-120b", "load_shape": load_shape}
-                pd_args = report.set_settings(pd_settings, args)
+            # Set gpt-oss-120b model
+            pd_settings = {"model": "gpt-oss-120b", "load_shape": load_shape}
+            pd_args = report.set_settings(pd_settings, args)
 
-                # Filter to show only pd- flavors
-                ordered_vars, settings, setting_lists, variables_filtered, cfg = pd_args
-                filter_flavors(setting_lists, lambda v: (v.startswith('pd-') or v.endswith('-tp4-x4')) and "(eth)" not in v)
-                pd_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
+            # Filter to show only pd- flavors
+            ordered_vars, settings, setting_lists, variables_filtered, cfg = pd_args
 
-                header += _generate_throughput_plots(pd_args_final)
+            def include_pd_flavor(v):
+                if "(eth)" in v: return False
+                #if "(sched v4)" in v: return False
+                if not (v.startswith('pd-') or v.endswith('-tp4-x4')): return False
+                return True
+
+            filter_flavors(setting_lists, include_pd_flavor)
+            pd_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
+
+            header += _generate_throughput_plots(pd_args_final)
 
         header.append(html.Hr())
 
@@ -151,33 +155,23 @@ class ThroughputComparisonsReport():
             "comparing across different models and load shapes."
         ]))
 
-        if 'model' in variables and 'llama3.3-70b' in variables['model'] and 'load_shape' in variables:
-            for load_shape in variables['load_shape']:
-                # Skip multiturn load shape for baseline
-                if load_shape == 'Multiturn':
-                    continue
+        # Get simple flavors
+        simple_flavors = [f for f in variables['flavor'] if f.startswith('simple')]
 
-                header.append(html.H3(f"📊 Load Shape: {load_shape}"))
+        for load_shape in variables['load_shape']:
+            # Skip multiturn load shape for baseline
+            if load_shape == 'Multiturn':
+                continue
 
-                # Set llama3.3-70b model
-                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape}
+            header.append(html.H3(f"📊 Load Shape: {load_shape}"))
+
+            for flavor in simple_flavors:
+                header.append(html.H4(f"🔧 {flavor}"))
+
+                # Set llama3.3-70b model and specific simple flavor
+                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
                 baseline_args = report.set_settings(baseline_settings, args)
 
-                # Filter to show only simple flavors
-                ordered_vars, settings, setting_lists, variables_filtered, cfg = baseline_args
-                filter_flavors(setting_lists, lambda v: v.startswith('simple'))
-                baseline_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
-
-                header += _generate_throughput_plots(baseline_args_final)
-
-        # Add overall insights
-        header.append(html.H3("💡 Key Insights"))
-        header.append(html.Ul([
-            html.Li("Compare throughput scaling patterns between models"),
-            html.Li("Analyze how load shapes affect performance characteristics"),
-            html.Li("Identify optimal concurrency levels for each model-load combination"),
-            html.Li("Evaluate performance consistency using percentile distributions"),
-            html.Li("Compare trade-offs between different configurations within each scenario"),
-        ]))
+                header += _generate_throughput_plots(baseline_args)
 
         return None, header

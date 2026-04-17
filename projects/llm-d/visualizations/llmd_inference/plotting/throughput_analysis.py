@@ -395,6 +395,11 @@ class GuidellmTokensConcurrency():
         """
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # 2. Generate plotly express plot with consistent color scheme
+        use_platform_markers = cfg.get("markers_by") == "platform"
+        if use_platform_markers and "platform" in variables:
+            del variables["platform"]
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -403,6 +408,9 @@ class GuidellmTokensConcurrency():
 
             # Get unique name for this entry (includes flavor info)
             entry_name = entry.get_name(variables)
+
+            # Extract platform information
+            platform = getattr(entry.settings, 'platform', 'unknown')
 
             # Include all strategies - let's show the full picture
             for benchmark in entry.results.guidellm_benchmarks:
@@ -430,6 +438,7 @@ class GuidellmTokensConcurrency():
 
                 data.append({
                     'Test Configuration': entry_name,
+                    'Platform': platform,
                     'Concurrency': benchmark.request_concurrency,
                     'Tokens/s': output_tokens_p50,
                     'Input Tokens/s': input_tokens_p50,
@@ -450,7 +459,6 @@ class GuidellmTokensConcurrency():
         # Sort by Concurrency for proper plot ordering
         df = df.sort_values(['Concurrency', "Test Configuration"])
 
-        # 2. Generate plotly express plot with consistent color scheme
         # Sort configurations to ensure consistent color assignment
         configurations = sorted(df['Test Configuration'].unique())
         available_colors = px.colors.qualitative.Set1
@@ -463,13 +471,18 @@ class GuidellmTokensConcurrency():
             settings,
         )
 
-        fig = px.scatter(df,
-                        hover_data=df.columns,
-                        x='Concurrency',
-                        y='Tokens/s',
-                        color='Test Configuration',
-                        color_discrete_map=color_map,
-                        title=title)
+        # Set line dash parameter conditionally for platforms
+        line_dash = 'Platform' if use_platform_markers else None
+
+        fig = px.line(df,
+                      hover_data=df.columns,
+                      x='Concurrency',
+                      y='Tokens/s',
+                      color='Test Configuration',
+                      line_dash=line_dash,
+                      markers=True,
+                      color_discrete_map=color_map,
+                      title=title)
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
@@ -525,7 +538,10 @@ class GuidellmTokensConcurrency():
                 msg.append(html.Br())
             msg.append(html.Br())
 
-        msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+        if use_platform_markers:
+            msg.append("Note: Color shows test configuration, line style shows platform, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+        else:
+            msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
 
         # 4. Return fig, msg
         return fig, msg
