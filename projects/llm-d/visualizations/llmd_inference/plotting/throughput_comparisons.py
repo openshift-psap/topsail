@@ -26,11 +26,11 @@ def _generate_throughput_plots(args):
     ]))
     content += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
 
-    # content.append(html.H4("🚀 Token Throughput Percentiles vs Concurrency"))
-    # content.append(html.P([
-    #     "Performance consistency analysis showing percentile distributions."
-    # ]))
-    # content += report.Plot_and_Text("Token Throughput Percentiles Analysis", args)
+    content.append(html.H4("🚀 Token Throughput Percentiles vs Concurrency"))
+    content.append(html.P([
+        "Performance consistency analysis showing percentile distributions."
+    ]))
+    content += report.Plot_and_Text("Token Throughput Percentiles Analysis", args)
 
     content.append(html.Hr())
 
@@ -78,6 +78,31 @@ class ThroughputComparisonsReport():
                     updated_setting_lists.append(setting_list)
             setting_lists[:] = updated_setting_lists
 
+        # Baseline Section
+        header.append(html.H2("📊 Baseline"))
+        header.append(html.P([
+            "Baseline performance analysis using simple flavor configuration, ",
+            "comparing across different models and load shapes."
+        ]))
+
+        # Get simple flavors
+        simple_flavors = [f for f in variables.get('flavor', []) if f.startswith('simple')]
+
+        for load_shape in variables.get('load_shape', []):
+            # Skip multiturn load shape for baseline
+            if load_shape == 'Multiturn':
+                continue
+
+            header.append(html.H3(f"📊 Load Shape: {load_shape}"))
+
+            for flavor in simple_flavors:
+                header.append(html.H4(f"🔧 {flavor}"))
+
+                # Set llama3.3-70b model and specific simple flavor
+                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
+                baseline_args = report.set_settings(baseline_settings, args)
+
+                header += _generate_throughput_plots(baseline_args)
 
         # Intelligent Routing Section
         header.append(html.H2("🧠 Intelligent Routing"))
@@ -147,31 +172,5 @@ class ThroughputComparisonsReport():
             header += _generate_throughput_plots(pd_args_final)
 
         header.append(html.Hr())
-
-        # Baseline Section
-        header.append(html.H2("📊 Baseline"))
-        header.append(html.P([
-            "Baseline performance analysis using simple flavor configuration, ",
-            "comparing across different models and load shapes."
-        ]))
-
-        # Get simple flavors
-        simple_flavors = [f for f in variables.get('flavor', []) if f.startswith('simple')]
-
-        for load_shape in variables.get('load_shape', []):
-            # Skip multiturn load shape for baseline
-            if load_shape == 'Multiturn':
-                continue
-
-            header.append(html.H3(f"📊 Load Shape: {load_shape}"))
-
-            for flavor in simple_flavors:
-                header.append(html.H4(f"🔧 {flavor}"))
-
-                # Set llama3.3-70b model and specific simple flavor
-                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
-                baseline_args = report.set_settings(baseline_settings, args)
-
-                header += _generate_throughput_plots(baseline_args)
 
         return None, header

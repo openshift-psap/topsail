@@ -397,8 +397,7 @@ class GuidellmTokensConcurrency():
 
         # 2. Generate plotly express plot with consistent color scheme
         use_platform_markers = cfg.get("markers_by", None) == "platform"
-        if use_platform_markers and "platform" in variables:
-            del variables["platform"]
+
 
         # 1. Generate DataFrame
         data = []
@@ -937,7 +936,6 @@ class TokenThroughputPercentilesAnalysis():
         df = pd.DataFrame(data)
 
         # Sort by Concurrency for proper plot ordering
-        df = df.sort_values(['Concurrency', "Test Configuration"])
 
         # 2. Generate plot for output token percentiles
         fig = go.Figure()
@@ -969,6 +967,9 @@ class TokenThroughputPercentilesAnalysis():
 
                 if column_name not in config_df.columns:
                     continue
+
+
+                config_df = config_df.sort_values(['Concurrency', column_name])
 
                 # Create unique trace name
                 trace_name = f'{config_name} - {percentile}'
