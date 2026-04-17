@@ -93,7 +93,7 @@ class ThroughputComparisonsReport():
                 header.append(html.H2("Intelligent Routing"))
 
 
-            for load_shape in variables['load_shape']:
+            for load_shape in variables.get('load_shape', []):
                 header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
                 # Set llama3.3-70b and remove simple flavor
@@ -125,7 +125,7 @@ class ThroughputComparisonsReport():
             "comparing disaggregated configurations across different load shapes."
         ]))
 
-        for load_shape in variables['load_shape']:
+        for load_shape in variables.get('load_shape', []):
             header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
             # Set gpt-oss-120b model
@@ -156,9 +156,9 @@ class ThroughputComparisonsReport():
         ]))
 
         # Get simple flavors
-        simple_flavors = [f for f in variables['flavor'] if f.startswith('simple')]
+        simple_flavors = [f for f in variables.get('flavor', []) if f.startswith('simple')]
 
-        for load_shape in variables['load_shape']:
+        for load_shape in variables.get('load_shape', []):
             # Skip multiturn load shape for baseline
             if load_shape == 'Multiturn':
                 continue
