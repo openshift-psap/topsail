@@ -242,8 +242,8 @@ deployment_profiles:
 
   pd:
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
-    tests.llmd.inference_service.epp.deploy: "custom"
-    tests.llmd.inference_service.epp.config_file: epp-default-rhoai-3.4-ea.1.yaml
+    tests.llmd.inference_service.epp.deploy: "default"
+    tests.llmd.inference_service.epp.config_file: null
 
 models:
   facebook-opt-125m:
