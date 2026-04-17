@@ -57,8 +57,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
 
             _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
-            # Start metrics capture after deployment
-            start_metrics_capture(flavor)
 
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
@@ -80,12 +78,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             flavor_failed = e
 
         finally:
-            # Stop metrics capture after testing (success or failure)
-            try:
-                stop_metrics_capture(flavor)
-            except Exception as metrics_e:
-                logging.exception(f"Failed to stop metrics capture: {metrics_e}")
-
             # Always capture LLM inference service state (success or failure)
             logging.info("Capturing LLM inference service state for debugging")
             try:
@@ -1218,119 +1210,6 @@ def capture_llm_inference_service_state(llmisvc_name, namespace):
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
-
-
-def _check_isvc_has_scheduler():
-    """
-    Check if the deployed ISVC has a scheduler by reading the actual ISVC spec
-
-    Returns:
-        bool: True if spec['router']['scheduler'] exists, False otherwise
-    """
-    try:
-        # Get the YAML file name from config
-        llmisvc_file = config.project.get_config("tests.llmd.inference_service.yaml_file")
-
-        # Construct path to the reshaped ISVC file in ARTIFACT_DIR
-        reshaped_isvc_path = env.ARTIFACT_DIR / llmisvc_file
-
-        if not reshaped_isvc_path.exists():
-            logging.warning(f"Reshaped ISVC file not found at {reshaped_isvc_path}, assuming no scheduler")
-            return False
-
-        # Read and parse the YAML
-        with open(reshaped_isvc_path, 'r') as f:
-            isvc_data = yaml.safe_load(f)
-
-        # Check if router scheduler exists
-        has_scheduler = 'router' in isvc_data.get('spec', {}) and 'scheduler' in isvc_data['spec'].get('router', {})
-
-        if has_scheduler:
-            logging.info("Scheduler found in ISVC spec - will capture scheduler metrics")
-        else:
-            logging.info("No scheduler found in ISVC spec - will skip scheduler metrics")
-
-        return has_scheduler
-
-    except Exception as e:
-        logging.warning(f"Failed to check ISVC scheduler presence: {e}, assuming no scheduler")
-        return False
-
-
-def start_metrics_capture(flavor):
-    """
-    Starts metrics capture for both ServiceMonitor and PodMonitor if enabled
-    """
-    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
-        return
-
-    logging.info("Starting metrics capture")
-
-    namespace = config.project.get_config("tests.llmd.namespace")
-    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
-    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
-
-    # Check if scheduler is present in deployed ISVC
-    has_scheduler = _check_isvc_has_scheduler()
-
-    # Start vLLM PodMonitor capture (always)
-    logging.info(f"Starting PodMonitor metrics capture for {vllm_name}")
-    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                    service_name=vllm_name,
-                    namespace=namespace,
-                    is_podmonitor=True,
-                    mute_stdout=True)
-
-    # Start scheduler ServiceMonitor capture (only if scheduler exists in ISVC)
-    if has_scheduler:
-        logging.info(f"Starting ServiceMonitor metrics capture for {scheduler_name}")
-        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                        service_name=scheduler_name,
-                        namespace=namespace,
-                        mute_stdout=True)
-    else:
-        logging.info("Skipping scheduler metrics capture - no scheduler found in ISVC")
-
-    logging.info("Metrics capture started successfully")
-
-
-def stop_metrics_capture(flavor):
-    """
-    Stops metrics capture for both ServiceMonitor and PodMonitor if enabled
-    """
-    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
-        return
-
-    logging.info("Stopping metrics capture")
-
-    namespace = config.project.get_config("tests.llmd.namespace")
-    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
-    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
-
-    # Check if scheduler is present in deployed ISVC
-    has_scheduler = _check_isvc_has_scheduler()
-
-    # Stop vLLM PodMonitor capture (always)
-    logging.info(f"Stopping PodMonitor metrics capture for {vllm_name}")
-    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                    service_name=vllm_name,
-                    namespace=namespace,
-                    is_podmonitor=True,
-                    finalize=True,
-                    mute_stdout=True,
-                    artifact_dir_suffix="_finalize",)
-
-    # Stop scheduler ServiceMonitor capture (only if scheduler exists in ISVC)
-    if has_scheduler:
-        logging.info(f"Stopping ServiceMonitor metrics capture for {scheduler_name}")
-        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                        service_name=scheduler_name,
-                        namespace=namespace,
-                        finalize=True,
-                        mute_stdout=True,
-                        artifact_dir_suffix="_finalize",)
-
-    logging.info("Metrics capture stopped successfully")
 
 
 def cleanup_llm_inference_resources():
