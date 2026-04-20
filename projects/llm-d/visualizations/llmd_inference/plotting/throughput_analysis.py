@@ -430,22 +430,22 @@ class GuidellmTokensConcurrency():
                 elif 'ramp' in benchmark.strategy.lower():
                     strategy_type = "Ramp"
 
-                # Use P50 (median) values for more representative throughput - consistent with TokenThroughputPercentilesAnalysis
-                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_p50',
-                                          getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second))
-                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_p50',
-                                           getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second))
-                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_p50',
-                                          getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second))
+                # Use mean values for throughput analysis
+                total_tokens_mean = getattr(benchmark, 'tokens_per_second_mean',
+                                          getattr(benchmark, 'tokens_per_second', benchmark.tokens_per_second))
+                output_tokens_mean = getattr(benchmark, 'output_tokens_per_second_mean',
+                                           getattr(benchmark, 'output_tokens_per_second', benchmark.output_tokens_per_second))
+                input_tokens_mean = getattr(benchmark, 'input_tokens_per_second_mean',
+                                          getattr(benchmark, 'input_tokens_per_second', benchmark.input_tokens_per_second))
 
                 data.append({
                     'Test Configuration': entry_name,
                     'Platform': platform,
                     'Concurrency': benchmark.request_concurrency,
-                    'Tokens/s': output_tokens_p50,
-                    'Input Tokens/s': input_tokens_p50,
-                    'Output Tokens/s': output_tokens_p50,
-                    'Total Tokens/s': total_tokens_p50,
+                    'Tokens/s': output_tokens_mean,
+                    'Input Tokens/s': input_tokens_mean,
+                    'Output Tokens/s': output_tokens_mean,
+                    'Total Tokens/s': total_tokens_mean,
                     'Strategy': benchmark.strategy,
                     'Strategy Type': strategy_type,
                     'Request Rate (req/s)': benchmark.request_rate,
@@ -461,14 +461,9 @@ class GuidellmTokensConcurrency():
         # Sort by Concurrency for proper plot ordering
         df = df.sort_values(['Concurrency', "Test Configuration"])
 
-        # Sort configurations to ensure consistent color assignment
-        configurations = sorted(df['Test Configuration'].unique())
-        available_colors = px.colors.qualitative.Set1
-        color_map = {config: available_colors[i % len(available_colors)] for i, config in enumerate(configurations)}
-
         # Create title with load_shape if missing from variables
         title = _get_plot_title_with_context_info(
-            'Token Throughput vs Concurrency by Configuration<br><sub>Higher is better • P50 (median) values</sub>',
+            'Token Throughput vs Concurrency by Configuration<br><sub>Higher is better • Mean values</sub>',
             variables,
             settings,
         )
@@ -483,7 +478,6 @@ class GuidellmTokensConcurrency():
                       color='Test Configuration',
                       line_dash=line_dash,
                       markers=True,
-                      color_discrete_map=color_map,
                       title=title)
 
         fig.update_traces(mode='lines+markers')
@@ -541,9 +535,9 @@ class GuidellmTokensConcurrency():
             msg.append(html.Br())
 
         if use_platform_markers:
-            msg.append("Note: Color shows test configuration, line style shows platform, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+            msg.append("Note: Color shows test configuration, line style shows platform, lines connect points for each configuration. Values shown are mean for average performance analysis.")
         else:
-            msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+            msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are mean for average performance analysis.")
 
         # 4. Return fig, msg
         return fig, msg
@@ -712,18 +706,95 @@ class GuidellmLatencyAnalysisBase():
         return fig, msg
 
 
-# Specific analysis classes using the factorized base class
-class GuidellmTTFTAnalysis(GuidellmLatencyAnalysisBase):
+# Simplified TTFT analysis class showing only P50
+class GuidellmTTFTAnalysis():
     def __init__(self):
-        super().__init__({
-            'name': 'TTFT',
-            'description': 'TTFT Latency',
-            'p50_field': 'ttft_median',
-            'p95_field': 'ttft_p95',
-            'unit_conversion': 1,  # Already in ms
-            'note_text': 'P1 and P90 percentiles require additional data extraction from logs.',
-            'insight_text': 'Lower TTFT values indicate better responsiveness. Look for configurations with consistently low and stable TTFT across concurrency levels.'
-        })
+        self.name = "Guidellm TTFT Analysis"
+        self.id_name = "guidellm_ttft_analysis"
+        self.no_graph = False
+        self.is_report = False
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        """
+        Generate TTFT P50 analysis plot
+        """
+        entries = list(common.Matrix.all_records(settings, setting_lists))
+
+        # 1. Generate DataFrame
+        data = []
+        for entry in entries:
+            if not entry.results.guidellm_benchmarks:
+                continue
+
+            entry_name = entry.get_name(variables)
+            platform = getattr(entry.settings, 'platform', 'unknown')
+
+            for benchmark in entry.results.guidellm_benchmarks:
+                if benchmark.strategy == "throughput":
+                    continue
+
+                ttft_p50 = getattr(benchmark, 'ttft_median', None)
+
+                data.append({
+                    'Test Configuration': entry_name,
+                    'Platform': platform,
+                    'Strategy': benchmark.strategy,
+                    'Concurrency': benchmark.request_concurrency,
+                    'TTFT P50 (ms)': ttft_p50,
+                    'Request Rate (req/s)': benchmark.request_rate,
+                    'Tokens/s': benchmark.tokens_per_second,
+                })
+
+        if not data:
+            return None, ["No Guidellm benchmark data available"]
+
+        df = pd.DataFrame(data)
+        df = df.sort_values(['Concurrency', "Test Configuration"])
+
+        # 2. Generate plot
+        use_platform_markers = cfg.get("markers_by") == "platform"
+        line_dash = 'Platform' if use_platform_markers else None
+
+        title = _get_plot_title_with_context_info(
+            'TTFT (P50) vs Concurrency<br><sub>Lower is better • Median values</sub>',
+            variables,
+            settings,
+        )
+
+        fig = px.line(df,
+                      hover_data=df.columns,
+                      x='Concurrency',
+                      y='TTFT P50 (ms)',
+                      color='Test Configuration',
+                      line_dash=line_dash,
+                      markers=True,
+                      title=title)
+
+        fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")
+
+        # 3. Generate summary text
+        if 'TTFT P50 (ms)' in df.columns and not df['TTFT P50 (ms)'].isna().all():
+            best_ttft = df.loc[df['TTFT P50 (ms)'].idxmin()]
+            avg_ttft = df['TTFT P50 (ms)'].mean()
+            ttft_range = df['TTFT P50 (ms)'].max() - df['TTFT P50 (ms)'].min()
+
+            msg = []
+            msg.append(f"🏆 Best TTFT P50: {best_ttft['Strategy']} in {best_ttft['Test Configuration']} ({best_ttft['TTFT P50 (ms)']:.1f} ms)")
+            msg.append(html.Br())
+            msg.append(f"📊 Average TTFT P50: {avg_ttft:.1f} ms")
+            msg.append(html.Br())
+            msg.append(f"📈 TTFT range: {ttft_range:.1f} ms")
+            msg.append(html.Br())
+            msg.append(html.Br())
+            msg.append("💡 Lower TTFT values indicate better responsiveness. Look for configurations with consistently low and stable TTFT across concurrency levels.")
+        else:
+            msg = ["No TTFT data available for analysis"]
+
+        return fig, msg
 
 
 class GuidellmTPOTAnalysis(GuidellmLatencyAnalysisBase):
@@ -739,17 +810,97 @@ class GuidellmTPOTAnalysis(GuidellmLatencyAnalysisBase):
         })
 
 
-class GuidellmITLAnalysis(GuidellmLatencyAnalysisBase):
+# Simplified ITL analysis class showing only P50
+class GuidellmITLAnalysis():
     def __init__(self):
-        super().__init__({
-            'name': 'ITL',
-            'description': 'ITL Latency',
-            'p50_field': 'itl_median',
-            'p95_field': 'itl_p95',
-            'unit_conversion': 1000,  # Convert from seconds to ms
-            'note_text': 'ITL measures streaming responsiveness.',
-            'insight_text': 'Lower ITL values indicate smoother token streaming. Look for configurations with consistently low ITL for better user experience.'
-        })
+        self.name = "Guidellm ITL Analysis"
+        self.id_name = "guidellm_itl_analysis"
+        self.no_graph = False
+        self.is_report = False
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, ordered_vars, settings, setting_lists, variables, cfg):
+        """
+        Generate ITL P50 analysis plot
+        """
+        entries = list(common.Matrix.all_records(settings, setting_lists))
+
+        # 1. Generate DataFrame
+        data = []
+        for entry in entries:
+            if not entry.results.guidellm_benchmarks:
+                continue
+
+            entry_name = entry.get_name(variables)
+            platform = getattr(entry.settings, 'platform', 'unknown')
+
+            for benchmark in entry.results.guidellm_benchmarks:
+                if benchmark.strategy == "throughput":
+                    continue
+
+                itl_p50 = getattr(benchmark, 'itl_median', None)
+                if itl_p50 is not None:
+                    itl_p50 = itl_p50 * 1000  # Convert from seconds to ms
+
+                data.append({
+                    'Test Configuration': entry_name,
+                    'Platform': platform,
+                    'Strategy': benchmark.strategy,
+                    'Concurrency': benchmark.request_concurrency,
+                    'ITL P50 (ms)': itl_p50,
+                    'Request Rate (req/s)': benchmark.request_rate,
+                    'Tokens/s': benchmark.tokens_per_second,
+                })
+
+        if not data:
+            return None, ["No Guidellm benchmark data available"]
+
+        df = pd.DataFrame(data)
+        df = df.sort_values(['Concurrency', "Test Configuration"])
+
+        # 2. Generate plot
+        use_platform_markers = cfg.get("markers_by") == "platform"
+        line_dash = 'Platform' if use_platform_markers else None
+
+        title = _get_plot_title_with_context_info(
+            'ITL (P50) vs Concurrency<br><sub>Lower is better • Median values</sub>',
+            variables,
+            settings,
+        )
+
+        fig = px.line(df,
+                      hover_data=df.columns,
+                      x='Concurrency',
+                      y='ITL P50 (ms)',
+                      color='Test Configuration',
+                      line_dash=line_dash,
+                      markers=True,
+                      title=title)
+
+        fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")
+
+        # 3. Generate summary text
+        if 'ITL P50 (ms)' in df.columns and not df['ITL P50 (ms)'].isna().all():
+            best_itl = df.loc[df['ITL P50 (ms)'].idxmin()]
+            avg_itl = df['ITL P50 (ms)'].mean()
+            itl_range = df['ITL P50 (ms)'].max() - df['ITL P50 (ms)'].min()
+
+            msg = []
+            msg.append(f"🏆 Best ITL P50: {best_itl['Strategy']} in {best_itl['Test Configuration']} ({best_itl['ITL P50 (ms)']:.1f} ms)")
+            msg.append(html.Br())
+            msg.append(f"📊 Average ITL P50: {avg_itl:.1f} ms")
+            msg.append(html.Br())
+            msg.append(f"📈 ITL range: {itl_range:.1f} ms")
+            msg.append(html.Br())
+            msg.append(html.Br())
+            msg.append("💡 Lower ITL values indicate smoother token streaming. Look for configurations with consistently low ITL for better user experience.")
+        else:
+            msg = ["No ITL data available for analysis"]
+
+        return fig, msg
 
 
 class GuidellmE2ELatencyAnalysis(GuidellmLatencyAnalysisBase):
@@ -880,7 +1031,7 @@ class TokenThroughputAnalysis():
         msg.append(f"Best configuration overall: {best_config} ({config_tokens[best_config]:.0f} tok/s avg)")
         msg.append(html.Br())
         msg.append(html.Br())
-        msg.append("Note: All token throughput values shown are P50 (median) for more representative performance analysis.")
+        msg.append("Note: All token throughput values shown are mean values for average performance analysis.")
 
         # 4. Return fig, msg
         return fig, msg

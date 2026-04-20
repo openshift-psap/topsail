@@ -1,4 +1,8 @@
-from dash import html
+from dash import html, dcc
+import plotly.graph_objects as go
+import plotly.express as px
+import pandas as pd
+import copy
 
 import projects.matrix_benchmarking.visualizations.helpers.plotting.report as report
 
@@ -8,30 +12,267 @@ import matrix_benchmarking.common as common
 def register():
     ThroughputComparisonsReport()
 
+def _generate_ttft_percentiles_plot(args):
+    """Generate TTFT percentiles plot in single chart"""
+    ordered_vars, settings, setting_lists, variables, cfg = args
+    entries = list(common.Matrix.all_records(settings, setting_lists))
+
+    # Generate DataFrame
+    data = []
+    for entry in entries:
+        if not entry.results.guidellm_benchmarks:
+            continue
+
+        entry_name = entry.get_name(variables)
+        platform = getattr(entry.settings, 'platform', 'unknown')
+
+        for benchmark in entry.results.guidellm_benchmarks:
+            if benchmark.strategy == "throughput":
+                continue
+
+
+            # Use available TTFT fields with fallbacks for missing percentiles
+            ttft_p50 = getattr(benchmark, 'ttft_p50', getattr(benchmark, 'ttft_median', None))
+            ttft_p90 = getattr(benchmark, 'ttft_p90', getattr(benchmark, 'ttft_p95', None))
+
+            data.append({
+                'Test Configuration': entry_name,
+                'Platform': platform,
+                'Concurrency': benchmark.request_concurrency,
+                'Strategy': benchmark.strategy,
+                'TTFT P10': getattr(benchmark, 'ttft_p10', None),
+                'TTFT P25': getattr(benchmark, 'ttft_p25', None),
+                'TTFT P50': ttft_p50,
+                'TTFT P75': getattr(benchmark, 'ttft_p75', None),
+                'TTFT P90': ttft_p90,
+            })
+
+    if not data:
+        return html.P("No TTFT data available")
+
+    df = pd.DataFrame(data)
+    df = df.sort_values(['Concurrency', "Test Configuration"])
+
+
+    # Create plot - use same color assignment as px.line()
+    fig = go.Figure()
+    configurations = sorted(df['Test Configuration'].unique())
+
+    # Create a dummy px.line figure to get the same color assignment
+    dummy_df = pd.DataFrame({'Test Configuration': configurations, 'x': range(len(configurations)), 'y': range(len(configurations))})
+    dummy_fig = px.line(dummy_df, x='x', y='y', color='Test Configuration')
+    color_map = {}
+    for trace in dummy_fig.data:
+        config_name = trace.name
+        color_map[config_name] = trace.line.color
+
+    percentiles_config = [
+        {'percentile': 'P10', 'line_style': {'width': 2, 'dash': 'longdash'}, 'opacity': 0.6},
+        {'percentile': 'P25', 'line_style': {'width': 2, 'dash': 'dot'}, 'opacity': 0.7},
+        {'percentile': 'P50', 'line_style': {'width': 4, 'dash': 'solid'}, 'opacity': 1.0},
+        {'percentile': 'P75', 'line_style': {'width': 3, 'dash': 'dash'}, 'opacity': 0.9},
+        {'percentile': 'P90', 'line_style': {'width': 2, 'dash': 'dashdot'}, 'opacity': 0.8},
+    ]
+
+    for config_name in configurations:
+        config_df = df[df['Test Configuration'] == config_name].sort_values('Concurrency')
+        if len(config_df) == 0:
+            continue
+
+        for perc_config in percentiles_config:
+            percentile = perc_config['percentile']
+            column_name = f'TTFT {percentile}'
+
+            # Skip if column doesn't exist or all values are None/NaN
+            if (column_name not in config_df.columns or
+                config_df[column_name].isna().all() or
+                config_df[column_name].isnull().all()):
+                continue
+
+            trace_name = f'{config_name} - {percentile}'
+            base_color = color_map.get(config_name, px.colors.qualitative.Set1[0])
+
+            fig.add_trace(go.Scatter(
+                x=config_df['Concurrency'],
+                y=config_df[column_name],
+                mode='lines+markers',
+                name=trace_name,
+                legendgroup=f'{config_name}',
+                marker=dict(size=6),
+                line=dict(color=base_color, **perc_config['line_style']),
+                opacity=perc_config['opacity'],
+                hovertemplate=f'<b>{config_name}</b><br>TTFT {percentile}<br>Concurrency: %{{x}}<br>Value: %{{y:.1f}} ms<br><extra></extra>',
+                showlegend=True
+            ))
+
+    fig.update_layout(
+        title="TTFT Percentiles vs Concurrency<br><sub>Lower is better • P10 (long dash), P25 (dotted), P50 (solid), P75 (dashed), P90 (dash-dot)</sub>",
+        showlegend=True,
+        hovermode='closest',
+        height=600,
+        xaxis_title="Concurrency",
+        yaxis_title="TTFT (ms)",
+    )
+    fig.update_yaxes(rangemode="tozero")
+
+    return dcc.Graph(figure=fig)
+
+
+def _generate_itl_percentiles_plot(args):
+    """Generate ITL percentiles plot in single chart"""
+    ordered_vars, settings, setting_lists, variables, cfg = args
+    entries = list(common.Matrix.all_records(settings, setting_lists))
+
+    # Generate DataFrame
+    data = []
+    for entry in entries:
+        if not entry.results.guidellm_benchmarks:
+            continue
+
+        entry_name = entry.get_name(variables)
+        platform = getattr(entry.settings, 'platform', 'unknown')
+
+        for benchmark in entry.results.guidellm_benchmarks:
+            if benchmark.strategy == "throughput":
+                continue
+
+
+            # Use available ITL fields with fallbacks for missing percentiles
+            itl_p50 = getattr(benchmark, 'itl_p50', getattr(benchmark, 'itl_median', None))
+            itl_p90 = getattr(benchmark, 'itl_p90', getattr(benchmark, 'itl_p95', None))
+
+            data.append({
+                'Test Configuration': entry_name,
+                'Platform': platform,
+                'Concurrency': benchmark.request_concurrency,
+                'Strategy': benchmark.strategy,
+                'ITL P10': getattr(benchmark, 'itl_p10', None),
+                'ITL P25': getattr(benchmark, 'itl_p25', None),
+                'ITL P50': itl_p50,
+                'ITL P75': getattr(benchmark, 'itl_p75', None),
+                'ITL P90': itl_p90,
+            })
+
+    if not data:
+        return html.P("No ITL data available")
+
+    df = pd.DataFrame(data)
+    df = df.sort_values(['Concurrency', "Test Configuration"])
+
+    # Convert from seconds to milliseconds
+    for col in ['ITL P10', 'ITL P25', 'ITL P50', 'ITL P75', 'ITL P90']:
+        if col in df.columns:
+            df[col] = df[col] * 1000  # Convert to ms
+
+
+    # Create plot - use same color assignment as px.line()
+    fig = go.Figure()
+    configurations = sorted(df['Test Configuration'].unique())
+
+    # Create a dummy px.line figure to get the same color assignment
+    dummy_df = pd.DataFrame({'Test Configuration': configurations, 'x': range(len(configurations)), 'y': range(len(configurations))})
+    dummy_fig = px.line(dummy_df, x='x', y='y', color='Test Configuration')
+    color_map = {}
+    for trace in dummy_fig.data:
+        config_name = trace.name
+        color_map[config_name] = trace.line.color
+
+    percentiles_config = [
+        {'percentile': 'P10', 'line_style': {'width': 2, 'dash': 'longdash'}, 'opacity': 0.6},
+        {'percentile': 'P25', 'line_style': {'width': 2, 'dash': 'dot'}, 'opacity': 0.7},
+        {'percentile': 'P50', 'line_style': {'width': 4, 'dash': 'solid'}, 'opacity': 1.0},
+        {'percentile': 'P75', 'line_style': {'width': 3, 'dash': 'dash'}, 'opacity': 0.9},
+        {'percentile': 'P90', 'line_style': {'width': 2, 'dash': 'dashdot'}, 'opacity': 0.8},
+    ]
+
+    for config_name in configurations:
+        config_df = df[df['Test Configuration'] == config_name].sort_values('Concurrency')
+        if len(config_df) == 0:
+            continue
+
+        for perc_config in percentiles_config:
+            percentile = perc_config['percentile']
+            column_name = f'ITL {percentile}'
+
+            # Skip if column doesn't exist or all values are None/NaN
+            if (column_name not in config_df.columns or
+                config_df[column_name].isna().all() or
+                config_df[column_name].isnull().all()):
+                continue
+
+            trace_name = f'{config_name} - {percentile}'
+            base_color = color_map.get(config_name, px.colors.qualitative.Set1[0])
+
+            fig.add_trace(go.Scatter(
+                x=config_df['Concurrency'],
+                y=config_df[column_name],
+                mode='lines+markers',
+                name=trace_name,
+                legendgroup=f'{config_name}',
+                marker=dict(size=6),
+                line=dict(color=base_color, **perc_config['line_style']),
+                opacity=perc_config['opacity'],
+                hovertemplate=f'<b>{config_name}</b><br>ITL {percentile}<br>Concurrency: %{{x}}<br>Value: %{{y:.1f}} ms<br><extra></extra>',
+                showlegend=True
+            ))
+
+    fig.update_layout(
+        title="ITL Percentiles vs Concurrency<br><sub>Lower is better • P10 (long dash), P25 (dotted), P50 (solid), P75 (dashed), P90 (dash-dot)</sub>",
+        showlegend=True,
+        hovermode='closest',
+        height=600,
+        xaxis_title="Concurrency",
+        yaxis_title="ITL (ms)",
+    )
+    fig.update_yaxes(rangemode="tozero")
+
+    return dcc.Graph(figure=fig)
+
+
 def _generate_throughput_plots(args):
     """
-    Generate throughput plots with the given configuration
+    Generate throughput plots with three sections: Throughput (mean), TTFT, and ITL
 
     Args:
         args: Plot arguments (potentially filtered for specific model/load_shape)
 
     Returns:
-        List of HTML elements containing the plots and descriptions
+        List of HTML elements containing the plots
     """
     content = []
 
-    content.append(html.H4("🚀 Token Throughput vs Concurrency"))
-    content.append(html.P([
-        "Token generation throughput scaling analysis."
-    ]))
+    # Section 1: Throughput (Mean)
+    content.append(html.H4("🚀 Token Throughput vs Concurrency (Mean)"))
+    content.append(html.P("Token generation throughput scaling analysis using mean values."))
     content += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
+    content.append(html.Hr())
 
-    content.append(html.H4("🚀 Token Throughput Percentiles vs Concurrency"))
-    content.append(html.P([
-        "Performance consistency analysis showing percentile distributions."
-    ]))
-    content += report.Plot_and_Text("Token Throughput Percentiles Analysis", args)
+    # Section 2: TTFT Analysis
+    content.append(html.H4("⏱️ Time To First Token Analysis"))
 
+    # TTFT P50
+    content.append(html.H5("TTFT (P50)"))
+    content.append(html.P("Median time to first token analysis."))
+    content += report.Plot_and_Text("Guidellm TTFT Analysis", args)
+
+    # TTFT Percentiles
+    content.append(html.H5("📊 TTFT Percentiles"))
+    content.append(html.P("Complete TTFT percentile distribution analysis."))
+    content.append(_generate_ttft_percentiles_plot(args))
+    content.append(html.Hr())
+
+    # Section 3: ITL Analysis
+    content.append(html.H4("🔄 Inter-Token Latency Analysis"))
+
+    # ITL P50
+    content.append(html.H5("ITL (P50)"))
+    content.append(html.P("Median inter-token latency analysis."))
+    content += report.Plot_and_Text("Guidellm ITL Analysis", args)
+
+    # ITL Percentiles
+    content.append(html.H5("📊 ITL Percentiles"))
+    content.append(html.P("Complete ITL percentile distribution analysis."))
+    content.append(_generate_itl_percentiles_plot(args))
     content.append(html.Hr())
 
     return content

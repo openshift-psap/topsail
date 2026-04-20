@@ -361,10 +361,26 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                 # Extract latency metrics (convert ms to seconds for consistency)
                 request_latency_median = get_metric_value('request_latency', 'median') / 1000.0
                 request_latency_p95 = get_metric_value('request_latency', 'p95') / 1000.0
+
+                # Extract TTFT percentiles
                 ttft_median = get_metric_value('time_to_first_token_ms', 'median') / 1000.0
+                ttft_p10 = get_metric_value('time_to_first_token_ms', 'p10') / 1000.0
+                ttft_p25 = get_metric_value('time_to_first_token_ms', 'p25') / 1000.0
+                ttft_p50 = get_metric_value('time_to_first_token_ms', 'p50') / 1000.0
+                ttft_p75 = get_metric_value('time_to_first_token_ms', 'p75') / 1000.0
+                ttft_p90 = get_metric_value('time_to_first_token_ms', 'p90') / 1000.0
                 ttft_p95 = get_metric_value('time_to_first_token_ms', 'p95') / 1000.0
+
+                # Extract ITL percentiles
                 itl_median = get_metric_value('inter_token_latency_ms', 'median') / 1000.0
+                itl_p10 = get_metric_value('inter_token_latency_ms', 'p10') / 1000.0
+                itl_p25 = get_metric_value('inter_token_latency_ms', 'p25') / 1000.0
+                itl_p50 = get_metric_value('inter_token_latency_ms', 'p50') / 1000.0
+                itl_p75 = get_metric_value('inter_token_latency_ms', 'p75') / 1000.0
+                itl_p90 = get_metric_value('inter_token_latency_ms', 'p90') / 1000.0
                 itl_p95 = get_metric_value('inter_token_latency_ms', 'p95') / 1000.0
+
+                # Extract TPOT percentiles
                 tpot_median = get_metric_value('time_per_output_token_ms', 'median') / 1000.0
                 tpot_p95 = get_metric_value('time_per_output_token_ms', 'p95') / 1000.0
 
@@ -409,8 +425,18 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
                     request_latency_median=request_latency_median,
                     request_latency_p95=request_latency_p95,
                     ttft_median=ttft_median,
+                    ttft_p10=ttft_p10,
+                    ttft_p25=ttft_p25,
+                    ttft_p50=ttft_p50,
+                    ttft_p75=ttft_p75,
+                    ttft_p90=ttft_p90,
                     ttft_p95=ttft_p95,
                     itl_median=itl_median,
+                    itl_p10=itl_p10,
+                    itl_p25=itl_p25,
+                    itl_p50=itl_p50,
+                    itl_p75=itl_p75,
+                    itl_p90=itl_p90,
                     itl_p95=itl_p95,
                     tpot_median=tpot_median,
                     tpot_p95=tpot_p95,
