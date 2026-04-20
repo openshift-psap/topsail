@@ -920,12 +920,13 @@ class TokenThroughputPercentilesAnalysis():
                     'Concurrency': benchmark.request_concurrency,
                     'Strategy': benchmark.strategy,
 
-                    # Output token percentiles
+                    # Output token percentiles and mean
                     'Output Tokens/s P10': benchmark.output_tokens_per_second_p10,
                     'Output Tokens/s P25': benchmark.output_tokens_per_second_p25,
                     'Output Tokens/s P50': benchmark.output_tokens_per_second_p50,
                     'Output Tokens/s P75': benchmark.output_tokens_per_second_p75,
                     'Output Tokens/s P90': benchmark.output_tokens_per_second_p90,
+                    'Output Tokens/s Mean': getattr(benchmark, 'output_tokens_per_second_mean', benchmark.output_tokens_per_second),
 
                     'Request Rate (req/s)': benchmark.request_rate,
                 })
@@ -945,13 +946,14 @@ class TokenThroughputPercentilesAnalysis():
         available_colors = px.colors.qualitative.Set1
         color_map = {config_name: available_colors[i % len(available_colors)] for i, config_name in enumerate(configurations)}
 
-        # Define percentiles to plot with distinct line styles
+        # Define percentiles and mean to plot with distinct line styles
         percentiles_config = [
             {'percentile': 'P10', 'line_style': {'width': 2, 'dash': 'longdash'}, 'opacity': 0.6},
             {'percentile': 'P25', 'line_style': {'width': 2, 'dash': 'dot'}, 'opacity': 0.7},
             {'percentile': 'P50', 'line_style': {'width': 4, 'dash': 'solid'}, 'opacity': 1.0},
             {'percentile': 'P75', 'line_style': {'width': 3, 'dash': 'dash'}, 'opacity': 0.9},
             {'percentile': 'P90', 'line_style': {'width': 2, 'dash': 'dashdot'}, 'opacity': 0.8},
+            {'percentile': 'Mean', 'line_style': {'width': 4, 'dash': 'dot'}, 'opacity': 1.0},
         ]
 
         # Add traces for each configuration and percentile
@@ -1001,7 +1003,7 @@ class TokenThroughputPercentilesAnalysis():
 
         # Create title with context info
         title = _get_plot_title_with_context_info(
-            'Output Token Throughput Percentiles vs Concurrency<br><sub>Higher is better • P10 (long dash), P25 (dotted), P50 (solid), P75 (dashed), P90 (dash-dot)</sub>',
+            'Output Token Throughput Percentiles vs Concurrency<br><sub>Higher is better • P10 (long dash), P25 (dotted), P50 (solid), P75 (dashed), P90 (dash-dot), Mean (thick dotted)</sub>',
             variables,
             settings,
         )
@@ -1026,11 +1028,11 @@ class TokenThroughputPercentilesAnalysis():
 
         # 3. Generate summary text focusing on output token percentiles
         msg = []
-        msg.append("🚀 <b>Output Token Throughput Percentiles Analysis:</b>")
+        msg.append("🚀 <b>Output Token Throughput Percentiles & Mean Analysis:</b>")
         msg.append(html.Br())
 
-        # Best performers for each percentile
-        percentiles_to_analyze = ['P10', 'P25', 'P50', 'P75', 'P90']
+        # Best performers for each percentile and mean
+        percentiles_to_analyze = ['P10', 'P25', 'P50', 'P75', 'P90', 'Mean']
         best_performers = {}
 
         for perc in percentiles_to_analyze:
@@ -1080,8 +1082,10 @@ class TokenThroughputPercentilesAnalysis():
         msg.append(html.Br())
         msg.append("• <b>P90</b>: High performance — 90% achieve this or higher")
         msg.append(html.Br())
+        msg.append("• <b>Mean</b>: Average performance across all requests")
         msg.append(html.Br())
-        msg.append("💡 <b>Analysis</b>: Smaller spreads between percentiles indicate more consistent performance. Focus on configurations with high P50 and small P90—P10 gaps.")
+        msg.append(html.Br())
+        msg.append("💡 <b>Analysis</b>: Smaller spreads between percentiles indicate more consistent performance. Compare mean vs P50 to understand distribution skew. Focus on configurations with high P50 and small P90—P10 gaps.")
 
         # 4. Return fig, msg
         return fig, msg
