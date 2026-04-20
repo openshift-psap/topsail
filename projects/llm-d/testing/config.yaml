@@ -28,7 +28,7 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
+    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
@@ -78,11 +78,11 @@ ci_presets:
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
-  base_line-flavor:
-    tests.llmd.flavors: [intelligentrouting-tp2-x4]
+  baseline-flavors:
+    tests.llmd.flavors: [simple, simple-tp4, simple-tp2-x4]
 
-  multi-flavor:
-    tests.llmd.flavors: [simple, simple-tp2-x4, intelligentrouting-tp2-x4]
+  intelligentrouting-flavors:
+    tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
@@ -229,20 +229,21 @@ prepare:
 
 deployment_profiles:
   __default__:
-    tests.llmd.inference_service.epp: epp-default-rhoai-3.4-ea.1
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+    tests.llmd.inference_service.epp.deploy: "default"
+    tests.llmd.inference_service.epp.config_file: null # use the default config
 
   simple:
-    tests.llmd.inference_service.epp: null
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
+    tests.llmd.inference_service.epp.deploy: false
 
   intelligentrouting:
-    # tests.llmd.inference_service.epp: epp-approximate-prefix-cache
     tests.llmd.inference_service.yaml_file: llmisvc-simple.yaml
 
   pd:
-    tests.llmd.inference_service.epp: epp-pd.v0.6
     tests.llmd.inference_service.yaml_file: llmisvc-pd.yaml
+    tests.llmd.inference_service.epp.deploy: "default"
+    tests.llmd.inference_service.epp.config_file: null
 
 models:
   facebook-opt-125m:
@@ -290,7 +291,9 @@ tests:
       yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
 
-      epp: null # defined in the deployment_profile
+      epp:
+        deploy: "default"
+        config_file: null # use the default config
 
       do_simple_test: true
       gateway:

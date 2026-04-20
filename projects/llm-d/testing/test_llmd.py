@@ -57,8 +57,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
 
             _, _, llmisvc_path = deploy_llm_inference_service(flavor, llmisvc_name, namespace, model_ref)
 
-            # Start metrics capture after deployment
-            start_metrics_capture(flavor)
 
             models = config.project.get_config(f"models")
             model_name = models[model_ref]["name"]
@@ -80,12 +78,6 @@ def test_single_flavor(flavor, flavor_index, total_flavors, namespace):
             flavor_failed = e
 
         finally:
-            # Stop metrics capture after testing (success or failure)
-            try:
-                stop_metrics_capture(flavor)
-            except Exception as metrics_e:
-                logging.exception(f"Failed to stop metrics capture: {metrics_e}")
-
             # Always capture LLM inference service state (success or failure)
             logging.info("Capturing LLM inference service state for debugging")
             try:
@@ -368,11 +360,8 @@ def apply_flavor_modifications(isvc_data, flavor):
 
     # Apply base flavor modifications
     if base_flavor == "simple":
-        logging.info("Applying 'simple' flavor modifications")
-        # Remove spec.router if it exists
-        if 'router' in isvc_data.get('spec', {}):
-            del isvc_data['spec']['router']
-            logging.info("Removed spec.router for 'simple' flavor")
+        logging.info("Applying 'simple' flavor - keeping ISVC untouched")
+        # No modifications - keep original ISVC configuration
 
     elif base_flavor in ["intelligentrouting"]:
         logging.info("Applying 'intelligent-routing' flavor - keeping ISVC untouched")
@@ -910,16 +899,27 @@ def apply_epp_configuration(isvc_data):
     Args:
         isvc_data: The loaded YAML data structure
     """
-    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp", None)
+    epp_deploy = config.project.get_config("tests.llmd.inference_service.epp.deploy")
+    if epp_deploy is False:
+        logging.info("No EPP to deploy, delete spec.router")
+        del isvc_data['spec']['router']
+        return
+    elif epp_deploy == "default":
+        logging.info("EPP 'default' configuration. Keep the router untouched.")
+        return
+    elif epp_deploy != "custom":
+        raise ValueError(f"EPP configuration '{epp_deploy}' is not suppored.")
+
+
+    epp_config_name = config.project.get_config("tests.llmd.inference_service.epp.config_file")
 
     if not epp_config_name:
-        logging.debug("No EPP configuration specified")
-        return
+        raise ValueError(f"EPP configuration '{epp_deploy}' needs an EPP config file.")
 
     logging.info(f"Applying EPP configuration: {epp_config_name}")
 
     # Verify EPP configuration file exists
-    epp_config_path = TESTING_THIS_DIR / "epp-config" / f"{epp_config_name}.yaml"
+    epp_config_path = TESTING_THIS_DIR / "epp-config" / epp_config_name
     if not epp_config_path.exists():
         raise ValueError(f"EPP configuration file not found: {epp_config_path}")
 
@@ -928,11 +928,8 @@ def apply_epp_configuration(isvc_data):
     router_template = isvc_data['spec']['router']['scheduler']['template']
     router_container = router_template['containers'][0]
 
-    if router_container['args'][-1] != '--config-text':
-        raise ValueError(f"Excepted to find --config-text as last argument of the LLMISVC. Got '{router_container['args'][-1]}'.")
-
     # Add the new EPP configuration argument
-    router_container['args'].append(epp_value)
+    router_container['args'] = ["--config-text", epp_value]
 
 
 def reshape_isvc(flavor, llmisvc_path, model_key):
@@ -968,8 +965,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)
-    if not flavor.startswith("simple"):
-        apply_epp_configuration(isvc_data)
+    apply_epp_configuration(isvc_data)
 
     # Save the modified file to ARTIFACT_DIR
     output_path = env.ARTIFACT_DIR / llmisvc_path.name
@@ -1214,84 +1210,6 @@ def capture_llm_inference_service_state(llmisvc_name, namespace):
 
     except Exception as e:
         logging.error(f"Failed to capture LLM inference service state: {e}")
-
-
-def start_metrics_capture(flavor):
-    """
-    Starts metrics capture for both ServiceMonitor and PodMonitor if enabled
-    """
-    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
-        return
-
-    logging.info("Starting metrics capture")
-
-    namespace = config.project.get_config("tests.llmd.namespace")
-    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
-    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
-
-    # Parse flavor to check if it's simple
-    components = parse_flavor_components(flavor)
-    is_simple_flavor = components['base'] == "simple"
-
-    # Start vLLM PodMonitor capture (always)
-    logging.info(f"Starting PodMonitor metrics capture for {vllm_name}")
-    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                    service_name=vllm_name,
-                    namespace=namespace,
-                    is_podmonitor=True,
-                    mute_stdout=True)
-
-    # Start scheduler ServiceMonitor capture (only for non-simple flavors)
-    if not is_simple_flavor:
-        logging.info(f"Starting ServiceMonitor metrics capture for {scheduler_name}")
-        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                        service_name=scheduler_name,
-                        namespace=namespace,
-                        mute_stdout=True)
-    else:
-        logging.info("Skipping scheduler metrics capture for simple flavor")
-
-    logging.info("Metrics capture started successfully")
-
-
-def stop_metrics_capture(flavor):
-    """
-    Stops metrics capture for both ServiceMonitor and PodMonitor if enabled
-    """
-    if not config.project.get_config("tests.llmd.inference_service.metrics.manual_capture"):
-        return
-
-    logging.info("Stopping metrics capture")
-
-    namespace = config.project.get_config("tests.llmd.namespace")
-    scheduler_name = config.project.get_config("tests.llmd.inference_service.metrics.scheduler_servicemonitor_name")
-    vllm_name = config.project.get_config("tests.llmd.inference_service.metrics.vllm_podmonitor_name")
-
-    # Parse flavor to check if it's simple
-    components = parse_flavor_components(flavor)
-    is_simple_flavor = components['base'] == "simple"
-
-    # Stop vLLM PodMonitor capture (always)
-    logging.info(f"Stopping PodMonitor metrics capture for {vllm_name}")
-    run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                    service_name=vllm_name,
-                    namespace=namespace,
-                    is_podmonitor=True,
-                    finalize=True,
-                    mute_stdout=True,
-                    artifact_dir_suffix="_finalize",)
-
-    # Stop scheduler ServiceMonitor capture (only for non-simple flavors)
-    if not is_simple_flavor:
-        logging.info(f"Stopping ServiceMonitor metrics capture for {scheduler_name}")
-        run.run_toolbox("cluster", "capture_servicemonitor_metrics",
-                        service_name=scheduler_name,
-                        namespace=namespace,
-                        finalize=True,
-                        mute_stdout=True,
-                        artifact_dir_suffix="_finalize",)
-
-    logging.info("Metrics capture stopped successfully")
 
 
 def cleanup_llm_inference_resources():

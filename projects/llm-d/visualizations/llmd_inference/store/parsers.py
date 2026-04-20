@@ -19,6 +19,7 @@ artifact_dirnames = types.SimpleNamespace()
 artifact_dirnames.GUIDELLM_BENCHMARK_DIR = "*__llmd__run_guidellm_benchmark"
 artifact_dirnames.PROMETHEUS_DUMP_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db"
 artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR = "*__cluster__dump_prometheus_dbs/*__cluster__dump_prometheus_db_uwm"
+artifact_dirnames.LLMISVC_CAPTURE_DIR = "*__llmd__capture_isvc_state"
 
 artifact_paths = types.SimpleNamespace() # will be dynamically populated
 
@@ -33,6 +34,7 @@ IMPORTANT_FILES = [
     f"{artifact_dirnames.PROMETHEUS_UWM_DUMP_DIR}/prometheus.t*",
     f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/results/benchmarks.json",
     f"{artifact_dirnames.GUIDELLM_BENCHMARK_DIR}/artifacts/guidellm_benchmark_job.logs",
+    f"{artifact_dirnames.LLMISVC_CAPTURE_DIR}/artifacts/llminferenceservice.json",
 ]
 
 
@@ -59,8 +61,12 @@ def find_guidellm_benchmark_directories(dirname):
 def parse_once(results, dirname):
     """Parse the benchmark log files once"""
 
+    # Parse test configuration and environment for PROW URLs
+    results.from_env = helpers_store_parsers.parse_env(dirname, None, artifact_paths.LLMISVC_CAPTURE_DIR)
+
     # Parse guidellm benchmarks - support multiple benchmark directories
     results.guidellm_benchmarks = []
+    results.guidellm_configuration = None
     guidellm_directories = find_guidellm_benchmark_directories(dirname)
 
     if guidellm_directories:
@@ -73,8 +79,13 @@ def parse_once(results, dirname):
                 benchmarks = parse_guidellm_benchmark_json(dirname, json_file_path.relative_to(dirname))
                 results.guidellm_benchmarks.extend(benchmarks)
                 logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from JSON: {json_file_path}")
+
+                # Parse configuration from the first JSON file found
+                if results.guidellm_configuration is None:
+                    results.guidellm_configuration = _parse_guidellm_config(dirname, json_file_path.relative_to(dirname))
+
             elif log_file_path.exists():
-                raise RuntimeException("Don't want to use log-file parsing (hardcoded)")
+                raise RuntimeError("Don't want to use log-file parsing (hardcoded)")
                 benchmarks = parse_guidellm_benchmark_log(dirname, log_file_path.relative_to(dirname))
                 results.guidellm_benchmarks.extend(benchmarks)
                 logging.info(f"Parsed {len(benchmarks)} guidellm benchmarks from log: {log_file_path}")
@@ -95,6 +106,9 @@ def parse_once(results, dirname):
     else:
         results.test_success = None
         logging.warning(f"Exit code file not found at {exit_code_path}")
+
+    # Parse LLMISVC configuration
+    results.llmisvc_config = _parse_llmisvc_config(dirname)
 
     # Parse Prometheus UWM metrics
     results.metrics = _extract_metrics(dirname)
@@ -434,6 +448,57 @@ def parse_guidellm_benchmark_json(dirname, json_file_path: pathlib.Path) -> list
     except (json.JSONDecodeError, ValueError) as e:
         logging.warning(f"Failed to parse Guidellm JSON {json_file_path}: {e}")
         return []
+
+
+def _parse_guidellm_config(dirname, json_file_path: pathlib.Path):
+    """Parse GuideLLM configuration from JSON file"""
+
+    if not (dirname / json_file_path).exists():
+        logging.warning(f"GuideLLM JSON config file not found: {json_file_path}")
+        return None
+
+    try:
+        with open(register_important_file(dirname, json_file_path)) as f:
+            json_data = json.load(f)
+
+        # Extract top-level configuration fields
+        config = {}
+
+        # Extract args if present
+        if 'args' in json_data and json_data['args']:
+            config['args'] = json_data['args']
+        if 'metadata' in json_data and json_data['metadata']:
+            config['metadata'] = json_data['metadata']
+
+        logging.info(f"Successfully parsed GuideLLM configuration from {json_file_path}")
+
+        return config if config else None
+
+    except Exception as e:
+        logging.error(f"Failed to parse GuideLLM configuration from {json_file_path}: {e}")
+        return None
+
+
+def _parse_llmisvc_config(dirname):
+    """Parse LLMISVC configuration from captured state artifacts"""
+    if artifact_paths.LLMISVC_CAPTURE_DIR is None:
+        logging.warning("LLMISVC capture directory not found")
+        return None
+
+    llmisvc_config_path = artifact_paths.LLMISVC_CAPTURE_DIR / "artifacts" / "llminferenceservice.json"
+
+    if not (dirname / llmisvc_config_path).exists():
+        logging.warning(f"LLMISVC config file not found at {llmisvc_config_path}")
+        return None
+
+    try:
+        with open(register_important_file(dirname, llmisvc_config_path)) as f:
+            llmisvc_config = json.load(f)
+            logging.info(f"Successfully parsed LLMISVC configuration from {llmisvc_config_path}")
+            return llmisvc_config
+    except Exception as e:
+        logging.error(f"Failed to parse LLMISVC configuration from {llmisvc_config_path}: {e}")
+        return None
 
 
 def _extract_metrics(dirname):

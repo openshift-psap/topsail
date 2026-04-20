@@ -140,7 +140,7 @@ def parse_env(dirname, test_config, capture_state_dir):
             JENKINS_ARTIFACTS=f"https://{jenkins_instance}/{jenkins_job}/{build_number}/artifact/run/{jumphost}/{from_env.test.test_path}"
         )
 
-    if test_config.get("export_artifacts.enabled", False):
+    if test_config and test_config.get("export_artifacts.enabled", False):
         bucket = test_config.get("export_artifacts.bucket")
         path_prefix = test_config.get("export_artifacts.path_prefix")
 

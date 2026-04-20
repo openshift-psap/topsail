@@ -144,6 +144,7 @@ class GuidellmThroughputScaling():
 
         fig.update_traces(textposition="top center")
         fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # Add trend lines for constant strategies
         constant_data = df[df['Strategy Type'].str.contains('Constant', na=False)]
@@ -394,6 +395,10 @@ class GuidellmTokensConcurrency():
         """
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # 2. Generate plotly express plot with consistent color scheme
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -402,6 +407,9 @@ class GuidellmTokensConcurrency():
 
             # Get unique name for this entry (includes flavor info)
             entry_name = entry.get_name(variables)
+
+            # Extract platform information
+            platform = getattr(entry.settings, 'platform', 'unknown')
 
             # Include all strategies - let's show the full picture
             for benchmark in entry.results.guidellm_benchmarks:
@@ -422,13 +430,17 @@ class GuidellmTokensConcurrency():
                 elif 'ramp' in benchmark.strategy.lower():
                     strategy_type = "Ramp"
 
-                # Use P50 (median) values for more representative throughput
-                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second)
-                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second)
-                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second)
+                # Use P50 (median) values for more representative throughput - consistent with TokenThroughputPercentilesAnalysis
+                total_tokens_p50 = getattr(benchmark, 'tokens_per_second_p50',
+                                          getattr(benchmark, 'tokens_per_second_median', benchmark.tokens_per_second))
+                output_tokens_p50 = getattr(benchmark, 'output_tokens_per_second_p50',
+                                           getattr(benchmark, 'output_tokens_per_second_median', benchmark.output_tokens_per_second))
+                input_tokens_p50 = getattr(benchmark, 'input_tokens_per_second_p50',
+                                          getattr(benchmark, 'input_tokens_per_second_median', benchmark.input_tokens_per_second))
 
                 data.append({
                     'Test Configuration': entry_name,
+                    'Platform': platform,
                     'Concurrency': benchmark.request_concurrency,
                     'Tokens/s': output_tokens_p50,
                     'Input Tokens/s': input_tokens_p50,
@@ -449,7 +461,6 @@ class GuidellmTokensConcurrency():
         # Sort by Concurrency for proper plot ordering
         df = df.sort_values(['Concurrency', "Test Configuration"])
 
-        # 2. Generate plotly express plot with consistent color scheme
         # Sort configurations to ensure consistent color assignment
         configurations = sorted(df['Test Configuration'].unique())
         available_colors = px.colors.qualitative.Set1
@@ -462,16 +473,22 @@ class GuidellmTokensConcurrency():
             settings,
         )
 
-        fig = px.scatter(df,
-                        hover_data=df.columns,
-                        x='Concurrency',
-                        y='Tokens/s',
-                        color='Test Configuration',
-                        color_discrete_map=color_map,
-                        title=title)
+        # Set line dash parameter conditionally for platforms
+        line_dash = 'Platform' if use_platform_markers else None
+
+        fig = px.line(df,
+                      hover_data=df.columns,
+                      x='Concurrency',
+                      y='Tokens/s',
+                      color='Test Configuration',
+                      line_dash=line_dash,
+                      markers=True,
+                      color_discrete_map=color_map,
+                      title=title)
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # 3. Generate summary text
         max_tokens = df['Tokens/s'].max()
@@ -523,7 +540,10 @@ class GuidellmTokensConcurrency():
                 msg.append(html.Br())
             msg.append(html.Br())
 
-        msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+        if use_platform_markers:
+            msg.append("Note: Color shows test configuration, line style shows platform, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
+        else:
+            msg.append("Note: Color shows test configuration, lines connect points for each configuration. Values shown are P50 (median) for more representative performance.")
 
         # 4. Return fig, msg
         return fig, msg
@@ -916,7 +936,6 @@ class TokenThroughputPercentilesAnalysis():
         df = pd.DataFrame(data)
 
         # Sort by Concurrency for proper plot ordering
-        df = df.sort_values(['Concurrency', "Test Configuration"])
 
         # 2. Generate plot for output token percentiles
         fig = go.Figure()
@@ -948,6 +967,9 @@ class TokenThroughputPercentilesAnalysis():
 
                 if column_name not in config_df.columns:
                     continue
+
+
+                config_df = config_df.sort_values(['Concurrency', column_name])
 
                 # Create unique trace name
                 trace_name = f'{config_name} - {percentile}'
@@ -1000,6 +1022,7 @@ class TokenThroughputPercentilesAnalysis():
                 font=dict(size=10)
             )
         )
+        fig.update_yaxes(rangemode="tozero")  # Ensure 0 is always shown on y-axis
 
         # 3. Generate summary text focusing on output token percentiles
         msg = []
