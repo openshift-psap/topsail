@@ -231,51 +231,62 @@ def _generate_itl_percentiles_plot(args):
 
 def _generate_throughput_plots(args):
     """
-    Generate throughput plots with three sections: Throughput (mean), TTFT, and ITL
+    Generate throughput plots with three tabs: Throughput (mean), TTFT, and ITL
 
     Args:
         args: Plot arguments (potentially filtered for specific model/load_shape)
 
     Returns:
-        List of HTML elements containing the plots
+        List of HTML elements containing the tabbed plots
     """
-    content = []
+    # Tab 1: Throughput (Mean)
+    throughput_content = []
+    throughput_content.append(html.H4("🚀 Token Throughput vs Concurrency (Mean)"))
+    throughput_content.append(html.P("Token generation throughput scaling analysis using mean values."))
+    throughput_content += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
 
-    # Section 1: Throughput (Mean)
-    content.append(html.H4("🚀 Token Throughput vs Concurrency (Mean)"))
-    content.append(html.P("Token generation throughput scaling analysis using mean values."))
-    content += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
-    content.append(html.Hr())
-
-    # Section 2: TTFT Analysis
-    content.append(html.H4("⏱️ Time To First Token Analysis"))
+    # Tab 2: TTFT Analysis
+    ttft_content = []
+    ttft_content.append(html.H4("⏱️ Time To First Token Analysis"))
 
     # TTFT P50
-    content.append(html.H5("TTFT (P50)"))
-    content.append(html.P("Median time to first token analysis."))
-    content += report.Plot_and_Text("Guidellm TTFT Analysis", args)
+    ttft_content.append(html.H5("TTFT (P50)"))
+    ttft_content.append(html.P("Median time to first token analysis."))
+    ttft_content += report.Plot_and_Text("Guidellm TTFT Analysis", args)
 
     # TTFT Percentiles
-    content.append(html.H5("📊 TTFT Percentiles"))
-    content.append(html.P("Complete TTFT percentile distribution analysis."))
-    content.append(_generate_ttft_percentiles_plot(args))
-    content.append(html.Hr())
+    ttft_content.append(html.H5("📊 TTFT Percentiles"))
+    ttft_content.append(html.P("Complete TTFT percentile distribution analysis."))
+    ttft_content.append(_generate_ttft_percentiles_plot(args))
 
-    # Section 3: ITL Analysis
-    content.append(html.H4("🔄 Inter-Token Latency Analysis"))
+    # Tab 3: ITL Analysis
+    itl_content = []
+    itl_content.append(html.H4("🔄 Inter-Token Latency Analysis"))
 
     # ITL P50
-    content.append(html.H5("ITL (P50)"))
-    content.append(html.P("Median inter-token latency analysis."))
-    content += report.Plot_and_Text("Guidellm ITL Analysis", args)
+    itl_content.append(html.H5("ITL (P50)"))
+    itl_content.append(html.P("Median inter-token latency analysis."))
+    itl_content += report.Plot_and_Text("Guidellm ITL Analysis", args)
 
     # ITL Percentiles
-    content.append(html.H5("📊 ITL Percentiles"))
-    content.append(html.P("Complete ITL percentile distribution analysis."))
-    content.append(_generate_itl_percentiles_plot(args))
-    content.append(html.Hr())
+    itl_content.append(html.H5("📊 ITL Percentiles"))
+    itl_content.append(html.P("Complete ITL percentile distribution analysis."))
+    itl_content.append(_generate_itl_percentiles_plot(args))
 
-    return content
+    # Create tabs
+    tabs = dcc.Tabs(id="throughput-tabs", value="throughput", children=[
+        dcc.Tab(label="🚀 Throughput", value="throughput", children=[
+            html.Div(throughput_content, style={"padding": "20px"})
+        ]),
+        dcc.Tab(label="⏱️ TTFT", value="ttft", children=[
+            html.Div(ttft_content, style={"padding": "20px"})
+        ]),
+        dcc.Tab(label="🔄 ITL", value="itl", children=[
+            html.Div(itl_content, style={"padding": "20px"})
+        ]),
+    ])
+
+    return [tabs]
 
 class ThroughputComparisonsReport():
     def __init__(self):
