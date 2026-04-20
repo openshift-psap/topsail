@@ -10,7 +10,9 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 def register():
-    ThroughputComparisonsReport()
+    BaselineComparisonsReport()
+    IntelligentRoutingComparisonsReport()
+    PDComparisonsReport()
 
 def _generate_ttft_percentiles_plot(args):
     """Generate TTFT percentiles plot in single chart"""
@@ -231,7 +233,7 @@ def _generate_itl_percentiles_plot(args):
 
 def _generate_throughput_plots(args):
     """
-    Generate throughput plots with three tabs: Throughput (mean), TTFT, and ITL
+    Generate throughput plots with five tabs: Throughput (mean), TTFT P50, TTFT Percentiles, ITL P50, ITL Percentiles
 
     Args:
         args: Plot arguments (potentially filtered for specific model/load_shape)
@@ -245,52 +247,54 @@ def _generate_throughput_plots(args):
     throughput_content.append(html.P("Token generation throughput scaling analysis using mean values."))
     throughput_content += report.Plot_and_Text("Guidellm Tokens vs Concurrency", args)
 
-    # Tab 2: TTFT Analysis
-    ttft_content = []
-    ttft_content.append(html.H4("⏱️ Time To First Token Analysis"))
+    # Tab 2: TTFT P50
+    ttft_p50_content = []
+    ttft_p50_content.append(html.H4("⏱️ Time To First Token (P50)"))
+    ttft_p50_content.append(html.P("Median time to first token analysis."))
+    ttft_p50_content += report.Plot_and_Text("Guidellm TTFT Analysis", args)
 
-    # TTFT P50
-    ttft_content.append(html.H5("TTFT (P50)"))
-    ttft_content.append(html.P("Median time to first token analysis."))
-    ttft_content += report.Plot_and_Text("Guidellm TTFT Analysis", args)
+    # Tab 3: TTFT Percentiles
+    ttft_percentiles_content = []
+    ttft_percentiles_content.append(html.H4("📊 TTFT Percentiles"))
+    ttft_percentiles_content.append(html.P("Complete TTFT percentile distribution analysis (P10, P25, P50, P75, P90)."))
+    ttft_percentiles_content.append(_generate_ttft_percentiles_plot(args))
 
-    # TTFT Percentiles
-    ttft_content.append(html.H5("📊 TTFT Percentiles"))
-    ttft_content.append(html.P("Complete TTFT percentile distribution analysis."))
-    ttft_content.append(_generate_ttft_percentiles_plot(args))
+    # Tab 4: ITL P50
+    itl_p50_content = []
+    itl_p50_content.append(html.H4("🔄 Inter-Token Latency (P50)"))
+    itl_p50_content.append(html.P("Median inter-token latency analysis."))
+    itl_p50_content += report.Plot_and_Text("Guidellm ITL Analysis", args)
 
-    # Tab 3: ITL Analysis
-    itl_content = []
-    itl_content.append(html.H4("🔄 Inter-Token Latency Analysis"))
-
-    # ITL P50
-    itl_content.append(html.H5("ITL (P50)"))
-    itl_content.append(html.P("Median inter-token latency analysis."))
-    itl_content += report.Plot_and_Text("Guidellm ITL Analysis", args)
-
-    # ITL Percentiles
-    itl_content.append(html.H5("📊 ITL Percentiles"))
-    itl_content.append(html.P("Complete ITL percentile distribution analysis."))
-    itl_content.append(_generate_itl_percentiles_plot(args))
+    # Tab 5: ITL Percentiles
+    itl_percentiles_content = []
+    itl_percentiles_content.append(html.H4("📊 ITL Percentiles"))
+    itl_percentiles_content.append(html.P("Complete ITL percentile distribution analysis (P10, P25, P50, P75, P90)."))
+    itl_percentiles_content.append(_generate_itl_percentiles_plot(args))
 
     # Create tabs
     tabs = dcc.Tabs(id="throughput-tabs", value="throughput", children=[
         dcc.Tab(label="🚀 Throughput", value="throughput", children=[
             html.Div(throughput_content, style={"padding": "20px"})
         ]),
-        dcc.Tab(label="⏱️ TTFT", value="ttft", children=[
-            html.Div(ttft_content, style={"padding": "20px"})
+        dcc.Tab(label="⏱️ TTFT P50", value="ttft-p50", children=[
+            html.Div(ttft_p50_content, style={"padding": "20px"})
         ]),
-        dcc.Tab(label="🔄 ITL", value="itl", children=[
-            html.Div(itl_content, style={"padding": "20px"})
+        dcc.Tab(label="📊 TTFT Percentiles", value="ttft-percentiles", children=[
+            html.Div(ttft_percentiles_content, style={"padding": "20px"})
+        ]),
+        dcc.Tab(label="🔄 ITL P50", value="itl-p50", children=[
+            html.Div(itl_p50_content, style={"padding": "20px"})
+        ]),
+        dcc.Tab(label="📊 ITL Percentiles", value="itl-percentiles", children=[
+            html.Div(itl_percentiles_content, style={"padding": "20px"})
         ]),
     ])
 
     return [tabs]
 
-class ThroughputComparisonsReport():
+class BaselineComparisonsReport():
     def __init__(self):
-        self.name = "report: Throughput Comparisons"
+        self.name = "report: Baseline Comparisons"
         self.id_name = self.name.lower().replace(" ", "_").replace("-", "_")
         self.no_graph = True
         self.is_report = True
@@ -300,18 +304,18 @@ class ThroughputComparisonsReport():
 
     def do_plot(self, *args):
         """
-        Generate throughput comparison report combining token throughput plots
+        Generate baseline comparison report for simple flavor configurations
         """
 
         ordered_vars, settings, setting_lists, variables, cfg = args
 
         header = []
-        header.append(html.H2("🚀 Throughput Comparisons"))
+        header.append(html.H2("📊 Baseline Comparisons"))
         header.append(html.Br())
 
         header.append(html.P([
-            "This report provides comprehensive analysis of token throughput performance ",
-            "organized by model and load shape to enable focused comparisons."
+            "Baseline performance analysis using simple flavor configuration, ",
+            "comparing across different models and load shapes."
         ]))
         header.append(html.Br())
 
@@ -329,13 +333,6 @@ class ThroughputComparisonsReport():
                 else:
                     updated_setting_lists.append(setting_list)
             setting_lists[:] = updated_setting_lists
-
-        # Baseline Section
-        header.append(html.H2("📊 Baseline"))
-        header.append(html.P([
-            "Baseline performance analysis using simple flavor configuration, ",
-            "comparing across different models and load shapes."
-        ]))
 
         # Get simple flavors
         simple_flavors = [f for f in variables.get('flavor', []) if f.startswith('simple')]
@@ -356,19 +353,56 @@ class ThroughputComparisonsReport():
 
                 header += _generate_throughput_plots(baseline_args)
 
-        # Intelligent Routing Section
-        header.append(html.H2("🧠 Intelligent Routing"))
+        return None, header
+
+
+class IntelligentRoutingComparisonsReport():
+    def __init__(self):
+        self.name = "report: Intelligent-routing Comparisons"
+        self.id_name = self.name.lower().replace(" ", "_").replace("-", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, *args):
+        """
+        Generate intelligent routing comparison report
+        """
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+        header.append(html.H2("🧠 Intelligent Routing Comparisons"))
+        header.append(html.Br())
+
         header.append(html.P([
             "Analysis of intelligent routing performance using llama3.3-70b model, ",
             "comparing routing-enabled configurations across different load shapes."
         ]))
+        header.append(html.Br())
+
+        args = report.set_config(dict(markers_by="platform"), args)
+
+        def filter_flavors(setting_lists, flavor_filter):
+            """Filter flavors from setting_lists based on provided filter function"""
+            updated_setting_lists = []
+            for setting_list in setting_lists:
+                if setting_list and setting_list[0][0] == 'flavor':
+                    # Apply the filter function to flavors
+                    filtered_flavors = [(k, v) for k, v in setting_list if flavor_filter(v)]
+                    if filtered_flavors:
+                        updated_setting_lists.append(filtered_flavors)
+                else:
+                    updated_setting_lists.append(setting_list)
+            setting_lists[:] = updated_setting_lists
 
         for with_simple in False, True:
             if with_simple:
                 header.append(html.H2("Intelligent Routing VS native"))
             else:
                 header.append(html.H2("Intelligent Routing"))
-
 
             for load_shape in variables.get('load_shape', []):
                 header.append(html.H3(f"📊 Load Shape: {load_shape}"))
@@ -393,14 +427,50 @@ class ThroughputComparisonsReport():
 
                 header += _generate_throughput_plots(ir_args_final)
 
-        header.append(html.Hr())
+        return None, header
 
-        # P/D Disaggregation Section
-        header.append(html.H2("🔄 P/D Disaggregation"))
+
+class PDComparisonsReport():
+    def __init__(self):
+        self.name = "report: P-D Comparisons"
+        self.id_name = self.name.lower().replace(" ", "_").replace("-", "_")
+        self.no_graph = True
+        self.is_report = True
+
+        table_stats.TableStats._register_stat(self)
+        common.Matrix.settings["stats"].add(self.name)
+
+    def do_plot(self, *args):
+        """
+        Generate P/D disaggregation comparison report
+        """
+
+        ordered_vars, settings, setting_lists, variables, cfg = args
+
+        header = []
+        header.append(html.H2("🔄 P/D Disaggregation Comparisons"))
+        header.append(html.Br())
+
         header.append(html.P([
             "Prefill/Decode disaggregation analysis using gpt-oss-120b model, ",
             "comparing disaggregated configurations across different load shapes."
         ]))
+        header.append(html.Br())
+
+        args = report.set_config(dict(markers_by="platform"), args)
+
+        def filter_flavors(setting_lists, flavor_filter):
+            """Filter flavors from setting_lists based on provided filter function"""
+            updated_setting_lists = []
+            for setting_list in setting_lists:
+                if setting_list and setting_list[0][0] == 'flavor':
+                    # Apply the filter function to flavors
+                    filtered_flavors = [(k, v) for k, v in setting_list if flavor_filter(v)]
+                    if filtered_flavors:
+                        updated_setting_lists.append(filtered_flavors)
+                else:
+                    updated_setting_lists.append(setting_list)
+            setting_lists[:] = updated_setting_lists
 
         for load_shape in variables.get('load_shape', []):
             header.append(html.H3(f"📊 Load Shape: {load_shape}"))
@@ -422,7 +492,5 @@ class ThroughputComparisonsReport():
             pd_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
 
             header += _generate_throughput_plots(pd_args_final)
-
-        header.append(html.Hr())
 
         return None, header
