@@ -8,4 +8,6 @@ visualize:
   - "report: Prometheus GPU Performance"
   - "report: Prometheus System Health"
   - "report: VLLM Metrics Analysis"
-  - "report: Throughput Comparisons"
+  - "report: Baseline Comparisons"
+  - "report: Intelligent-routing Comparisons"
+  - "report: P-D Comparisons"

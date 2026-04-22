@@ -43,6 +43,20 @@ class GuidellmBenchmark(matbench_models.ExclusiveModel):
     tpot_median: float  # Time Per Output Token
     tpot_p95: float
 
+    # TTFT percentiles
+    ttft_p10: float = 0.0
+    ttft_p25: float = 0.0
+    ttft_p50: float = 0.0
+    ttft_p75: float = 0.0
+    ttft_p90: float = 0.0
+
+    # ITL percentiles
+    itl_p10: float = 0.0
+    itl_p25: float = 0.0
+    itl_p50: float = 0.0
+    itl_p75: float = 0.0
+    itl_p90: float = 0.0
+
     # Throughput metrics
     tokens_per_second: float
     input_tokens_per_second: float

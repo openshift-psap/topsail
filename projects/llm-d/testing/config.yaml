@@ -278,6 +278,10 @@ models:
     source: hf://RedHatAI/granite-4.0-h-tiny-FP8-dynamic
     resources: {}
 
+  gpt-oss-20b:
+    name: openai/gpt-oss-20b
+    source: hf://openai/gpt-oss-20b
+
 tests:
   llmd:
     skip: false
@@ -298,7 +302,7 @@ tests:
       do_simple_test: true
       gateway:
         name: gateway-external
-      model: llama3-1-8b
+      model: gpt-oss-20b
       max_model_len: 40960
       metrics:
         manual_capture: false
