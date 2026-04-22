@@ -335,9 +335,9 @@ class BaselineComparisonsReport():
             setting_lists[:] = updated_setting_lists
 
         # Get simple flavors
-        simple_flavors = [f for f in variables.get('flavor', []) if f.startswith('simple')]
+        simple_flavors = [f for f in common.Matrix.settings.get('flavor', []) if f.startswith('simple')]
 
-        for load_shape in variables.get('load_shape', []):
+        for load_shape in common.Matrix.settings.get('load_shape', []):
             # Skip multiturn load shape for baseline
             if load_shape == 'Multiturn':
                 continue
@@ -404,7 +404,7 @@ class IntelligentRoutingComparisonsReport():
             else:
                 header.append(html.H2("Intelligent Routing"))
 
-            for load_shape in variables.get('load_shape', []):
+            for load_shape in common.Matrix.settings.get('load_shape', []):
                 header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
                 # Set llama3.3-70b and remove simple flavor
@@ -472,7 +472,7 @@ class PDComparisonsReport():
                     updated_setting_lists.append(setting_list)
             setting_lists[:] = updated_setting_lists
 
-        for load_shape in variables.get('load_shape', []):
+        for load_shape in common.Matrix.settings.get('load_shape', []):
             header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
             # Set gpt-oss-120b model
