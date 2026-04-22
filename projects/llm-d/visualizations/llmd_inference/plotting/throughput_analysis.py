@@ -755,7 +755,7 @@ class GuidellmTTFTAnalysis():
         df = df.sort_values(['Concurrency', "Test Configuration"])
 
         # 2. Generate plot
-        use_platform_markers = cfg.get("markers_by") == "platform"
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
         line_dash = 'Platform' if use_platform_markers else None
 
         title = _get_plot_title_with_context_info(
@@ -861,7 +861,7 @@ class GuidellmITLAnalysis():
         df = df.sort_values(['Concurrency', "Test Configuration"])
 
         # 2. Generate plot
-        use_platform_markers = cfg.get("markers_by") == "platform"
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
         line_dash = 'Platform' if use_platform_markers else None
 
         title = _get_plot_title_with_context_info(
