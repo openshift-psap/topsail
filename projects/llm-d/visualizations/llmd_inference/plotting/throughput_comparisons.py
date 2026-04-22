@@ -346,6 +346,9 @@ class BaselineComparisonsReport():
 
             for flavor in simple_flavors:
                 header.append(html.H4(f"🔧 {flavor}"))
+                if flavor == "simple-tp4-x4":
+                    header.append(html.I(f"Skipped, not relevant for baseline."))
+                    continue
 
                 # Set llama3.3-70b model and specific simple flavor
                 baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
