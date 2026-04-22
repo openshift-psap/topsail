@@ -9,6 +9,10 @@ from .utils.config import (
     get_all_configuration_info,
     generate_display_config_label
 )
+from .comparison_plots import (
+    SYNTHETIC_PLOT_NAME,
+    PERFORMANCE_PLOT_NAME,
+)
 
 from .utils.shared import (
     MIN_PLOT_BENCHMARK_TIME,
@@ -308,7 +312,7 @@ def create_performance_comparison_table(configurations):
     return html.Table(rows, style=css.STYLE_COMPARISON_TABLE)
 
 
-def create_differences_comparison_table(configurations):
+def create_differences_comparison_table(configurations, args):
     if not configurations or len(configurations) < 2:
         return html.Div("No differences found between configurations")
 
@@ -316,19 +320,43 @@ def create_differences_comparison_table(configurations):
 
     if configurations[0].get("metric_type") == "synthetic_benchmark":
         synthetic_table = create_synthetic_benchmark_comparison_table(configurations)
+        synthetic_plot = html_elements.plot_card(
+            SYNTHETIC_PLOT_NAME,
+            report.set_config(dict(configurations=configurations), args)
+        )
+
+        content = [html.H4("Benchmark Results", style=css.STYLE_H4)]
         if synthetic_table:
-            tables.append(html.Div([
-                html.H4("Benchmark Results", style=css.STYLE_H4),
-                synthetic_table
-            ]))
+            content.append(synthetic_table)
+        if synthetic_plot:
+            content.append(html.Div(
+                synthetic_plot,
+                style=css.STYLE_PLOTS_GRID,
+                className='plots-grid-responsive'
+            ))
+
+        if content:
+            tables.append(html.Div(content))
     else:
         # Regular container_bench metrics
         perf_table = create_performance_comparison_table(configurations)
+        perf_plot = html_elements.plot_card(
+            PERFORMANCE_PLOT_NAME,
+            report.set_config(dict(configurations=configurations), args)
+        )
+
+        content = [html.H4("Performance Metrics", style=css.STYLE_H4)]
         if perf_table:
-            tables.append(html.Div([
-                html.H4("Performance Metrics", style=css.STYLE_H4),
-                perf_table
-            ]))
+            content.append(perf_table)
+        if perf_plot:
+            content.append(html.Div(
+                perf_plot,
+                style=css.STYLE_PLOTS_GRID,
+                className='plots-grid-responsive'
+            ))
+
+        if content:
+            tables.append(html.Div(content))
 
     if tables:
         return html.Div([table for table in tables if table], style={'margin-bottom': '1rem'})
@@ -438,7 +466,7 @@ def _create_benchmark_section(benchmark, configurations, args):
 
     shared_info, _ = find_shared_and_different_info(configurations)
 
-    differences_table = create_differences_comparison_table(configurations)
+    differences_table = create_differences_comparison_table(configurations, args)
     section_components.extend([
         html.H3("Configuration Differences & Results", style=css.STYLE_H3),
         differences_table,
