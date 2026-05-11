@@ -2,12 +2,12 @@ visualize:
 - id: llmd_inference
   generate:
   - "report: LLM-D Inference Error Report"
-  - "report: GuideLLM Results Table"
-  - "report: GuideLLM Performance Analysis"
-  - "report: Prometheus Resource Usage"
-  - "report: Prometheus GPU Performance"
-  - "report: Prometheus System Health"
-  - "report: VLLM Metrics Analysis"
+  # - "report: GuideLLM Results Table"
+  # - "report: GuideLLM Performance Analysis"
+  # - "report: Prometheus Resource Usage"
+  # - "report: Prometheus GPU Performance"
+  # - "report: Prometheus System Health"
+  # - "report: VLLM Metrics Analysis"
   - "report: Baseline Comparisons"
   - "report: Intelligent-routing Comparisons"
   - "report: P-D Comparisons"

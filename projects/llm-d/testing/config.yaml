@@ -4,6 +4,7 @@ ci_presets:
   # list of names of the presets to apply, or a single name, or null if no preset
   names: null
   local_config: null
+  to_apply: [azure_h100]
 
   # Preset that automatically scales up GPU nodes if none exist, and scales down at the end
   scale_up:
@@ -16,7 +17,7 @@ ci_presets:
 
   opt-125m:
     tests.llmd.inference_service.model: facebook-opt-125m
-    tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
+    #tests.llmd.inference_service.vllm_args[5]: "--max-model-len=2048"
 
   psap_h200:
     extends: [llama-70b]
@@ -134,7 +135,7 @@ prepare:
     name: llm-d-project
 
   operators:
-    skip: false
+    skip: true
     list:
       - name: "Red Hat Connectivity Link"
         catalog: redhat-operators
@@ -199,14 +200,14 @@ prepare:
     name: openshift-ai-inference  # NOTE: Should not be changed for the time being
 
   grafana:
-    skip: false
+    skip: true
     namespace: grafana
     datasources:
       - grafana/datasource.yaml
     dashboards_dir: grafana/dashboards
 
   monitoring:
-    skip: false
+    skip: true
     namespaces:
       - "@prepare.namespace.name"
 
@@ -214,7 +215,7 @@ prepare:
     wait_for_readiness: false
 
   preload:
-    skip: false
+    skip: true
     extra_images: {}
     node_selector_key: nvidia.com/gpu.present
     node_selector_value: "true"
