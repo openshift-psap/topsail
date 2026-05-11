@@ -35,10 +35,16 @@ ci_presets:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
 
+  azure_h100:
+    extends: [azure, gpt-oss, pvc_rwx]
+    prepare.namespace.name: kpouget-dev
+    prepare.pvc.storage_class: azurefile-csi-nfs-premium
+
   azure:
     security.run_as_root: true
     prepare.preload.skip: true
     prepare.operators.skip: true
+    prepare.monitoring.skip: true
     prepare.cluster.skip: true
     prepare.rhoai.skip: true
 
@@ -46,9 +52,11 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: false
 
+    presets.gpt-oss["tests.llmd.inference_service.model"]: gpt-oss-120-local
+    presets.llama-70b["tests.llmd.inference_service.model"]: llama3-3-70b-local
+
   azure_light:
-    extends: [azure, opt-125m]
-    prepare.pvc.storage_class: managed-csi
+    extends: [azure, llama3.2-8b-local]
 
   cks:
     extends: [pvc_rwx, llama-70b]
@@ -247,6 +255,27 @@ deployment_profiles:
     tests.llmd.inference_service.epp.config_file: null
 
 models:
+  llama3-3-70b-local:
+    name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 64Gi
+
+  llama3-2-3b-local:
+    name: RedHatAI/Llama-3.2-3B-Instruct-FP8
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 8Gi
+
+  gpt-oss-120-local:
+    name: openai/gpt-oss-120b
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 64Gi
+
   facebook-opt-125m:
     name: facebook/opt-125m
     source: hf://facebook/opt-125m
