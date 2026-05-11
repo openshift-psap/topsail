@@ -92,6 +92,22 @@
        -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.podmonitors.yaml"
   ignore_errors: true
 
+- name: Capture HTTPRoute for routing
+  shell:
+    oc get httproute \
+       -l "app.kubernetes.io/component=llminferenceservice-router,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -n "{{ target_namespace }}" \
+       -oyaml > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.httproute.yaml"
+  ignore_errors: true
+
+- name: Capture HTTPRoute status
+  shell:
+    oc get httproute \
+       -l "app.kubernetes.io/component=llminferenceservice-router,app.kubernetes.io/name={{ llmd_capture_isvc_state_llmisvc_name }}" \
+       -n "{{ target_namespace }}" \
+       > "{{ artifact_extra_logs_dir }}/artifacts/llminferenceservice.httproute.status"
+  ignore_errors: true
+
 - name: Capture logs from LLMInferenceService pods
   shell: |
     for pod in $(oc get pods \
