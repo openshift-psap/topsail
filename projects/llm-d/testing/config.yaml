@@ -34,6 +34,11 @@ ci_presets:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
 
+  azure_h100:
+    extends: [azure, gpt-oss, pvc_rwx]
+    prepare.namespace.name: kpouget-dev
+    prepare.pvc.storage_class: azurefile-csi-nfs-premium
+
   azure:
     security.run_as_root: true
     prepare.preload.skip: true
