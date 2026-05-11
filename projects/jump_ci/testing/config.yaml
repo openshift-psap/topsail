@@ -20,6 +20,10 @@ ci_presets:
     extends: [mac_ai_mac5]
     project.args: [cpt_nightly_lightspeed]
 
+  mac_ai_nightly_remoting:
+    extends: [mac_ai_mac5]
+    project.args: [cpt_nightly_remoting]
+
   cont_bench:
     secrets.dir.name: cont-bench-secret # key/value never actually used
     secrets.dir.env_key: CONTAINER_BENCH_SECRET_PATH
@@ -51,6 +55,7 @@ prepare:
     pull-ci-openshift-psap-topsail-main-mac_ai-jump-ci-mac5: mac_ai_mac5
     periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt: mac_ai_nightly
     periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt-lightspeed: mac_ai_nightly_lightspeed
+    periodic-ci-openshift-psap-topsail-main-mac_ai-jump-ci-cpt-remoting: mac_ai_nightly_remoting
     pull-ci-openshift-psap-topsail-main-jump-ci-plot: plot_cluster
     pull-ci-crc-org-llama.cpp-main-topsail: llama_cpp_presubmit
 ssh_tunnel:

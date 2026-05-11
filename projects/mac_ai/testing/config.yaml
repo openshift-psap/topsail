@@ -93,6 +93,10 @@ ci_presets:
     extends: [cpt_lightspeed, mac5]
     matbench.lts.regression_analyses.notification.title: "Mac-AI: Lightspeed on Mac5"
 
+  cpt_nightly_remoting:
+    extends: [cpt_remoting, mac5]
+    matbench.lts.regression_analyses.notification.title: "Mac-AI: Remoting on Mac5"
+
   cpt_all:
     extends: [cpt_ramalama, cpt_llama_cpp]
     matbench.lts.regression_analyses.notification.title: "Mac-AI: Ramalama & llama.cpp"
@@ -136,6 +140,25 @@ ci_presets:
     test.llm_load_test.args.concurrency: 1
     test.llm_load_test.args.duration: 300
     secrets.image_registry: lightspeed-authfile.json
+
+  cpt_remoting:
+    extends: [use_intlab_os, analyze_kpis, export_kpis]
+
+    prepare.podman.machine.remoting_env.enabled: true
+    prepare.virglrenderer.enabled: true
+    prepare.llama_cpp.source.repo.url: https://github.com/ggml-org/llama.cpp
+    prepare.llama_cpp.source.repo.version: latest
+    prepare.virglrenderer.repo.branch: v1.2.0-remoting-0.3.6
+    prepare.ramalama.build_image.enabled: true
+    prepare.ramalama.build_image.name: remoting
+    prepare.ramalama.repo.version: main
+    prepare.remoting.podman_desktop_extension.repo.version: v0.1.3
+
+    test.platform:
+    - macos/llama_cpp/metal
+    - podman/llama_cpp/remoting
+    - podman/ramalama/remoting
+
   # ---
 
   remoting:
@@ -166,6 +189,7 @@ ci_presets:
     prepare.ramalama.remoting.backend: cuda
     prepare.podman.container.device: "nvidia.com/gpu=all"
     prepare.llama_cpp.source.podman.local_container_file.path: "images/llama_cpp.cuda.containerfile"
+
   remoting_linux:
     extends: [remoting]
     prepare.llama_cpp.source.cmake.openmp.enabled: false
