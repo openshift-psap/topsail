@@ -9,7 +9,7 @@ import sys
 
 from projects.core.library import env, config, run
 from projects.matrix_benchmarking.library import visualize, matbenchmark
-from container_engine import ContainerEngine
+from container_engine import ContainerEngine, PodmanMachine
 from config_manager import ConfigManager
 
 TESTING_THIS_DIR = pathlib.Path(__file__).absolute().parent
@@ -54,6 +54,7 @@ def test():
 def _separate_benchmark_values_by_platform(benchmark_values):
     platform_configs = {
         "podman": {},
+        "machine_podman": {},
         "docker": {}
     }
     common_values = {}
@@ -68,6 +69,14 @@ def _separate_benchmark_values_by_platform(benchmark_values):
             if key == "test.podman.runtime" and not ConfigManager.is_linux():
                 continue
             platform_configs["podman"][key] = value
+        elif key.startswith("test.benchmark_machine"):
+            # benchmark_machine keys are for independent machine experiments
+            if key == "test.benchmark_machine.provider":
+                if ConfigManager.is_linux():
+                    continue
+                supported_hypervisors = ["wsl", "hyperv"] if ConfigManager.is_windows() else ["libkrun", "applehv"]
+                value = [v for v in value if v in supported_hypervisors]
+            platform_configs["machine_podman"][key] = value
         elif key.startswith("test.docker"):
             platform_configs["docker"][key] = value
         elif key == "test.platform":
@@ -100,6 +109,8 @@ def _distribute_platform_values(platform_configs, platform_values):
             platform_configs["podman"].setdefault("test.platform", []).append(platform)
         elif platform.startswith("docker"):
             platform_configs["docker"].setdefault("test.platform", []).append(platform)
+        elif platform.startswith("machine"):
+            platform_configs["machine_podman"].setdefault("test.platform", []).append(platform)
         else:
             logging.warning(f"Unknown platform type: {platform}")
 
@@ -231,6 +242,10 @@ def run_benchmarks_for_specific_platform(platform_str, benchmarks):
         for benchmark in benchmarks:
             if platform.container_engine not in benchmark.supported_container_engines:
                 continue  # skip unsupported benchmarks
+            is_machine_benchmark = benchmark.is_machine_benchmark
+            is_machine_platform = platform_str == "machine_podman"
+            if is_machine_benchmark != is_machine_platform:
+                continue  # machine benchmarks only on podman_machine; others never on podman_machine
             config.project.set_config("test.platform", platform_str)  # for the post-processing
             config.project.set_config("test.benchmark", benchmark.name)  # for the post-processing
             with env.NextArtifactDir(f"{platform_str}_{benchmark.name}_run_dir".replace("/", "_")):
@@ -289,6 +304,13 @@ def prepare_benchmark_args(platform, benchmark, base_work_dir):
         exec_time_path=str(utils.get_benchmark_script_path(base_work_dir)),
     )
 
+    if benchmark.is_machine_benchmark:
+        machine_config = ConfigManager.get_benchmark_machine_config(benchmark.name)
+        exec_props['machine_provider'] = machine_config['provider']
+        exec_props['machine_cpus'] = machine_config['cpus']
+        exec_props['machine_memory'] = machine_config['memory']
+        exec_props['machine_rootful'] = machine_config['rootful']
+
     benchmark_kwargs = dict(
         exec_props=exec_props,
         artifact_dir_suffix="_run_metrics"
@@ -327,6 +349,11 @@ def run_benchmark(platform, benchmark):
 
     capture_metrics(platform)
     prepare_matbench_test_files()
+
+    machine = PodmanMachine() if platform.container_engine == "podman" else None
+    if benchmark.is_machine_benchmark and machine:
+        machine.stop()
+
     exit_code = 1
     try:
         for _ in range(benchmark.runs):
@@ -337,6 +364,8 @@ def run_benchmark(platform, benchmark):
             )
         exit_code = 0
     finally:
+        if benchmark.is_machine_benchmark and machine:
+            machine.start()
         exc = None
         if not ConfigManager.should_run_locally():
             # retrieve all the files that have been saved remotely
