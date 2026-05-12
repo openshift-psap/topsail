@@ -163,3 +163,20 @@
          -oyaml \
          > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.pods.yaml"
     failed_when: false
+
+  - name: Capture HTTPRoute YAML for routing
+    shell:
+      oc get httproute \
+         -l "app.kubernetes.io/component=llminferenceservice-router,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         -oyaml \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.httproute.yaml"
+    failed_when: false
+
+  - name: Capture HTTPRoute status for routing
+    shell:
+      oc get httproute \
+         -l "app.kubernetes.io/component=llminferenceservice-router,app.kubernetes.io/name={{ llmd_deploy_llm_inference_service_name }}" \
+         -n "{{ llmd_deploy_llm_inference_service_namespace }}" \
+         > "{{ artifact_extra_logs_dir }}/artifacts/llm_inference_service.httproute.status"
+    failed_when: false
