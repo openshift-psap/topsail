@@ -980,6 +980,41 @@ def _set_nested_property(data, dotted_key, value):
     current[final_key] = value
 
 
+def apply_router_configuration(isvc_data):
+    """
+    Apply router configuration (tolerations, etc.) to ISVC router scheduler template
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    # Check if router configuration is needed
+    if 'spec' not in isvc_data or 'router' not in isvc_data['spec'] or 'scheduler' not in isvc_data['spec']['router']:
+        return
+
+    # Get router tolerations from config
+    router_tolerations = config.project.get_config("tests.llmd.inference_service.router.tolerations", [])
+    if not router_tolerations:
+        return
+
+    logging.info(f"Applying router tolerations: {router_tolerations}")
+
+    # Get scheduler template
+    scheduler_template = isvc_data['spec']['router']['scheduler'].get('template', {})
+
+    # Add tolerations to scheduler template
+    if 'tolerations' not in scheduler_template:
+        scheduler_template['tolerations'] = []
+
+    # Add each configured toleration
+    for toleration in router_tolerations:
+        scheduler_template['tolerations'].append(toleration)
+
+    # Update the scheduler template back to the data structure
+    isvc_data['spec']['router']['scheduler']['template'] = scheduler_template
+
+    logging.info(f"Added {len(router_tolerations)} toleration(s) to router scheduler template")
+
+
 def apply_epp_configuration(isvc_data):
     """
     Apply EPP (Endpoint Picker) configuration to the LLMISVC router container
@@ -1054,6 +1089,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_model_configuration(isvc_data)
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
+    apply_router_configuration(isvc_data)
     apply_extra_properties(isvc_data)
     apply_epp_configuration(isvc_data)
 
