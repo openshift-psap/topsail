@@ -4,6 +4,7 @@ ci_presets:
   # list of names of the presets to apply, or a single name, or null if no preset
   names: null
   local_config: null
+  to_apply: []
 
   # Preset that automatically scales up GPU nodes if none exist, and scales down at the end
   scale_up:
