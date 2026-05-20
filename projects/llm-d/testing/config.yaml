@@ -31,14 +31,21 @@ ci_presets:
   llmisvc_pd:
     tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
 
+  pd-flavors:
+    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4, simple-tp4-x4]
+
   pvc_rwx:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
+
+  aks_ib:
+    tests.llmd.inference_service.infiniband: aks
 
   azure_h100:
     extends: [azure]
     tests.llmd.inference_service.model: llama3-2-3b-local
     tests.llmd.inference_service.image_pull_secrets: rhai-pull-secret
+    tests.llmd.inference_service.infiniband: null
     tests.llmd.inference_service.router.tolerations:
       - effect: NoSchedule
         key: nvidia.com/gpu
@@ -70,6 +77,7 @@ ci_presets:
     tests.llmd.inference_service.metrics.manual_capture: false
     tests.llmd.inference_service.gateway.name: gateway-internal
     tests.llmd.inference_service.image_pull_secrets: kpouget-pull-secret
+    tests.llmd.inference_service.infiniband: true
 
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
@@ -340,6 +348,7 @@ tests:
         tolerations: []  # List of tolerations for router scheduler pods
       model: gpt-oss-20b
       max_model_len: 40960
+      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", false=disable rdma/ib
       metrics:
         manual_capture: false
         scheduler_servicemonitor_name: kserve-llm-isvc-scheduler
