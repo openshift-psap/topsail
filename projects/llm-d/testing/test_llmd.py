@@ -588,6 +588,57 @@ def apply_model_configuration(isvc_data):
         # Explicit URI in model config takes precedence
         isvc_data['spec']['model']['uri'] = model_config['uri']
         logging.info(f"Set model URI from model config: {model_config['uri']}")
+    elif 'source' in model_config and model_config['source'].startswith('hostpath:'):
+        # Hostpath source - use hf://{model_name} format and configure volumes
+        hostpath = model_config['source'].removeprefix("hostpath:")
+        model_name = model_config.get('name', model_key)
+        isvc_data['spec']['model']['uri'] = f"hf://{model_name}"
+        logging.info(f"Set model URI from hostpath model: hf:/{model_name}")
+
+        # Configure hostpath volume and environment
+        apply_hostpath_volume_configuration(isvc_data, hostpath)
+
+        # Set vLLM command for hostpath models
+        main_container = isvc_data['spec']['template']['containers'][0]  # Assume first container is main
+
+        # Build base command
+        command = [
+            'vllm',
+            'serve',
+            model_name,
+            '--port',
+            '8000',
+            '--served-model-name',
+            model_name,
+            '--enable-ssl-refresh',
+            '--ssl-certfile',
+            '/var/run/kserve/tls/tls.crt',
+            '--ssl-keyfile',
+            '/var/run/kserve/tls/tls.key'
+        ]
+
+        # Process VLLM_ADDITIONAL_ARGS from environment and add to command
+        vllm_args_found = False
+        if 'env' in main_container:
+            for i, env_var in enumerate(main_container['env']):
+                if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+                    vllm_args_found = True
+                    additional_args = env_var.get('value', '').strip()
+                    if additional_args:
+                        # Parse additional args and add to command
+                        import shlex
+                        parsed_args = shlex.split(additional_args)
+                        command.extend(parsed_args)
+                        logging.info(f"Added VLLM_ADDITIONAL_ARGS to command: {additional_args}")
+
+                    # Remove VLLM_ADDITIONAL_ARGS from env since it's now in command
+                    main_container['env'].pop(i)
+                    break
+
+        if not vllm_args_found:
+            raise RuntimeError("VLLM_ADDITIONAL_ARGS environment variable not found in main container for hostpath model. This should have been set by apply_vllm_args_configuration().")
+
+        main_container['command'] = command
     elif not pvc_enabled:
         # PVC disabled - use model source directly as URI
         if 'source' in model_config:
@@ -607,6 +658,45 @@ def apply_model_configuration(isvc_data):
         isvc_data['spec']['model']['name'] = model_config['name']
         logging.info(f"Set model name: {model_config['name']}")
 
+
+def apply_hostpath_volume_configuration(isvc_data, hostpath):
+    """
+    Apply hostPath volume configuration to ISVC containers for local model storage
+    """
+    logging.info(f"Configuring hostPath volume for: {hostpath}")
+
+    # Disable storage initializer for hostpath models
+    isvc_data['spec']['storageInitializer'] = {
+        'enabled': False
+    }
+
+    # Add volumes
+    isvc_data['spec']['template']['volumes'] = [{
+        'name': 'hf-cache',
+        'hostPath': {
+            'path': hostpath,
+            'type': 'Directory'
+        }
+    }]
+
+    # Add volumeMounts to main container
+    main_container = isvc_data['spec']['template']['containers'][0]  # Assume first container is main
+    main_container['volumeMounts'] = [{
+        'name': 'hf-cache',
+        'mountPath': '/hf-cache',
+        'readOnly': True
+    }]
+
+    # Add HF_HUB_CACHE environment variable
+    if 'env' not in main_container:
+        main_container['env'] = []
+
+    main_container['env'].append({
+        'name': 'HF_HUB_CACHE',
+        'value': '/hf-cache/hub'
+    })
+
+    logging.info("Configured hostPath volume, mount, HF_HUB_CACHE environment variable, and vLLM command")
 
 
 def apply_vllm_args_configuration(isvc_data):
@@ -959,9 +1049,9 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     # Apply modifications in order
     apply_flavor_modifications(isvc_data, flavor)
     apply_kueue_configuration(isvc_data)
-    apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
     apply_max_model_len_configuration(isvc_data)
+    apply_model_configuration(isvc_data)
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_extra_properties(isvc_data)

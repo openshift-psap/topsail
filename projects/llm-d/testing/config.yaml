@@ -36,9 +36,18 @@ ci_presets:
     prepare.pvc.access_mode: ReadWriteMany
 
   azure_h100:
-    extends: [azure, gpt-oss, pvc_rwx]
+    extends: [azure]
+    tests.llmd.inference_service.model: llama3-2-3b-local
+    tests.llmd.inference_service.image_pull_secrets: rhai-pull-secret
+    tests.llmd.inference_service.router.tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        value: present
+
     prepare.namespace.name: kpouget-dev
-    prepare.pvc.storage_class: azurefile-csi-nfs-premium
+
+    ci_presets.gpt-oss["tests.llmd.inference_service.model"]: gpt-oss-120-local
+    ci_presets.llama-70b["tests.llmd.inference_service.model"]: llama3-3-70b-local
 
   azure:
     security.run_as_root: true
@@ -52,11 +61,6 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: false
 
-    presets.gpt-oss["tests.llmd.inference_service.model"]: gpt-oss-120-local
-    presets.llama-70b["tests.llmd.inference_service.model"]: llama3-3-70b-local
-
-  azure_light:
-    extends: [azure, llama3.2-8b-local]
 
   cks:
     extends: [pvc_rwx, llama-70b]
@@ -332,6 +336,8 @@ tests:
       do_simple_test: true
       gateway:
         name: gateway-external
+      router:
+        tolerations: []  # List of tolerations for router scheduler pods
       model: gpt-oss-20b
       max_model_len: 40960
       metrics:
