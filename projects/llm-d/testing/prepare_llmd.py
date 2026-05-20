@@ -555,6 +555,11 @@ def download_single_model(model_key):
 
         source = model_config['source']
 
+        # Check if model uses hostpath source
+        if source.startswith('hostpath:'):
+            logging.info(f"Model '{model_key}' uses hostpath source ({source}) - skipping download")
+            return
+
         # Get PVC configuration
         pvc_name = config.project.get_config("prepare.pvc.name")
         pvc_size = config.project.get_config("prepare.pvc.size")
