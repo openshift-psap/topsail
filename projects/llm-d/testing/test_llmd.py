@@ -751,14 +751,27 @@ def apply_vllm_args_configuration(isvc_data):
     """
     vllm_args = config.project.get_config("tests.llmd.inference_service.vllm_args", [])
 
-    if not vllm_args:
+    # Create a copy to avoid modifying the original config
+    final_vllm_args = list(vllm_args) if vllm_args else []
+
+    # Add hybrid KV cache manager flag if enabled
+    hybrid_kv_enabled = config.project.get_config("tests.llmd.inference_service.hybrid_kv_cache_manager", False)
+    if hybrid_kv_enabled:
+        final_vllm_args.append("--no-disable-hybrid-kv-cache-manager")
+        logging.info("Added --no-disable-hybrid-kv-cache-manager flag")
+
+    if not final_vllm_args:
         logging.info("No vLLM args configured")
         return
 
-    logging.info(f"Applying vLLM args: {vllm_args}")
+    logging.info(f"Applying vLLM args: {final_vllm_args}")
 
-    # Apply to main container only
-    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
+    # Apply to main container (decode)
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', final_vllm_args, 'main')
+
+    # Apply to prefill container if it exists
+    if 'prefill' in isvc_data['spec']:
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', final_vllm_args, 'main')
 
 
 def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
@@ -1018,6 +1031,12 @@ def apply_infiniband_aks_configuration(isvc_data):
         isvc_data: The loaded YAML data structure
     """
     logging.info("Applying AKS-specific InfiniBand configuration")
+
+    # Check if AKS hotfix is enabled
+    aks_hotfix_enabled = config.project.get_config("tests.llmd.inference_service.aks_hotfix_enabled", True)
+    if not aks_hotfix_enabled:
+        logging.info("AKS hotfix disabled - skipping ConfigMap mounts")
+        return
 
     # Verify that the required configmap exists in the namespace
     namespace = config.project.get_config("tests.llmd.namespace")
