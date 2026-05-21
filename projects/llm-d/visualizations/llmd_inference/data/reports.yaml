@@ -1,0 +1,7 @@
+visualize:
+- id: llmd_inference
+  generate:
+  - "report: LLM-D Inference Error Report"
+  - "report: Baseline Comparisons"
+  - "report: Intelligent-routing Comparisons"
+  - "report: P-D Comparisons"
