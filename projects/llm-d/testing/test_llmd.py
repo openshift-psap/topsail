@@ -562,12 +562,13 @@ def apply_kueue_configuration(isvc_data):
     isvc_data['metadata']['annotations'][f"{kueue_prefix}pod-group-total-count"] = str(pod_group_total_count)
     logging.info(f"Set pod-group-total-count: {pod_group_total_count} (1 scheduler + {replicas} replicas)")
 
-def apply_model_configuration(isvc_data):
+def apply_model_configuration(isvc_data, flavor):
     """
     Apply model URI and name configuration from config file
 
     Args:
         isvc_data: The loaded YAML data structure
+        flavor: The flavor string to determine port configuration
     """
     model_key = config.project.get_config("tests.llmd.inference_service.model", None)
 
@@ -650,13 +651,17 @@ def apply_model_configuration(isvc_data):
 
             container['command'] = command
 
-        # Configure main container (decode) with port 8001
+        # Configure main container (decode) - port depends on flavor
         main_container = isvc_data['spec']['template']['containers'][0]  # Assume first container is main
-        port = '8001' \
-            if config.project.get_config("tests.llmd.inference_service.infiniband", None) == "aks" \
-               else "8000"
 
-        configure_vllm_command(main_container, port)
+        # Parse flavor to get base flavor
+        components = parse_flavor_components(flavor)
+        base_flavor = components['base']
+
+        # If simple flavor, use port 8000; otherwise use 8001 for decode
+        decode_port = '8001' if base_flavor == 'pd' else '8000'
+
+        configure_vllm_command(main_container, decode_port)
 
         # Configure prefill container with port 8000 if it exists
         if 'prefill' in isvc_data['spec'] and 'template' in isvc_data['spec']['prefill']:
@@ -751,14 +756,27 @@ def apply_vllm_args_configuration(isvc_data):
     """
     vllm_args = config.project.get_config("tests.llmd.inference_service.vllm_args", [])
 
-    if not vllm_args:
+    # Create a copy to avoid modifying the original config
+    final_vllm_args = list(vllm_args) if vllm_args else []
+
+    # Add hybrid KV cache manager flag if enabled
+    hybrid_kv_enabled = config.project.get_config("tests.llmd.inference_service.hybrid_kv_cache_manager", False)
+    if hybrid_kv_enabled:
+        final_vllm_args.append("--no-disable-hybrid-kv-cache-manager")
+        logging.info("Added --no-disable-hybrid-kv-cache-manager flag")
+
+    if not final_vllm_args:
         logging.info("No vLLM args configured")
         return
 
-    logging.info(f"Applying vLLM args: {vllm_args}")
+    logging.info(f"Applying vLLM args: {final_vllm_args}")
 
-    # Apply to main container only
-    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
+    # Apply to main container (decode)
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', final_vllm_args, 'main')
+
+    # Apply to prefill container if it exists
+    if 'prefill' in isvc_data['spec']:
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', final_vllm_args, 'main')
 
 
 def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
@@ -1029,72 +1047,12 @@ def apply_infiniband_aks_configuration(isvc_data):
     """
     logging.info("Applying AKS-specific InfiniBand configuration")
 
-    # Verify that the required configmap exists in the namespace
-    namespace = config.project.get_config("tests.llmd.namespace")
-    cm_name = "vllm-ucx-multiproc-hotfix"
+    # Check if AKS hotfix is enabled
+    aks_hotfix_enabled = config.project.get_config("tests.llmd.inference_service.aks_hotfix_enabled", True)
 
-    hotfix_files = [
-        'envs.py',
-        'platforms/cuda.py',
-        'platforms/interface.py',
-        'v1/executor/multiproc_executor.py',
-        'v1/executor/uniproc_executor.py',
-        'v1/executor/vllm_net_devices.py'
-    ]
-
-    try:
-        result = run.run(f"oc get configmap {cm_name} -n {namespace} --ignore-not-found -o name",
-                         capture_stdout=True, check=True)
-        if not result.stdout.strip():
-            # Extract just the filenames from hotfix_files for the error message
-            filenames = [file_path.split('/')[-1] for file_path in hotfix_files]
-            file_args = ' \\\n       '.join([f"--from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/{filename}" for filename in filenames])
-
-            raise RuntimeError(f"Required ConfigMap '{cm_name}' not found in namespace '{namespace}'. "
-                               f"Please create it first:\n\n"
-                               f"oc create cm vllm-ucx-multiproc-hotfix -n {namespace} \\\n"
-                               f"       {file_args}")
-        logging.info(f"Verified ConfigMap '{cm_name}' exists in namespace '{namespace}'")
-    except Exception as e:
-        raise RuntimeError(f"Failed to verify ConfigMap '{cm_name}' in namespace '{namespace}': {e}")
-
-    """
-    oc create cm vllm-ucx-multiproc-hotfix  \
-       --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/envs.py \
-       --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/interface.py \
-       --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/multiproc_executor.py \
-       --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/uniproc_executor.py \
-       --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/vllm_net_devices.py
-    """
-
-    # Define vLLM hotfix mounts from configmap (similar to values_aks.yaml)
-    vllm_base_path = '/opt/app-root/lib64/python3.12/site-packages/vllm'
-
-    hotfix_mounts = []
-    for file_path in hotfix_files:
-        filename = file_path.split('/')[-1]  # Extract just the filename for subPath
-        hotfix_mounts.append({
-            'name': 'vllm-ucx-multiproc-hotfix',
-            'mountPath': f'{vllm_base_path}/{file_path}',
-            'subPath': filename
-        })
-
-    # ConfigMap volume definition
-    hotfix_volume = {
-        'name': 'vllm-ucx-multiproc-hotfix',
-        'configMap': {
-            'name': 'vllm-ucx-multiproc-hotfix',
-            'defaultMode': 0o444  # octal 0444
-        }
-    }
-
-    def add_hotfix_to_containers(containers, template_volumes):
+    # Helper function to add AKS-specific environment variables and security context to containers
+    def add_aks_env_and_security(containers):
         for container in containers:
-            # Add volume mounts
-            if 'volumeMounts' not in container:
-                container['volumeMounts'] = []
-            container['volumeMounts'].extend(hotfix_mounts)
-
             # Add AKS-specific environment variables for UCX/NIXL configuration
             if 'env' not in container:
                 container['env'] = []
@@ -1133,19 +1091,110 @@ def apply_infiniband_aks_configuration(isvc_data):
             if 'IPC_LOCK' not in container['securityContext']['capabilities']['add']:
                 container['securityContext']['capabilities']['add'].append('IPC_LOCK')
 
-        # Add volume to template
-        template_volumes.append(hotfix_volume)
+    # Always apply AKS environment variables and security context to both templates
+    add_aks_env_and_security(isvc_data['spec']['template']['containers'])
+    if "prefill" in isvc_data['spec']:
+        add_aks_env_and_security(isvc_data['spec']['prefill']['template']['containers'])
 
-    # Apply to main template
-    main_volumes = isvc_data['spec']['template'].setdefault('volumes', [])
-    add_hotfix_to_containers(isvc_data['spec']['template']['containers'], main_volumes)
+    # Conditionally apply ConfigMap hotfix mounts if enabled
+    if aks_hotfix_enabled:
+        logging.info("AKS hotfix enabled - applying ConfigMap mounts")
 
-    # Apply to prefill template
-    if "prefill" in  isvc_data['spec']:
-        prefill_volumes = isvc_data['spec']['prefill']['template'].setdefault('volumes', [])
-        add_hotfix_to_containers(isvc_data['spec']['prefill']['template']['containers'], prefill_volumes)
+        # Verify that the required configmap exists in the namespace
+        namespace = config.project.get_config("tests.llmd.namespace")
+        cm_name = "vllm-ucx-multiproc-hotfix"
 
-    # Add AKS-specific annotations for ulimits on both decode and prefill pods
+        hotfix_files = [
+            'envs.py',
+            'platforms/cuda.py',
+            'platforms/interface.py',
+            'v1/executor/multiproc_executor.py',
+            'v1/executor/uniproc_executor.py',
+            'v1/executor/vllm_net_devices.py'
+        ]
+
+        try:
+            result = run.run(f"oc get configmap {cm_name} -n {namespace} --ignore-not-found -o name",
+                             capture_stdout=True, check=True)
+            if not result.stdout.strip():
+                # Extract just the filenames from hotfix_files for the error message
+                filenames = [file_path.split('/')[-1] for file_path in hotfix_files]
+                file_args = ' \\\n       '.join([f"--from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/{filename}" for filename in filenames])
+
+                raise RuntimeError(f"Required ConfigMap '{cm_name}' not found in namespace '{namespace}'. "
+                                   f"Please create it first:\n\n"
+                                   f"oc create cm vllm-ucx-multiproc-hotfix -n {namespace} \\\n"
+                                   f"       {file_args}")
+            logging.info(f"Verified ConfigMap '{cm_name}' exists in namespace '{namespace}'")
+        except Exception as e:
+            raise RuntimeError(f"Failed to verify ConfigMap '{cm_name}' in namespace '{namespace}': {e}")
+
+        """
+        oc create cm vllm-ucx-multiproc-hotfix  \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/envs.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/interface.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/multiproc_executor.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/uniproc_executor.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/vllm_net_devices.py
+        """
+
+        # Define vLLM hotfix mounts from configmap (similar to values_aks.yaml)
+        vllm_base_path = '/opt/app-root/lib64/python3.12/site-packages/vllm'
+
+        hotfix_mounts = []
+        for file_path in hotfix_files:
+            filename = file_path.split('/')[-1]  # Extract just the filename for subPath
+            hotfix_mounts.append({
+                'name': 'vllm-ucx-multiproc-hotfix',
+                'mountPath': f'{vllm_base_path}/{file_path}',
+                'subPath': filename
+            })
+
+        # ConfigMap volume definition
+        hotfix_volume = {
+            'name': 'vllm-ucx-multiproc-hotfix',
+            'configMap': {
+                'name': 'vllm-ucx-multiproc-hotfix',
+                'defaultMode': 0o444  # octal 0444
+            }
+        }
+
+        # Helper function to add hotfix volume mounts to containers
+        def add_hotfix_volumes(containers, template_volumes):
+            for container in containers:
+                # Add volume mounts
+                if 'volumeMounts' not in container:
+                    container['volumeMounts'] = []
+                container['volumeMounts'].extend(hotfix_mounts)
+
+            # Add volume to template
+            template_volumes.append(hotfix_volume)
+
+        # Apply hotfix volumes and complete configuration to containers
+        def add_hotfix_to_containers(containers, template_volumes):
+            for container in containers:
+                # Add volume mounts
+                if 'volumeMounts' not in container:
+                    container['volumeMounts'] = []
+                container['volumeMounts'].extend(hotfix_mounts)
+
+            # Add volume to template
+            template_volumes.append(hotfix_volume)
+
+        # Apply hotfix volumes to main template
+        main_volumes = isvc_data['spec']['template'].setdefault('volumes', [])
+        add_hotfix_to_containers(isvc_data['spec']['template']['containers'], main_volumes)
+
+        # Apply hotfix volumes to prefill template
+        if "prefill" in isvc_data['spec']:
+            prefill_volumes = isvc_data['spec']['prefill']['template'].setdefault('volumes', [])
+            add_hotfix_to_containers(isvc_data['spec']['prefill']['template']['containers'], prefill_volumes)
+
+        logging.info("Applied AKS ConfigMap hotfix mounts")
+    else:
+        logging.info("AKS hotfix disabled - skipping ConfigMap mounts")
+
+    # Always add AKS-specific annotations for ulimits on both decode and prefill pods
     ulimit_annotation_value = """- type: memlock
   hard: 17179869184
   soft: 17179869184"""
@@ -1160,7 +1209,7 @@ def apply_infiniband_aks_configuration(isvc_data):
         isvc_data['spec']['prefill']['annotations'] = {}
     isvc_data['spec']['prefill']['annotations']['ulimits.nri.containerd.io/container.main'] = ulimit_annotation_value
 
-    logging.info("Added vllm-ucx-multiproc-hotfix configmap mounts and ulimit annotations for AKS")
+    logging.info("Applied AKS-specific environment variables, security context, and ulimit annotations")
 
 
 def apply_extra_properties(isvc_data):
@@ -1325,10 +1374,10 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_kueue_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
     apply_max_model_len_configuration(isvc_data)
-    apply_model_configuration(isvc_data)
+    apply_model_configuration(isvc_data, flavor)
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
-    apply_infiniband_configuration(isvc_data)
+    apply_infiniband_configuration(isvc_data, flavor)
     apply_router_configuration(isvc_data)
     apply_extra_properties(isvc_data)
     apply_epp_configuration(isvc_data)
