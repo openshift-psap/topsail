@@ -402,6 +402,51 @@ def apply_flavor_modifications(isvc_data, flavor):
             apply_prefill_tensor_parallelism(isvc_data, prefill_tp_size)
 
 
+def add_tensor_parallelism_to_container(container, tp_size):
+    """
+    Helper function to add tensor parallelism arguments and GPU resources to a container
+
+    Args:
+        container: Container dict to modify
+        tp_size: Tensor parallel size
+    """
+    # Ensure env section exists
+    if 'env' not in container:
+        container['env'] = []
+
+    # Find or create VLLM_ADDITIONAL_ARGS environment variable
+    vllm_args_env = None
+    for env_var in container['env']:
+        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+            vllm_args_env = env_var
+            break
+
+    if not vllm_args_env:
+        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
+        container['env'].append(vllm_args_env)
+
+    # Add tensor parallelism argument
+    current_args = vllm_args_env.get('value', '').strip()
+    tp_arg = f"--tensor-parallel-size={tp_size}"
+
+    # Check if TP argument already exists and update it
+    import re
+    if re.search(r'--tensor-parallel-size=\d+', current_args):
+        # Replace existing TP argument
+        current_args = re.sub(r'--tensor-parallel-size=\d+', tp_arg, current_args)
+    else:
+        # Add new TP argument
+        if current_args:
+            current_args = f"{current_args} {tp_arg}"
+        else:
+            current_args = tp_arg
+
+    vllm_args_env['value'] = current_args
+
+    # Set GPU resources to match tensor parallel size
+    apply_gpu_resources(container, tp_size)
+
+
 def apply_flavor_tensor_parallelism(isvc_data, tp_size):
     """
     Apply tensor parallelism configuration from flavor to the ISVC
@@ -429,43 +474,10 @@ def apply_flavor_tensor_parallelism(isvc_data, tp_size):
         main_container = {'name': 'main'}
         isvc_data['spec']['template']['containers'].append(main_container)
 
-    # Ensure env section exists
-    if 'env' not in main_container:
-        main_container['env'] = []
+    # Apply tensor parallelism to the container
+    add_tensor_parallelism_to_container(main_container, tp_size)
 
-    # Find or create VLLM_ADDITIONAL_ARGS environment variable
-    vllm_args_env = None
-    for env_var in main_container['env']:
-        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
-            vllm_args_env = env_var
-            break
-
-    if not vllm_args_env:
-        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
-        main_container['env'].append(vllm_args_env)
-
-    # Add tensor parallelism argument
-    current_args = vllm_args_env.get('value', '').strip()
-    tp_arg = f"--tensor-parallel-size={tp_size}"
-
-    # Check if TP argument already exists and update it
-    import re
-    if re.search(r'--tensor-parallel-size=\d+', current_args):
-        # Replace existing TP argument
-        current_args = re.sub(r'--tensor-parallel-size=\d+', tp_arg, current_args)
-    else:
-        # Add new TP argument
-        if current_args:
-            current_args = f"{current_args} {tp_arg}"
-        else:
-            current_args = tp_arg
-
-    vllm_args_env['value'] = current_args
-
-    # Set GPU resources to match tensor parallel size
-    apply_gpu_resources(main_container, tp_size)
-
-    logging.info(f"Applied flavor TP: {tp_arg}, GPU resources: {tp_size}")
+    logging.info(f"Applied flavor tensor parallelism: TP={tp_size}")
 
 
 def apply_prefill_tensor_parallelism(isvc_data, tp_size):
@@ -481,10 +493,8 @@ def apply_prefill_tensor_parallelism(isvc_data, tp_size):
     # Find the main container in prefill
     main_container = isvc_data['spec']['prefill']['template']['containers'][0]
 
-    # Set GPU resources to match tensor parallel size
-    apply_gpu_resources(main_container, tp_size)
-
-    logging.info(f"Applied prefill GPU resources: {tp_size}")
+    # Apply tensor parallelism to the container
+    add_tensor_parallelism_to_container(main_container, tp_size)
 
 
 def apply_kueue_configuration(isvc_data):
@@ -1131,8 +1141,9 @@ def apply_infiniband_aks_configuration(isvc_data):
     add_hotfix_to_containers(isvc_data['spec']['template']['containers'], main_volumes)
 
     # Apply to prefill template
-    prefill_volumes = isvc_data['spec']['prefill']['template'].setdefault('volumes', [])
-    add_hotfix_to_containers(isvc_data['spec']['prefill']['template']['containers'], prefill_volumes)
+    if "prefill" in  isvc_data['spec']:
+        prefill_volumes = isvc_data['spec']['prefill']['template'].setdefault('volumes', [])
+        add_hotfix_to_containers(isvc_data['spec']['prefill']['template']['containers'], prefill_volumes)
 
     # Add AKS-specific annotations for ulimits on both decode and prefill pods
     ulimit_annotation_value = """- type: memlock
