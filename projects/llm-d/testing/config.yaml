@@ -113,6 +113,7 @@ ci_presets:
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
     tests.llmd.benchmarks.guidellm.args.request_type: text_completions
+    tests.llmd.inference_service.hybrid_kv_cache_manager: true
 
   llama-70b:
     tests.llmd.inference_service.model: llama3-3-70b
@@ -336,6 +337,8 @@ tests:
       model: gpt-oss-20b
       max_model_len: 40960
       infiniband: null  # null=unchanged, true=enable rdma/ib: "1", false=disable rdma/ib
+      aks_hotfix_enabled: true  # Enable/disable AKS ConfigMap hotfix mounts
+      hybrid_kv_cache_manager: false  # Add --no-disable-hybrid-kv-cache-manager flag
       metrics:
         manual_capture: false
         scheduler_servicemonitor_name: kserve-llm-isvc-scheduler
