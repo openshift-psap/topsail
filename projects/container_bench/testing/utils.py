@@ -110,8 +110,12 @@ def cleanup_container_images(base_work_dir):
 
 def parse_platform(platform_str):
     p = SimpleNamespace()
-    p.container_engine = platform_str
     p.platform = ConfigManager.get_system_type().value
+
+    if platform_str == "machine_podman":
+        p.container_engine = "podman"
+    else:
+        p.container_engine = platform_str
 
     if p.container_engine not in ["podman", "docker"]:
         raise ValueError(f"Unsupported container engine: {p.container_engine}. Expected 'podman' or 'docker'.")
@@ -148,6 +152,7 @@ def parse_benchmark(benchmark_name):
     if runs < 1:
         raise ValueError(f"Benchmark '{benchmark_name}' must have runs >= 1 (got {runs}).")
     b.runs = runs
+    b.is_machine_benchmark = benchmark_config['is_machine_benchmark']
     return b
 
 
