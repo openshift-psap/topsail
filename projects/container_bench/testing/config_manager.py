@@ -188,7 +188,9 @@ class ConfigManager:
             'provider': config.project.get_config(f"{benchmark_name}.machine.provider", print=False),
             'cpus': config.project.get_config(f"{benchmark_name}.machine.cpus", print=False),
             'memory': config.project.get_config(f"{benchmark_name}.machine.memory", print=False),
-            'rootful': config.project.get_config(f"{benchmark_name}.machine.rootful", print=False),
+            'rootful': config.project.get_config(
+                f"{benchmark_name}.machine.rootful", default_value=False, print=False
+            ) or False,
         }
 
     @staticmethod

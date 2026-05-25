@@ -198,9 +198,16 @@ def _create_exec_time_plot(configurations):
     if not configurations:
         return None
 
+    configurations = [
+        config for config in configurations
+        if config.get("execution_time_95th_percentile") is not None
+    ]
+    if not configurations:
+        return None
+
     sorted_configurations = sorted(
         configurations,
-        key=lambda c: c.get("execution_time_95th_percentile", 0) or 0
+        key=lambda c: c["execution_time_95th_percentile"]
     )
 
     bars = []
@@ -208,7 +215,7 @@ def _create_exec_time_plot(configurations):
     for idx, config in enumerate(sorted_configurations):
         color = COLOR_PALETTE[idx % len(COLOR_PALETTE)]
         config_label = generate_display_config_label(config, configurations)
-        exec_time = config.get("execution_time_95th_percentile") or 0
+        exec_time = config["execution_time_95th_percentile"]
 
         bars.append(
             go.Bar(

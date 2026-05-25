@@ -351,11 +351,10 @@ def run_benchmark(platform, benchmark):
     prepare_matbench_test_files()
 
     machine = PodmanMachine() if platform.container_engine == "podman" else None
-    if benchmark.is_machine_benchmark and machine:
-        machine.stop()
-
     exit_code = 1
     try:
+        if benchmark.is_machine_benchmark and machine:
+            machine.stop()
         for _ in range(benchmark.runs):
             run.run_toolbox(
                 "container_bench",

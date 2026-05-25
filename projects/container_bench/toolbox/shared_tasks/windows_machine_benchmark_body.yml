@@ -28,3 +28,4 @@
 - name: Execute benchmark cleanup commands
   ansible.windows.win_shell: "{{ cleanup_commands }}"
   when: cleanup_commands | length > 0
+  ignore_errors: true

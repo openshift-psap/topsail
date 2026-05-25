@@ -3,7 +3,7 @@
 # Source component: Container_Bench.machine_start_benchmark
 
 # Parameters
-# dict containing execution properties (binary_path, rootfull, additional_args, exec_time_path, machine_cpus, machine_memory, machine_rootful)
+# dict containing execution properties (binary_path, rootfull, additional_args, exec_time_path, machine_provider, machine_cpus, machine_memory, machine_rootful)
 # Mandatory value
 container_bench_machine_start_benchmark_exec_props:
 

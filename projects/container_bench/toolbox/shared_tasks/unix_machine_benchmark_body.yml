@@ -30,3 +30,4 @@
   become: "{{ rootfull | default(false) }}"
   shell: "{{ cleanup_commands }}"
   when: cleanup_commands | length > 0
+  ignore_errors: true

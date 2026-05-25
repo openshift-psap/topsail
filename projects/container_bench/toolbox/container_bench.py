@@ -440,6 +440,7 @@ class Container_Bench:
           rootfull:        whether to run Ansible tasks as root
           additional_args: additional arguments to pass to the podman binary
           exec_time_path:  path to the exec_time.py script
+          machine_provider:     podman machine provider (optional)
           machine_cpus:         number of CPUs to allocate to the benchmark machine (optional)
           machine_memory:        memory in MB to allocate to the benchmark machine (optional)
           machine_rootful:       whether the podman machine runs in rootful mode (default: false)
@@ -451,7 +452,7 @@ class Container_Bench:
 
         Args:
           exec_props: dict containing execution properties (binary_path, rootfull, additional_args,
-                      exec_time_path, machine_cpus, machine_memory, machine_rootful)
+                      exec_time_path, machine_provider, machine_cpus, machine_memory, machine_rootful)
         """
         return RunAnsibleRole(locals())
 
@@ -468,6 +469,7 @@ class Container_Bench:
           rootfull:        whether to run Ansible tasks as root
           additional_args: additional arguments to pass to the podman binary
           exec_time_path:  path to the exec_time.py script
+          machine_provider:     podman machine provider (optional)
           machine_cpus:         number of CPUs to allocate to the benchmark machine (optional)
           machine_memory:        memory in MB to allocate to the benchmark machine (optional)
           machine_rootful:       whether the podman machine runs in rootful mode (default: false)
@@ -480,7 +482,7 @@ class Container_Bench:
 
         Args:
           exec_props: dict containing execution properties (binary_path, rootfull, additional_args,
-                      exec_time_path, machine_cpus, machine_memory, machine_rootful)
+                      exec_time_path, machine_provider, machine_cpus, machine_memory, machine_rootful)
         """
         return RunAnsibleRole(locals())
 

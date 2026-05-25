@@ -325,17 +325,16 @@ def create_differences_comparison_table(configurations, args):
             report.set_config(dict(configurations=configurations), args)
         )
 
-        content = [html.H4("Benchmark Results", style=css.STYLE_H4)]
-        if synthetic_table:
-            content.append(synthetic_table)
-        if synthetic_plot:
-            content.append(html.Div(
-                synthetic_plot,
-                style=css.STYLE_PLOTS_GRID,
-                className='plots-grid-responsive'
-            ))
-
-        if content:
+        if synthetic_table or synthetic_plot:
+            content = [html.H4("Benchmark Results", style=css.STYLE_H4)]
+            if synthetic_table:
+                content.append(synthetic_table)
+            if synthetic_plot:
+                content.append(html.Div(
+                    synthetic_plot,
+                    style=css.STYLE_PLOTS_GRID,
+                    className='plots-grid-responsive'
+                ))
             tables.append(html.Div(content))
     else:
         # Regular container_bench metrics
@@ -345,17 +344,16 @@ def create_differences_comparison_table(configurations, args):
             report.set_config(dict(configurations=configurations), args)
         )
 
-        content = [html.H4("Performance Metrics", style=css.STYLE_H4)]
-        if perf_table:
-            content.append(perf_table)
-        if perf_plot:
-            content.append(html.Div(
-                perf_plot,
-                style=css.STYLE_PLOTS_GRID,
-                className='plots-grid-responsive'
-            ))
-
-        if content:
+        if perf_table or perf_plot:
+            content = [html.H4("Performance Metrics", style=css.STYLE_H4)]
+            if perf_table:
+                content.append(perf_table)
+            if perf_plot:
+                content.append(html.Div(
+                    perf_plot,
+                    style=css.STYLE_PLOTS_GRID,
+                    className='plots-grid-responsive'
+                ))
             tables.append(html.Div(content))
 
     if tables:
