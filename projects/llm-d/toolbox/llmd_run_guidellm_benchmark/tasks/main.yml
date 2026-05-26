@@ -129,9 +129,18 @@
         shell: |
           oc wait --for=condition=Ready pod/{{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" --timeout=60s
 
-      - name: Copy benchmarks.json from PVC to artifacts directory
+      - name: Check if benchmarks.json exists in PVC
         shell: |
-          oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- cat /results/benchmarks.json > "{{ artifact_extra_logs_dir }}/artifacts/results/benchmarks.json" 2>/dev/null || echo "Warning: benchmarks.json not found in PVC"
+          oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- test -f /results/benchmarks.json
+        register: file_check_result
+        failed_when: false
+
+      - name: Copy benchmarks.json from PVC to artifacts directory (with retry)
+        shell: |
+          oc exec {{ llmd_run_guidellm_benchmark_name }}-copy -n "{{ target_namespace }}" -- cat /results/benchmarks.json > "{{ artifact_extra_logs_dir }}/artifacts/results/benchmarks.json"
+        retries: 10
+        delay: 1
+        when: file_check_result.rc == 0
       always:
       - name: Delete the copy helper pod
         command:
