@@ -17,45 +17,8 @@ spec:
       template:
         containers:
         - name: main
-          command:
-          - /app/epp
-          - --pool-name
-          - '{{ ChildName .ObjectMeta.Name `-inference-pool` }}'
-          - --pool-namespace
-          - '{{ .ObjectMeta.Namespace }}'
-          - --pool-group
-          - inference.networking.x-k8s.io
-          - --zap-encoder
-          - json
-          - --grpc-port
-          - "9002"
-          - --grpc-health-port
-          - "9003"
-          - --secure-serving
-          - --model-server-metrics-scheme
-          - https
-          - --cert-path
-          - /var/run/kserve/tls
-          args:
-          - --config-text
-          - |2
-            apiVersion: inference.networking.x-k8s.io/v1alpha1
-            kind: EndpointPickerConfig
-            plugins:
-            - type: single-profile-handler
-            - type: prefix-cache-scorer
-            - type: load-aware-scorer
-            - type: max-score-picker
-            schedulingProfiles:
-            - name: default
-              plugins:
-              - pluginRef: prefix-cache-scorer
-                weight: 2.0
-              - pluginRef: load-aware-scorer
-                weight: 1.0
-              - pluginRef: max-score-picker
         nodeSelector:
-          nvidia.com/gpu.present: "true"
+          nvidia.com/gpu.deploy.container-toolkit: "true"
     route: {}
     gateway: {}
   template:

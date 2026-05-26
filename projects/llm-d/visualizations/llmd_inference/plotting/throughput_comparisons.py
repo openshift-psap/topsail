@@ -319,7 +319,9 @@ class BaselineComparisonsReport():
         ]))
         header.append(html.Br())
 
-        args = report.set_config(dict(markers_by="platform"), args)
+        # Only use platform markers if platform is being varied
+        if "platform" in variables:
+            args = report.set_config(dict(markers_by="platform"), args)
 
         def filter_flavors(setting_lists, flavor_filter):
             """Filter flavors from setting_lists based on provided filter function"""
@@ -344,17 +346,44 @@ class BaselineComparisonsReport():
 
             header.append(html.H3(f"📊 Load Shape: {load_shape}"))
 
-            for flavor in simple_flavors:
-                header.append(html.H4(f"🔧 {flavor}"))
-                if flavor == "simple-tp4-x4":
-                    header.append(html.I(f"Skipped, not relevant for baseline."))
-                    continue
-
-                # Set llama3.3-70b model and specific simple flavor
-                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
+            # If only one platform, show all simple flavors together
+            if "platform" not in variables:
+                header.append(html.H4(f"🔧 Simple Flavor Comparison"))
+                # Set llama3.3-70b model and specific load shape, but allow all simple flavors
+                baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape}
                 baseline_args = report.set_settings(baseline_settings, args)
 
-                header += _generate_throughput_plots(baseline_args)
+                # Filter to include all simple flavors (excluding simple-tp4-x4)
+                ordered_vars, settings, setting_lists, variables_filtered, cfg = baseline_args
+
+                def include_all_simple_flavors(v):
+                    return v.startswith('simple') and v != "simple-tp4-x4"
+
+                filter_flavors(setting_lists, include_all_simple_flavors)
+                baseline_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
+
+                header += _generate_throughput_plots(baseline_args_final)
+            else:
+                # Multiple platforms - show each flavor separately
+                for flavor in simple_flavors:
+                    if flavor == "simple-tp4-x4":
+                        continue
+                    header.append(html.H4(f"🔧 {flavor}"))
+                    # Set llama3.3-70b model and specific simple flavor
+                    baseline_settings = {"model": "llama3.3-70b", "load_shape": load_shape, "flavor": flavor}
+                    baseline_args = report.set_settings(baseline_settings, args)
+
+                    # Actually filter to only show this specific combination
+                    ordered_vars, settings, setting_lists, variables_filtered, cfg = baseline_args
+
+                    # Filter to only include the current simple flavor
+                    def include_baseline_flavor(v):
+                        return v == flavor
+
+                    filter_flavors(setting_lists, include_baseline_flavor)
+                    baseline_args_final = (ordered_vars, settings, setting_lists, variables_filtered, cfg)
+
+                    header += _generate_throughput_plots(baseline_args_final)
 
         return None, header
 
@@ -386,7 +415,9 @@ class IntelligentRoutingComparisonsReport():
         ]))
         header.append(html.Br())
 
-        args = report.set_config(dict(markers_by="platform"), args)
+        # Only use platform markers if platform is being varied
+        if "platform" in variables:
+            args = report.set_config(dict(markers_by="platform"), args)
 
         def filter_flavors(setting_lists, flavor_filter):
             """Filter flavors from setting_lists based on provided filter function"""
@@ -460,7 +491,9 @@ class PDComparisonsReport():
         ]))
         header.append(html.Br())
 
-        args = report.set_config(dict(markers_by="platform"), args)
+        # Only use platform markers if platform is being varied
+        if "platform" in variables:
+            args = report.set_config(dict(markers_by="platform"), args)
 
         def filter_flavors(setting_lists, flavor_filter):
             """Filter flavors from setting_lists based on provided filter function"""

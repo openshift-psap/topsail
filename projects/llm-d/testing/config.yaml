@@ -4,6 +4,7 @@ ci_presets:
   # list of names of the presets to apply, or a single name, or null if no preset
   names: null
   local_config: null
+  to_apply: []
 
   # Preset that automatically scales up GPU nodes if none exist, and scales down at the end
   scale_up:
@@ -28,16 +29,32 @@ ci_presets:
     tests.llmd.inference_service.gateway.name: gateway-internal
 
   llmisvc_pd:
-    tests.llmd.flavors: [pd-x2-ptp1-px4-dtp4]
+    tests.llmd.flavors: [pd-x2-ptp4-px1-dtp4]
 
   pvc_rwx:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
 
+  azure_h100:
+    extends: [azure]
+    tests.llmd.inference_service.model: llama3-2-3b-local
+    tests.llmd.inference_service.image_pull_secrets: rhai-pull-secret
+    tests.llmd.inference_service.infiniband: aks
+    tests.llmd.inference_service.router.tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        value: present
+
+    prepare.namespace.name: kpouget-dev
+
+    ci_presets.gpt-oss["tests.llmd.inference_service.model"]: gpt-oss-120-local
+    ci_presets.llama-70b["tests.llmd.inference_service.model"]: llama3-3-70b-local
+
   azure:
     security.run_as_root: true
     prepare.preload.skip: true
     prepare.operators.skip: true
+    prepare.monitoring.skip: true
     prepare.cluster.skip: true
     prepare.rhoai.skip: true
 
@@ -45,9 +62,6 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.skip_prepare: false
 
-  azure_light:
-    extends: [azure, opt-125m]
-    prepare.pvc.storage_class: managed-csi
 
   cks:
     extends: [pvc_rwx, llama-70b]
@@ -57,32 +71,26 @@ ci_presets:
     tests.llmd.inference_service.metrics.manual_capture: false
     tests.llmd.inference_service.gateway.name: gateway-internal
     tests.llmd.inference_service.image_pull_secrets: kpouget-pull-secret
+    tests.llmd.inference_service.infiniband: true
 
     tests.llmd.skip_prepare: true
     prepare.namespace.name: kpouget-dev
     prepare.preload.node_selector_key: gpu.nvidia.com/class
     prepare.preload.node_selector_value: "H200"
-    tests.llmd.inference_service.extra_properties:
-      spec.template.affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                - gf48e48
-                - gf4334a
+
     prepare.preload.extra_images:
       vllm-cuda-rhel9: registry.redhat.io/rhaiis/vllm-cuda-rhel9@sha256:094db84a1da5e8a575d0c9eade114fa30f4a2061064a338e3e032f3578f8082a
       llm-d-inference-scheduler: ghcr.io/opendatahub-io/rhaii-on-xks/llm-d-inference-scheduler:e6b5db0@sha256:43e8b8edc158f31535c8b23d77629f8cde111cc762a8f4ee5f2f884470566211
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
   baseline-flavors:
-    tests.llmd.flavors: [simple, simple-tp4, simple-tp2-x4]
+    tests.llmd.flavors: [simple-tp2, simple-tp4, simple-tp2-x4]
 
   intelligentrouting-flavors:
     tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4]
+
+  pd-flavors:
+    tests.llmd.flavors: [pd-x2-ptp4-px1-dtp4, intelligentrouting-tp4-x4, simple-tp4-x4]
 
   guidellm_light:
     tests.llmd.benchmarks.guidellm.load_shape_name: lightweight
@@ -105,6 +113,7 @@ ci_presets:
   gpt-oss:
     tests.llmd.inference_service.model: gpt-oss-120
     tests.llmd.benchmarks.guidellm.args.request_type: text_completions
+    tests.llmd.inference_service.hybrid_kv_cache_manager: true
 
   llama-70b:
     tests.llmd.inference_service.model: llama3-3-70b
@@ -183,7 +192,7 @@ prepare:
   rhoai:
     skip: false
     image: "quay.io/rhoai/rhoai-fbc-fragment@sha256"
-    tag: "cc054ef120d1b22c92d046ce5d4c175f302134b62dbbf965ceb964134de5c477"
+    tag: "17970f248eb3b3df410a5a77da57cc893f0969d549088f76cd50165fa7576937"
     channel: "beta"
     datasciencecluster:
       enable: "[kserve]"
@@ -246,6 +255,27 @@ deployment_profiles:
     tests.llmd.inference_service.epp.config_file: null
 
 models:
+  llama3-3-70b-local:
+    name: RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 64Gi
+
+  llama3-2-3b-local:
+    name: RedHatAI/Llama-3.2-3B-Instruct-FP8
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 8Gi
+
+  gpt-oss-120-local:
+    name: openai/gpt-oss-120b
+    source: hostpath:/mnt/local-nvme-storage/models
+    resources:
+      cpu: 4
+      memory: 64Gi
+
   facebook-opt-125m:
     name: facebook/opt-125m
     source: hf://facebook/opt-125m
@@ -286,7 +316,7 @@ tests:
   llmd:
     skip: false
     skip_prepare: false
-    flavors: intelligentrouting
+    flavors: pd-x2-ptp4-px1-dtp4
     namespace: "@prepare.namespace.name"
 
     inference_service:
@@ -302,8 +332,13 @@ tests:
       do_simple_test: true
       gateway:
         name: gateway-external
+      router:
+        tolerations: []  # List of tolerations for router scheduler pods
       model: gpt-oss-20b
       max_model_len: 40960
+      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", false=disable rdma/ib
+      aks_hotfix_enabled: true  # Enable/disable AKS ConfigMap hotfix mounts
+      hybrid_kv_cache_manager: false  # Add --no-disable-hybrid-kv-cache-manager flag
       metrics:
         manual_capture: false
         scheduler_servicemonitor_name: kserve-llm-isvc-scheduler

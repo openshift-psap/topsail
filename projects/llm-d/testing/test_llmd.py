@@ -402,6 +402,51 @@ def apply_flavor_modifications(isvc_data, flavor):
             apply_prefill_tensor_parallelism(isvc_data, prefill_tp_size)
 
 
+def add_tensor_parallelism_to_container(container, tp_size):
+    """
+    Helper function to add tensor parallelism arguments and GPU resources to a container
+
+    Args:
+        container: Container dict to modify
+        tp_size: Tensor parallel size
+    """
+    # Ensure env section exists
+    if 'env' not in container:
+        container['env'] = []
+
+    # Find or create VLLM_ADDITIONAL_ARGS environment variable
+    vllm_args_env = None
+    for env_var in container['env']:
+        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+            vllm_args_env = env_var
+            break
+
+    if not vllm_args_env:
+        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
+        container['env'].append(vllm_args_env)
+
+    # Add tensor parallelism argument
+    current_args = vllm_args_env.get('value', '').strip()
+    tp_arg = f"--tensor-parallel-size={tp_size}"
+
+    # Check if TP argument already exists and update it
+    import re
+    if re.search(r'--tensor-parallel-size=\d+', current_args):
+        # Replace existing TP argument
+        current_args = re.sub(r'--tensor-parallel-size=\d+', tp_arg, current_args)
+    else:
+        # Add new TP argument
+        if current_args:
+            current_args = f"{current_args} {tp_arg}"
+        else:
+            current_args = tp_arg
+
+    vllm_args_env['value'] = current_args
+
+    # Set GPU resources to match tensor parallel size
+    apply_gpu_resources(container, tp_size)
+
+
 def apply_flavor_tensor_parallelism(isvc_data, tp_size):
     """
     Apply tensor parallelism configuration from flavor to the ISVC
@@ -429,43 +474,10 @@ def apply_flavor_tensor_parallelism(isvc_data, tp_size):
         main_container = {'name': 'main'}
         isvc_data['spec']['template']['containers'].append(main_container)
 
-    # Ensure env section exists
-    if 'env' not in main_container:
-        main_container['env'] = []
+    # Apply tensor parallelism to the container
+    add_tensor_parallelism_to_container(main_container, tp_size)
 
-    # Find or create VLLM_ADDITIONAL_ARGS environment variable
-    vllm_args_env = None
-    for env_var in main_container['env']:
-        if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
-            vllm_args_env = env_var
-            break
-
-    if not vllm_args_env:
-        vllm_args_env = {'name': 'VLLM_ADDITIONAL_ARGS', 'value': ''}
-        main_container['env'].append(vllm_args_env)
-
-    # Add tensor parallelism argument
-    current_args = vllm_args_env.get('value', '').strip()
-    tp_arg = f"--tensor-parallel-size={tp_size}"
-
-    # Check if TP argument already exists and update it
-    import re
-    if re.search(r'--tensor-parallel-size=\d+', current_args):
-        # Replace existing TP argument
-        current_args = re.sub(r'--tensor-parallel-size=\d+', tp_arg, current_args)
-    else:
-        # Add new TP argument
-        if current_args:
-            current_args = f"{current_args} {tp_arg}"
-        else:
-            current_args = tp_arg
-
-    vllm_args_env['value'] = current_args
-
-    # Set GPU resources to match tensor parallel size
-    apply_gpu_resources(main_container, tp_size)
-
-    logging.info(f"Applied flavor TP: {tp_arg}, GPU resources: {tp_size}")
+    logging.info(f"Applied flavor tensor parallelism: TP={tp_size}")
 
 
 def apply_prefill_tensor_parallelism(isvc_data, tp_size):
@@ -481,10 +493,8 @@ def apply_prefill_tensor_parallelism(isvc_data, tp_size):
     # Find the main container in prefill
     main_container = isvc_data['spec']['prefill']['template']['containers'][0]
 
-    # Set GPU resources to match tensor parallel size
-    apply_gpu_resources(main_container, tp_size)
-
-    logging.info(f"Applied prefill GPU resources: {tp_size}")
+    # Apply tensor parallelism to the container
+    add_tensor_parallelism_to_container(main_container, tp_size)
 
 
 def apply_kueue_configuration(isvc_data):
@@ -552,12 +562,13 @@ def apply_kueue_configuration(isvc_data):
     isvc_data['metadata']['annotations'][f"{kueue_prefix}pod-group-total-count"] = str(pod_group_total_count)
     logging.info(f"Set pod-group-total-count: {pod_group_total_count} (1 scheduler + {replicas} replicas)")
 
-def apply_model_configuration(isvc_data):
+def apply_model_configuration(isvc_data, flavor):
     """
     Apply model URI and name configuration from config file
 
     Args:
         isvc_data: The loaded YAML data structure
+        flavor: The flavor string to determine port configuration
     """
     model_key = config.project.get_config("tests.llmd.inference_service.model", None)
 
@@ -588,6 +599,74 @@ def apply_model_configuration(isvc_data):
         # Explicit URI in model config takes precedence
         isvc_data['spec']['model']['uri'] = model_config['uri']
         logging.info(f"Set model URI from model config: {model_config['uri']}")
+    elif 'source' in model_config and model_config['source'].startswith('hostpath:'):
+        # Hostpath source - use hf://{model_name} format and configure volumes
+        hostpath = model_config['source'].removeprefix("hostpath:")
+        model_name = model_config.get('name', model_key)
+        isvc_data['spec']['model']['uri'] = f"hf://{model_name}"
+        logging.info(f"Set model URI from hostpath model: hf:/{model_name}")
+
+        # Configure hostpath volume and environment
+        apply_hostpath_volume_configuration(isvc_data, hostpath)
+
+        # Set vLLM command for hostpath models
+        def configure_vllm_command(container, port='8000'):
+            """Helper function to configure vLLM command for a container"""
+            # Build base command
+            command = [
+                'vllm',
+                'serve',
+                model_name,
+                '--port',
+                port,
+                '--served-model-name',
+                model_name,
+                '--enable-ssl-refresh',
+                '--ssl-certfile',
+                '/var/run/kserve/tls/tls.crt',
+                '--ssl-keyfile',
+                '/var/run/kserve/tls/tls.key'
+            ]
+
+            # Process VLLM_ADDITIONAL_ARGS from environment and add to command
+            vllm_args_found = False
+            if 'env' in container:
+                for i, env_var in enumerate(container['env']):
+                    if env_var.get('name') == 'VLLM_ADDITIONAL_ARGS':
+                        vllm_args_found = True
+                        additional_args = env_var.get('value', '').strip()
+                        if additional_args:
+                            # Parse additional args and add to command
+                            import shlex
+                            parsed_args = shlex.split(additional_args)
+                            command.extend(parsed_args)
+                            logging.info(f"Added VLLM_ADDITIONAL_ARGS to command: {additional_args}")
+
+                        # Remove VLLM_ADDITIONAL_ARGS from env since it's now in command
+                        container['env'].pop(i)
+                        break
+
+            if not vllm_args_found:
+                raise RuntimeError("VLLM_ADDITIONAL_ARGS environment variable not found in container for hostpath model. This should have been set by apply_vllm_args_configuration().")
+
+            container['command'] = command
+
+        # Configure main container (decode) - port depends on flavor
+        main_container = isvc_data['spec']['template']['containers'][0]  # Assume first container is main
+
+        # Parse flavor to get base flavor
+        components = parse_flavor_components(flavor)
+        base_flavor = components['base']
+
+        # If simple flavor, use port 8000; otherwise use 8001 for decode
+        decode_port = '8001' if base_flavor == 'pd' else '8000'
+
+        configure_vllm_command(main_container, decode_port)
+
+        # Configure prefill container with port 8000 if it exists
+        if 'prefill' in isvc_data['spec'] and 'template' in isvc_data['spec']['prefill']:
+            prefill_container = isvc_data['spec']['prefill']['template']['containers'][0]  # Assume first container is main
+            configure_vllm_command(prefill_container, '8000')
     elif not pvc_enabled:
         # PVC disabled - use model source directly as URI
         if 'source' in model_config:
@@ -608,6 +687,63 @@ def apply_model_configuration(isvc_data):
         logging.info(f"Set model name: {model_config['name']}")
 
 
+def apply_hostpath_volume_configuration(isvc_data, hostpath):
+    """
+    Apply hostPath volume configuration to ISVC containers for local model storage
+    """
+    logging.info(f"Configuring hostPath volume for: {hostpath}")
+
+    # Disable storage initializer for hostpath models
+    isvc_data['spec']['storageInitializer'] = {
+        'enabled': False
+    }
+
+    # Define volume and volume mount configuration
+    hf_cache_volume = {
+        'name': 'hf-cache',
+        'hostPath': {
+            'path': hostpath,
+            'type': 'Directory'
+        }
+    }
+
+    hf_cache_mount = {
+        'name': 'hf-cache',
+        'mountPath': '/hf-cache',
+        'readOnly': True
+    }
+
+    hf_env_var = {
+        'name': 'HF_HUB_CACHE',
+        'value': '/hf-cache/hub'
+    }
+
+    # Helper function to configure a container with hostpath volume
+    def configure_container(container):
+        container['volumeMounts'] = [hf_cache_mount]
+
+        if 'env' not in container:
+            container['env'] = []
+        container['env'].append(hf_env_var)
+
+    # Add volume to main template
+    isvc_data['spec']['template']['volumes'] = [hf_cache_volume]
+
+    # Configure main container
+    main_container = isvc_data['spec']['template']['containers'][0]  # Assume first container is main
+    configure_container(main_container)
+
+    # Configure prefill container if it exists
+    if 'prefill' in isvc_data['spec'] and 'template' in isvc_data['spec']['prefill']:
+        # Add volume to prefill template
+        isvc_data['spec']['prefill']['template']['volumes'] = [hf_cache_volume]
+
+        # Configure prefill container
+        prefill_container = isvc_data['spec']['prefill']['template']['containers'][0]  # Assume first container is main
+        configure_container(prefill_container)
+
+    logging.info("Configured hostPath volume, mount, and HF_HUB_CACHE environment variable for all containers")
+
 
 def apply_vllm_args_configuration(isvc_data):
     """
@@ -620,14 +756,27 @@ def apply_vllm_args_configuration(isvc_data):
     """
     vllm_args = config.project.get_config("tests.llmd.inference_service.vllm_args", [])
 
-    if not vllm_args:
+    # Create a copy to avoid modifying the original config
+    final_vllm_args = list(vllm_args) if vllm_args else []
+
+    # Add hybrid KV cache manager flag if enabled
+    hybrid_kv_enabled = config.project.get_config("tests.llmd.inference_service.hybrid_kv_cache_manager", False)
+    if hybrid_kv_enabled:
+        final_vllm_args.append("--no-disable-hybrid-kv-cache-manager")
+        logging.info("Added --no-disable-hybrid-kv-cache-manager flag")
+
+    if not final_vllm_args:
         logging.info("No vLLM args configured")
         return
 
-    logging.info(f"Applying vLLM args: {vllm_args}")
+    logging.info(f"Applying vLLM args: {final_vllm_args}")
 
-    # Apply to main container only
-    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', vllm_args, 'main')
+    # Apply to main container (decode)
+    _apply_vllm_args_to_container_section(isvc_data, 'spec.template.containers', final_vllm_args, 'main')
+
+    # Apply to prefill container if it exists
+    if 'prefill' in isvc_data['spec']:
+        _apply_vllm_args_to_container_section(isvc_data, 'spec.prefill.template.containers', final_vllm_args, 'main')
 
 
 def _apply_vllm_args_to_container_section(isvc_data, container_path, vllm_args, container_name):
@@ -834,6 +983,235 @@ def apply_resource_configuration(isvc_data, model_key):
         logging.error("Expected structure: spec.template.containers[0].resources.requests")
 
 
+def apply_infiniband_configuration(isvc_data, flavor):
+    """
+    Apply InfiniBand configuration to ISVC containers (only for 'pd' flavor)
+
+    Args:
+        isvc_data: The loaded YAML data structure
+        flavor: The flavor string to check
+    """
+    infiniband_config = config.project.get_config("tests.llmd.inference_service.infiniband", None)
+
+    if infiniband_config is None:
+        return
+
+    # Parse flavor to get base flavor
+    components = parse_flavor_components(flavor)
+    base_flavor = components['base']
+
+    # Only apply InfiniBand configuration for 'pd' flavor
+    if base_flavor != "pd":
+        logging.info(f"Skipping InfiniBand configuration for flavor '{base_flavor}' (only applied to 'pd' flavor)")
+        return
+
+    logging.info(f"Applying InfiniBand configuration for 'pd' flavor: {infiniband_config}")
+
+    # Handle AKS-specific configuration
+    if infiniband_config == "aks":
+        apply_infiniband_aks_configuration(isvc_data)
+        infiniband_config = "rdma/shared_ib"
+
+    def apply_to_containers(containers):
+        for container in containers:
+            # Always remove existing rdma/ib first
+            container['resources']['limits'].pop('rdma/ib', None)
+            container['resources']['requests'].pop('rdma/ib', None)
+
+            # Add InfiniBand resource based on config type
+            if infiniband_config is True:
+                container['resources']['limits']['rdma/ib'] = "1"
+                container['resources']['requests']['rdma/ib'] = "1"
+            elif isinstance(infiniband_config, str):
+                # Use custom resource string (e.g., "rdma/shared_ib")
+                container['resources']['limits'][infiniband_config] = "1"
+                container['resources']['requests'][infiniband_config] = "1"
+
+    # Apply to main template containers
+    apply_to_containers(isvc_data['spec']['template']['containers'])
+
+    # Apply to prefill template containers (for P/D deployments)
+    if 'prefill' not in isvc_data['spec']:
+        raise ValueError("Trying to apply infiniband config without a prefill deployment")
+
+    apply_to_containers(isvc_data['spec']['prefill']['template']['containers'])
+
+
+def apply_infiniband_aks_configuration(isvc_data):
+    """
+    Apply AKS-specific InfiniBand configuration to ISVC containers
+    Adds vllm-ucx-multiproc-hotfix configmap mounts similar to values_aks.yaml
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    logging.info("Applying AKS-specific InfiniBand configuration")
+
+    # Check if AKS hotfix is enabled
+    aks_hotfix_enabled = config.project.get_config("tests.llmd.inference_service.aks_hotfix_enabled", True)
+
+    # Helper function to add AKS-specific environment variables and security context to containers
+    def add_aks_env_and_security(containers):
+        for container in containers:
+            # Add AKS-specific environment variables for UCX/NIXL configuration
+            if 'env' not in container:
+                container['env'] = []
+
+            # Define the required environment variables
+            aks_env_vars = [
+                {
+                    'name': 'VLLM_GPU_NIC_PCIE_MAPPING',
+                    'value': '00000001:00:00.0=0101:00:00.0,00000002:00:00.0=0102:00:00.0,00000003:00:00.0=0103:00:00.0,00000008:00:00.0=0104:00:00.0,00000009:00:00.0=0105:00:00.0,0000000A:00:00.0=0106:00:00.0,0000000B:00:00.0=0107:00:00.0,0000000C:00:00.0=0108:00:00.0'
+                },
+                {
+                    'name': 'VLLM_NIC_SELECTION_VARS',
+                    'value': 'UCX_NET_DEVICES:1,NVSHMEM_HCA_LIST:1,NCCL_IB_HCA:1'
+                },
+                {
+                    'name': 'NVSHMEM_ENABLE_NIC_PE_MAPPING',
+                    'value': '1'
+                }
+            ]
+
+            # Add each environment variable if it doesn't already exist
+            existing_env_names = {env.get('name') for env in container['env']}
+            for env_var in aks_env_vars:
+                if env_var['name'] not in existing_env_names:
+                    container['env'].append(env_var)
+
+            # Add IPC_LOCK capability to container security context
+            if 'securityContext' not in container:
+                container['securityContext'] = {}
+            if 'capabilities' not in container['securityContext']:
+                container['securityContext']['capabilities'] = {}
+            if 'add' not in container['securityContext']['capabilities']:
+                container['securityContext']['capabilities']['add'] = []
+
+            # Add IPC_LOCK if not already present
+            if 'IPC_LOCK' not in container['securityContext']['capabilities']['add']:
+                container['securityContext']['capabilities']['add'].append('IPC_LOCK')
+
+    # Always apply AKS environment variables and security context to both templates
+    add_aks_env_and_security(isvc_data['spec']['template']['containers'])
+    if "prefill" in isvc_data['spec']:
+        add_aks_env_and_security(isvc_data['spec']['prefill']['template']['containers'])
+
+    # Conditionally apply ConfigMap hotfix mounts if enabled
+    if aks_hotfix_enabled:
+        logging.info("AKS hotfix enabled - applying ConfigMap mounts")
+
+        # Verify that the required configmap exists in the namespace
+        namespace = config.project.get_config("tests.llmd.namespace")
+        cm_name = "vllm-ucx-multiproc-hotfix"
+
+        hotfix_files = [
+            'envs.py',
+            'platforms/cuda.py',
+            'platforms/interface.py',
+            'v1/executor/multiproc_executor.py',
+            'v1/executor/uniproc_executor.py',
+            'v1/executor/vllm_net_devices.py'
+        ]
+
+        try:
+            result = run.run(f"oc get configmap {cm_name} -n {namespace} --ignore-not-found -o name",
+                             capture_stdout=True, check=True)
+            if not result.stdout.strip():
+                # Extract just the filenames from hotfix_files for the error message
+                filenames = [file_path.split('/')[-1] for file_path in hotfix_files]
+                file_args = ' \\\n       '.join([f"--from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/{filename}" for filename in filenames])
+
+                raise RuntimeError(f"Required ConfigMap '{cm_name}' not found in namespace '{namespace}'. "
+                                   f"Please create it first:\n\n"
+                                   f"oc create cm vllm-ucx-multiproc-hotfix -n {namespace} \\\n"
+                                   f"       {file_args}")
+            logging.info(f"Verified ConfigMap '{cm_name}' exists in namespace '{namespace}'")
+        except Exception as e:
+            raise RuntimeError(f"Failed to verify ConfigMap '{cm_name}' in namespace '{namespace}': {e}")
+
+        """
+        oc create cm vllm-ucx-multiproc-hotfix  \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/envs.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/interface.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/multiproc_executor.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/uniproc_executor.py \
+           --from-file=guides/pd-disaggregation/ms-pd/charts/vllm-ucx-multiproc-hotfix/vllm_net_devices.py
+        """
+
+        # Define vLLM hotfix mounts from configmap (similar to values_aks.yaml)
+        vllm_base_path = '/opt/app-root/lib64/python3.12/site-packages/vllm'
+
+        hotfix_mounts = []
+        for file_path in hotfix_files:
+            filename = file_path.split('/')[-1]  # Extract just the filename for subPath
+            hotfix_mounts.append({
+                'name': 'vllm-ucx-multiproc-hotfix',
+                'mountPath': f'{vllm_base_path}/{file_path}',
+                'subPath': filename
+            })
+
+        # ConfigMap volume definition
+        hotfix_volume = {
+            'name': 'vllm-ucx-multiproc-hotfix',
+            'configMap': {
+                'name': 'vllm-ucx-multiproc-hotfix',
+                'defaultMode': 0o444  # octal 0444
+            }
+        }
+
+        # Helper function to add hotfix volume mounts to containers
+        def add_hotfix_volumes(containers, template_volumes):
+            for container in containers:
+                # Add volume mounts
+                if 'volumeMounts' not in container:
+                    container['volumeMounts'] = []
+                container['volumeMounts'].extend(hotfix_mounts)
+
+            # Add volume to template
+            template_volumes.append(hotfix_volume)
+
+        # Apply hotfix volumes and complete configuration to containers
+        def add_hotfix_to_containers(containers, template_volumes):
+            for container in containers:
+                # Add volume mounts
+                if 'volumeMounts' not in container:
+                    container['volumeMounts'] = []
+                container['volumeMounts'].extend(hotfix_mounts)
+
+            # Add volume to template
+            template_volumes.append(hotfix_volume)
+
+        # Apply hotfix volumes to main template
+        main_volumes = isvc_data['spec']['template'].setdefault('volumes', [])
+        add_hotfix_to_containers(isvc_data['spec']['template']['containers'], main_volumes)
+
+        # Apply hotfix volumes to prefill template
+        if "prefill" in isvc_data['spec']:
+            prefill_volumes = isvc_data['spec']['prefill']['template'].setdefault('volumes', [])
+            add_hotfix_to_containers(isvc_data['spec']['prefill']['template']['containers'], prefill_volumes)
+
+        logging.info("Applied AKS ConfigMap hotfix mounts")
+    else:
+        logging.info("AKS hotfix disabled - skipping ConfigMap mounts")
+
+    # Always add AKS-specific annotations for ulimits on both decode and prefill pods
+    ulimit_annotation_value = """- type: memlock
+  hard: 17179869184
+  soft: 17179869184"""
+
+    # Set annotations for decode pods (spec.annotations)
+    if 'annotations' not in isvc_data['spec']:
+        isvc_data['spec']['annotations'] = {}
+    isvc_data['spec']['annotations']['ulimits.nri.containerd.io/container.main'] = ulimit_annotation_value
+
+    # Set annotations for prefill pods (spec.prefill.annotations)
+    if 'annotations' not in isvc_data['spec']['prefill']:
+        isvc_data['spec']['prefill']['annotations'] = {}
+    isvc_data['spec']['prefill']['annotations']['ulimits.nri.containerd.io/container.main'] = ulimit_annotation_value
+
+    logging.info("Applied AKS-specific environment variables, security context, and ulimit annotations")
+
+
 def apply_extra_properties(isvc_data):
     """
     Apply extra properties from configuration to the ISVC
@@ -888,6 +1266,41 @@ def _set_nested_property(data, dotted_key, value):
     # Set the final value
     final_key = keys[-1]
     current[final_key] = value
+
+
+def apply_router_configuration(isvc_data):
+    """
+    Apply router configuration (tolerations, etc.) to ISVC router scheduler template
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    # Check if router configuration is needed
+    if 'spec' not in isvc_data or 'router' not in isvc_data['spec'] or 'scheduler' not in isvc_data['spec']['router']:
+        return
+
+    # Get router tolerations from config
+    router_tolerations = config.project.get_config("tests.llmd.inference_service.router.tolerations", [])
+    if not router_tolerations:
+        return
+
+    logging.info(f"Applying router tolerations: {router_tolerations}")
+
+    # Get scheduler template
+    scheduler_template = isvc_data['spec']['router']['scheduler'].get('template', {})
+
+    # Add tolerations to scheduler template
+    if 'tolerations' not in scheduler_template:
+        scheduler_template['tolerations'] = []
+
+    # Add each configured toleration
+    for toleration in router_tolerations:
+        scheduler_template['tolerations'].append(toleration)
+
+    # Update the scheduler template back to the data structure
+    isvc_data['spec']['router']['scheduler']['template'] = scheduler_template
+
+    logging.info(f"Added {len(router_tolerations)} toleration(s) to router scheduler template")
 
 
 def apply_epp_configuration(isvc_data):
@@ -959,11 +1372,13 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     # Apply modifications in order
     apply_flavor_modifications(isvc_data, flavor)
     apply_kueue_configuration(isvc_data)
-    apply_model_configuration(isvc_data)
     apply_vllm_args_configuration(isvc_data)
     apply_max_model_len_configuration(isvc_data)
+    apply_model_configuration(isvc_data, flavor)
     apply_image_pull_secrets_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
+    apply_infiniband_configuration(isvc_data, flavor)
+    apply_router_configuration(isvc_data)
     apply_extra_properties(isvc_data)
     apply_epp_configuration(isvc_data)
 
