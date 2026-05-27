@@ -192,8 +192,8 @@ def prepare_for_test():
     with run.Parallel("prepare_gpu_node") as parallel:
         if config.project.get_config("prepare.gpu.wait_for_readiness"):
             parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
-        if not config.project.get_config("prepare.preload.skip"):
-            parallel.delayed(prepare_llmd.preload_llm_model_image)
+
+        parallel.delayed(prepare_llmd.preload_llm_model_image)
 
         parallel.delayed(prepare_llmd.download_single_model, model_ref)
 
