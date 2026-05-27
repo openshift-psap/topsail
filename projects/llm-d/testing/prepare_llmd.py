@@ -580,8 +580,9 @@ def download_single_model(model_key):
         check_result = run.run(f'oc get pvc -l {model_key}=yes -oname -n {namespace}',
                                capture_stdout=True, check=False)
 
+
         expected_pvc = f"persistentvolumeclaim/{pvc_name}"
-        if check_result.returncode == 0 and expected_pvc in check_result.stdout:
+        if check_result.returncode == 0 and expected_pvc in check_result.stdout.splitlines():
             logging.info(f"Model '{model_key}' already exists in PVC (found {expected_pvc} with label {model_key}=yes) - skipping download")
             return
 
