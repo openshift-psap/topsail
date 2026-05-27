@@ -35,6 +35,25 @@ ci_presets:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
 
+  prepare_skip_all:
+    prepare.operators.skip: true
+    prepare.rhoai.skip: true
+    prepare.cluster.skip: true
+    prepare.gateway.skip: true
+    prepare.grafana.skip: true
+    prepare.monitoring.skip: true
+    prepare.preload.skip: true
+
+  ibm_h100:
+    extends: [prepare_skip_all, intelligentrouting-flavors, intelligentrouting-flavors, pvc_rwx]
+    prepare.rhoai.skip: true
+    prepare.namespace.name: kpouget-dev
+    prepare.pvc.storage_class: ibmc-vpc-block-10iops-tier
+    tests.llmd.inference_service.infiniband: nvidia.com/roce
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.inference_service.gateway.name: gateway-internal
+
   azure_h100:
     extends: [azure]
     tests.llmd.inference_service.model: llama3-2-3b-local
@@ -84,12 +103,15 @@ ci_presets:
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
   baseline-flavors:
+    extends: [llama-70b]
     tests.llmd.flavors: [simple-tp2, simple-tp4, simple-tp2-x4]
 
   intelligentrouting-flavors:
+    extends: [llama-70b]
     tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4]
 
   pd-flavors:
+    extends: [gpt-oss]
     tests.llmd.flavors: [pd-x2-ptp4-px1-dtp4, intelligentrouting-tp4-x4, simple-tp4-x4]
 
   guidellm_light:
