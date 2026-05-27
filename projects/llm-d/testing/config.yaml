@@ -214,7 +214,7 @@ prepare:
   rhoai:
     skip: false
     image: "quay.io/rhoai/rhoai-fbc-fragment@sha256"
-    tag: "17970f248eb3b3df410a5a77da57cc893f0969d549088f76cd50165fa7576937"
+    tag: "a46c92385e40d1f64da54170b37aba2dabf9f5deea9e1e8a36f06ea6161790e5" # 3.4-rc2
     channel: "beta"
     datasciencecluster:
       enable: "[kserve]"
