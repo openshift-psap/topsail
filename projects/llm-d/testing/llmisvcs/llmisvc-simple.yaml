@@ -40,7 +40,7 @@ spec:
             path: /health
             port: 8000
             scheme: HTTPS
-          initialDelaySeconds: 900
+          initialDelaySeconds: 1500
           periodSeconds: 60
           timeoutSeconds: 60
           failureThreshold: 1000
@@ -54,3 +54,12 @@ spec:
           periodSeconds: 30
           successThreshold: 1
           timeoutSeconds: 30
+        startupProbe:
+          failureThreshold: 150
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTPS
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
