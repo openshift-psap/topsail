@@ -211,11 +211,21 @@ def _generate_test_metadata(failed, flavor):
 
     logging.info(f"Written exit code: {exit_code} to {exit_code_path}")
 
+    # Get model name
+    model_ref = config.project.get_config("tests.llmd.inference_service.model")
+    models = config.project.get_config("models")
+    model_name = models[model_ref]["name"]
+
+    # Get load shape
+    load_shape = config.project.get_config("tests.llmd.benchmarks.guidellm.load_shape_name")
+
     # Write settings file using YAML
     settings_path = env.ARTIFACT_DIR / "settings.yaml"
     settings_data = {
         "llm-d": True,
-        "flavor": flavor
+        "flavor": flavor,
+        "model": model_name,
+        "load_shape": load_shape
     }
 
     with open(settings_path, 'w') as f:
