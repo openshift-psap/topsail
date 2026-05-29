@@ -53,6 +53,9 @@ ci_presets:
     tests.capture_prom: false
     tests.capture_prom_uwm: false
     tests.llmd.inference_service.gateway.name: gateway-internal
+    tests.llmd.inference_service.infiniband: roce
+    tests.llmd.inference_service.service_account: llm-d-privileged
+    ci_presets.gpt-oss["tests.llmd.inference_service.hybrid_kv_cache_manager"]: false
 
   azure_h100:
     extends: [azure]
@@ -346,6 +349,7 @@ tests:
       name: llm-d
       yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
+      service_account: null  # Service account for ISVC pods (required for privileged capabilities like IPC_LOCK)
 
       epp:
         deploy: "default"
@@ -358,7 +362,7 @@ tests:
         tolerations: []  # List of tolerations for router scheduler pods
       model: gpt-oss-20b
       max_model_len: 40960
-      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", false=disable rdma/ib
+      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", "aks"=AKS config+ulimits, "roce"=RoCE config+DRA, false=disable rdma/ib
       aks_hotfix_enabled: true  # Enable/disable AKS ConfigMap hotfix mounts
       hybrid_kv_cache_manager: false  # Add --no-disable-hybrid-kv-cache-manager flag
       metrics:
