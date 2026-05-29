@@ -15,7 +15,7 @@ spec:
     runAsNonRoot: true
     runAsUser: 1001
   containers:
-  - image: nvcr.io/nvidia/cuda:11.2.2-devel-ubi8
+  - image: nvcr.io/nvidia/cuda:12.3.1-devel-ubi8
     imagePullPolicy: Always
     name: gpu-burn-ctr
     command:
@@ -35,8 +35,8 @@ spec:
       value: "{{ gpu_operator_run_gpu_burn_runtime }}"
     resources:
       limits:
-        # '0' means 'get access to all the GPUs of the local node'
-        nvidia.com/gpu: 0
+        # Request all GPUs available on this node
+        nvidia.com/gpu: {{ gpu_count }}
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:

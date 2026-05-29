@@ -550,12 +550,12 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid,
                 fminf((float)(thisTime - startTime) / (float)runTime * 100.0f,
                       100.0f);
             printf("\r%.1f%%  ", elapsed);
-            printf("proc'd: ");
+            printf("GPUs: ");
             for (size_t i = 0; i < clientCalcs.size(); ++i) {
-                printf("%d (%.0f Gflop/s) ", clientCalcs.at(i),
+                printf("GPU%d: %d (%.0f Gflop/s)", (int)i, clientCalcs.at(i),
                        clientGflops.at(i));
                 if (i != clientCalcs.size() - 1)
-                    printf("- ");
+                    printf(" | ");
             }
             printf("  errors: ");
             for (size_t i = 0; i < clientErrors.size(); ++i) {
@@ -659,9 +659,29 @@ void listenClients(std::vector<int> clientFd, std::vector<pid_t> clientPid,
         ;
     printf("done\n");
 
+    // Calculate final average GFLOPS over the entire run for each GPU
+    time_t endTime = time(0);
+    double totalRunTime = (double)(endTime - startTime);
+
     printf("\nTested %d GPUs:\n", (int)clientPid.size());
-    for (size_t i = 0; i < clientPid.size(); ++i)
-        printf("\tGPU %d: %s\n", (int)i, clientFaulty.at(i) ? "FAULTY" : "OK");
+    for (size_t i = 0; i < clientPid.size(); ++i) {
+        double finalGflops = 0.0;
+        if (clientCalcs.at(i) > 0 && totalRunTime > 0) {
+            double totalOps = (double)clientCalcs.at(i) * (double)OPS_PER_MUL;
+            finalGflops = totalOps / totalRunTime / 1000.0 / 1000.0 / 1000.0;
+        }
+
+        printf("\tGPU %d: %s", (int)i, clientFaulty.at(i) ? "FAULTY" : "OK");
+
+        if (finalGflops > 0.0) {
+            printf(" (%.1f Gflop/s)", finalGflops);
+        } else if (clientCalcs.at(i) == -1) {
+            printf(" (DIED!)");
+        } else {
+            printf(" (0.0 Gflop/s)");
+        }
+        printf("\n");
+    }
 }
 
 template <class T>
