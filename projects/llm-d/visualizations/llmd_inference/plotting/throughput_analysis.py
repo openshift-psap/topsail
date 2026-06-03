@@ -8,6 +8,37 @@ import matrix_benchmarking.plotting.table_stats as table_stats
 import matrix_benchmarking.common as common
 
 
+def _get_platform_line_style_map(platforms):
+    """
+    Create a mapping from platform names to line dash styles.
+    OCP gets solid line, others get dotted, dash, dashdot in sequence.
+
+    Args:
+        platforms: List of platform names
+
+    Returns:
+        Dict mapping platform names to plotly line dash styles
+    """
+    # Define the line style sequence: dotted, dash, solid
+    line_styles = ['dot', 'dash', 'dashdot', 'longdash', 'longdashdot']
+
+    style_map = {}
+
+    # Always assign solid line to OCP
+    non_ocp_platforms = []
+    for platform in platforms:
+        if platform == 'OCP':
+            style_map[platform] = 'solid'
+        else:
+            non_ocp_platforms.append(platform)
+
+    # Assign other styles to non-OCP platforms
+    for i, platform in enumerate(sorted(non_ocp_platforms)):
+        style_map[platform] = line_styles[i % len(line_styles)]
+
+    return style_map
+
+
 def _get_plot_title_with_context_info(base_title, variables, settings):
     """
     Helper function to add context info (model, load_shape) to plot titles if not in variables
@@ -23,7 +54,7 @@ def _get_plot_title_with_context_info(base_title, variables, settings):
     context_info = []
 
     # settings to show in the subtitle if not part of the 'variables'
-    SUBTITLE_SETTINGS = "model", "flavor", "load_shape",
+    SUBTITLE_SETTINGS = "model", "flavor", "load_shape", "gpu"
 
     for setting_name  in SUBTITLE_SETTINGS :
         if setting_name in variables:
@@ -78,6 +109,12 @@ class GuidellmThroughputScaling():
         ## rewrite below
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -85,7 +122,7 @@ class GuidellmThroughputScaling():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             # Include all strategies - let's show the full picture
             for benchmark in entry.results.guidellm_benchmarks:
@@ -207,6 +244,12 @@ class GuidellmLatencyVsThroughput():
         ## rewrite below
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -214,7 +257,7 @@ class GuidellmLatencyVsThroughput():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
                 if benchmark.strategy == "throughput":
@@ -295,6 +338,12 @@ class GuidellmLatencyOverview():
         ## rewrite below
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -302,7 +351,7 @@ class GuidellmLatencyOverview():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
                 data.append({
@@ -398,6 +447,8 @@ class GuidellmTokensConcurrency():
         # 2. Generate plotly express plot with consistent color scheme
         use_platform_markers = cfg.get("markers_by", None) == "platform"
 
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
 
         # 1. Generate DataFrame
         data = []
@@ -406,7 +457,7 @@ class GuidellmTokensConcurrency():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             # Extract platform information
             platform = getattr(entry.settings, 'platform', 'unknown')
@@ -441,6 +492,7 @@ class GuidellmTokensConcurrency():
                 data.append({
                     'Test Configuration': entry_name,
                     'Platform': platform,
+                    'Config-Platform': f"{entry_name}, {platform}",
                     'Concurrency': benchmark.request_concurrency,
                     'Tokens/s': output_tokens_mean,
                     'Input Tokens/s': input_tokens_mean,
@@ -468,17 +520,45 @@ class GuidellmTokensConcurrency():
             settings,
         )
 
-        # Set line dash parameter conditionally for platforms
-        line_dash = 'Platform' if use_platform_markers else None
+        if use_platform_markers:
+            # Use Config-Platform for traces to get separate lines for each combination
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='Tokens/s',
+                          color='Config-Platform',
+                          markers=True,
+                          title=title)
 
-        fig = px.line(df,
-                      hover_data=df.columns,
-                      x='Concurrency',
-                      y='Tokens/s',
-                      color='Test Configuration',
-                      line_dash=line_dash,
-                      markers=True,
-                      title=title)
+            # Create color and line style mappings
+            unique_platforms = sorted(df['Platform'].unique())
+            platform_style_map = _get_platform_line_style_map(unique_platforms)
+
+            unique_configs = sorted(df['Test Configuration'].unique())
+            available_colors = px.colors.qualitative.Set1
+            config_color_map = {config: available_colors[i % len(available_colors)] for i, config in enumerate(unique_configs)}
+
+            # Update each trace with appropriate color and line style
+            for trace in fig.data:
+                trace_name = trace.name  # This will be "config, platform"
+                # Find the config and platform for this trace
+                trace_data = df[df['Config-Platform'] == trace_name]
+                if not trace_data.empty:
+                    config = trace_data.iloc[0]['Test Configuration']
+                    platform = trace_data.iloc[0]['Platform']
+
+                    # Set color based on configuration
+                    trace.line.color = config_color_map.get(config, available_colors[0])
+                    # Set line style based on platform
+                    trace.line.dash = platform_style_map.get(platform, 'solid')
+        else:
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='Tokens/s',
+                          color='Test Configuration',
+                          markers=True,
+                          title=title)
 
         fig.update_traces(mode='lines+markers')
         fig.update_layout(showlegend=True)
@@ -562,6 +642,12 @@ class GuidellmLatencyAnalysisBase():
         config = self.metric_config
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -569,7 +655,7 @@ class GuidellmLatencyAnalysisBase():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
                 if benchmark.strategy == "throughput":
@@ -723,13 +809,19 @@ class GuidellmTTFTAnalysis():
         """
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
             if not entry.results.guidellm_benchmarks:
                 continue
 
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
             platform = getattr(entry.settings, 'platform', 'unknown')
 
             for benchmark in entry.results.guidellm_benchmarks:
@@ -741,6 +833,7 @@ class GuidellmTTFTAnalysis():
                 data.append({
                     'Test Configuration': entry_name,
                     'Platform': platform,
+                    'Config-Platform': f"{entry_name}, {platform}",
                     'Strategy': benchmark.strategy,
                     'Concurrency': benchmark.request_concurrency,
                     'TTFT P50 (ms)': ttft_p50,
@@ -756,7 +849,6 @@ class GuidellmTTFTAnalysis():
 
         # 2. Generate plot
         use_platform_markers = cfg.get("markers_by", None) == "platform"
-        line_dash = 'Platform' if use_platform_markers else None
 
         title = _get_plot_title_with_context_info(
             'TTFT (P50) vs Concurrency<br><sub>Lower is better • Median values</sub>',
@@ -764,14 +856,45 @@ class GuidellmTTFTAnalysis():
             settings,
         )
 
-        fig = px.line(df,
-                      hover_data=df.columns,
-                      x='Concurrency',
-                      y='TTFT P50 (ms)',
-                      color='Test Configuration',
-                      line_dash=line_dash,
-                      markers=True,
-                      title=title)
+        if use_platform_markers:
+            # Use Config-Platform for traces to get separate lines for each combination
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='TTFT P50 (ms)',
+                          color='Config-Platform',
+                          markers=True,
+                          title=title)
+
+            # Create color and line style mappings
+            unique_platforms = sorted(df['Platform'].unique())
+            platform_style_map = _get_platform_line_style_map(unique_platforms)
+
+            unique_configs = sorted(df['Test Configuration'].unique())
+            available_colors = px.colors.qualitative.Set1
+            config_color_map = {config: available_colors[i % len(available_colors)] for i, config in enumerate(unique_configs)}
+
+            # Update each trace with appropriate color and line style
+            for trace in fig.data:
+                trace_name = trace.name  # This will be "config, platform"
+                # Find the config and platform for this trace
+                trace_data = df[df['Config-Platform'] == trace_name]
+                if not trace_data.empty:
+                    config = trace_data.iloc[0]['Test Configuration']
+                    platform = trace_data.iloc[0]['Platform']
+
+                    # Set color based on configuration
+                    trace.line.color = config_color_map.get(config, available_colors[0])
+                    # Set line style based on platform
+                    trace.line.dash = platform_style_map.get(platform, 'solid')
+        else:
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='TTFT P50 (ms)',
+                          color='Test Configuration',
+                          markers=True,
+                          title=title)
 
         fig.update_layout(showlegend=True)
         fig.update_yaxes(rangemode="tozero")
@@ -827,13 +950,19 @@ class GuidellmITLAnalysis():
         """
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
             if not entry.results.guidellm_benchmarks:
                 continue
 
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
             platform = getattr(entry.settings, 'platform', 'unknown')
 
             for benchmark in entry.results.guidellm_benchmarks:
@@ -847,6 +976,7 @@ class GuidellmITLAnalysis():
                 data.append({
                     'Test Configuration': entry_name,
                     'Platform': platform,
+                    'Config-Platform': f"{entry_name}, {platform}",
                     'Strategy': benchmark.strategy,
                     'Concurrency': benchmark.request_concurrency,
                     'ITL P50 (ms)': itl_p50,
@@ -862,7 +992,6 @@ class GuidellmITLAnalysis():
 
         # 2. Generate plot
         use_platform_markers = cfg.get("markers_by", None) == "platform"
-        line_dash = 'Platform' if use_platform_markers else None
 
         title = _get_plot_title_with_context_info(
             'ITL (P50) vs Concurrency<br><sub>Lower is better • Median values</sub>',
@@ -870,14 +999,45 @@ class GuidellmITLAnalysis():
             settings,
         )
 
-        fig = px.line(df,
-                      hover_data=df.columns,
-                      x='Concurrency',
-                      y='ITL P50 (ms)',
-                      color='Test Configuration',
-                      line_dash=line_dash,
-                      markers=True,
-                      title=title)
+        if use_platform_markers:
+            # Use Config-Platform for traces to get separate lines for each combination
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='ITL P50 (ms)',
+                          color='Config-Platform',
+                          markers=True,
+                          title=title)
+
+            # Create color and line style mappings
+            unique_platforms = sorted(df['Platform'].unique())
+            platform_style_map = _get_platform_line_style_map(unique_platforms)
+
+            unique_configs = sorted(df['Test Configuration'].unique())
+            available_colors = px.colors.qualitative.Set1
+            config_color_map = {config: available_colors[i % len(available_colors)] for i, config in enumerate(unique_configs)}
+
+            # Update each trace with appropriate color and line style
+            for trace in fig.data:
+                trace_name = trace.name  # This will be "config, platform"
+                # Find the config and platform for this trace
+                trace_data = df[df['Config-Platform'] == trace_name]
+                if not trace_data.empty:
+                    config = trace_data.iloc[0]['Test Configuration']
+                    platform = trace_data.iloc[0]['Platform']
+
+                    # Set color based on configuration
+                    trace.line.color = config_color_map.get(config, available_colors[0])
+                    # Set line style based on platform
+                    trace.line.dash = platform_style_map.get(platform, 'solid')
+        else:
+            fig = px.line(df,
+                          hover_data=df.columns,
+                          x='Concurrency',
+                          y='ITL P50 (ms)',
+                          color='Test Configuration',
+                          markers=True,
+                          title=title)
 
         fig.update_layout(showlegend=True)
         fig.update_yaxes(rangemode="tozero")
@@ -933,6 +1093,12 @@ class TokenThroughputAnalysis():
         ## rewrite below
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -940,7 +1106,7 @@ class TokenThroughputAnalysis():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
                 # Use P50 (median) values for more representative throughput
@@ -1053,6 +1219,12 @@ class TokenThroughputPercentilesAnalysis():
         """
         entries = list(common.Matrix.all_records(settings, setting_lists))
 
+        # Check if we're using platform markers
+        use_platform_markers = cfg.get("markers_by", None) == "platform"
+
+        # Remove 'platform' from variables if using platform markers
+        entry_variables = {k: v for k, v in variables.items() if not (use_platform_markers and k == 'platform')}
+
         # 1. Generate DataFrame
         data = []
         for entry in entries:
@@ -1060,7 +1232,7 @@ class TokenThroughputPercentilesAnalysis():
                 continue
 
             # Get unique name for this entry (includes flavor info)
-            entry_name = entry.get_name(variables)
+            entry_name = entry.get_name(entry_variables)
 
             for benchmark in entry.results.guidellm_benchmarks:
                 if benchmark.strategy == "throughput":
