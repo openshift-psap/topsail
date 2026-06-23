@@ -1,4 +1,14 @@
 ---
+- name: Get current namespace if not specified
+  command: oc project -q
+  register: current_namespace_result
+  when: gpu_operator_run_gpu_burn_namespace == ""
+
+- name: Set the target namespace to current project
+  set_fact:
+    gpu_operator_run_gpu_burn_namespace: "{{ current_namespace_result.stdout }}"
+  when: gpu_operator_run_gpu_burn_namespace == ""
+
 - name: Ensure that NFD found nodes with GPU labels
   # label list should be in sync with:
   # https://github.com/NVIDIA/gpu-operator/blob/master/pkg/controller/clusterpolicy/state_manager.go#L26
@@ -19,9 +29,22 @@
   register: gpu_burn_gpu_nodes
   failed_when: gpu_operator_run_gpu_burn_ensure_has_gpu and gpu_burn_gpu_nodes.stdout == ""
 
+- name: Get GPU count per node
+  shell: |
+    set -o pipefail
+    oc get node {{ item }} -o jsonpath='{.status.allocatable.nvidia\.com/gpu}'
+  register: gpu_burn_gpu_counts
+  loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+
 - name: Create the src artifacts directory
   file:
     path: "{{ artifact_extra_logs_dir }}/src/"
+    state: directory
+    mode: '0755'
+
+- name: Create the logs artifacts directory
+  file:
+    path: "{{ artifact_extra_logs_dir }}/logs/"
     state: directory
     mode: '0755'
 
@@ -59,19 +82,23 @@
   failed_when: false
 
 - name: Instantiate GPU Burn Pods from template
-  loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  loop: "{{ gpu_burn_gpu_counts.results }}"
   loop_control:
-    loop_var: gpu_node_name
+    loop_var: node_gpu_info
+    index_var: node_index
   template:
     src: "{{ gpu_burn_pod }}"
-    dest: "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
+    dest: "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ node_gpu_info.item }}.yml"
     mode: '0400'
+  vars:
+    gpu_node_name: "{{ node_gpu_info.item }}"
+    gpu_count: "{{ node_gpu_info.stdout }}"
 
 - name: Create GPU Burn Pods from template
-  loop: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
+  loop: "{{ gpu_burn_gpu_counts.results }}"
   loop_control:
-    loop_var: gpu_node_name
-  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ gpu_node_name }}.yml"
+    loop_var: node_gpu_info
+  command: oc apply -f "{{ artifact_extra_logs_dir }}/src/001_pod_gpu_burn_{{ node_gpu_info.item }}.yml"
 
 - name: Ensure that the GPU burn ran successfully
   block:
@@ -110,7 +137,7 @@
     failed_when: false
 
   - name: Save the full logs of the GPU burn Pods
-    shell: oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} > {{ artifact_extra_logs_dir }}/gpu_burn.{{ item }}.log
+    shell: oc logs pod/gpu-burn-{{ item }} -n {{ gpu_operator_run_gpu_burn_namespace }} > {{ artifact_extra_logs_dir }}/logs/gpu_burn.{{ item }}.log
     with_items: "{{ gpu_burn_gpu_nodes.stdout_lines }}"
     failed_when: false
 

@@ -450,6 +450,7 @@ class IntelligentRoutingComparisonsReport():
 
                 def include_ir_flavor(v):
                     if v.startswith('pd-'): return False
+                    if v.startswith('pd '): return False
                     if not with_simple and v.startswith("simple"): return False
                     if v.startswith("simple") and not v.endswith("tp2-x4"): return False
 
@@ -521,7 +522,8 @@ class PDComparisonsReport():
             def include_pd_flavor(v):
                 if "(eth)" in v: return False
                 #if "(sched v4)" in v: return False
-                if not (v.startswith('pd-') or v.endswith('-tp4-x4')): return False
+                if not (v.startswith('pd') or v.endswith('-tp4-x4')): return False
+                if v.startswith("intelligent"): return False
                 return True
 
             filter_flavors(setting_lists, include_pd_flavor)

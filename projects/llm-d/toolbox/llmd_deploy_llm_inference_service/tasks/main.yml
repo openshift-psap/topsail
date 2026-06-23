@@ -72,7 +72,7 @@
          --no-headers
     register: llm_inference_service_pods_appear
     until: llm_inference_service_pods_appear.stdout != ""
-    retries: 20
+    retries: 40
     delay: 5
 
   - name: Wait for the LLM inference service pods to be scheduled (not Pending)
@@ -116,7 +116,7 @@
          -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
     register: llm_inference_service_ready_status
     until: llm_inference_service_ready_status.stdout == "True"
-    retries: 30
+    retries: 120
     delay: 10
 
   always:

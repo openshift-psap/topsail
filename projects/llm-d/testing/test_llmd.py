@@ -192,8 +192,8 @@ def prepare_for_test():
     with run.Parallel("prepare_gpu_node") as parallel:
         if config.project.get_config("prepare.gpu.wait_for_readiness"):
             parallel.delayed(prepare_llmd.wait_for_gpu_readiness)
-        if not config.project.get_config("prepare.preload.skip"):
-            parallel.delayed(prepare_llmd.preload_llm_model_image)
+
+        parallel.delayed(prepare_llmd.preload_llm_model_image)
 
         parallel.delayed(prepare_llmd.download_single_model, model_ref)
 
@@ -211,11 +211,21 @@ def _generate_test_metadata(failed, flavor):
 
     logging.info(f"Written exit code: {exit_code} to {exit_code_path}")
 
+    # Get model name
+    model_ref = config.project.get_config("tests.llmd.inference_service.model")
+    models = config.project.get_config("models")
+    model_name = models[model_ref]["name"]
+
+    # Get load shape
+    load_shape = config.project.get_config("tests.llmd.benchmarks.guidellm.load_shape_name")
+
     # Write settings file using YAML
     settings_path = env.ARTIFACT_DIR / "settings.yaml"
     settings_data = {
         "llm-d": True,
-        "flavor": flavor
+        "flavor": flavor,
+        "model": model_name,
+        "load_shape": load_shape
     }
 
     with open(settings_path, 'w') as f:
@@ -907,6 +917,36 @@ def apply_image_pull_secrets_configuration(isvc_data):
         logging.info(f"Set imagePullSecrets to '{image_pull_secrets}' in prefill template")
 
 
+def apply_service_account_configuration(isvc_data):
+    """
+    Apply service account configuration to ISVC templates
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    service_account = config.project.get_config("tests.llmd.inference_service.service_account", None)
+
+    if not service_account:
+        logging.debug("No service account configured")
+        return
+
+    logging.info(f"Applying service account: {service_account}")
+
+    # Apply to main template
+    isvc_data['spec']['template']['serviceAccountName'] = service_account
+    logging.info(f"Set serviceAccountName to '{service_account}' in main template")
+
+    # Apply to router scheduler template if this is a LLM-D deployment
+    if 'router' in isvc_data['spec'] and 'scheduler' in isvc_data['spec']['router']:
+        isvc_data['spec']['router']['scheduler']['template']['serviceAccountName'] = service_account
+        logging.info(f"Set serviceAccountName to '{service_account}' in router.scheduler template")
+
+    # Apply to prefill template if this is a P/D deployment
+    if 'prefill' in isvc_data['spec']:
+        isvc_data['spec']['prefill']['template']['serviceAccountName'] = service_account
+        logging.info(f"Set serviceAccountName to '{service_account}' in prefill template")
+
+
 def apply_gpu_resources(main_container, gpu_count):
     """
     Set GPU resource requests and limits based on tensor parallel size
@@ -1011,6 +1051,11 @@ def apply_infiniband_configuration(isvc_data, flavor):
     if infiniband_config == "aks":
         apply_infiniband_aks_configuration(isvc_data)
         infiniband_config = "rdma/shared_ib"
+
+    # Handle RoCE-specific configuration
+    elif infiniband_config == "roce":
+        apply_infiniband_roce_configuration(isvc_data)
+        return  # RoCE configuration handles everything, no need for generic resource application
 
     def apply_to_containers(containers):
         for container in containers:
@@ -1212,6 +1257,95 @@ def apply_infiniband_aks_configuration(isvc_data):
     logging.info("Applied AKS-specific environment variables, security context, and ulimit annotations")
 
 
+def apply_infiniband_roce_configuration(isvc_data):
+    """
+    Apply RoCE-specific InfiniBand configuration to ISVC containers
+    Adds UCX_IB_GID_INDEX environment variable, IPC_LOCK/SYS_RAWIO capabilities,
+    and replaces GPU resources with DRA GPU-NIC pair resources
+
+    Args:
+        isvc_data: The loaded YAML data structure
+    """
+    logging.info("Applying RoCE-specific InfiniBand configuration")
+
+    # Validate that service account is configured for RoCE (required for IPC_LOCK/SYS_RAWIO capabilities)
+    service_account = config.project.get_config("tests.llmd.inference_service.service_account", None)
+    if not service_account:
+        namespace = config.project.get_config("tests.llmd.namespace", "default")
+        logging.error("RoCE InfiniBand configuration requires a privileged service account!")
+        logging.error("The RoCE configuration adds IPC_LOCK and SYS_RAWIO capabilities that require privileged access.")
+        logging.error("")
+        logging.error("Please create a privileged service account with these commands:")
+        logging.error(f"  oc create serviceaccount llm-d-privileged -n {namespace}")
+        logging.error(f"  oc adm policy add-scc-to-user privileged system:serviceaccount:{namespace}:llm-d-privileged")
+        logging.error("")
+        logging.error("Then configure it in your settings:")
+        logging.error("  tests.llmd.inference_service.service_account: llm-d-privileged")
+        logging.error("")
+        raise ValueError("RoCE InfiniBand configuration requires tests.llmd.inference_service.service_account to be set")
+
+    logging.info(f"Using service account '{service_account}' for RoCE InfiniBand configuration")
+
+    def apply_roce_to_containers(containers):
+        for container in containers:
+            # 1. Add UCX_IB_GID_INDEX environment variable
+            if 'env' not in container:
+                container['env'] = []
+
+            # Add UCX_IB_GID_INDEX if not already present
+            existing_env_names = {env.get('name') for env in container['env']}
+            if 'UCX_IB_GID_INDEX' not in existing_env_names:
+                container['env'].append({
+                    'name': 'UCX_IB_GID_INDEX',
+                    'value': '3'
+                })
+
+            # 2. Add security context with IPC_LOCK and SYS_RAWIO capabilities
+            if 'securityContext' not in container:
+                container['securityContext'] = {}
+            if 'capabilities' not in container['securityContext']:
+                container['securityContext']['capabilities'] = {}
+            if 'add' not in container['securityContext']['capabilities']:
+                container['securityContext']['capabilities']['add'] = []
+
+            # Add capabilities if not already present
+            for capability in ['IPC_LOCK', 'SYS_RAWIO']:
+                if capability not in container['securityContext']['capabilities']['add']:
+                    container['securityContext']['capabilities']['add'].append(capability)
+
+            # 3. Replace nvidia.com/gpu with dra.llm-d.io/gpu-nic-pair (keeping same count)
+            if 'resources' not in container:
+                container['resources'] = {'limits': {}, 'requests': {}}
+            if 'limits' not in container['resources']:
+                container['resources']['limits'] = {}
+            if 'requests' not in container['resources']:
+                container['resources']['requests'] = {}
+
+            # Get current GPU count from nvidia.com/gpu
+            gpu_count = container['resources']['limits'].get('nvidia.com/gpu', '0')
+
+            # Remove old GPU resources
+            container['resources']['limits'].pop('nvidia.com/gpu', None)
+            container['resources']['requests'].pop('nvidia.com/gpu', None)
+
+            # Remove any existing rdma/ib resources (they conflict with DRA GPU-NIC pairs)
+            container['resources']['limits'].pop('rdma/ib', None)
+            container['resources']['requests'].pop('rdma/ib', None)
+
+            # Add DRA GPU-NIC pair resources
+            container['resources']['limits']['dra.llm-d.io/gpu-nic-pair'] = str(gpu_count)
+            container['resources']['requests']['dra.llm-d.io/gpu-nic-pair'] = str(gpu_count)
+
+    # Apply to main template containers
+    apply_roce_to_containers(isvc_data['spec']['template']['containers'])
+
+    # Apply to prefill template containers (for P/D deployments)
+    if 'prefill' in isvc_data['spec']:
+        apply_roce_to_containers(isvc_data['spec']['prefill']['template']['containers'])
+
+    logging.info("Applied RoCE-specific environment variables, security context, and DRA GPU-NIC pair resources")
+
+
 def apply_extra_properties(isvc_data):
     """
     Apply extra properties from configuration to the ISVC
@@ -1376,6 +1510,7 @@ def reshape_isvc(flavor, llmisvc_path, model_key):
     apply_max_model_len_configuration(isvc_data)
     apply_model_configuration(isvc_data, flavor)
     apply_image_pull_secrets_configuration(isvc_data)
+    apply_service_account_configuration(isvc_data)
     apply_resource_configuration(isvc_data, model_key)
     apply_infiniband_configuration(isvc_data, flavor)
     apply_router_configuration(isvc_data)

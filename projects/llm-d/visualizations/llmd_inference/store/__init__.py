@@ -43,6 +43,15 @@ is_cache_file = local_store.is_cache_file
 is_important_file = local_store.is_important_file
 
 def _rewrite_settings(settings_dict, results=None, is_lts=None):
+    settings_dict.pop("version", None)
+    # if settings_dict.get("platform") == "CKS":
+    #    return None
+
+    flavor = settings_dict.get("flavor", None)
+    if flavor == "pd-x2-ptp4-px1-dtp4":
+        settings_dict["flavor"] = "pd p:2xTP4 d:2xTP4"
+    if flavor == "pd-x2-ptp1-px4-dtp4":
+        settings_dict["flavor"] = "pd p:8xTP1 d:2xtp4"
     return settings_dict
 
 # delegate the parsing to the simple_store

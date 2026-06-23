@@ -35,6 +35,27 @@ ci_presets:
     prepare.pvc.name: storage-rwx
     prepare.pvc.access_mode: ReadWriteMany
 
+  prepare_skip_all:
+    prepare.operators.skip: true
+    prepare.rhoai.skip: true
+    prepare.cluster.skip: true
+    prepare.gateway.skip: true
+    prepare.grafana.skip: true
+    prepare.monitoring.skip: true
+    prepare.preload.skip: true
+
+  ibm_h100:
+    extends: [prepare_skip_all, pvc_rwx]
+    prepare.rhoai.skip: true
+    prepare.namespace.name: kpouget-dev
+    prepare.pvc.storage_class: ibmc-vpc-block-10iops-tier
+    tests.capture_prom: false
+    tests.capture_prom_uwm: false
+    tests.llmd.inference_service.gateway.name: gateway-internal
+    tests.llmd.inference_service.infiniband: roce
+    tests.llmd.inference_service.service_account: llm-d-privileged
+    ci_presets.gpt-oss["tests.llmd.inference_service.hybrid_kv_cache_manager"]: false
+
   azure_h100:
     extends: [azure]
     tests.llmd.inference_service.model: llama3-2-3b-local
@@ -70,7 +91,7 @@ ci_presets:
     tests.capture_prom_uwm: false
     tests.llmd.inference_service.metrics.manual_capture: false
     tests.llmd.inference_service.gateway.name: gateway-internal
-    tests.llmd.inference_service.image_pull_secrets: kpouget-pull-secret
+    tests.llmd.inference_service.image_pull_secrets: rhaii-pull-secret
     tests.llmd.inference_service.infiniband: true
 
     tests.llmd.skip_prepare: true
@@ -84,12 +105,15 @@ ci_presets:
       guidellm: ghcr.io/vllm-project/guidellm:v0.5.4
 
   baseline-flavors:
+    extends: [llama-70b]
     tests.llmd.flavors: [simple-tp2, simple-tp4, simple-tp2-x4]
 
   intelligentrouting-flavors:
+    extends: [llama-70b]
     tests.llmd.flavors: [intelligentrouting-tp2-x4, simple-tp2-x4]
 
   pd-flavors:
+    extends: [gpt-oss]
     tests.llmd.flavors: [pd-x2-ptp4-px1-dtp4, intelligentrouting-tp4-x4, simple-tp4-x4]
 
   guidellm_light:
@@ -192,7 +216,7 @@ prepare:
   rhoai:
     skip: false
     image: "quay.io/rhoai/rhoai-fbc-fragment@sha256"
-    tag: "17970f248eb3b3df410a5a77da57cc893f0969d549088f76cd50165fa7576937"
+    tag: "a46c92385e40d1f64da54170b37aba2dabf9f5deea9e1e8a36f06ea6161790e5" # 3.4-rc2
     channel: "beta"
     datasciencecluster:
       enable: "[kserve]"
@@ -324,6 +348,7 @@ tests:
       name: llm-d
       yaml_file: null # defined in the deployment_profile
       image_pull_secrets: null
+      service_account: null  # Service account for ISVC pods (required for privileged capabilities like IPC_LOCK)
 
       epp:
         deploy: "default"
@@ -336,7 +361,7 @@ tests:
         tolerations: []  # List of tolerations for router scheduler pods
       model: gpt-oss-20b
       max_model_len: 40960
-      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", false=disable rdma/ib
+      infiniband: null  # null=unchanged, true=enable rdma/ib: "1", "aks"=AKS config+ulimits, "roce"=RoCE config+DRA, false=disable rdma/ib
       aks_hotfix_enabled: true  # Enable/disable AKS ConfigMap hotfix mounts
       hybrid_kv_cache_manager: false  # Add --no-disable-hybrid-kv-cache-manager flag
       metrics:

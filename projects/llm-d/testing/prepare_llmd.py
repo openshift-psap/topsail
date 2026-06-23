@@ -197,7 +197,8 @@ def prepare():
 
     model_ref = config.project.get_config("tests.llmd.inference_service.model")
     with run.Parallel("prepare_node") as parallel:
-        parallel.delayed(download_single_model, model_ref)
+        if not config.project.get_config("prepare.preload.skip"):
+            parallel.delayed(download_single_model, model_ref)
 
         if config.project.get_config("prepare.gpu.wait_for_readiness"):
             parallel.delayed(wait_for_gpu_readiness)
@@ -341,6 +342,9 @@ def scale_up():
     """
     Prepares the cluster for GPU operations - scales up unconditionally if configured
     """
+
+    if config.project.get_config("prepare.cluster.skip"):
+        return
 
     logging.info("Scaling up the cluster")
 
@@ -496,6 +500,10 @@ def download_models_to_pvc():
     """
     Download configured models to the PVC for use with inference services
     """
+
+    if config.project.get_config("prepare.preload.skip"):
+        return
+
     logging.info("Starting model download process")
 
     # Check if PVC prefetch is enabled
@@ -572,8 +580,9 @@ def download_single_model(model_key):
         check_result = run.run(f'oc get pvc -l {model_key}=yes -oname -n {namespace}',
                                capture_stdout=True, check=False)
 
+
         expected_pvc = f"persistentvolumeclaim/{pvc_name}"
-        if check_result.returncode == 0 and expected_pvc in check_result.stdout:
+        if check_result.returncode == 0 and expected_pvc in check_result.stdout.splitlines():
             logging.info(f"Model '{model_key}' already exists in PVC (found {expected_pvc} with label {model_key}=yes) - skipping download")
             return
 
