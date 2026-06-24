@@ -42,6 +42,8 @@ spec:
 {% endif %}
             command: [bash, "/mnt/entrypoint/{{ fine_tuning_job_entrypoint_name }}"]
             env:
+            - name: FORCE_COLOR
+              value: "1"
             - name: CONFIG_JSON_PATH
               value: /mnt/config/config.json
             - name: WORKLOAD

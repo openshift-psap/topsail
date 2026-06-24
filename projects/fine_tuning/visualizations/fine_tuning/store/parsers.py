@@ -292,9 +292,9 @@ def _parse_ilab_logs(dirname):
             in_green = False
 
         if ilab_metrics.progress:
-            first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[0].timestamp)
+            first_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[2].timestamp)
             last_step_timestamp = datetime.datetime.fromisoformat(ilab_metrics.progress[-1].timestamp)
-            first_step_samples_seen = ilab_metrics.progress[0].samples_seen
+            first_step_samples_seen = ilab_metrics.progress[2].samples_seen
             last_step_samples_seen = ilab_metrics.progress[-1].samples_seen
             period = (last_step_timestamp - first_step_timestamp).total_seconds()
             all_samples_seen = last_step_samples_seen - first_step_samples_seen
