@@ -13,7 +13,7 @@ AI <https://www.redhat.com/en/technologies/cloud-computing/openshift/openshift-a
 
 To learn about overall architecture of TOPSAIL and it's components please refer to
 the `page
-<https://openshift-psap.github.io/topsail/intro.html>`_
+<https://openshift-psap.github.io/topsail/intro.html>`_.
 
 The automation relies on:
 
