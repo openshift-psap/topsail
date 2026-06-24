@@ -1,4 +1,4 @@
-FROM quay.io/fedora/fedora:42
+FROM quay.io/fedora/fedora:44
 USER 0
 
 ARG BUILD_FLAVOR="default"
